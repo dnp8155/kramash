@@ -1,0 +1,106 @@
+{
+  "name": "WorkspaceSubscription",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "title": "Workspace ID"
+    },
+    "plan_id": {
+      "type": "string",
+      "title": "Plan ID"
+    },
+    "pricing_id": {
+      "type": "string",
+      "title": "Pricing ID"
+    },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "default": "ACTIVE",
+      "enum": [
+        "ACTIVE",
+        "EXPIRED",
+        "CANCELLED",
+        "SUSPENDED"
+      ]
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date",
+      "title": "Start Date"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date",
+      "title": "Expiry Date"
+    },
+    "auto_renew": {
+      "type": "boolean",
+      "title": "Auto Renew",
+      "default": false
+    },
+    "source": {
+      "type": "string",
+      "title": "Source",
+      "default": "ADMIN",
+      "enum": [
+        "ADMIN",
+        "PAYMENT_GATEWAY",
+        "PROMOTIONAL",
+        "ONBOARDING"
+      ]
+    },
+    "assigned_price": {
+      "type": "number",
+      "title": "Assigned Price (snapshot)",
+      "default": 0
+    },
+    "billing_cycle_snapshot": {
+      "type": "string",
+      "title": "Billing Cycle (snapshot)"
+    },
+    "updated_by": {
+      "type": "string",
+      "title": "Updated By (user id)"
+    },
+    "note": {
+      "type": "string",
+      "title": "Note / Reason"
+    }
+  },
+  "required": [
+    "workspace_id",
+    "plan_id",
+    "status"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.workspace_id": "{{user.data.active_workspace_id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

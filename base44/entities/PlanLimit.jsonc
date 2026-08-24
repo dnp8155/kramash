@@ -1,0 +1,53 @@
+{
+  "name": "PlanLimit",
+  "type": "object",
+  "properties": {
+    "plan_id": {
+      "type": "string",
+      "title": "Plan ID"
+    },
+    "limit_key": {
+      "type": "string",
+      "title": "Limit Key",
+      "enum": [
+        "max_events",
+        "max_team_members",
+        "max_services",
+        "pdf_export_enabled",
+        "reminders_enabled"
+      ]
+    },
+    "limit_value": {
+      "type": "string",
+      "title": "Limit Value (number or 'true'/'false')"
+    },
+    "enabled": {
+      "type": "boolean",
+      "title": "Enabled",
+      "default": true
+    }
+  },
+  "required": [
+    "plan_id",
+    "limit_key",
+    "limit_value"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

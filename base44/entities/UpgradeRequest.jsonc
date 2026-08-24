@@ -1,0 +1,78 @@
+{
+  "name": "UpgradeRequest",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "title": "Workspace ID"
+    },
+    "requested_plan": {
+      "type": "string",
+      "title": "Requested Plan Code",
+      "default": "PRO"
+    },
+    "requested_pricing_id": {
+      "type": "string",
+      "title": "Requested Pricing ID"
+    },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "default": "PENDING",
+      "enum": [
+        "PENDING",
+        "APPROVED",
+        "REJECTED"
+      ]
+    },
+    "requested_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Requested At"
+    },
+    "reviewed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Reviewed At"
+    },
+    "reviewed_by": {
+      "type": "string",
+      "title": "Reviewed By (user id)"
+    },
+    "note": {
+      "type": "string",
+      "title": "Note"
+    }
+  },
+  "required": [
+    "workspace_id",
+    "status"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.workspace_id": "{{user.data.active_workspace_id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "data.workspace_id": "{{user.data.active_workspace_id}}"
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
