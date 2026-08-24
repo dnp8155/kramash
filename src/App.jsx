@@ -1,11 +1,21 @@
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ScrollToTop from './components/ScrollToTop';
+import AppLayout from '@/components/layout/AppLayout';
+import Events from '@/pages/Events';
+import Team from '@/pages/Team';
+import Financial from '@/pages/Financial';
+import RateEstimator from '@/pages/RateEstimator';
+import Quotation from '@/pages/Quotation';
+import SignPdf from '@/pages/SignPdf';
+import Preferences from '@/pages/Preferences';
+import AppUpdates from '@/pages/AppUpdates';
+import YourPlan from '@/pages/YourPlan';
 // Add page imports here
 
 const AuthenticatedApp = () => {
@@ -35,6 +45,18 @@ const AuthenticatedApp = () => {
   return (
     <Routes>
       {/* Add your page Route elements here */}
+      <Route element={<AppLayout />}>
+        <Route path="/" element={<Navigate to="/events" replace />} />
+        <Route path="/events" element={<Events />} />
+        <Route path="/team" element={<Team />} />
+        <Route path="/financial" element={<Financial />} />
+        <Route path="/rate-estimator" element={<RateEstimator />} />
+        <Route path="/quotation" element={<Quotation />} />
+        <Route path="/sign-pdf" element={<SignPdf />} />
+        <Route path="/preferences" element={<Preferences />} />
+        <Route path="/app-updates" element={<AppUpdates />} />
+        <Route path="/plan" element={<YourPlan />} />
+      </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
