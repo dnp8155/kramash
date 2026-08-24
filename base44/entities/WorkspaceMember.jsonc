@@ -1,0 +1,54 @@
+{
+  "name": "WorkspaceMember",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "title": "Workspace ID"
+    },
+    "user_id": {
+      "type": "string",
+      "title": "User ID"
+    },
+    "role": {
+      "type": "string",
+      "title": "Role",
+      "default": "owner",
+      "enum": [
+        "owner",
+        "admin",
+        "accountant",
+        "manager",
+        "staff"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "default": "active",
+      "enum": [
+        "active",
+        "invited",
+        "removed"
+      ]
+    }
+  },
+  "required": [
+    "workspace_id",
+    "user_id"
+  ],
+  "rls": {
+    "read": {
+      "data.user_id": "{{user.id}}"
+    },
+    "create": {
+      "data.user_id": "{{user.id}}"
+    },
+    "update": {
+      "data.user_id": "{{user.id}}"
+    },
+    "delete": {
+      "data.user_id": "{{user.id}}"
+    }
+  }
+}

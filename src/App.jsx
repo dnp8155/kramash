@@ -7,6 +7,14 @@ import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ScrollToTop from './components/ScrollToTop';
 import AppLayout from '@/components/layout/AppLayout';
+import ProtectedRoute from '@/components/ProtectedRoute';
+import WorkspaceRoute from '@/components/auth/WorkspaceRoute';
+import Login from '@/pages/Login';
+import Register from '@/pages/Register';
+import ForgotPassword from '@/pages/ForgotPassword';
+import ResetPassword from '@/pages/ResetPassword';
+import PhoneLogin from '@/pages/PhoneLogin';
+import Onboarding from '@/pages/Onboarding';
 import Events from '@/pages/Events';
 import Team from '@/pages/Team';
 import Financial from '@/pages/Financial';
@@ -44,19 +52,34 @@ const AuthenticatedApp = () => {
   // Render the main app
   return (
     <Routes>
-      {/* Add your page Route elements here */}
-      <Route element={<AppLayout />}>
-        <Route path="/" element={<Navigate to="/events" replace />} />
-        <Route path="/events" element={<Events />} />
-        <Route path="/team" element={<Team />} />
-        <Route path="/financial" element={<Financial />} />
-        <Route path="/rate-estimator" element={<RateEstimator />} />
-        <Route path="/quotation" element={<Quotation />} />
-        <Route path="/sign-pdf" element={<SignPdf />} />
-        <Route path="/preferences" element={<Preferences />} />
-        <Route path="/app-updates" element={<AppUpdates />} />
-        <Route path="/plan" element={<YourPlan />} />
+      {/* Public auth routes */}
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/phone-login" element={<PhoneLogin />} />
+
+      {/* Authenticated but no workspace yet → onboarding */}
+      <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
+        <Route path="/onboarding" element={<Onboarding />} />
       </Route>
+
+      {/* Authenticated + workspace → application */}
+      <Route element={<WorkspaceRoute unauthenticatedElement={<Navigate to="/login" replace />} noWorkspaceElement={<Navigate to="/onboarding" replace />} />}>
+        <Route element={<AppLayout />}>
+          <Route path="/" element={<Navigate to="/events" replace />} />
+          <Route path="/events" element={<Events />} />
+          <Route path="/team" element={<Team />} />
+          <Route path="/financial" element={<Financial />} />
+          <Route path="/rate-estimator" element={<RateEstimator />} />
+          <Route path="/quotation" element={<Quotation />} />
+          <Route path="/sign-pdf" element={<SignPdf />} />
+          <Route path="/preferences" element={<Preferences />} />
+          <Route path="/app-updates" element={<AppUpdates />} />
+          <Route path="/plan" element={<YourPlan />} />
+        </Route>
+      </Route>
+
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );

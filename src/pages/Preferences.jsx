@@ -2,13 +2,15 @@ import { useState } from "react";
 import { teamRoles, services, teamMemberTypes, themes, businessTypes } from "@/data/mockPreferences";
 import { formatINR } from "@/utils/format";
 import Button from "@/components/common/Button";
-import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
 import Toggle from "@/components/common/Toggle";
-import { Upload, Pencil, Trash2, ArrowUp, ArrowDown, Plus, LogOut, Crown } from "lucide-react";
+import WorkspaceSettings from "@/components/settings/WorkspaceSettings";
+import { useAuth } from "@/lib/AuthContext";
+import { Pencil, Trash2, ArrowUp, ArrowDown, Plus, LogOut, Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function Preferences() {
+  const { logout } = useAuth();
   const [theme, setTheme] = useState("Contact Sheet");
   const [toggles, setToggles] = useState({
     statusDots: true,
@@ -28,33 +30,8 @@ export default function Preferences() {
     <div className="p-4 sm:p-6 space-y-4 max-w-[1200px] mx-auto">
       {/* Top row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Owner & workspace */}
-        <Card title="Owner & Workspace">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-14 h-14 rounded-full bg-muted border border-border flex items-center justify-center">
-              <Upload className="w-5 h-5 text-muted-foreground" />
-            </div>
-            <Button variant="outline" size="sm">Upload</Button>
-          </div>
-          <div className="space-y-3">
-            <Field label="Owner Name"><Input placeholder="Krishna Shah" /></Field>
-            <Field label="Company / Firm name (optional)"><Input placeholder="Krishna Shah Photography" /></Field>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Field label="Business Phone"><Input placeholder="+91…" /></Field>
-              <Field label="Business Address"><Input placeholder="Address" /></Field>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Field label="Currency">
-                <Select><option>INR (₹)</option><option>USD ($)</option></Select>
-              </Field>
-              <Field label="Timezone">
-                <Select><option>Asia/Kolkata</option><option>UTC</option></Select>
-              </Field>
-            </div>
-            <Field label="UPI ID"><Input placeholder="krishna@upi" /></Field>
-            <Button>Save Settings</Button>
-          </div>
-        </Card>
+        {/* Owner & workspace (live) */}
+        <WorkspaceSettings />
 
         {/* Appearance */}
         <Card title="Appearance">
@@ -167,7 +144,7 @@ export default function Preferences() {
           </div>
           <div className="mt-4 pt-4 border-t border-border space-y-3">
             <div className="text-sm font-semibold">Session</div>
-            <Button variant="destructive"><LogOut className="w-4 h-4" />Log out</Button>
+            <Button variant="destructive" onClick={() => logout(true)}><LogOut className="w-4 h-4" />Log out</Button>
             <div className="text-sm font-semibold mt-3">Reset data</div>
             <div className="flex items-center gap-3">
               <Select className="flex-1"><option>All data</option><option>Events only</option></Select>

@@ -1,0 +1,119 @@
+{
+  "name": "Workspace",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "title": "Business / Workspace Name"
+    },
+    "business_type": {
+      "type": "string",
+      "title": "Business Type"
+    },
+    "owner_user_id": {
+      "type": "string",
+      "title": "Owner User ID"
+    },
+    "email": {
+      "type": "string",
+      "title": "Business Email"
+    },
+    "phone": {
+      "type": "string",
+      "title": "Business Phone"
+    },
+    "logo": {
+      "type": "string",
+      "title": "Workspace Logo URL"
+    },
+    "address": {
+      "type": "string",
+      "title": "Business Address"
+    },
+    "city": {
+      "type": "string",
+      "title": "City"
+    },
+    "state": {
+      "type": "string",
+      "title": "State"
+    },
+    "country": {
+      "type": "string",
+      "title": "Country"
+    },
+    "currency": {
+      "type": "string",
+      "title": "Currency",
+      "default": "INR"
+    },
+    "timezone": {
+      "type": "string",
+      "title": "Timezone",
+      "default": "Asia/Kolkata"
+    },
+    "plan_type": {
+      "type": "string",
+      "title": "Plan Type",
+      "default": "free",
+      "enum": [
+        "free",
+        "pro"
+      ]
+    },
+    "plan_status": {
+      "type": "string",
+      "title": "Plan Status",
+      "default": "active",
+      "enum": [
+        "active",
+        "suspended",
+        "cancelled"
+      ]
+    },
+    "gst_enabled": {
+      "type": "boolean",
+      "title": "GST Enabled",
+      "default": false
+    },
+    "gstin": {
+      "type": "string",
+      "title": "GSTIN"
+    },
+    "gst_business_name": {
+      "type": "string",
+      "title": "GST Registered Business Name"
+    },
+    "gst_billing_address": {
+      "type": "string",
+      "title": "GST Billing Address"
+    },
+    "gst_state": {
+      "type": "string",
+      "title": "GST State"
+    },
+    "default_gst_rate": {
+      "type": "number",
+      "title": "Default GST Rate (%)",
+      "default": 18
+    }
+  },
+  "required": [
+    "name",
+    "owner_user_id"
+  ],
+  "rls": {
+    "read": {
+      "data.owner_user_id": "{{user.id}}"
+    },
+    "create": {
+      "data.owner_user_id": "{{user.id}}"
+    },
+    "update": {
+      "data.owner_user_id": "{{user.id}}"
+    },
+    "delete": {
+      "data.owner_user_id": "{{user.id}}"
+    }
+  }
+}

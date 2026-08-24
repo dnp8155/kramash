@@ -1,12 +1,15 @@
 import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { mainNav, moreNav, moreGroup } from "@/constants/navigation";
-import { currentUser } from "@/data/mockPreferences";
+import { useAuth } from "@/lib/AuthContext";
+import { useWorkspace } from "@/lib/WorkspaceContext";
 import { ChevronDown, ChevronUp, Settings, Info, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function Sidebar({ mobile = false, onClose }) {
   const location = useLocation();
+  const { user } = useAuth();
+  const { workspace } = useWorkspace();
   const moreActive = moreNav.some((item) => location.pathname === item.path);
   const [moreOpen, setMoreOpen] = useState(moreActive);
 
@@ -97,11 +100,11 @@ export default function Sidebar({ mobile = false, onClose }) {
 
       <div className="flex items-center gap-3 px-3 py-3">
         <div className="w-9 h-9 rounded-full bg-sidebar-primary flex items-center justify-center text-sidebar-primary-foreground font-semibold text-sm">
-          {currentUser.name.charAt(0)}
+          {(user?.full_name || user?.email || "K").charAt(0).toUpperCase()}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-sm font-medium truncate">{currentUser.name}</div>
-          <div className="text-xs text-sidebar-muted truncate">{currentUser.business}</div>
+          <div className="text-sm font-medium truncate">{user?.full_name || "User"}</div>
+          <div className="text-xs text-sidebar-muted truncate">{workspace?.name || "—"}</div>
         </div>
         <button
           className="text-sidebar-muted hover:text-sidebar-foreground"
