@@ -1,0 +1,103 @@
+{
+  "name": "FinancialTransaction",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "title": "Workspace ID"
+    },
+    "event_id": {
+      "type": "string",
+      "title": "Event ID"
+    },
+    "transaction_type": {
+      "type": "string",
+      "title": "Transaction Type",
+      "enum": [
+        "CLIENT_RECEIPT",
+        "TEAM_PAYMENT",
+        "BUSINESS_EXPENSE"
+      ]
+    },
+    "client_id": {
+      "type": "string",
+      "title": "Client ID"
+    },
+    "team_member_id": {
+      "type": "string",
+      "title": "Team Member ID"
+    },
+    "team_assignment_id": {
+      "type": "string",
+      "title": "Team Assignment ID"
+    },
+    "expense_category_id": {
+      "type": "string",
+      "title": "Expense Category ID"
+    },
+    "expense_category_name_snapshot": {
+      "type": "string",
+      "title": "Expense Category Snapshot"
+    },
+    "amount": {
+      "type": "number",
+      "title": "Amount",
+      "default": 0
+    },
+    "payment_method": {
+      "type": "string",
+      "title": "Payment Method",
+      "default": "Cash",
+      "enum": [
+        "Cash",
+        "UPI",
+        "Bank Transfer",
+        "Card",
+        "Cheque",
+        "Other"
+      ]
+    },
+    "transaction_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Transaction Date"
+    },
+    "reference_number": {
+      "type": "string",
+      "title": "Reference Number"
+    },
+    "notes": {
+      "type": "string",
+      "title": "Notes"
+    },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "default": "ACTIVE",
+      "enum": [
+        "ACTIVE",
+        "VOID"
+      ]
+    }
+  },
+  "required": [
+    "workspace_id",
+    "transaction_type",
+    "amount",
+    "transaction_date"
+  ],
+  "rls": {
+    "read": {
+      "data.workspace_id": "{{user.data.active_workspace_id}}"
+    },
+    "create": {
+      "data.workspace_id": "{{user.data.active_workspace_id}}"
+    },
+    "update": {
+      "data.workspace_id": "{{user.data.active_workspace_id}}"
+    },
+    "delete": {
+      "data.workspace_id": "{{user.data.active_workspace_id}}"
+    }
+  }
+}

@@ -47,6 +47,11 @@
         "cancelled"
       ]
     },
+    "contract_value": {
+      "type": "number",
+      "title": "Contract / Agreed Value",
+      "default": 0
+    },
     "description": {
       "type": "string",
       "title": "Description"

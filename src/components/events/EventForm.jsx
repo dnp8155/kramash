@@ -17,7 +17,7 @@ const EVENT_TYPES = ["Wedding", "Pre-Wedding", "Reception", "Engagement", "Haldi
 const empty = {
   client_id: "", title: "", event_type: "Wedding",
   start_date: "", end_date: "", venue: "", venue_address: "",
-  status: "upcoming", description: "", notes: ""
+  status: "upcoming", contract_value: 0, description: "", notes: ""
 };
 
 export default function EventForm({ open, onClose, onSaved, event = null, workspaceId }) {
@@ -77,6 +77,7 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
         venue: form.venue.trim(),
         venue_address: form.venue_address.trim(),
         status: form.status,
+        contract_value: Number(form.contract_value) || 0,
         description: form.description.trim(),
         notes: form.notes.trim()
       };
@@ -140,6 +141,18 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
                   {EVENT_STATUS_ORDER.map((s) => <option key={s} value={s}>{EVENT_STATUS[s].label}</option>)}
                 </Select>
               </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Contract Value (₹)</Label>
+              <Input
+                type="number"
+                min="0"
+                step="0.01"
+                value={form.contract_value ?? ""}
+                onChange={(e) => set("contract_value", e.target.value)}
+                placeholder="0"
+              />
             </div>
 
             <div className="grid grid-cols-2 gap-3">

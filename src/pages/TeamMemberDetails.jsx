@@ -8,22 +8,27 @@ import StatusBadge from "@/components/common/StatusBadge";
 import LoadingState from "@/components/common/LoadingState";
 import EmptyState from "@/components/common/EmptyState";
 import TeamMemberForm from "@/components/team/TeamMemberForm";
+import RecordPaymentDialog from "@/components/financial/RecordPaymentDialog";
 import { TEAM_MEMBER_STATUS } from "@/constants/teamConfig";
 import { formatEventDate, isUpcomingDate, isPastDate } from "@/lib/dates";
-import { formatINR } from "@/utils/format";
+import { formatINR, formatMoney } from "@/utils/format";
+import { assignmentPaid, memberPaidTotal, teamPaymentStatus } from "@/lib/financeService";
 import { ArrowLeft, Pencil, Phone, Mail, StickyNote, Calendar, ArrowRight, Wallet } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default function TeamMemberDetails() {
   const { id } = useParams();
-  const { workspaceId } = useWorkspace();
+  const { workspaceId, workspace } = useWorkspace();
   const navigate = useNavigate();
 
   const [member, setMember] = useState(null);
   const [assignments, setAssignments] = useState([]);
   const [events, setEvents] = useState([]);
+  const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [payAssignment, setPayAssignment] = useState(null);
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -42,6 +47,15 @@ export default function TeamMemberDetails() {
         1000
       );
       setAssignments(asgns || []);
+      // Load team payment transactions for this member.
+      try {
+        const tx = await base44.entities.FinancialTransaction.filter(
+          { workspace_id: workspaceId, team_member_id: id }, "-transaction_date", 500
+        );
+        setTransactions(tx || []);
+      } catch (e) {
+        setTransactions([]);
+      }
       // Load related events.
       const evIds = [...new Set((asgns || []).map((a) => a.event_id))];
       const evs = [];
@@ -92,6 +106,9 @@ export default function TeamMemberDetails() {
     .sort((x, y) => (x.ev.start_date < y.ev.start_date ? 1 : -1));
 
   const totalEarnings = active.reduce((s, a) => s + (Number(a.agreed_rate) || 0), 0);
+  const totalPaid = memberPaidTotal(transactions, member.id);
+  const totalRemaining = Math.max(0, totalEarnings - totalPaid);
+  const currency = workspace?.currency || "INR";
 
   return (
     <div className="p-4 sm:p-6 space-y-4 max-w-[1100px] mx-auto">
@@ -142,9 +159,11 @@ export default function TeamMemberDetails() {
         <Card className="p-4">
           <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Agreed Earnings</div>
           <div className="text-lg font-semibold mt-1 flex items-center gap-1">
-            <Wallet className="w-4 h-4 text-muted-foreground" /> {formatINR(totalEarnings)}
+            <Wallet className="w-4 h-4 text-muted-foreground" /> {formatMoney(totalEarnings, currency)}
           </div>
-          <div className="text-[10px] text-muted-foreground mt-0.5">Paid: not tracked yet</div>
+          <div className="text-[10px] text-muted-foreground mt-0.5">
+            Paid: {formatMoney(totalPaid, currency)} · Remaining: {formatMoney(totalRemaining, currency)}
+          </div>
         </Card>
       </div>
 
@@ -156,7 +175,13 @@ export default function TeamMemberDetails() {
         {upcoming.length === 0 ? (
           <EmptyState title="No upcoming assignments" description="This member has no upcoming events." />
         ) : (
-          <AssignmentList items={upcoming} onOpen={(ev) => navigate(`/events/${ev.id}`)} />
+          <AssignmentList
+            items={upcoming}
+            transactions={transactions}
+            currency={currency}
+            onOpen={(ev) => navigate(`/events/${ev.id}`)}
+            onPay={(a) => setPayAssignment(a)}
+          />
         )}
       </Card>
 
@@ -168,7 +193,13 @@ export default function TeamMemberDetails() {
         {past.length === 0 ? (
           <EmptyState title="No previous assignments" description="Past events will appear here." />
         ) : (
-          <AssignmentList items={past} onOpen={(ev) => navigate(`/events/${ev.id}`)} />
+          <AssignmentList
+            items={past}
+            transactions={transactions}
+            currency={currency}
+            onOpen={(ev) => navigate(`/events/${ev.id}`)}
+            onPay={(a) => setPayAssignment(a)}
+          />
         )}
       </Card>
 
@@ -179,32 +210,79 @@ export default function TeamMemberDetails() {
         member={member}
         workspaceId={workspaceId}
       />
+
+      <RecordPaymentDialog
+        open={!!payAssignment}
+        onClose={() => setPayAssignment(null)}
+        onSaved={load}
+        mode="team"
+        workspaceId={workspaceId}
+        currency={currency}
+        events={events}
+        assignments={active}
+        membersById={{ [member.id]: member }}
+        preselectedEventId={payAssignment?.event_id || ""}
+        preselectedAssignmentId={payAssignment?.id || ""}
+      />
     </div>
   );
 }
 
-function AssignmentList({ items, onOpen }) {
+function AssignmentList({ items, transactions, currency, onOpen, onPay }) {
   return (
     <div className="divide-y divide-border">
-      {items.map(({ a, ev }) => (
-        <button
-          key={a.id}
-          onClick={() => onOpen(ev)}
-          className="w-full flex items-center gap-3 py-3 hover:bg-muted/40 -mx-2 px-2 rounded text-left"
-        >
-          <Calendar className="w-4 h-4 text-muted-foreground shrink-0" />
-          <div className="min-w-0 flex-1">
-            <div className="text-sm font-medium text-foreground truncate">{ev.title}</div>
-            <div className="text-xs text-muted-foreground">
-              {formatEventDate(ev.start_date, ev.end_date)}{ev.venue ? ` · ${ev.venue}` : ""}
-              {a.role_name_snapshot ? ` · ${a.role_name_snapshot}` : ""}
+      {items.map(({ a, ev }) => {
+        const paid = assignmentPaid(transactions, a.id);
+        const agreed = Number(a.agreed_rate) || 0;
+        const remaining = Math.max(0, agreed - paid);
+        const overpaid = paid > agreed ? paid - agreed : 0;
+        const status = teamPaymentStatus(paid, agreed);
+        return (
+          <div
+            key={a.id}
+            className="w-full flex items-center gap-3 py-3 hover:bg-muted/40 -mx-2 px-2 rounded"
+          >
+            <Calendar className="w-4 h-4 text-muted-foreground shrink-0" />
+            <button onClick={() => onOpen(ev)} className="min-w-0 flex-1 text-left">
+              <div className="text-sm font-medium text-foreground truncate">{ev.title}</div>
+              <div className="text-xs text-muted-foreground">
+                {formatEventDate(ev.start_date, ev.end_date)}{ev.venue ? ` · ${ev.venue}` : ""}
+                {a.role_name_snapshot ? ` · ${a.role_name_snapshot}` : ""}
+              </div>
+            </button>
+            <div className="text-right hidden sm:block">
+              <div className="text-xs text-muted-foreground">Agreed {formatMoney(agreed, currency)}</div>
+              <div className="text-xs text-muted-foreground">Paid {formatMoney(paid, currency)}</div>
             </div>
+            <div className="text-right">
+              <span className={cn(
+                "text-[10px] px-1.5 py-0.5 rounded font-medium uppercase tracking-wide",
+                status === "Paid" ? "bg-success/10 text-success" :
+                status === "Overpaid" ? "bg-warning/10 text-warning" :
+                status === "Partial" ? "bg-amber-100 text-amber-700" :
+                "bg-muted text-muted-foreground"
+              )}>
+                {status}
+              </span>
+              {overpaid > 0 ? (
+                <div className="text-xs text-warning mt-0.5">Over {formatMoney(overpaid, currency)}</div>
+              ) : (
+                <div className="text-xs text-muted-foreground mt-0.5">Rem {formatMoney(remaining, currency)}</div>
+              )}
+            </div>
+            <button
+              onClick={() => onPay(a)}
+              className="text-primary hover:text-primary-hover p-1"
+              aria-label="Record payment"
+              title="Record payment"
+            >
+              <Wallet className="w-4 h-4" />
+            </button>
+            <StatusBadge status={ev.status} />
+            <ArrowRight className="w-4 h-4 text-muted-foreground" />
           </div>
-          <div className="text-sm font-medium text-foreground">{formatINR(a.agreed_rate)}</div>
-          <StatusBadge status={ev.status} />
-          <ArrowRight className="w-4 h-4 text-muted-foreground" />
-        </button>
-      ))}
+        );
+      })}
     </div>
   );
 }

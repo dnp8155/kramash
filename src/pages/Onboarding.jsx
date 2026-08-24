@@ -63,6 +63,13 @@ export default function Onboarding() {
           DEFAULT_TEAM_ROLES.map((r) => ({ ...r, workspace_id: workspace.id, status: "active" }))
         );
       } catch (e) { /* non-fatal */ }
+      // Seed default expense categories for the new workspace.
+      try {
+        const { DEFAULT_EXPENSE_CATEGORIES } = await import("@/constants/financeConfig");
+        await base44.entities.ExpenseCategory.bulkCreate(
+          DEFAULT_EXPENSE_CATEGORIES.map((n) => ({ workspace_id: workspace.id, name: n, status: "active" }))
+        );
+      } catch (e) { /* non-fatal */ }
       setStep(4);
     } catch (err) {
       setError(err.message || "Failed to create workspace. Please try again.");
