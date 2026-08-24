@@ -7,8 +7,8 @@ module.exports = {
       opacity: Object.fromEntries(Array.from({ length: 101 }, (_, i) => [i, `${i / 100}`])),
       borderRadius: {
         lg: 'var(--radius)',
-        md: 'calc(var(--radius) - 2px)',
-        sm: 'calc(var(--radius) - 4px)',
+        md: 'calc(var(--radius) - 4px)',
+        sm: 'calc(var(--radius) - 8px)',
         xl: 'calc(var(--radius) + 4px)'
       },
       boxShadow: {
@@ -18,7 +18,7 @@ module.exports = {
         'lg': 'var(--shadow-lg)',
         'card': 'var(--shadow-card)',
         'card-hover': 'var(--shadow-card-hover)',
-        'premium': '0 1px 3px 0 rgb(0 0 0 / 0.05), 0 8px 24px -6px rgb(0 0 0 / 0.08), 0 2px 8px -2px rgb(0 0 0 / 0.04)'
+        'premium': '0 1px 2px rgb(28 34 48 / 0.06), 0 4px 14px rgb(28 34 48 / 0.08)'
       },
       backgroundImage: {
         'gradient-primary': 'var(--gradient-primary)',
