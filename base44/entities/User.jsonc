@@ -7,6 +7,11 @@
         "admin",
         "user"
       ]
+    },
+    "phone": {
+      "type": "string",
+      "title": "Phone Number",
+      "description": "Phone number for OTP login (E.164 format, e.g. +91...)"
     }
   },
   "required": [

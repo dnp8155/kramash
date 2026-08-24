@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +20,8 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const [showOtp, setShowOtp] = useState(false);
   const [otpCode, setOtpCode] = useState("");
+  const [searchParams] = useSearchParams();
+  const phoneFromOtp = searchParams.get("phone");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -47,8 +49,11 @@ export default function Register() {
       if (result?.access_token) {
         base44.auth.setToken(result.access_token);
       }
-      if (fullName.trim()) {
-        try { await base44.auth.updateMe({ full_name: fullName.trim() }); } catch {}
+      const updates = {};
+      if (fullName.trim()) updates.full_name = fullName.trim();
+      if (phoneFromOtp) updates.phone = phoneFromOtp;
+      if (Object.keys(updates).length > 0) {
+        try { await base44.auth.updateMe(updates); } catch {}
       }
       window.location.href = safeReturnTo();
     } catch (err) {
@@ -167,6 +172,13 @@ export default function Register() {
       {error && (
         <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
           {error}
+        </div>
+      )}
+
+      {phoneFromOtp && (
+        <div className="mb-4 p-3 rounded-lg bg-primary/10 text-primary text-sm flex items-center gap-2">
+          <Smartphone className="w-4 h-4 shrink-0" />
+          <span>Phone verified: <strong>{phoneFromOtp}</strong> — complete your account details below.</span>
         </div>
       )}
 

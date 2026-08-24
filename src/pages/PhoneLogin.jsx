@@ -33,7 +33,7 @@ export default function PhoneLogin() {
     }
     setLoading(true);
     try {
-      await sendPhoneOtp(phone);
+      await sendPhoneOtp(phone, "firebase-recaptcha");
       setStep("otp");
       setResendIn(30);
     } catch (err) {
@@ -47,8 +47,12 @@ export default function PhoneLogin() {
     setError("");
     setLoading(true);
     try {
-      await verifyPhoneOtp(phone, code);
-      window.location.href = returnTo;
+      const res = await verifyPhoneOtp(phone, code);
+      if (res.needsRegistration) {
+        window.location.href = "/register?phone=" + encodeURIComponent(phone);
+      } else {
+        window.location.href = returnTo;
+      }
     } catch (err) {
       setError(err.message || "Invalid or expired code.");
     } finally {
@@ -60,7 +64,7 @@ export default function PhoneLogin() {
     setError("");
     setLoading(true);
     try {
-      await sendPhoneOtp(phone);
+      await sendPhoneOtp(phone, "firebase-recaptcha");
       setResendIn(30);
     } catch (err) {
       setError(err.message || "Could not resend OTP.");
@@ -85,7 +89,7 @@ export default function PhoneLogin() {
       {pending && (
         <div className="mb-4 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm flex gap-2">
           <Info className="w-4 h-4 shrink-0 mt-0.5" />
-          <span>Phone OTP login is ready, but an external SMS/OTP provider must be configured before codes can be delivered.</span>
+          <span>Phone OTP login is ready, but Firebase Phone Authentication must be configured before codes can be delivered. Add your Firebase project config in <code className="text-xs bg-amber-100 px-1 rounded">src/lib/firebaseConfig.js</code> and enable Phone Auth in Firebase Console.</span>
         </div>
       )}
 
@@ -145,6 +149,9 @@ export default function PhoneLogin() {
           </p>
         </>
       )}
+
+      {/* Invisible reCAPTCHA container for Firebase Phone Auth */}
+      <div id="firebase-recaptcha" className="mt-4"></div>
     </AuthLayout>
   );
 }
