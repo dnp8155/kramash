@@ -1,4 +1,4 @@
-import { ArrowRight, Wallet, Users } from "lucide-react";
+import { ArrowRight, Users } from "lucide-react";
 import Button from "@/components/common/Button";
 import { formatEventDate, isUpcomingDate } from "@/lib/dates";
 import { useNavigate } from "react-router-dom";
@@ -42,7 +42,7 @@ export default function EventsRightPanel({ events = [], onEventClick }) {
             <button
               key={e.id}
               onClick={() => onEventClick?.(e)}
-              className="w-full flex items-center gap-2 py-1.5 text-left hover:bg-muted/40 rounded -mx-1 px-1"
+              className="w-full flex items-center gap-2 py-1.5 text-left hover:bg-muted/40 rounded -mx-1 px-1 transition-colors"
             >
               <span className="text-sm text-foreground flex-1 truncate">{e.title}</span>
               <span className="text-xs text-muted-foreground">{formatEventDate(e.start_date, e.end_date)}</span>
@@ -52,17 +52,11 @@ export default function EventsRightPanel({ events = [], onEventClick }) {
         </div>
       </div>
 
-      {/* Quick actions — future phases */}
-      <div className="space-y-2">
-        <Button variant="dark" className="w-full justify-start opacity-60 cursor-not-allowed" disabled title="Available in Phase 5">
-          <Wallet className="w-4 h-4" />
-          Record Payment
-        </Button>
-        <Button variant="outline" className="w-full justify-start" onClick={() => navigate("/team")}>
-          <Users className="w-4 h-4" />
-          Team Availability
-        </Button>
-      </div>
+      {/* Quick actions */}
+      <Button variant="outline" className="w-full justify-start" onClick={() => navigate("/team")}>
+        <Users className="w-4 h-4" />
+        Team Availability
+      </Button>
     </div>
   );
 }

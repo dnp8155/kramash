@@ -96,6 +96,15 @@ export default function QuotationEditor() {
         if (Array.isArray(estimateItems) && estimateItems.length) {
           setItems(estimateItems.map((it) => ({ ...it, id: undefined })));
         }
+        // Pre-select event from query param (e.g. from EventDetails "Create Quotation").
+        const qpEventId = new URLSearchParams(location.search).get("event_id");
+        if (qpEventId) {
+          const qpEvent = (ev || []).find((e) => e.id === qpEventId);
+          if (qpEvent) {
+            setEventId(qpEvent.id);
+            if (qpEvent.client_id) setClientId(qpEvent.client_id);
+          }
+        }
       } else {
         const result = await loadQuotation(workspaceId, id);
         if (!result) { setNotFound(true); return; }

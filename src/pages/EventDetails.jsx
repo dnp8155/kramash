@@ -328,7 +328,7 @@ export default function EventDetails() {
         <Button variant="outline" onClick={() => setShowExpense(true)}>
           <Receipt className="w-4 h-4" /> Record Expense
         </Button>
-        <Button variant="outline" disabled className="opacity-60 cursor-not-allowed" title="Available in Phase 6">
+        <Button variant="outline" onClick={() => navigate(`/quotation/new?event_id=${event.id}`)}>
           <FileText className="w-4 h-4" /> Create Quotation
         </Button>
       </div>

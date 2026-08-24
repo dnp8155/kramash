@@ -32,15 +32,15 @@ export default function AppLayout() {
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       {/* Desktop sidebar */}
-      <aside className="hidden lg:block w-60 shrink-0">
+      <aside className="hidden lg:block w-64 shrink-0">
         <Sidebar />
       </aside>
 
       {/* Mobile drawer */}
       {mobileOpen && (
         <div className="lg:hidden fixed inset-0 z-40 flex">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setMobileOpen(false)} />
-          <div className="relative w-60 h-full">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
+          <div className="relative w-64 h-full">
             <Sidebar mobile onClose={() => setMobileOpen(false)} />
           </div>
         </div>

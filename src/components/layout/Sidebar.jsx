@@ -37,8 +37,8 @@ export default function Sidebar({ mobile = false, onClose }) {
           K
         </div>
         <div className="flex-1">
-          <div className="font-semibold text-sm leading-tight">Kuch Naya</div>
-          <div className="text-xs text-sidebar-muted">aa raha hai</div>
+          <div className="font-semibold text-sm leading-tight">Kramashah</div>
+          <div className="text-xs text-sidebar-muted">Event Management</div>
         </div>
         {mobile && (
           <button onClick={onClose} className="text-sidebar-muted hover:text-sidebar-foreground">
