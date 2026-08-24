@@ -240,7 +240,7 @@ function AssignmentList({ items, transactions, currency, onOpen, onPay }) {
         return (
           <div
             key={a.id}
-            className="w-full flex items-center gap-3 py-3 hover:bg-muted/40 -mx-2 px-2 rounded"
+            className="w-full flex items-center gap-2 sm:gap-3 py-3 hover:bg-muted/40 -mx-2 px-2 rounded"
           >
             <Calendar className="w-4 h-4 text-muted-foreground shrink-0" />
             <button onClick={() => onOpen(ev)} className="min-w-0 flex-1 text-left">
@@ -249,12 +249,15 @@ function AssignmentList({ items, transactions, currency, onOpen, onPay }) {
                 {formatEventDate(ev.start_date, ev.end_date)}{ev.venue ? ` · ${ev.venue}` : ""}
                 {a.role_name_snapshot ? ` · ${a.role_name_snapshot}` : ""}
               </div>
+              <div className="text-xs text-muted-foreground sm:hidden mt-0.5">
+                Agreed {formatMoney(agreed, currency)} · Paid {formatMoney(paid, currency)}
+              </div>
             </button>
             <div className="text-right hidden sm:block">
               <div className="text-xs text-muted-foreground">Agreed {formatMoney(agreed, currency)}</div>
               <div className="text-xs text-muted-foreground">Paid {formatMoney(paid, currency)}</div>
             </div>
-            <div className="text-right">
+            <div className="text-right shrink-0">
               <span className={cn(
                 "text-[10px] px-1.5 py-0.5 rounded font-medium uppercase tracking-wide",
                 status === "Paid" ? "bg-success/10 text-success" :
@@ -272,14 +275,14 @@ function AssignmentList({ items, transactions, currency, onOpen, onPay }) {
             </div>
             <button
               onClick={() => onPay(a)}
-              className="text-primary hover:text-primary-hover p-1"
+              className="text-primary hover:text-primary-hover p-1 shrink-0"
               aria-label="Record payment"
               title="Record payment"
             >
               <Wallet className="w-4 h-4" />
             </button>
             <StatusBadge status={ev.status} />
-            <ArrowRight className="w-4 h-4 text-muted-foreground" />
+            <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0" />
           </div>
         );
       })}

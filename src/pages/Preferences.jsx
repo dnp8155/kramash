@@ -183,14 +183,14 @@ export default function Preferences() {
             ) : (
               roles.map((r) => (
                 <div key={r.id} className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-muted/40">
-                  <span className={`w-2 h-2 rounded-full ${r.status === "active" ? "bg-[#10b981]" : "bg-[#ef4444]"}`} />
-                  <span className={cn("text-sm flex-1", r.status === "inactive" && "text-muted-foreground line-through")}>{r.name}</span>
-                  <span className="text-sm text-muted-foreground">{formatINR(r.default_rate)}</span>
-                  <span className="text-[10px] text-muted-foreground">{r.rate_type}</span>
-                  <button onClick={() => openEditRole(r)} className="text-muted-foreground hover:text-foreground" aria-label="Edit role">
+                  <span className={`w-2 h-2 rounded-full shrink-0 ${r.status === "active" ? "bg-[#10b981]" : "bg-[#ef4444]"}`} />
+                  <span className={cn("text-sm flex-1 min-w-0 truncate", r.status === "inactive" && "text-muted-foreground line-through")}>{r.name}</span>
+                  <span className="text-sm text-muted-foreground whitespace-nowrap">{formatINR(r.default_rate)}</span>
+                  <span className="text-[10px] text-muted-foreground whitespace-nowrap hidden sm:inline">{r.rate_type}</span>
+                  <button onClick={() => openEditRole(r)} className="text-muted-foreground hover:text-foreground shrink-0" aria-label="Edit role">
                     <Pencil className="w-3.5 h-3.5" />
                   </button>
-                  <button onClick={() => toggleRoleStatus(r)} className="text-muted-foreground hover:text-warning" aria-label="Toggle status" title={r.status === "active" ? "Disable" : "Enable"}>
+                  <button onClick={() => toggleRoleStatus(r)} className="text-muted-foreground hover:text-warning shrink-0" aria-label="Toggle status" title={r.status === "active" ? "Disable" : "Enable"}>
                     {r.status === "active" ? <Trash2 className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
                   </button>
                 </div>
@@ -208,20 +208,20 @@ export default function Preferences() {
             ) : (
               serviceList.map((s) => (
                 <div key={s.id} className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-muted/40">
-                  <span className={`w-2 h-2 rounded-full ${s.status === "active" ? "bg-[#10b981]" : "bg-[#ef4444]"}`} />
-                  <span className={cn("text-sm flex-1", s.status === "inactive" && "text-muted-foreground line-through")}>{s.name}</span>
-                  <span className="text-sm text-muted-foreground">{formatINR(s.default_rate)}</span>
-                  <span className="text-[10px] text-muted-foreground">{s.rate_type}</span>
+                  <span className={`w-2 h-2 rounded-full shrink-0 ${s.status === "active" ? "bg-[#10b981]" : "bg-[#ef4444]"}`} />
+                  <span className={cn("text-sm flex-1 min-w-0 truncate", s.status === "inactive" && "text-muted-foreground line-through")}>{s.name}</span>
+                  <span className="text-sm text-muted-foreground whitespace-nowrap">{formatINR(s.default_rate)}</span>
+                  <span className="text-[10px] text-muted-foreground whitespace-nowrap hidden sm:inline">{s.rate_type}</span>
                   {workspace?.gst_enabled && Number(s.gst_rate) > 0 && (
-                    <span className="text-[10px] text-muted-foreground">GST {s.gst_rate}%</span>
+                    <span className="text-[10px] text-muted-foreground whitespace-nowrap hidden sm:inline">GST {s.gst_rate}%</span>
                   )}
-                  <button onClick={() => openEditService(s)} className="text-muted-foreground hover:text-foreground" aria-label="Edit service">
+                  <button onClick={() => openEditService(s)} className="text-muted-foreground hover:text-foreground shrink-0" aria-label="Edit service">
                     <Pencil className="w-3.5 h-3.5" />
                   </button>
-                  <button onClick={() => toggleServiceStatus(s)} className="text-muted-foreground hover:text-warning" aria-label="Toggle status" title={s.status === "active" ? "Disable" : "Enable"}>
+                  <button onClick={() => toggleServiceStatus(s)} className="text-muted-foreground hover:text-warning shrink-0" aria-label="Toggle status" title={s.status === "active" ? "Disable" : "Enable"}>
                     {s.status === "active" ? <Trash2 className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
                   </button>
-                  <button onClick={() => deleteService(s)} className="text-muted-foreground hover:text-destructive" aria-label="Delete service">
+                  <button onClick={() => deleteService(s)} className="text-muted-foreground hover:text-destructive shrink-0" aria-label="Delete service">
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>

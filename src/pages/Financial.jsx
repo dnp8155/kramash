@@ -318,7 +318,7 @@ export default function Financial() {
 
       {tab === "Financial Years" && (
         <div className="bg-card border border-border rounded-lg overflow-hidden">
-          <div className="grid grid-cols-[2fr_1fr_1fr_1fr] gap-4 px-4 py-2.5 border-b border-border text-xs font-medium text-muted-foreground uppercase tracking-wide">
+          <div className="hidden sm:grid grid-cols-[2fr_1fr_1fr_1fr] gap-4 px-4 py-2.5 border-b border-border text-xs font-medium text-muted-foreground uppercase tracking-wide">
             <span>Financial Year</span>
             <span className="text-right">Received</span>
             <span className="text-right">Paid</span>
@@ -330,21 +330,32 @@ export default function Financial() {
               <div
                 key={row.label}
                 className={cn(
-                  "grid grid-cols-[2fr_1fr_1fr_1fr] gap-4 px-4 py-3 border-b border-border last:border-0 hover:bg-muted/40",
+                  "grid grid-cols-2 sm:grid-cols-[2fr_1fr_1fr_1fr] gap-2 sm:gap-4 px-4 py-3 border-b border-border last:border-0 hover:bg-muted/40",
                   row.label === fy && "bg-primary/5"
                 )}
               >
                 <button
                   onClick={() => { setFy(row.label); setTab("Payment Activity"); }}
-                  className="text-sm font-medium text-primary text-left hover:underline"
+                  className="text-sm font-medium text-primary text-left hover:underline col-span-2 sm:col-span-1"
                 >
                   {row.label}
                 </button>
-                <span className="text-sm text-success text-right">{formatMoney(row.received, currency)}</span>
-                <span className="text-sm text-destructive text-right">{formatMoney(row.paid, currency)}</span>
-                <span className={cn("text-sm font-semibold text-right", profit >= 0 ? "text-success" : "text-destructive")}>
-                  {formatMoney(profit, currency)}
-                </span>
+                <div className="sm:contents">
+                  <div className="flex sm:block justify-between">
+                    <span className="sm:hidden text-xs text-muted-foreground">Rec</span>
+                    <span className="text-sm text-success sm:text-right">{formatMoney(row.received, currency)}</span>
+                  </div>
+                  <div className="flex sm:block justify-between">
+                    <span className="sm:hidden text-xs text-muted-foreground">Paid</span>
+                    <span className="text-sm text-destructive sm:text-right">{formatMoney(row.paid, currency)}</span>
+                  </div>
+                  <div className="flex sm:block justify-between">
+                    <span className="sm:hidden text-xs text-muted-foreground">Profit</span>
+                    <span className={cn("text-sm font-semibold sm:text-right", profit >= 0 ? "text-success" : "text-destructive")}>
+                      {formatMoney(profit, currency)}
+                    </span>
+                  </div>
+                </div>
               </div>
             );
           })}

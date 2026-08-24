@@ -455,28 +455,28 @@ export default function QuotationEditor() {
       {/* Items */}
       <Section title="Items & Deliverables">
         {!readOnly && (
-          <div className="flex flex-wrap gap-2 items-end mb-3">
-            <div className="flex flex-col gap-1">
+          <div className="flex flex-wrap gap-3 items-end mb-3">
+            <div className="flex flex-col gap-1 flex-1 min-w-[180px]">
               <span className="text-xs font-medium text-muted-foreground">Add Service</span>
               <div className="flex gap-2">
-                <Select value={addServiceId} onChange={(e) => setAddServiceId(e.target.value)} className="w-48">
+                <Select value={addServiceId} onChange={(e) => setAddServiceId(e.target.value)} className="flex-1">
                   <option value="">— choose —</option>
                   {services.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </Select>
                 <Button size="sm" variant="outline" onClick={addService} disabled={!addServiceId}><Plus className="w-3.5 h-3.5" />Add</Button>
               </div>
             </div>
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-1 flex-1 min-w-[180px]">
               <span className="text-xs font-medium text-muted-foreground">Add Role</span>
               <div className="flex gap-2">
-                <Select value={addRoleId} onChange={(e) => setAddRoleId(e.target.value)} className="w-48">
+                <Select value={addRoleId} onChange={(e) => setAddRoleId(e.target.value)} className="flex-1">
                   <option value="">— choose —</option>
                   {roles.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
                 </Select>
                 <Button size="sm" variant="outline" onClick={addRole} disabled={!addRoleId}><Plus className="w-3.5 h-3.5" />Add</Button>
               </div>
             </div>
-            <Button size="sm" variant="dark" onClick={addCustom}><Plus className="w-3.5 h-3.5" />Custom Item</Button>
+            <Button size="sm" variant="dark" onClick={addCustom} className="shrink-0"><Plus className="w-3.5 h-3.5" />Custom Item</Button>
           </div>
         )}
 

@@ -55,12 +55,12 @@ export default function PaymentTable({
           <div
             key={t.id}
             className={cn(
-              "grid grid-cols-1 sm:grid-cols-[2fr_1fr_1fr_1fr_auto] gap-1 sm:gap-4 px-4 py-3 border-b border-border last:border-0 hover:bg-muted/40",
+              "grid grid-cols-2 sm:grid-cols-[2fr_1fr_1fr_1fr_auto] gap-1 sm:gap-4 px-4 py-3 border-b border-border last:border-0 hover:bg-muted/40",
               isVoid && "opacity-50"
             )}
           >
-            <div className="min-w-0">
-              <div className="text-sm font-medium text-foreground truncate flex items-center gap-2">
+            <div className="min-w-0 col-span-2 sm:col-span-1">
+              <div className="text-sm font-medium text-foreground truncate flex items-center gap-2 flex-wrap">
                 {ev?.title || "Event"}
                 <span className={cn(
                   "text-[10px] px-1.5 py-0.5 rounded font-medium uppercase tracking-wide",
@@ -78,15 +78,21 @@ export default function PaymentTable({
                 {partyFor(t)}{t.reference_number ? ` · Ref ${t.reference_number}` : ""}
               </div>
             </div>
-            <div className="text-sm text-muted-foreground">{t.transaction_date}</div>
-            <div className="text-sm text-muted-foreground">{t.payment_method}</div>
+            <div className="text-sm text-muted-foreground">
+              <span className="sm:hidden text-xs text-muted-foreground/70 mr-1">Date:</span>
+              {t.transaction_date}
+            </div>
+            <div className="text-sm text-muted-foreground">
+              <span className="sm:hidden text-xs text-muted-foreground/70 mr-1">Method:</span>
+              {t.payment_method}
+            </div>
             <div className={cn(
               "text-sm font-semibold sm:text-right",
               isIn ? "text-success" : "text-destructive"
             )}>
               {isIn ? "+" : "−"}{formatMoney(t.amount, currency)}
             </div>
-            <div className="flex items-center gap-1 sm:justify-end">
+            <div className="flex items-center gap-1 sm:justify-end col-span-2 sm:col-span-1 justify-end">
               {!isVoid && onEdit && (
                 <button
                   onClick={() => onEdit(t)}

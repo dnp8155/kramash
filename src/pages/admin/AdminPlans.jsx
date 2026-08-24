@@ -113,17 +113,19 @@ export default function AdminPlans() {
                 const limit = getLimit(plan.id, key);
                 if (!limit) return null;
                 return (
-                  <div key={key} className="flex items-center gap-2">
-                    <Label className="w-40 text-sm font-normal">{KEY_LABELS[key]}</Label>
-                    <Input
-                      type="number"
-                      value={limit.limit_value}
-                      onChange={(e) => updateLimitValue(plan.id, key, e.target.value)}
-                      className="w-32"
-                    />
-                    <Button variant="outline" size="sm" onClick={() => saveLimit(plan.id, key)} disabled={saving}>
-                      <Save className="w-3.5 h-3.5" /> Save
-                    </Button>
+                  <div key={key} className="flex flex-col sm:flex-row sm:items-center gap-2">
+                    <Label className="sm:w-40 text-sm font-normal">{KEY_LABELS[key]}</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        type="number"
+                        value={limit.limit_value}
+                        onChange={(e) => updateLimitValue(plan.id, key, e.target.value)}
+                        className="w-full sm:w-32"
+                      />
+                      <Button variant="outline" size="sm" onClick={() => saveLimit(plan.id, key)} disabled={saving}>
+                        <Save className="w-3.5 h-3.5" /> Save
+                      </Button>
+                    </div>
                   </div>
                 );
               })}
@@ -131,19 +133,21 @@ export default function AdminPlans() {
                 const limit = getLimit(plan.id, key);
                 if (!limit) return null;
                 return (
-                  <div key={key} className="flex items-center gap-2">
-                    <Label className="w-40 text-sm font-normal">{KEY_LABELS[key]}</Label>
-                    <Select
-                      value={limit.limit_value === "true" ? "true" : "false"}
-                      onChange={(e) => updateLimitValue(plan.id, key, e.target.value)}
-                      className="w-32"
-                    >
-                      <option value="false">No</option>
-                      <option value="true">Yes</option>
-                    </Select>
-                    <Button variant="outline" size="sm" onClick={() => saveLimit(plan.id, key)} disabled={saving}>
-                      <Save className="w-3.5 h-3.5" /> Save
-                    </Button>
+                  <div key={key} className="flex flex-col sm:flex-row sm:items-center gap-2">
+                    <Label className="sm:w-40 text-sm font-normal">{KEY_LABELS[key]}</Label>
+                    <div className="flex gap-2">
+                      <Select
+                        value={limit.limit_value === "true" ? "true" : "false"}
+                        onChange={(e) => updateLimitValue(plan.id, key, e.target.value)}
+                        className="w-full sm:w-32"
+                      >
+                        <option value="false">No</option>
+                        <option value="true">Yes</option>
+                      </Select>
+                      <Button variant="outline" size="sm" onClick={() => saveLimit(plan.id, key)} disabled={saving}>
+                        <Save className="w-3.5 h-3.5" /> Save
+                      </Button>
+                    </div>
                   </div>
                 );
               })}
@@ -156,18 +160,20 @@ export default function AdminPlans() {
                 <div className="text-xs text-muted-foreground mt-4 mb-2">Pricing Options (₹)</div>
                 <div className="space-y-2">
                   {planPricings.map((p) => (
-                    <div key={p.id} className="flex items-center gap-2 flex-wrap">
-                      <span className="w-28 text-sm">{BILLING_LABELS[p.billing_cycle]}</span>
-                      <Input
-                        type="number"
-                        value={p.price}
-                        onChange={(e) => updatePricing(p.id, "price", e.target.value)}
-                        className="w-32"
-                      />
-                      <span className="text-xs text-muted-foreground">/ {p.duration_months} mo</span>
-                      <Button variant="outline" size="sm" onClick={() => savePricing(p)} disabled={saving}>
-                        <Save className="w-3.5 h-3.5" /> Save
-                      </Button>
+                    <div key={p.id} className="flex flex-col sm:flex-row sm:items-center gap-2">
+                      <span className="sm:w-28 text-sm">{BILLING_LABELS[p.billing_cycle]}</span>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Input
+                          type="number"
+                          value={p.price}
+                          onChange={(e) => updatePricing(p.id, "price", e.target.value)}
+                          className="w-full sm:w-32"
+                        />
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">/ {p.duration_months} mo</span>
+                        <Button variant="outline" size="sm" onClick={() => savePricing(p)} disabled={saving}>
+                          <Save className="w-3.5 h-3.5" /> Save
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>

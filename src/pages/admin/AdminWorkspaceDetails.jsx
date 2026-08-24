@@ -157,7 +157,7 @@ export default function AdminWorkspaceDetails() {
           <p className="text-sm text-muted-foreground">No subscriptions recorded.</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm min-w-[640px]">
               <thead className="text-left text-muted-foreground">
                 <tr>
                   <th className="py-1.5 font-medium">Status</th>

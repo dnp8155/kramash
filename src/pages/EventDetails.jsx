@@ -230,21 +230,24 @@ export default function EventDetails() {
                 const overpaid = paid > (Number(a.agreed_rate) || 0) ? paid - (Number(a.agreed_rate) || 0) : 0;
                 const status = teamPaymentStatus(paid, Number(a.agreed_rate) || 0);
                 return (
-                  <div key={a.id} className="flex items-center gap-3 py-2.5">
+                  <div key={a.id} className="flex items-center gap-2 sm:gap-3 py-2.5">
                     <span className="w-2 h-2 rounded-full bg-[#10b981] shrink-0" />
                     <div className="min-w-0 flex-1">
                       <div className="text-sm font-medium text-foreground truncate">
                         {m?.name || "Unknown member"}
                       </div>
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-xs text-muted-foreground truncate">
                         {a.role_name_snapshot || m?.profession || "—"} · {a.rate_type}
+                      </div>
+                      <div className="text-xs text-muted-foreground sm:hidden mt-0.5">
+                        {formatMoney(a.agreed_rate, currency)} · Paid {formatMoney(paid, currency)}
                       </div>
                     </div>
                     <div className="text-right hidden sm:block">
                       <div className="text-xs text-muted-foreground">Agreed {formatMoney(a.agreed_rate, currency)}</div>
                       <div className="text-xs text-muted-foreground">Paid {formatMoney(paid, currency)}</div>
                     </div>
-                    <div className="text-right">
+                    <div className="text-right shrink-0">
                       <div className={cn(
                         "text-[10px] px-1.5 py-0.5 rounded font-medium uppercase tracking-wide",
                         status === "Paid" ? "bg-success/10 text-success" :
@@ -262,7 +265,7 @@ export default function EventDetails() {
                     </div>
                     <button
                       onClick={() => setTeamPayAssignment(a)}
-                      className="text-primary hover:text-primary-hover p-1"
+                      className="text-primary hover:text-primary-hover p-1 shrink-0"
                       aria-label="Record team payment"
                       title="Record payment"
                     >
@@ -270,7 +273,7 @@ export default function EventDetails() {
                     </button>
                     <button
                       onClick={() => removeAssignment(a)}
-                      className="text-muted-foreground hover:text-destructive p-1"
+                      className="text-muted-foreground hover:text-destructive p-1 shrink-0"
                       aria-label="Remove assignment"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
