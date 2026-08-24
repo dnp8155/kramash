@@ -8,22 +8,23 @@ import StatusBadge from "@/components/common/StatusBadge";
 import LoadingState from "@/components/common/LoadingState";
 import EmptyState from "@/components/common/EmptyState";
 import EventForm from "@/components/events/EventForm";
+import EventFinancialCards from "@/components/events/EventFinancialCards";
+import EventAssignmentCard from "@/components/events/EventAssignmentCard";
 import AssignTeamDialog from "@/components/team/AssignTeamDialog";
 import RecordPaymentDialog from "@/components/financial/RecordPaymentDialog";
 import RecordExpenseDialog from "@/components/financial/RecordExpenseDialog";
 import { useToast } from "@/components/ui/use-toast";
-import { EVENT_STATUS } from "@/constants/statusConfig";
 import { formatEventDate } from "@/lib/dates";
-import { formatINR, formatMoney } from "@/utils/format";
-import { eventTeamCost } from "@/lib/teamService";
+import { formatMoney } from "@/utils/format";
 import {
   eventFinancialSummary,
-  assignmentPaid,
   clientPaymentStatus,
-  teamPaymentStatus,
   loadExpenseCategories
 } from "@/lib/financeService";
-import { ArrowLeft, Pencil, Wallet, FileText, Users, MapPin, Calendar, Phone, Mail, Trash2, Plus, Receipt, AlertTriangle } from "lucide-react";
+import {
+  ArrowLeft, Pencil, Wallet, FileText, MapPin, Calendar, Phone, Plus,
+  CalendarPlus, Share2, Receipt, StickyNote, Camera, User
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function EventDetails() {
@@ -45,9 +46,9 @@ export default function EventDetails() {
   const [showForm, setShowForm] = useState(false);
   const [showAssign, setShowAssign] = useState(false);
   const [showClientPayment, setShowClientPayment] = useState(false);
-  const [showTeamPayment, setShowTeamPayment] = useState(false);
   const [showExpense, setShowExpense] = useState(false);
   const [teamPayAssignment, setTeamPayAssignment] = useState(null);
+  const [tab, setTab] = useState("Team");
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -74,7 +75,6 @@ export default function EventDetails() {
       setAssignments(asgns || []);
       setTransactions(tx || []);
       setCategories(cats || []);
-      // Build eventsById from all assignments for conflict detection.
       const evIds = [...new Set((asgns || []).map((a) => a.event_id))];
       const evMap = {};
       evMap[ev.id] = ev;
@@ -105,14 +105,16 @@ export default function EventDetails() {
     const m = {}; members.forEach((x) => { m[x.id] = x; }); return m;
   }, [members]);
 
-  const teamCost = useMemo(() => eventTeamCost(eventAssignments), [eventAssignments]);
-
   const fin = useMemo(
     () => eventFinancialSummary(event, transactions, eventAssignments),
     [event, transactions, eventAssignments]
   );
   const clientStatus = clientPaymentStatus(fin.received, fin.contractValue);
   const currency = workspace?.currency || "INR";
+
+  const teamTotalRate = fin.teamAgreed;
+  const teamTotalPaid = fin.teamPaid;
+  const teamTotalRemaining = Math.max(0, fin.teamAgreed - fin.teamPaid);
 
   const removeAssignment = async (a) => {
     try {
@@ -122,6 +124,51 @@ export default function EventDetails() {
     } catch (e) {
       toast({ title: "Failed to remove assignment", description: e?.message, variant: "destructive" });
     }
+  };
+
+  const shareAssignment = async (a) => {
+    const m = membersById[a.team_member_id];
+    const text = `${m?.name || "Team member"} assigned to ${event?.title || "event"} — Rate: ${formatMoney(a.agreed_rate, currency)}`;
+    if (navigator.share) {
+      try { await navigator.share({ text }); } catch (e) { /* cancelled */ }
+    } else {
+      navigator.clipboard?.writeText(text);
+      toast({ title: "Copied to clipboard" });
+    }
+  };
+
+  const addToCalendar = () => {
+    if (!event) return;
+    const start = event.start_date ? event.start_date.replace(/-/g, "") : "";
+    const end = event.end_date ? event.end_date.replace(/-/g, "") : start;
+    const ics = [
+      "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Kramashah//Event//EN",
+      "BEGIN:VEVENT",
+      `UID:${event.id}@kramashah`,
+      `DTSTART;VALUE=DATE:${start}`,
+      `DTEND;VALUE=DATE:${end}`,
+      `SUMMARY:${event.title}`,
+      event.venue ? `LOCATION:${event.venue}` : "",
+      "END:VEVENT", "END:VCALENDAR"
+    ].filter(Boolean).join("\r\n");
+    const blob = new Blob([ics], { type: "text/calendar" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${event.title || "event"}.ics`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const remindClient = () => {
+    if (!client?.phone) {
+      toast({ title: "No client phone number", variant: "destructive" });
+      return;
+    }
+    const due = Math.max(0, fin.pending);
+    const msg = `Hi ${client.name}, this is a gentle reminder about your pending balance of ${formatMoney(due, currency)} for ${event?.title || "your event"}. Thank you!`;
+    const phone = client.phone.replace(/\D/g, "");
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, "_blank");
   };
 
   if (loading) return <div className="p-6"><LoadingState label="Loading event…" /></div>;
@@ -140,202 +187,256 @@ export default function EventDetails() {
     );
   }
 
+  const tabs = ["Team", "Payments", "Notes"];
+  const eventTransactions = transactions.filter((t) => t.status === "ACTIVE");
+
   return (
     <div className="p-4 sm:p-6 space-y-4 max-w-[1100px] mx-auto">
+      {/* Header */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <Button variant="ghost" onClick={() => navigate("/events")} className="-ml-2">
-          <ArrowLeft className="w-4 h-4" /> Back to Events
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button variant="dark" size="sm" onClick={() => navigate("/events")}>
+            <ArrowLeft className="w-4 h-4" /> Back
+          </Button>
+          <div>
+            <h1 className="text-xl font-bold text-foreground">{event.title}</h1>
+            <div className="flex items-center gap-2 mt-0.5">
+              <StatusBadge status={event.status} />
+              <span className="flex items-center gap-1 text-xs text-success font-medium">
+                <span className="w-1.5 h-1.5 rounded-full bg-success" /> Online
+              </span>
+            </div>
+          </div>
+        </div>
         <Button onClick={() => setShowForm(true)}>
-          <Pencil className="w-4 h-4" /> Edit Event
+          <Plus className="w-4 h-4" /> New Entry
         </Button>
       </div>
 
-      {/* Event header */}
+      {/* Entry details form */}
       <Card className="p-5">
-        <div className="flex items-start justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-3">
-            <span className={`w-3 h-3 rounded-full shrink-0 ${EVENT_STATUS[event.status]?.dot}`} />
-            <div>
-              <h1 className="text-xl font-semibold text-foreground">{event.title}</h1>
-              <p className="text-sm text-muted-foreground">{event.event_type}</p>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <div className="text-xs text-muted-foreground">{event.start_date?.slice(8)}-{event.start_date?.slice(0, 4)}</div>
+            <h2 className="text-base font-semibold">{event.event_type} · {formatEventDate(event.start_date, event.end_date)}</h2>
+          </div>
+          <Button size="sm" variant="outline" onClick={() => setShowForm(true)}>
+            <Pencil className="w-3.5 h-3.5" /> Edit
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field label="Client / Event Name" value={event.title} />
+          <Field label="Event Type" value={event.event_type || "—"} />
+          <Field label="Event Start Date" value={event.start_date || "—"} icon={Calendar} />
+          <Field label="Event End Date" value={event.end_date || "—"} icon={Calendar} />
+        </div>
+
+        {/* Date chips */}
+        <div className="mt-4">
+          <div className="flex flex-wrap gap-2">
+            <DateChip date={event.start_date} />
+            {event.end_date && event.end_date !== event.start_date && <DateChip date={event.end_date} />}
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            Tap a day to include/exclude it — not every day in the range has to be a shoot day.
+          </p>
+        </div>
+
+        {/* Additional fields */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+          <Field label="Contact Number (optional)" value={client?.phone || "—"} icon={Phone} />
+          <Field label="Event Venue (optional)" value={event.venue || "—"} icon={MapPin} />
+          <div className="sm:col-span-2">
+            <Field label="Address (optional)" value={[client?.address, client?.city].filter(Boolean).join(", ") || "—"} icon={MapPin} />
+          </div>
+        </div>
+
+        {/* Contract value + FY */}
+        <div className="flex items-end gap-4 mt-4 pt-4 border-t border-border flex-wrap">
+          <div className="flex-1 min-w-[200px]">
+            <div className="text-xs font-semibold text-muted-foreground uppercase mb-1">Contract Value (₹)</div>
+            <div className="text-2xl font-bold text-foreground">{formatMoney(event.contract_value || 0, currency)}</div>
+          </div>
+          <div>
+            <div className="text-xs font-semibold text-muted-foreground uppercase mb-1">Financial Year</div>
+            <div className="text-sm font-semibold text-foreground px-3 py-1.5 bg-muted/50 rounded-md border border-border">
+              April 2026 - March 2027 (Current)
             </div>
           </div>
-          <StatusBadge status={event.status} />
         </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-5">
-          <InfoRow icon={Calendar} label="Date(s)" value={formatEventDate(event.start_date, event.end_date)} />
-          <InfoRow icon={MapPin} label="Venue" value={event.venue || "—"} />
-          <div className="sm:col-span-2">
-            <InfoRow icon={MapPin} label="Venue Address" value={event.venue_address || "—"} />
-          </div>
-        </div>
-
-        {event.description && (
-          <div className="mt-4">
-            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Description</div>
-            <p className="text-sm text-foreground whitespace-pre-wrap">{event.description}</p>
-          </div>
-        )}
-        {event.notes && (
-          <div className="mt-3">
-            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Notes</div>
-            <p className="text-sm text-foreground whitespace-pre-wrap">{event.notes}</p>
-          </div>
-        )}
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Client card */}
-        <Card className="p-5">
-          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Client</div>
-          {client ? (
-            <div className="space-y-2">
-              <button
-                onClick={() => navigate(`/clients/${client.id}`)}
-                className="text-base font-semibold text-primary hover:underline text-left"
-              >
-                {client.name}
-              </button>
-              {client.phone && <InfoRow icon={Phone} label="Phone" value={client.phone} />}
-              {client.email && <InfoRow icon={Mail} label="Email" value={client.email} />}
-              {(client.city || client.address) && (
-                <InfoRow icon={MapPin} label="Address" value={[client.address, client.city, client.state].filter(Boolean).join(", ") || "—"} />
-              )}
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">Client not available.</p>
-          )}
-        </Card>
+      {/* Financial summary cards */}
+      <EventFinancialCards
+        received={fin.received}
+        paid={fin.teamPaid}
+        leftBalance={Math.max(0, fin.pending)}
+        profit={fin.profit}
+        currency={currency}
+      />
 
-        {/* Team card — real assignments */}
+      {/* Actions row */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+          <Camera className="w-4 h-4" />
+          <User className="w-4 h-4" />
+          <span className="capitalize">{event.status}</span>
+        </div>
+        <Button size="sm" variant="outline" onClick={addToCalendar}>
+          <CalendarPlus className="w-3.5 h-3.5" /> Add to Calendar
+        </Button>
+        {fin.pending > 0 && (
+          <Button size="sm" variant="outline" onClick={remindClient}>
+            <Share2 className="w-3.5 h-3.5" /> Remind client about {formatMoney(fin.pending, currency)} due
+          </Button>
+        )}
+      </div>
+
+      {/* Tabs */}
+      <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-lg w-full sm:w-auto">
+        {tabs.map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={cn(
+              "px-4 py-1.5 text-sm font-medium rounded-md transition-all whitespace-nowrap flex-1 sm:flex-initial",
+              tab === t
+                ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            {t}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab content */}
+      {tab === "Team" && (
+        <div className="space-y-4">
+          {/* Team summary cards */}
+          <div className="grid grid-cols-3 gap-3">
+            <TeamStatCard label="TOTAL RATE" value={formatMoney(teamTotalRate, currency)} />
+            <TeamStatCard label="TOTAL PAYMENTS" value={formatMoney(teamTotalPaid, currency)} />
+            <TeamStatCard label="TOTAL REMAINING" value={formatMoney(teamTotalRemaining, currency)} tone="warning" />
+          </div>
+
+          {/* Assignments */}
+          {eventAssignments.length === 0 ? (
+            <Card className="p-6">
+              <EmptyState
+                title="No team assigned"
+                description="Add team members to this event to track their payments."
+                action={
+                  <Button size="sm" onClick={() => setShowAssign(true)}>
+                    <Plus className="w-3.5 h-3.5" /> Add Team Member
+                  </Button>
+                }
+              />
+            </Card>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {eventAssignments.map((a) => (
+                  <EventAssignmentCard
+                    key={a.id}
+                    assignment={a}
+                    member={membersById[a.team_member_id]}
+                    event={event}
+                    currency={currency}
+                    transactions={transactions}
+                    onAddPayment={(asg) => setTeamPayAssignment(asg)}
+                    onRemove={removeAssignment}
+                    onShare={shareAssignment}
+                  />
+                ))}
+              </div>
+              <div className="flex justify-center">
+                <Button onClick={() => setShowAssign(true)}>
+                  <Plus className="w-4 h-4" /> Add Team Member
+                </Button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {tab === "Payments" && (
         <Card className="p-5">
           <div className="flex items-center justify-between mb-3">
             <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-              Team ({eventAssignments.length})
+              Transactions ({eventTransactions.length})
             </div>
-            <Button size="sm" variant="outline" onClick={() => setShowAssign(true)}>
-              <Plus className="w-3.5 h-3.5" /> Assign
-            </Button>
+            <div className="flex gap-2">
+              <Button size="sm" onClick={() => setShowClientPayment(true)}>
+                <Wallet className="w-3.5 h-3.5" /> Client Payment
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => setShowExpense(true)}>
+                <Receipt className="w-3.5 h-3.5" /> Expense
+              </Button>
+            </div>
           </div>
-          {eventAssignments.length === 0 ? (
-            <EmptyState title="No team assigned yet" description="Assign team members to this event." />
+          {eventTransactions.length === 0 ? (
+            <EmptyState title="No transactions yet" description="Record client payments or expenses for this event." />
           ) : (
             <div className="divide-y divide-border">
-              {eventAssignments.map((a) => {
-                const m = membersById[a.team_member_id];
-                const paid = assignmentPaid(transactions, a.id);
-                const remaining = Math.max(0, (Number(a.agreed_rate) || 0) - paid);
-                const overpaid = paid > (Number(a.agreed_rate) || 0) ? paid - (Number(a.agreed_rate) || 0) : 0;
-                const status = teamPaymentStatus(paid, Number(a.agreed_rate) || 0);
-                return (
-                  <div key={a.id} className="flex items-center gap-2 sm:gap-3 py-2.5">
-                    <span className="w-2 h-2 rounded-full bg-[#10b981] shrink-0" />
-                    <div className="min-w-0 flex-1">
-                      <div className="text-sm font-medium text-foreground truncate">
-                        {m?.name || "Unknown member"}
-                      </div>
-                      <div className="text-xs text-muted-foreground truncate">
-                        {a.role_name_snapshot || m?.profession || "—"} · {a.rate_type}
-                      </div>
-                      <div className="text-xs text-muted-foreground sm:hidden mt-0.5">
-                        {formatMoney(a.agreed_rate, currency)} · Paid {formatMoney(paid, currency)}
-                      </div>
+              {eventTransactions.map((t) => (
+                <div key={t.id} className="flex items-center justify-between py-2.5">
+                  <div>
+                    <div className="text-sm font-medium text-foreground">
+                      {t.transaction_type === "CLIENT_RECEIPT" ? "Client Payment" :
+                       t.transaction_type === "TEAM_PAYMENT" ? "Team Payment" : "Expense"}
                     </div>
-                    <div className="text-right hidden sm:block">
-                      <div className="text-xs text-muted-foreground">Agreed {formatMoney(a.agreed_rate, currency)}</div>
-                      <div className="text-xs text-muted-foreground">Paid {formatMoney(paid, currency)}</div>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <div className={cn(
-                        "text-[10px] px-1.5 py-0.5 rounded font-medium uppercase tracking-wide",
-                        status === "Paid" ? "bg-success/10 text-success" :
-                        status === "Overpaid" ? "bg-warning/10 text-warning" :
-                        status === "Partial" ? "bg-amber-100 text-amber-700" :
-                        "bg-muted text-muted-foreground"
-                      )}>
-                        {status}
-                      </div>
-                      {overpaid > 0 ? (
-                        <div className="text-xs text-warning mt-0.5">Overpaid {formatMoney(overpaid, currency)}</div>
-                      ) : (
-                        <div className="text-xs text-muted-foreground mt-0.5">Rem {formatMoney(remaining, currency)}</div>
-                      )}
-                    </div>
-                    <button
-                      onClick={() => setTeamPayAssignment(a)}
-                      className="text-primary hover:text-primary-hover p-1 shrink-0"
-                      aria-label="Record team payment"
-                      title="Record payment"
-                    >
-                      <Wallet className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={() => removeAssignment(a)}
-                      className="text-muted-foreground hover:text-destructive p-1 shrink-0"
-                      aria-label="Remove assignment"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    <div className="text-xs text-muted-foreground">{t.transaction_date} · {t.payment_method}</div>
                   </div>
-                );
-              })}
+                  <div className={cn(
+                    "text-sm font-semibold",
+                    t.transaction_type === "CLIENT_RECEIPT" ? "text-success" : "text-warning"
+                  )}>
+                    {t.transaction_type === "CLIENT_RECEIPT" ? "+" : "-"}{formatMoney(t.amount, currency)}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </Card>
-      </div>
+      )}
 
-      {/* Financials — real summary */}
-      <Card className="p-5">
-        <div className="flex items-center justify-between mb-3">
-          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Financials</div>
-          <span className={cn(
-            "text-[10px] px-2 py-0.5 rounded font-medium uppercase tracking-wide",
-            clientStatus === "Paid" ? "bg-success/10 text-success" :
-            clientStatus === "Overpaid" ? "bg-warning/10 text-warning" :
-            clientStatus === "Partially Paid" ? "bg-amber-100 text-amber-700" :
-            "bg-muted text-muted-foreground"
-          )}>
-            {clientStatus}
-          </span>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          <FinCell label="Contract Value" value={formatMoney(fin.contractValue, currency)} />
-          <FinCell label="Received" value={formatMoney(fin.received, currency)} tone="success" />
-          <FinCell label="Pending" value={formatMoney(fin.pending, currency)} tone={fin.pending > 0 ? "warning" : "muted"} />
-          <FinCell label={fin.overpaid > 0 ? "Overpaid" : "Team Agreed"} value={fin.overpaid > 0 ? formatMoney(fin.overpaid, currency) : formatMoney(fin.teamAgreed, currency)} tone={fin.overpaid > 0 ? "warning" : "default"} />
-          <FinCell label="Team Paid" value={formatMoney(fin.teamPaid, currency)} tone="destructive" />
-          <FinCell label="Team Remaining" value={formatMoney(Math.max(0, fin.teamAgreed - fin.teamPaid), currency)} />
-          <FinCell label="Expenses" value={formatMoney(fin.expenses, currency)} tone="destructive" />
-          <FinCell label="Actual Profit" value={formatMoney(fin.profit, currency)} tone={fin.profit >= 0 ? "success" : "destructive"} />
-        </div>
-        {fin.overpaid > 0 && (
-          <p className="mt-2 text-xs text-warning flex items-center gap-1">
-            <AlertTriangle className="w-3 h-3" /> Client has overpaid by {formatMoney(fin.overpaid, currency)}.
-          </p>
-        )}
-      </Card>
+      {tab === "Notes" && (
+        <Card className="p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <StickyNote className="w-4 h-4 text-muted-foreground" />
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Notes</span>
+          </div>
+          {event.notes || event.description ? (
+            <div className="space-y-3">
+              {event.description && (
+                <div>
+                  <div className="text-xs font-semibold text-muted-foreground uppercase mb-1">Description</div>
+                  <p className="text-sm text-foreground whitespace-pre-wrap">{event.description}</p>
+                </div>
+              )}
+              {event.notes && (
+                <div>
+                  <div className="text-xs font-semibold text-muted-foreground uppercase mb-1">Notes</div>
+                  <p className="text-sm text-foreground whitespace-pre-wrap">{event.notes}</p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <EmptyState title="No notes" description="Edit the event to add notes or a description." />
+          )}
+        </Card>
+      )}
 
       {/* Quick actions */}
       <div className="flex flex-wrap gap-2">
-        <Button onClick={() => setShowForm(true)}>
-          <Pencil className="w-4 h-4" /> Edit Event
-        </Button>
-        <Button onClick={() => setShowAssign(true)}>
-          <Users className="w-4 h-4" /> Add Team
-        </Button>
-        <Button onClick={() => setShowClientPayment(true)}>
-          <Wallet className="w-4 h-4" /> Record Payment
-        </Button>
-        <Button variant="outline" onClick={() => setShowExpense(true)}>
-          <Receipt className="w-4 h-4" /> Record Expense
-        </Button>
         <Button variant="outline" onClick={() => navigate(`/quotation/new?event_id=${event.id}`)}>
           <FileText className="w-4 h-4" /> Create Quotation
         </Button>
       </div>
 
+      {/* Dialogs */}
       <EventForm
         open={showForm}
         onClose={() => setShowForm(false)}
@@ -397,30 +498,39 @@ export default function EventDetails() {
   );
 }
 
-function InfoRow({ icon: Icon, label, value }) {
+function Field({ label, value, icon: Icon }) {
   return (
-    <div className="flex items-start gap-2">
-      <Icon className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
-      <div className="min-w-0">
-        <div className="text-xs text-muted-foreground">{label}</div>
-        <div className="text-sm text-foreground break-words">{value}</div>
+    <div>
+      <div className="text-xs font-semibold text-muted-foreground uppercase mb-1">{label}</div>
+      <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+        {Icon && <Icon className="w-3.5 h-3.5 text-muted-foreground" />}
+        {value}
       </div>
     </div>
   );
 }
 
-function FinCell({ label, value, tone = "default" }) {
-  const toneClass = {
-    success: "text-success",
-    destructive: "text-destructive",
-    warning: "text-warning",
-    muted: "text-muted-foreground",
-    default: "text-foreground"
-  };
+function DateChip({ date }) {
+  if (!date) return null;
+  const d = new Date(date);
+  const day = d.getDate();
+  const month = d.toLocaleString("en-IN", { month: "short" });
   return (
-    <div className="bg-muted/40 border border-border rounded-md px-3 py-2">
-      <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">{label}</div>
-      <div className={cn("text-sm font-semibold mt-0.5", toneClass[tone])}>{value}</div>
-    </div>
+    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-semibold">
+      <Calendar className="w-3.5 h-3.5" />
+      {day} {month}
+    </span>
+  );
+}
+
+function TeamStatCard({ label, value, tone = "default" }) {
+  return (
+    <Card className="p-3 border-2 border-border rounded-xl">
+      <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">{label}</div>
+      <div className={cn(
+        "text-base font-bold mt-1",
+        tone === "warning" ? "text-warning" : "text-foreground"
+      )}>{value}</div>
+    </Card>
   );
 }
