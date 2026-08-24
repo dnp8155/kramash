@@ -161,14 +161,14 @@ export default function Financial() {
         <p className="text-sm text-muted-foreground mt-0.5">Track payments, expenses, and profit across financial years.</p>
       </div>
 
-      <div className="flex items-center justify-between gap-3 flex-wrap">
+      <div className="flex flex-col gap-3">
         <div className="flex items-center gap-1 border-b border-border w-full sm:w-auto">
           {tabs.map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
               className={cn(
-                "px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors",
+                "px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap",
                 tab === t
                   ? "border-primary text-foreground"
                   : "border-transparent text-muted-foreground hover:text-foreground"
@@ -178,7 +178,7 @@ export default function Financial() {
             </button>
           ))}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Button variant="outline" size="sm" onClick={() => setShowExpense(true)}>
             <Receipt className="w-3.5 h-3.5" /> Record Expense
           </Button>
@@ -194,7 +194,7 @@ export default function Financial() {
       {tab === "Payment Activity" && (
         <>
           {/* Showing / export */}
-          <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Showing</span>
             <Select value={fy} onChange={(e) => setFy(e.target.value)} size="sm">
               {financialYearLabels(6).map((l) => (
@@ -204,12 +204,13 @@ export default function Financial() {
             <Button
               variant="outline"
               size="sm"
-              className="ml-auto"
+              className="sm:ml-auto"
               onClick={() => exportFinancialCsv(fyTx, { eventsById, clientsById, membersById }, currency, fy)}
               disabled={fyTx.length === 0}
             >
               <Download className="w-3.5 h-3.5" />
-              Export to Excel
+              <span className="hidden sm:inline">Export to Excel</span>
+              <span className="sm:hidden">Export</span>
             </Button>
           </div>
 
