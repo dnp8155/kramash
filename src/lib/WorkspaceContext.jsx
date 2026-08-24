@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect, useCallback } from "react";
+import React, { createContext, useState, useContext, useEffect, useCallback, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 
@@ -10,6 +10,9 @@ export const WorkspaceProvider = ({ children }) => {
   const [membership, setMembership] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  // Tracks the workspace id we've persisted to the user record this session,
+  // so RLS rules keyed on `user.data.active_workspace_id` scope entity queries.
+  const syncedWorkspaceId = useRef(null);
 
   const resolve = useCallback(async () => {
     if (!user?.id) {
@@ -33,6 +36,15 @@ export const WorkspaceProvider = ({ children }) => {
       try {
         const ws = await base44.entities.Workspace.get(activeMembership.workspace_id);
         setWorkspace(ws);
+        // Persist active workspace on the user so RLS scopes Client/Event queries.
+        if (ws && syncedWorkspaceId.current !== ws.id) {
+          try {
+            await base44.auth.updateMe({ active_workspace_id: ws.id });
+            syncedWorkspaceId.current = ws.id;
+          } catch (e) {
+            /* non-fatal: RLS will fall back to empty results */
+          }
+        }
       } catch (e) {
         setWorkspace(null);
       }

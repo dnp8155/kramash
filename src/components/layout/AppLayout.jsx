@@ -7,6 +7,7 @@ import ErrorBoundary from "@/components/common/ErrorBoundary";
 
 const titles = {
   "/events": "Events",
+  "/clients": "Clients",
   "/team": "Team",
   "/financial": "Payment Activity",
   "/rate-estimator": "Rate Estimator",
@@ -20,7 +21,10 @@ const titles = {
 export default function AppLayout() {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const title = titles[location.pathname] || "Kramashah";
+  const path = location.pathname;
+  let title = titles[path] || "Kramashah";
+  if (path.startsWith("/events/")) title = "Event Details";
+  else if (path.startsWith("/clients/")) title = "Client Details";
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">

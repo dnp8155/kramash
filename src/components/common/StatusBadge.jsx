@@ -4,7 +4,8 @@ import { EVENT_STATUS } from "@/constants/statusConfig";
 const styles = {
   upcoming: "bg-badge-upcoming-bg text-badge-upcoming-fg",
   progress: "bg-badge-progress-bg text-badge-progress-fg",
-  completed: "bg-badge-completed-bg text-badge-completed-fg"
+  completed: "bg-badge-completed-bg text-badge-completed-fg",
+  cancelled: "bg-destructive/10 text-destructive"
 };
 
 export default function StatusBadge({ status, className }) {

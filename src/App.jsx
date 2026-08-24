@@ -16,6 +16,9 @@ import ResetPassword from '@/pages/ResetPassword';
 import PhoneLogin from '@/pages/PhoneLogin';
 import Onboarding from '@/pages/Onboarding';
 import Events from '@/pages/Events';
+import EventDetails from '@/pages/EventDetails';
+import Clients from '@/pages/Clients';
+import ClientDetails from '@/pages/ClientDetails';
 import Team from '@/pages/Team';
 import Financial from '@/pages/Financial';
 import RateEstimator from '@/pages/RateEstimator';
@@ -69,6 +72,9 @@ const AuthenticatedApp = () => {
         <Route element={<AppLayout />}>
           <Route path="/" element={<Navigate to="/events" replace />} />
           <Route path="/events" element={<Events />} />
+          <Route path="/events/:id" element={<EventDetails />} />
+          <Route path="/clients" element={<Clients />} />
+          <Route path="/clients/:id" element={<ClientDetails />} />
           <Route path="/team" element={<Team />} />
           <Route path="/financial" element={<Financial />} />
           <Route path="/rate-estimator" element={<RateEstimator />} />

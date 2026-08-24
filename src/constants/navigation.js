@@ -1,6 +1,7 @@
 import {
   CalendarDays,
   Users,
+  UserCheck,
   Wallet,
   Calculator,
   FileText,
@@ -14,7 +15,8 @@ import {
 
 export const mainNav = [
   { label: "Events", path: "/events", icon: CalendarDays },
-  { label: "Team", path: "/team", icon: Users },
+  { label: "Clients", path: "/clients", icon: Users },
+  { label: "Team", path: "/team", icon: UserCheck },
   { label: "Financial", path: "/financial", icon: Wallet }
 ];
 

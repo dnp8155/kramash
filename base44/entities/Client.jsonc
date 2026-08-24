@@ -1,0 +1,65 @@
+{
+  "name": "Client",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "title": "Workspace ID"
+    },
+    "name": {
+      "type": "string",
+      "title": "Client Name"
+    },
+    "phone": {
+      "type": "string",
+      "title": "Phone"
+    },
+    "alternate_phone": {
+      "type": "string",
+      "title": "Alternate Phone"
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "title": "Email"
+    },
+    "address": {
+      "type": "string",
+      "title": "Address"
+    },
+    "city": {
+      "type": "string",
+      "title": "City"
+    },
+    "state": {
+      "type": "string",
+      "title": "State"
+    },
+    "country": {
+      "type": "string",
+      "title": "Country"
+    },
+    "notes": {
+      "type": "string",
+      "title": "Notes"
+    }
+  },
+  "required": [
+    "workspace_id",
+    "name"
+  ],
+  "rls": {
+    "read": {
+      "data.workspace_id": "{{user.data.active_workspace_id}}"
+    },
+    "create": {
+      "data.workspace_id": "{{user.data.active_workspace_id}}"
+    },
+    "update": {
+      "data.workspace_id": "{{user.data.active_workspace_id}}"
+    },
+    "delete": {
+      "data.workspace_id": "{{user.data.active_workspace_id}}"
+    }
+  }
+}

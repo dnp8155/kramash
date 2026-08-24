@@ -1,16 +1,20 @@
 import { ArrowRight, Wallet, Users } from "lucide-react";
-import { upcomingEvents } from "@/data/mockEvents";
 import Button from "@/components/common/Button";
+import { formatEventDate, isUpcomingDate } from "@/lib/dates";
+import { useNavigate } from "react-router-dom";
 
-export default function EventsRightPanel() {
+export default function EventsRightPanel({ events = [], onEventClick }) {
+  const navigate = useNavigate();
   const now = new Date();
   const dateStr = now.toLocaleDateString("en-IN", {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-    year: "numeric"
+    weekday: "short", day: "numeric", month: "short", year: "numeric"
   });
   const timeStr = now.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
+
+  const upcoming = events
+    .filter((e) => e.status === "upcoming" || (e.status === "in-progress" && isUpcomingDate(e.start_date)))
+    .sort((a, b) => (a.start_date > b.start_date ? 1 : -1))
+    .slice(0, 5);
 
   return (
     <div className="space-y-4">
@@ -31,24 +35,30 @@ export default function EventsRightPanel() {
           Upcoming Events
         </div>
         <div className="space-y-1">
-          {upcomingEvents.map((e) => (
-            <div key={e.id} className="flex items-center gap-2 py-1.5">
-              <span className="text-sm text-foreground flex-1 truncate">{e.name}</span>
-              <span className="text-xs text-muted-foreground">{e.date}</span>
+          {upcoming.length === 0 && (
+            <div className="text-sm text-muted-foreground py-2">No upcoming events.</div>
+          )}
+          {upcoming.map((e) => (
+            <button
+              key={e.id}
+              onClick={() => onEventClick?.(e)}
+              className="w-full flex items-center gap-2 py-1.5 text-left hover:bg-muted/40 rounded -mx-1 px-1"
+            >
+              <span className="text-sm text-foreground flex-1 truncate">{e.title}</span>
+              <span className="text-xs text-muted-foreground">{formatEventDate(e.start_date, e.end_date)}</span>
               <ArrowRight className="w-4 h-4 text-muted-foreground" />
-            </div>
+            </button>
           ))}
         </div>
-        <button className="mt-2 text-sm text-primary font-medium hover:underline">Go to Calendar</button>
       </div>
 
-      {/* Quick actions */}
+      {/* Quick actions — future phases */}
       <div className="space-y-2">
-        <Button variant="dark" className="w-full justify-start">
+        <Button variant="dark" className="w-full justify-start opacity-60 cursor-not-allowed" disabled title="Available in Phase 5">
           <Wallet className="w-4 h-4" />
           Record Payment
         </Button>
-        <Button variant="outline" className="w-full justify-start">
+        <Button variant="outline" className="w-full justify-start" onClick={() => navigate("/team")}>
           <Users className="w-4 h-4" />
           Team Availability
         </Button>
