@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { useWorkspace } from "@/lib/WorkspaceContext";
-import { teamMemberTypes, themes, businessTypes } from "@/data/mockPreferences";
+import { teamMemberTypes, themes, businessTypes } from "@/constants/preferencesConfig";
 import { formatINR } from "@/utils/format";
 import Button from "@/components/common/Button";
 import Select from "@/components/common/Select";

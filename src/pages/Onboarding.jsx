@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, Check, Building2, MapPin, Receipt, PartyPopper } from "lucide-react";
-import { businessTypes } from "@/data/mockPreferences";
+import { businessTypes } from "@/constants/preferencesConfig";
 
 const currencies = ["INR (₹)", "USD ($)", "EUR (€)", "AED (د.إ)"];
 const timezones = ["Asia/Kolkata", "UTC", "Asia/Dubai", "America/New_York"];

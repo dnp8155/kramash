@@ -7,7 +7,7 @@ import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
 import Toggle from "@/components/common/Toggle";
 import { Upload, Loader2 } from "lucide-react";
-import { businessTypes } from "@/data/mockPreferences";
+import { businessTypes } from "@/constants/preferencesConfig";
 import { toast } from "@/components/ui/use-toast";
 
 const currencies = [{ v: "INR", l: "INR (₹)" }, { v: "USD", l: "USD ($)" }, { v: "EUR", l: "EUR (€)" }, { v: "AED", l: "AED (د.إ)" }];
