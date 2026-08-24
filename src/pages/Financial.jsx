@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useWorkspace } from "@/lib/WorkspaceContext";
 import SummaryCard from "@/components/financial/SummaryCard";
+import { TrendingUp, TrendingDown, ArrowDownLeft } from "lucide-react";
 import PaymentTable from "@/components/financial/PaymentTable";
 import RecordPaymentDialog from "@/components/financial/RecordPaymentDialog";
 import RecordExpenseDialog from "@/components/financial/RecordExpenseDialog";
@@ -27,7 +28,7 @@ import {
   methodBreakdown
 } from "@/lib/financeService";
 import { formatMoney } from "@/utils/format";
-import { Download, Plus, Wallet, Receipt, AlertTriangle } from "lucide-react";
+import { Download, Plus, Wallet, Receipt, AlertTriangle, TrendingUp as TrendingUpIcon, TrendingDown as TrendingDownIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { exportFinancialCsv } from "@/lib/exportUtils";
 
@@ -157,7 +158,7 @@ export default function Financial() {
   return (
     <div className="p-4 sm:p-6 space-y-4 max-w-[1100px] mx-auto">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Financial</h1>
+        <h1 className="text-2xl font-bold text-foreground tracking-tight">Financial</h1>
         <p className="text-sm text-muted-foreground mt-0.5">Track payments, expenses, and profit across financial years.</p>
       </div>
 
@@ -216,9 +217,9 @@ export default function Financial() {
 
           {/* Summary */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <SummaryCard label="Received" value={summary.received} tone="success" currency={currency} />
-            <SummaryCard label="Paid" value={summary.paid} tone="destructive" currency={currency} />
-            <SummaryCard label="Profit" value={summary.profit} tone={summary.profit >= 0 ? "success" : "destructive"} currency={currency} />
+            <SummaryCard label="Received" value={summary.received} tone="success" currency={currency} icon={ArrowDownLeft} />
+            <SummaryCard label="Paid" value={summary.paid} tone="destructive" currency={currency} icon={TrendingDown} />
+            <SummaryCard label="Profit" value={summary.profit} tone={summary.profit >= 0 ? "success" : "destructive"} currency={currency} icon={TrendingUp} />
           </div>
 
           {/* Breakdown */}

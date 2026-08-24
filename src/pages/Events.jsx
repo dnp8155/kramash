@@ -10,7 +10,8 @@ import EventForm from "@/components/events/EventForm";
 import SearchInput from "@/components/common/SearchInput";
 import Select from "@/components/common/Select";
 import Button from "@/components/common/Button";
-import { Users, Plus, Download } from "lucide-react";
+import { Users, Plus, Download, CalendarCheck, Clock, CheckCircle2, CalendarDays } from "lucide-react";
+import StatCard from "@/components/common/StatCard";
 import { isToday, isThisWeek, isUpcomingDate, isPastDate, isWithinFY, fyOptions, currentFY } from "@/lib/dates";
 import { exportEventsCsv } from "@/lib/exportUtils";
 
@@ -87,9 +88,9 @@ export default function Events() {
 
   return (
     <div className="p-4 sm:p-6 space-y-4 max-w-[1400px] mx-auto">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Events</h1>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">Events</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Manage your bookings, schedule, and event details.</p>
         </div>
         <div className="flex items-center gap-2">
@@ -106,22 +107,10 @@ export default function Events() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-card border border-border rounded-lg p-4">
-          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Total</div>
-          <div className="mt-1 text-2xl font-bold text-foreground">{events.length}</div>
-        </div>
-        <div className="bg-card border border-border rounded-lg p-4">
-          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Upcoming</div>
-          <div className="mt-1 text-2xl font-bold text-primary">{upcomingCount}</div>
-        </div>
-        <div className="bg-card border border-border rounded-lg p-4">
-          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">In Progress</div>
-          <div className="mt-1 text-2xl font-bold text-warning">{inProgressCount}</div>
-        </div>
-        <div className="bg-card border border-border rounded-lg p-4">
-          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Completed</div>
-          <div className="mt-1 text-2xl font-bold text-success">{completedCount}</div>
-        </div>
+        <StatCard label="Total" value={events.length} icon={CalendarDays} tone="primary" />
+        <StatCard label="Upcoming" value={upcomingCount} icon={Clock} tone="info" />
+        <StatCard label="In Progress" value={inProgressCount} icon={Clock} tone="warning" />
+        <StatCard label="Completed" value={completedCount} icon={CheckCircle2} tone="success" />
       </div>
 
       <ReminderBanner events={events} onEventClick={openEvent} />

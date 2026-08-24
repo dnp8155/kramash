@@ -33,7 +33,7 @@ export default function Sidebar({ mobile = false, onClose }) {
     <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
       {/* Brand */}
       <div className="flex items-center gap-3 px-4 py-4">
-        <div className="w-9 h-9 rounded-lg bg-sidebar-primary flex items-center justify-center text-sidebar-primary-foreground font-bold text-lg">
+        <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-sidebar-primary to-accent flex items-center justify-center text-sidebar-primary-foreground font-bold text-lg shadow-md">
           K
         </div>
         <div className="flex-1">

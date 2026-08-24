@@ -42,12 +42,27 @@
     --destructive: 0 54% 54%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
+    --border: 220 13% 90%;
+    --input: 220 13% 90%;
     --ring: 215 53% 31%;
 
     /* Toggle */
     --toggle-on: 102 61% 29%;
+
+    /* Premium shadows */
+    --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.04);
+    --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.04);
+    --shadow-md: 0 4px 12px -2px rgb(0 0 0 / 0.08), 0 2px 6px -2px rgb(0 0 0 / 0.05);
+    --shadow-lg: 0 12px 28px -6px rgb(0 0 0 / 0.10), 0 4px 10px -4px rgb(0 0 0 / 0.06);
+    --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.04), 0 1px 2px -1px rgb(0 0 0 / 0.03);
+    --shadow-card-hover: 0 8px 24px -4px rgb(0 0 0 / 0.10), 0 2px 8px -2px rgb(0 0 0 / 0.06);
+
+    /* Accent gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(215 53% 31%), hsl(214 41% 34%));
+    --gradient-success: linear-gradient(135deg, hsl(150 67% 33%), hsl(152 67% 28%));
+    --gradient-warning: linear-gradient(135deg, hsl(26 83% 31%), hsl(32 80% 38%));
+    --gradient-danger: linear-gradient(135deg, hsl(0 54% 54%), hsl(355 60% 50%));
+    --gradient-info: linear-gradient(135deg, hsl(215 53% 31%), hsl(230 60% 45%));
 
     /* Chart / badges */
     --badge-upcoming-bg: 230 85% 90%;

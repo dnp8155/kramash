@@ -11,11 +11,12 @@ import Button from "@/components/common/Button";
 import LoadingState from "@/components/common/LoadingState";
 import EmptyState from "@/components/common/EmptyState";
 import Card from "@/components/common/Card";
-import { Crown, Plus, AlertTriangle, Download } from "lucide-react";
+import { Crown, Plus, AlertTriangle, Download, Users, UserCheck, UserX, CalendarClock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { loadTeamMembers, loadRoles, loadAssignments, ensureDefaultRoles } from "@/lib/teamService";
 import { useToast } from "@/components/ui/use-toast";
 import { exportTeamCsv } from "@/lib/exportUtils";
+import StatCard from "@/components/common/StatCard";
 
 const FREE_PLAN_LIMIT = 3;
 
@@ -139,7 +140,7 @@ export default function Team() {
     <div className="p-4 sm:p-6 space-y-5 max-w-[1400px] mx-auto">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Team</h1>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">Team</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Manage your roster, roles, and availability.</p>
         </div>
         <div className="flex items-center gap-2">
@@ -155,18 +156,9 @@ export default function Team() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        <div className="bg-card border border-border rounded-lg p-4">
-          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Total Members</div>
-          <div className="mt-1 text-2xl font-bold text-foreground">{members.length}</div>
-        </div>
-        <div className="bg-card border border-border rounded-lg p-4">
-          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Active</div>
-          <div className="mt-1 text-2xl font-bold text-success">{activeCount}</div>
-        </div>
-        <div className="bg-card border border-border rounded-lg p-4">
-          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Roles</div>
-          <div className="mt-1 text-2xl font-bold text-foreground">{roles.filter((r) => r.status === "active").length}</div>
-        </div>
+        <StatCard label="Total Members" value={members.length} icon={Users} tone="primary" />
+        <StatCard label="Active" value={activeCount} icon={UserCheck} tone="success" />
+        <StatCard label="Roles" value={roles.filter((r) => r.status === "active").length} icon={Crown} tone="info" />
       </div>
 
       <div className="flex items-center gap-1 border-b border-border w-full sm:w-auto">

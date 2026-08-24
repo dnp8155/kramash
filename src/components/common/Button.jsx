@@ -2,11 +2,11 @@ import { cn } from "@/lib/utils";
 import { Button as ShadButton } from "@/components/ui/button";
 
 const variants = {
-  primary: "bg-primary text-primary-foreground hover:bg-primary-hover",
-  outline: "border border-border bg-card text-foreground hover:bg-muted",
+  primary: "bg-primary text-primary-foreground hover:bg-primary-hover shadow-sm",
+  outline: "border border-border bg-card text-foreground hover:bg-muted shadow-xs",
   ghost: "text-foreground hover:bg-muted",
   dark: "bg-sidebar-primary text-sidebar-primary-foreground hover:opacity-90",
-  success: "bg-success text-success-foreground hover:opacity-90",
+  success: "bg-success text-success-foreground hover:opacity-90 shadow-sm",
   destructive: "border border-destructive/60 text-destructive hover:bg-destructive/5",
   subtle: "bg-muted text-foreground hover:bg-secondary"
 };

@@ -7,8 +7,9 @@ import Button from "@/components/common/Button";
 import LoadingState from "@/components/common/LoadingState";
 import EmptyState from "@/components/common/EmptyState";
 import ClientForm from "@/components/clients/ClientForm";
-import { Plus, Pencil, Eye, Download } from "lucide-react";
+import { Plus, Pencil, Eye, Download, Users, CalendarCheck, UserCheck } from "lucide-react";
 import { exportClientsCsv } from "@/lib/exportUtils";
+import StatCard from "@/components/common/StatCard";
 
 export default function Clients() {
   const { workspaceId } = useWorkspace();
@@ -62,7 +63,7 @@ export default function Clients() {
     <div className="p-4 sm:p-6 space-y-5 max-w-[1400px] mx-auto">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Clients</h1>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">Clients</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Manage your client directory and their event history.</p>
         </div>
         <div className="flex items-center gap-2">
@@ -79,18 +80,9 @@ export default function Clients() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        <div className="bg-card border border-border rounded-lg p-4">
-          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Total Clients</div>
-          <div className="mt-1 text-2xl font-bold text-foreground">{clients.length}</div>
-        </div>
-        <div className="bg-card border border-border rounded-lg p-4">
-          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Total Events</div>
-          <div className="mt-1 text-2xl font-bold text-foreground">{totalEvents}</div>
-        </div>
-        <div className="bg-card border border-border rounded-lg p-4">
-          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">With Events</div>
-          <div className="mt-1 text-2xl font-bold text-primary">{Object.keys(eventCounts).length}</div>
-        </div>
+        <StatCard label="Total Clients" value={clients.length} icon={Users} tone="primary" />
+        <StatCard label="Total Events" value={totalEvents} icon={CalendarCheck} tone="info" />
+        <StatCard label="With Events" value={Object.keys(eventCounts).length} icon={UserCheck} tone="success" />
       </div>
 
       <SearchInput
