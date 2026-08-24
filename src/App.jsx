@@ -24,6 +24,7 @@ import TeamMemberDetails from '@/pages/TeamMemberDetails';
 import Financial from '@/pages/Financial';
 import RateEstimator from '@/pages/RateEstimator';
 import Quotation from '@/pages/Quotation';
+import QuotationEditor from '@/pages/QuotationEditor';
 import SignPdf from '@/pages/SignPdf';
 import Preferences from '@/pages/Preferences';
 import AppUpdates from '@/pages/AppUpdates';
@@ -81,6 +82,8 @@ const AuthenticatedApp = () => {
           <Route path="/financial" element={<Financial />} />
           <Route path="/rate-estimator" element={<RateEstimator />} />
           <Route path="/quotation" element={<Quotation />} />
+          <Route path="/quotation/new" element={<QuotationEditor />} />
+          <Route path="/quotation/:id" element={<QuotationEditor />} />
           <Route path="/sign-pdf" element={<SignPdf />} />
           <Route path="/preferences" element={<Preferences />} />
           <Route path="/app-updates" element={<AppUpdates />} />

@@ -1,194 +1,207 @@
-import { useState } from "react";
-import { deliverables } from "@/data/mockPreferences";
-import { formatINR } from "@/utils/format";
-import Input from "@/components/common/Input";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { useWorkspace } from "@/lib/WorkspaceContext";
+import { useToast } from "@/components/ui/use-toast";
 import Button from "@/components/common/Button";
-import Toggle from "@/components/common/Toggle";
-import { FileText, Info, RefreshCw, Plus, X } from "lucide-react";
+import Input from "@/components/common/Input";
+import Select from "@/components/common/Select";
+import LoadingState from "@/components/common/LoadingState";
+import EmptyState from "@/components/common/EmptyState";
+import { formatMoney } from "@/utils/format";
+import { loadQuotations, deleteQuotation, loadQuotationItems } from "@/lib/quotationService";
+import { QUOTATION_STATUSES, QUOTATION_STATUS_META } from "@/constants/quotationConfig";
+import { generateQuotationPdf } from "@/lib/quotationPdf";
+import { base44 } from "@/api/base44Client";
+import { Plus, Search, Trash2, FileDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+const fmtDate = (iso) => {
+  if (!iso) return "—";
+  const d = new Date(iso + "T00:00:00");
+  if (isNaN(d)) return iso;
+  return d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+};
+
 export default function Quotation() {
-  const [terms, setTerms] = useState("This quotation is valid for 30 days. Payment Terms: 50% Advance.");
-  const [quotationNo, setQuotationNo] = useState("");
-  const [date, setDate] = useState("2026-08-24");
-  const [client, setClient] = useState({ name: "", contact: "", email: "", residence: "", venue: "" });
-  const [eventDates, setEventDates] = useState({ start: "2026-08-24", end: "2026-08-24" });
-  const [eventDays, setEventDays] = useState(["24 Aug 2026"]);
-  const [included, setIncluded] = useState(deliverables.slice(0, 4));
-  const [total, setTotal] = useState("");
-  const [includeTerms, setIncludeTerms] = useState(true);
+  const navigate = useNavigate();
+  const { workspaceId, workspace } = useWorkspace();
+  const { toast } = useToast();
+  const currency = workspace?.currency || "INR";
 
-  const toggleDeliverable = (d) =>
-    setIncluded((prev) => (prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d]));
+  const [loading, setLoading] = useState(true);
+  const [quotations, setQuotations] = useState([]);
+  const [clients, setClients] = useState([]);
+  const [events, setEvents] = useState([]);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [generatingId, setGeneratingId] = useState("");
+
+  const load = useCallback(async () => {
+    if (!workspaceId) return;
+    setLoading(true);
+    try {
+      const [qs, cl, ev] = await Promise.all([
+        loadQuotations(workspaceId),
+        base44.entities.Client.filter({ workspace_id: workspaceId }, "name", 500),
+        base44.entities.Event.filter({ workspace_id: workspaceId }, "-start_date", 500)
+      ]);
+      setQuotations(qs);
+      setClients(cl || []);
+      setEvents(ev || []);
+    } catch (e) {
+      toast({ title: "Failed to load quotations", description: e?.message, variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  }, [workspaceId, toast]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const clientsById = useMemo(() => {
+    const m = {};
+    for (const c of clients) m[c.id] = c;
+    return m;
+  }, [clients]);
+  const eventsById = useMemo(() => {
+    const m = {};
+    for (const e of events) m[e.id] = e;
+    return m;
+  }, [events]);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return quotations.filter((qt) => {
+      if (statusFilter !== "All" && qt.status !== statusFilter) return false;
+      if (!q) return true;
+      const cl = clientsById[qt.client_id];
+      const ev = eventsById[qt.event_id];
+      const hay = [qt.quotation_number, cl?.name || "", ev?.title || "", qt.status].join(" ").toLowerCase();
+      return hay.includes(q);
+    });
+  }, [quotations, search, statusFilter, clientsById, eventsById]);
+
+  const onDelete = async (qt) => {
+    if (!window.confirm(`Delete quotation ${qt.quotation_number}? This cannot be undone.`)) return;
+    try {
+      await deleteQuotation(workspaceId, qt.id);
+      toast({ title: "Quotation deleted" });
+      load();
+    } catch (e) {
+      toast({ title: "Delete failed", description: e?.message, variant: "destructive" });
+    }
+  };
+
+  const downloadPdf = async (qt) => {
+    setGeneratingId(qt.id);
+    try {
+      const items = await loadQuotationItems(workspaceId, qt.id);
+      const client = clientsById[qt.client_id];
+      const event = eventsById[qt.event_id];
+      await generateQuotationPdf({ quotation: qt, items, workspace, client, event, currency });
+    } catch (e) {
+      toast({ title: "PDF generation failed", description: e?.message, variant: "destructive" });
+    } finally {
+      setGeneratingId("");
+    }
+  };
+
+  if (loading) return <LoadingState label="Loading quotations…" />;
 
   return (
-    <div className="p-4 sm:p-6 space-y-4 max-w-[1100px] mx-auto">
-      {/* Info banner */}
-      <div className="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
-        <p className="text-sm text-blue-900">
-          Build a client quotation and a team job sheet from one form — for event managers, photographers,
-          architects and anyone running jobs with a crew. Roles & rates come from your Preferences.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-4">
-        <div className="space-y-4">
-          {/* Terms */}
-          <Section icon={FileText} title="Terms & Conditions" hint="shown on the PDF">
-            <textarea
-              value={terms}
-              onChange={(e) => setTerms(e.target.value)}
-              rows={3}
-              className="w-full bg-card border border-border rounded-md p-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
-            />
-            <p className="text-xs text-muted-foreground mt-2">
-              Your logo, name, company & contact come from Preferences — they appear on the PDF
-              automatically. Your profile photo is used as the logo.
-            </p>
-          </Section>
-
-          {/* Quotation */}
-          <Section title="Quotation">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Field label="Quotation No">
-                <Input value={quotationNo} onChange={(e) => setQuotationNo(e.target.value)} placeholder="e.g. Q-2026-01" />
-              </Field>
-              <Field label="Date">
-                <div className="flex gap-2">
-                  <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="flex-1" />
-                  <Button variant="outline" size="md" onClick={() => setDate(new Date().toISOString().slice(0, 10))}>
-                    Today
-                  </Button>
-                </div>
-              </Field>
-            </div>
-          </Section>
-
-          {/* Client */}
-          <Section title="Client Details">
-            <Field label="Name *">
-              <Input value={client.name} onChange={(e) => setClient({ ...client, name: e.target.value })} />
-            </Field>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Field label="Contact *">
-                <Input value={client.contact} onChange={(e) => setClient({ ...client, contact: e.target.value })} />
-              </Field>
-              <Field label="Email">
-                <Input value={client.email} onChange={(e) => setClient({ ...client, email: e.target.value })} />
-              </Field>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Field label="Residence Address">
-                <Input value={client.residence} onChange={(e) => setClient({ ...client, residence: e.target.value })} />
-              </Field>
-              <Field label="Event Venue">
-                <Input value={client.venue} onChange={(e) => setClient({ ...client, venue: e.target.value })} />
-              </Field>
-            </div>
-          </Section>
-
-          {/* Event */}
-          <Section title="Event Details">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Field label="Start Date">
-                <Input type="date" value={eventDates.start} onChange={(e) => setEventDates({ ...eventDates, start: e.target.value })} />
-              </Field>
-              <Field label="End Date">
-                <Input type="date" value={eventDates.end} onChange={(e) => setEventDates({ ...eventDates, end: e.target.value })} />
-              </Field>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Tap the day(s) this booking covers, then add an event day for each
-            </p>
-            <div className="flex flex-wrap gap-2 mt-2">
-              {eventDays.map((d) => (
-                <span key={d} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-primary/10 text-primary text-sm">
-                  {d}
-                  <button onClick={() => setEventDays(eventDays.filter((x) => x !== d))}>
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
-              ))}
-            </div>
-            <Button variant="outline" size="sm" className="mt-2" onClick={() => setEventDays([...eventDays, "New Day"])}>
-              <Plus className="w-3.5 h-3.5" />
-              Add Event Day
-            </Button>
-          </Section>
-
-          {/* Includes */}
-          <Section title="Includes (Deliverables)">
-            <div className="flex flex-wrap gap-2">
-              {deliverables.map((d) => (
-                <button
-                  key={d}
-                  onClick={() => toggleDeliverable(d)}
-                  className={cn(
-                    "px-3 py-1.5 rounded-md text-sm border transition-colors",
-                    included.includes(d)
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "bg-card text-foreground border-border hover:bg-muted/40"
-                  )}
-                >
-                  {d}
-                </button>
-              ))}
-            </div>
-            <Button variant="outline" size="sm" className="mt-3">
-              <Plus className="w-3.5 h-3.5" />
-              Add Custom Deliverable
-            </Button>
-          </Section>
-
-          {/* Pricing */}
-          <Section title="Pricing">
-            <Field label="Total Amount (₹)">
-              <Input type="number" value={total} onChange={(e) => setTotal(e.target.value)} placeholder="0" />
-            </Field>
-            <div className="flex items-center gap-3 mt-3">
-              <Toggle checked={includeTerms} onChange={setIncludeTerms} label="Include Terms & Conditions" />
-              <span className="text-sm font-medium">Include Terms & Conditions</span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Adds your T&C and a signature block to the PDF
-            </p>
-          </Section>
+    <div className="p-4 sm:p-6 space-y-4 max-w-[1200px] mx-auto">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h2 className="text-lg font-semibold">Quotations</h2>
+          <p className="text-sm text-muted-foreground">Create, track and finalize client quotations.</p>
         </div>
+        <Button onClick={() => navigate("/quotation/new")}><Plus className="w-4 h-4" /> Create Quotation</Button>
+      </div>
 
-        {/* Sticky PDF panel */}
-        <div className="lg:sticky lg:top-20 h-fit space-y-2">
-          <h3 className="text-sm font-semibold mb-1">Generate PDF</h3>
-          <Button variant="dark" className="w-full">Client Quotation</Button>
-          <Button variant="outline" className="w-full">Team / Job Sheet</Button>
-          <Button variant="outline" className="w-full">
-            <RefreshCw className="w-3.5 h-3.5" />
-            Reset Form
-          </Button>
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by number, client, event…"
+            className="pl-9"
+          />
         </div>
+        <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="sm:w-44">
+          <option value="All">All statuses</option>
+          {QUOTATION_STATUSES.map((s) => <option key={s} value={s}>{QUOTATION_STATUS_META[s].label}</option>)}
+        </Select>
       </div>
-    </div>
-  );
-}
 
-function Section({ icon: Icon, title, hint, children }) {
-  return (
-    <div className="bg-card border border-border rounded-lg p-4">
-      <div className="flex items-center gap-2 mb-3">
-        {Icon && <Icon className="w-4 h-4 text-muted-foreground" />}
-        <h3 className="text-sm font-semibold">{title}</h3>
-        {hint && <span className="text-xs text-muted-foreground">· {hint}</span>}
-      </div>
-      <div className="space-y-3">{children}</div>
-    </div>
-  );
-}
-
-function Field({ label, children }) {
-  return (
-    <div>
-      <label className="block text-xs font-medium text-muted-foreground mb-1">{label}</label>
-      {children}
+      {filtered.length === 0 ? (
+        <EmptyState
+          title={quotations.length === 0 ? "No quotations created yet" : "No quotations match your search"}
+          description={quotations.length === 0 ? "Create a quotation for your next event." : "Try a different search or filter."}
+        />
+      ) : (
+        <div className="bg-card border border-border rounded-lg overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[720px]">
+              <thead className="bg-muted/50 text-xs text-muted-foreground uppercase tracking-wide">
+                <tr>
+                  <th className="text-left px-4 py-3 font-medium">Quotation No</th>
+                  <th className="text-left px-4 py-3 font-medium">Client</th>
+                  <th className="text-left px-4 py-3 font-medium">Event</th>
+                  <th className="text-left px-4 py-3 font-medium">Date</th>
+                  <th className="text-right px-4 py-3 font-medium">Total</th>
+                  <th className="text-left px-4 py-3 font-medium">Status</th>
+                  <th className="px-4 py-3 font-medium w-20"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((qt) => {
+                  const cl = clientsById[qt.client_id];
+                  const ev = eventsById[qt.event_id];
+                  return (
+                    <tr
+                      key={qt.id}
+                      className="border-t border-border hover:bg-muted/30 cursor-pointer"
+                      onClick={() => navigate(`/quotation/${qt.id}`)}
+                    >
+                      <td className="px-4 py-3 font-medium">{qt.quotation_number}</td>
+                      <td className="px-4 py-3">{cl?.name || "—"}</td>
+                      <td className="px-4 py-3">{ev?.title || "—"}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{fmtDate(qt.quotation_date)}</td>
+                      <td className="px-4 py-3 text-right font-medium">{formatMoney(qt.grand_total, currency)}</td>
+                      <td className="px-4 py-3">
+                        <span className={cn("text-xs px-2 py-1 rounded font-medium uppercase tracking-wide", QUOTATION_STATUS_META[qt.status]?.className)}>
+                          {QUOTATION_STATUS_META[qt.status]?.label || qt.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center gap-1 justify-end">
+                          {(qt.status === "finalized" || qt.status === "accepted") && (
+                            <button
+                              onClick={() => downloadPdf(qt)}
+                              disabled={generatingId === qt.id}
+                              className="text-muted-foreground hover:text-primary p-1"
+                              title="Download PDF"
+                            >
+                              <FileDown className="w-4 h-4" />
+                            </button>
+                          )}
+                          <button
+                            onClick={() => onDelete(qt)}
+                            className="text-muted-foreground hover:text-destructive p-1"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

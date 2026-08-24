@@ -70,6 +70,13 @@ export default function Onboarding() {
           DEFAULT_EXPENSE_CATEGORIES.map((n) => ({ workspace_id: workspace.id, name: n, status: "active" }))
         );
       } catch (e) { /* non-fatal */ }
+      // Seed default services for the new workspace.
+      try {
+        const { DEFAULT_SERVICES } = await import("@/constants/quotationConfig");
+        await base44.entities.Service.bulkCreate(
+          DEFAULT_SERVICES.map((s) => ({ ...s, workspace_id: workspace.id, status: "active" }))
+        );
+      } catch (e) { /* non-fatal */ }
       setStep(4);
     } catch (err) {
       setError(err.message || "Failed to create workspace. Please try again.");

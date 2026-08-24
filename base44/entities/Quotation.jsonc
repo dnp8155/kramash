@@ -1,0 +1,150 @@
+{
+  "name": "Quotation",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "title": "Workspace ID"
+    },
+    "quotation_number": {
+      "type": "string",
+      "title": "Quotation Number"
+    },
+    "client_id": {
+      "type": "string",
+      "title": "Client ID"
+    },
+    "event_id": {
+      "type": "string",
+      "title": "Event ID"
+    },
+    "quotation_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Quotation Date"
+    },
+    "valid_until": {
+      "type": "string",
+      "format": "date",
+      "title": "Valid Until"
+    },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "default": "draft",
+      "enum": [
+        "draft",
+        "finalized",
+        "accepted",
+        "rejected"
+      ]
+    },
+    "subtotal": {
+      "type": "number",
+      "title": "Subtotal",
+      "default": 0
+    },
+    "discount_type": {
+      "type": "string",
+      "title": "Discount Type",
+      "default": "percent",
+      "enum": [
+        "percent",
+        "fixed"
+      ]
+    },
+    "discount_value": {
+      "type": "number",
+      "title": "Discount Value",
+      "default": 0
+    },
+    "discount_amount": {
+      "type": "number",
+      "title": "Discount Amount",
+      "default": 0
+    },
+    "taxable_amount": {
+      "type": "number",
+      "title": "Taxable Amount",
+      "default": 0
+    },
+    "gst_applicable": {
+      "type": "boolean",
+      "title": "GST Applicable",
+      "default": false
+    },
+    "gst_mode": {
+      "type": "string",
+      "title": "GST Mode",
+      "default": "cgst_sgst",
+      "enum": [
+        "cgst_sgst",
+        "igst"
+      ]
+    },
+    "cgst_amount": {
+      "type": "number",
+      "title": "CGST Amount",
+      "default": 0
+    },
+    "sgst_amount": {
+      "type": "number",
+      "title": "SGST Amount",
+      "default": 0
+    },
+    "igst_amount": {
+      "type": "number",
+      "title": "IGST Amount",
+      "default": 0
+    },
+    "gst_total": {
+      "type": "number",
+      "title": "GST Total",
+      "default": 0
+    },
+    "grand_total": {
+      "type": "number",
+      "title": "Grand Total",
+      "default": 0
+    },
+    "terms_and_conditions": {
+      "type": "string",
+      "title": "Terms & Conditions"
+    },
+    "notes": {
+      "type": "string",
+      "title": "Notes"
+    },
+    "client_snapshot": {
+      "type": "string",
+      "title": "Client Snapshot (JSON)"
+    },
+    "business_snapshot": {
+      "type": "string",
+      "title": "Business Snapshot (JSON)"
+    },
+    "event_snapshot": {
+      "type": "string",
+      "title": "Event Snapshot (JSON)"
+    }
+  },
+  "required": [
+    "workspace_id",
+    "quotation_number",
+    "quotation_date"
+  ],
+  "rls": {
+    "read": {
+      "data.workspace_id": "{{user.data.active_workspace_id}}"
+    },
+    "create": {
+      "data.workspace_id": "{{user.data.active_workspace_id}}"
+    },
+    "update": {
+      "data.workspace_id": "{{user.data.active_workspace_id}}"
+    },
+    "delete": {
+      "data.workspace_id": "{{user.data.active_workspace_id}}"
+    }
+  }
+}

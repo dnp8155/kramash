@@ -1,22 +1,24 @@
 import { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { useWorkspace } from "@/lib/WorkspaceContext";
-import { services, teamMemberTypes, themes, businessTypes } from "@/data/mockPreferences";
+import { teamMemberTypes, themes, businessTypes } from "@/data/mockPreferences";
 import { formatINR } from "@/utils/format";
 import Button from "@/components/common/Button";
 import Select from "@/components/common/Select";
 import Toggle from "@/components/common/Toggle";
 import WorkspaceSettings from "@/components/settings/WorkspaceSettings";
 import TeamRoleForm from "@/components/team/TeamRoleForm";
+import ServiceForm from "@/components/services/ServiceForm";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/lib/AuthContext";
 import { loadRoles } from "@/lib/teamService";
+import { loadAllServices } from "@/lib/quotationService";
 import { Pencil, Trash2, ArrowUp, ArrowDown, Plus, LogOut, Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function Preferences() {
   const { logout } = useAuth();
-  const { workspaceId } = useWorkspace();
+  const { workspaceId, workspace } = useWorkspace();
   const { toast } = useToast();
   const [theme, setTheme] = useState("Contact Sheet");
   const [toggles, setToggles] = useState({
@@ -37,6 +39,12 @@ export default function Preferences() {
   const [showRoleForm, setShowRoleForm] = useState(false);
   const [editingRole, setEditingRole] = useState(null);
 
+  // Services (real backend)
+  const [serviceList, setServiceList] = useState([]);
+  const [loadingServices, setLoadingServices] = useState(false);
+  const [showServiceForm, setShowServiceForm] = useState(false);
+  const [editingService, setEditingService] = useState(null);
+
   const loadRolesList = useCallback(async () => {
     if (!workspaceId) return;
     setLoadingRoles(true);
@@ -50,6 +58,41 @@ export default function Preferences() {
   }, [workspaceId]);
 
   useEffect(() => { loadRolesList(); }, [loadRolesList]);
+
+  const loadServicesList = useCallback(async () => {
+    if (!workspaceId) return;
+    setLoadingServices(true);
+    try {
+      setServiceList(await loadAllServices(workspaceId));
+    } catch (e) {
+      setServiceList([]);
+    } finally {
+      setLoadingServices(false);
+    }
+  }, [workspaceId]);
+
+  useEffect(() => { loadServicesList(); }, [loadServicesList]);
+
+  const openAddService = () => { setEditingService(null); setShowServiceForm(true); };
+  const openEditService = (s) => { setEditingService(s); setShowServiceForm(true); };
+  const toggleServiceStatus = async (s) => {
+    try {
+      await base44.entities.Service.update(s.id, { status: s.status === "active" ? "inactive" : "active" });
+      loadServicesList();
+    } catch (e) {
+      toast({ title: "Failed to update service", description: e?.message, variant: "destructive" });
+    }
+  };
+  const deleteService = async (s) => {
+    if (!window.confirm(`Delete service "${s.name}"? Historical quotations keep their snapshot.`)) return;
+    try {
+      await base44.entities.Service.delete(s.id);
+      toast({ title: "Service deleted" });
+      loadServicesList();
+    } catch (e) {
+      toast({ title: "Failed to delete service", description: e?.message, variant: "destructive" });
+    }
+  };
 
   const openAddRole = () => { setEditingRole(null); setShowRoleForm(true); };
   const openEditRole = (r) => { setEditingRole(r); setShowRoleForm(true); };
@@ -149,11 +192,34 @@ export default function Preferences() {
         </Card>
         <Card title="Services">
           <div className="space-y-2">
-            {services.map((s) => (
-              <ReorderRow key={s.id} title={s.title} value={formatINR(s.price)} />
-            ))}
+            {loadingServices ? (
+              <p className="text-sm text-muted-foreground py-2">Loading services…</p>
+            ) : serviceList.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-2">No services yet. Add one to get started.</p>
+            ) : (
+              serviceList.map((s) => (
+                <div key={s.id} className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-muted/40">
+                  <span className={`w-2 h-2 rounded-full ${s.status === "active" ? "bg-[#10b981]" : "bg-[#ef4444]"}`} />
+                  <span className={cn("text-sm flex-1", s.status === "inactive" && "text-muted-foreground line-through")}>{s.name}</span>
+                  <span className="text-sm text-muted-foreground">{formatINR(s.default_rate)}</span>
+                  <span className="text-[10px] text-muted-foreground">{s.rate_type}</span>
+                  {workspace?.gst_enabled && Number(s.gst_rate) > 0 && (
+                    <span className="text-[10px] text-muted-foreground">GST {s.gst_rate}%</span>
+                  )}
+                  <button onClick={() => openEditService(s)} className="text-muted-foreground hover:text-foreground" aria-label="Edit service">
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                  <button onClick={() => toggleServiceStatus(s)} className="text-muted-foreground hover:text-warning" aria-label="Toggle status" title={s.status === "active" ? "Disable" : "Enable"}>
+                    {s.status === "active" ? <Trash2 className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+                  </button>
+                  <button onClick={() => deleteService(s)} className="text-muted-foreground hover:text-destructive" aria-label="Delete service">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))
+            )}
           </div>
-          <Button variant="dark" size="sm" className="mt-3"><Plus className="w-3.5 h-3.5" />Add Service</Button>
+          <Button variant="dark" size="sm" className="mt-3" onClick={openAddService}><Plus className="w-3.5 h-3.5" />Add Service</Button>
         </Card>
       </div>
 
@@ -224,6 +290,15 @@ export default function Preferences() {
         onSaved={loadRolesList}
         role={editingRole}
         workspaceId={workspaceId}
+      />
+
+      <ServiceForm
+        open={showServiceForm}
+        onClose={() => setShowServiceForm(false)}
+        onSaved={loadServicesList}
+        service={editingService}
+        workspaceId={workspaceId}
+        gstEnabled={!!workspace?.gst_enabled}
       />
     </div>
   );
