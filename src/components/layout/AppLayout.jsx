@@ -23,6 +23,7 @@ const titles = {
 export default function AppLayout() {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const path = location.pathname;
   let title = titles[path] || "Kramashah";
   if (path.startsWith("/events/")) title = "Event Details";
@@ -32,7 +33,11 @@ export default function AppLayout() {
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       {/* Desktop sidebar */}
-      <aside className="hidden lg:block w-64 shrink-0">
+      <aside
+        className={`hidden lg:block shrink-0 transition-[width] duration-200 ease-in-out overflow-hidden ${
+          sidebarCollapsed ? "w-0" : "w-64"
+        }`}
+      >
         <Sidebar />
       </aside>
 
@@ -50,7 +55,12 @@ export default function AppLayout() {
       <div className="flex-1 flex flex-col min-w-0">
         <UpdateBanner />
         <OfflineBanner />
-        <TopHeader title={title} onMenuClick={() => setMobileOpen(true)} />
+        <TopHeader
+          title={title}
+          onMenuClick={() => setMobileOpen(true)}
+          onToggleSidebar={() => setSidebarCollapsed((v) => !v)}
+          sidebarCollapsed={sidebarCollapsed}
+        />
         <main className="flex-1 overflow-y-auto scrollbar-thin pb-16 lg:pb-0">
           <ErrorBoundary>
             <Outlet />
