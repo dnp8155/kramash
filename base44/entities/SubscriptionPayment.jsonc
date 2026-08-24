@@ -1,0 +1,101 @@
+{
+  "name": "SubscriptionPayment",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "title": "Workspace ID"
+    },
+    "subscription_id": {
+      "type": "string",
+      "title": "Workspace Subscription ID"
+    },
+    "plan_id": {
+      "type": "string",
+      "title": "Plan ID"
+    },
+    "pricing_id": {
+      "type": "string",
+      "title": "Plan Pricing ID"
+    },
+    "amount": {
+      "type": "number",
+      "title": "Amount",
+      "default": 0
+    },
+    "currency": {
+      "type": "string",
+      "title": "Currency",
+      "default": "INR"
+    },
+    "gateway": {
+      "type": "string",
+      "title": "Payment Gateway",
+      "default": "stripe"
+    },
+    "gateway_order_id": {
+      "type": "string",
+      "title": "Gateway Order/Session ID"
+    },
+    "gateway_payment_id": {
+      "type": "string",
+      "title": "Gateway Payment ID"
+    },
+    "billing_cycle_snapshot": {
+      "type": "string",
+      "title": "Billing Cycle (snapshot)"
+    },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "default": "CREATED",
+      "enum": [
+        "CREATED",
+        "SUCCESS",
+        "FAILED",
+        "REFUNDED"
+      ]
+    },
+    "verified_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Verified At"
+    },
+    "failure_reason": {
+      "type": "string",
+      "title": "Failure Reason"
+    }
+  },
+  "required": [
+    "workspace_id",
+    "amount",
+    "status"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.workspace_id": "{{user.data.active_workspace_id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "data.workspace_id": "{{user.data.active_workspace_id}}"
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

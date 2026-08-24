@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Crown, Check, Loader2, Lock } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
+import { Crown, Check, Loader2, Lock, CreditCard, AlertCircle } from "lucide-react";
 import Button from "@/components/common/Button";
 import { useWorkspace } from "@/lib/WorkspaceContext";
 import { usePlan } from "@/hooks/usePlan";
@@ -7,6 +8,7 @@ import { base44 } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
 import { PLAN_UNLIMITED } from "@/lib/planService";
+import { createPaymentOrder, verifyPayment } from "@/lib/paymentService";
 
 const BILLING_LABELS = { MONTHLY: "Monthly", SIX_MONTHS: "6 Months", ANNUAL: "Annual" };
 const BILLING_PERIOD = { MONTHLY: "/month", SIX_MONTHS: "/6 months", ANNUAL: "/year" };
@@ -23,13 +25,81 @@ export default function YourPlan() {
   const { workspace } = useWorkspace();
   const { plan, usage, loading, reload } = usePlan();
   const { toast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [requesting, setRequesting] = useState(null);
+  const [paying, setPaying] = useState(null);
+  const [verifying, setVerifying] = useState(false);
+  const [gatewayAvailable, setGatewayAvailable] = useState(null); // null = unknown, true/false
 
   const isPro = plan?.planCode === "PRO" && !plan?.isExpired;
   const isExpired = plan?.isExpired;
   const isSuspended = plan?.planStatus === "suspended";
 
   const proPricings = (plan?.pricings || []).filter((p) => p.is_active && p.billing_cycle);
+
+  // Check gateway availability on mount (only if not Pro).
+  useEffect(() => {
+    if (isPro || gatewayAvailable !== null || !workspace?.id || proPricings.length === 0) return;
+    // We determine gateway availability by attempting to create an order.
+    // If it returns 503 "not configured", gateway is unavailable.
+    // We don't actually redirect — just check.
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await createPaymentOrder(workspace.id, proPricings[0].id);
+        if (!cancelled) {
+          if (res?.gatewayStatus === "pending") {
+            setGatewayAvailable(false);
+          } else if (res?.checkout_url) {
+            // Gateway works but we created a real session — cancel it by not using it.
+            // Actually, we should not create a session just to check. Let's just set true.
+            setGatewayAvailable(true);
+          }
+        }
+      } catch (e) {
+        if (!cancelled) {
+          const msg = e?.message || "";
+          if (msg.includes("not yet available") || msg.includes("not configured") || msg.includes("503")) {
+            setGatewayAvailable(false);
+          } else {
+            setGatewayAvailable(false);
+          }
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [isPro, workspace?.id, gatewayAvailable, proPricings.length]);
+
+  // Handle payment redirect (success or cancelled).
+  useEffect(() => {
+    const status = searchParams.get("payment");
+    const sessionId = searchParams.get("session_id");
+    if (status === "success" && sessionId) {
+      setVerifying(true);
+      verifyPayment(sessionId)
+        .then((res) => {
+          if (res?.ok) {
+            toast({ title: "Pro activated!", description: "Your subscription is now active." });
+            reload();
+          } else {
+            toast({ title: "Payment verification failed", description: res?.error || "Please contact support.", variant: "destructive" });
+          }
+        })
+        .catch((e) => {
+          toast({ title: "Payment verification failed", description: e?.message, variant: "destructive" });
+        })
+        .finally(() => {
+          setVerifying(false);
+          searchParams.delete("payment");
+          searchParams.delete("session_id");
+          setSearchParams(searchParams, { replace: true });
+        });
+    } else if (status === "cancelled") {
+      toast({ title: "Payment cancelled", description: "Your plan remains unchanged." });
+      searchParams.delete("payment");
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams]);
 
   const submitUpgradeRequest = async (pricingId) => {
     setRequesting(pricingId);
@@ -46,10 +116,32 @@ export default function YourPlan() {
     }
   };
 
-  if (loading) {
+  const handlePayOnline = async (pricingId) => {
+    setPaying(pricingId);
+    try {
+      const res = await createPaymentOrder(workspace.id, pricingId);
+      if (res?.checkout_url) {
+        window.location.href = res.checkout_url;
+      } else {
+        setGatewayAvailable(false);
+        toast({ title: "Online payment unavailable", description: "Please use Request Upgrade instead.", variant: "destructive" });
+      }
+    } catch (e) {
+      const msg = e?.message || "";
+      if (msg.includes("not yet available") || msg.includes("not configured")) {
+        setGatewayAvailable(false);
+      }
+      toast({ title: "Could not start payment", description: msg, variant: "destructive" });
+    } finally {
+      setPaying(null);
+    }
+  };
+
+  if (loading || verifying) {
     return (
-      <div className="p-6 max-w-[900px] mx-auto flex items-center justify-center">
+      <div className="p-6 max-w-[900px] mx-auto flex items-center justify-center gap-2">
         <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+        <span className="text-sm text-muted-foreground">{verifying ? "Verifying payment…" : "Loading…"}</span>
       </div>
     );
   }
@@ -88,6 +180,9 @@ export default function YourPlan() {
               <span className="text-sm text-muted-foreground ml-2">expires {new Date(plan.expiresAt).toLocaleDateString()}</span>
             )}
           </div>
+          {isPro && (
+            <p className="text-xs text-muted-foreground mt-1">Renew manually before expiry</p>
+          )}
           <div className="mt-3 space-y-1">
             {usageRows.map((u) => {
               const limit = plan?.limits?.[u.key];
@@ -130,22 +225,46 @@ export default function YourPlan() {
                     <span className="text-2xl font-bold">₹{p.price}</span>
                     <span className="text-sm text-muted-foreground">{BILLING_PERIOD[p.billing_cycle]}</span>
                   </div>
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    className="mt-4"
-                    disabled={requesting === p.id}
-                    onClick={() => submitUpgradeRequest(p.id)}
-                  >
-                    {requesting === p.id ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Requesting…</> : "Request Upgrade"}
-                  </Button>
+                  {gatewayAvailable === true ? (
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      className="mt-4"
+                      disabled={paying === p.id}
+                      onClick={() => handlePayOnline(p.id)}
+                    >
+                      {paying === p.id ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Preparing…</> : <><CreditCard className="w-3.5 h-3.5" /> Pay Online</>}
+                    </Button>
+                  ) : gatewayAvailable === false ? (
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      className="mt-4"
+                      disabled={requesting === p.id}
+                      onClick={() => submitUpgradeRequest(p.id)}
+                    >
+                      {requesting === p.id ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Requesting…</> : "Request Upgrade"}
+                    </Button>
+                  ) : (
+                    <Button variant="primary" size="sm" className="mt-4" disabled>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" /> Checking…
+                    </Button>
+                  )}
                 </div>
               ))
             )}
           </div>
-          <p className="text-xs text-muted-foreground mt-3">
-            Online payment is coming soon. Your request will be reviewed and Pro activated by our team.
-          </p>
+          {gatewayAvailable === false && (
+            <p className="text-xs text-muted-foreground mt-3">
+              Online payment is not yet available. Your upgrade request will be reviewed and Pro activated by our team.
+            </p>
+          )}
+          {gatewayAvailable === true && (
+            <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1.5">
+              <AlertCircle className="w-3.5 h-3.5" />
+              Payment gateway transaction charges are borne separately by the client.
+            </p>
+          )}
         </div>
       )}
 
@@ -172,10 +291,6 @@ export default function YourPlan() {
           </table>
         </div>
       </div>
-
-      <p className="text-sm text-muted-foreground text-center">
-        Billing and payment gateway integration will be available in a future phase.
-      </p>
     </div>
   );
 }

@@ -110,9 +110,25 @@ export default function WorkspaceSettings() {
             : <Upload className="w-5 h-5 text-muted-foreground" />}
         </div>
         <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onLogo} />
-        <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()} disabled={uploading}>
-          {uploading ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />Uploading…</> : form.logo ? "Replace" : "Upload"}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()} disabled={uploading}>
+            {uploading ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />Uploading…</> : form.logo ? "Replace" : "Upload"}
+          </Button>
+          {form.logo && (
+            <Button variant="ghost" size="sm" onClick={async () => {
+              try {
+                await base44.entities.Workspace.update(workspace.id, { logo: "" });
+                set("logo", "");
+                setWorkspace((w) => ({ ...w, logo: "" }));
+                toast({ title: "Logo removed" });
+              } catch (err) {
+                toast({ title: "Failed to remove logo", description: err.message, variant: "destructive" });
+              }
+            }}>
+              Remove
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="space-y-3">

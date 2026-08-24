@@ -13,14 +13,23 @@ import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/lib/AuthContext";
 import { loadRoles } from "@/lib/teamService";
 import { loadAllServices } from "@/lib/quotationService";
-import { Pencil, Trash2, ArrowUp, ArrowDown, Plus, LogOut, Crown } from "lucide-react";
+import { Pencil, Trash2, ArrowUp, ArrowDown, Plus, LogOut, Crown, Download, Loader2, Bell } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { exportFinancialCsv } from "@/lib/exportUtils";
+import { loadAllTransactions } from "@/lib/financeService";
+import { financialYearLabels, currentFinancialYearLabel } from "@/constants/financeConfig";
+import { usePlan } from "@/hooks/usePlan";
 
 export default function Preferences() {
   const { logout } = useAuth();
   const { workspaceId, workspace } = useWorkspace();
   const { toast } = useToast();
+  const { plan } = usePlan();
   const [theme, setTheme] = useState("Contact Sheet");
+  const [exportFy, setExportFy] = useState(currentFinancialYearLabel());
+  const [exporting, setExporting] = useState(false);
+  const remindersEnabled = !!plan?.limits?.reminders_enabled;
+  const pushSupported = typeof window !== "undefined" && "Notification" in window;
   const [toggles, setToggles] = useState({
     statusDots: true,
     groupUpcoming: true,
@@ -253,33 +262,75 @@ export default function Preferences() {
       {/* Bottom */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card title="Export">
-          <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-end">
-            <Field label="Financial year" className="flex-1">
-              <Select><option>April 2026 - March 2027</option></Select>
-            </Field>
-            <Field label="Team member" className="flex-1">
-              <Select><option>All members</option></Select>
-            </Field>
-          </div>
-          <div className="flex items-center gap-3 mt-3">
-            <Button variant="outline">Export to Excel</Button>
-            <ProBadge />
-          </div>
+          <Field label="Financial year" className="mb-3">
+            <Select value={exportFy} onChange={(e) => setExportFy(e.target.value)}>
+              {financialYearLabels(6).map((l) => (
+                <option key={l} value={l}>{l.replace("FY ", "April ")} - March {("20" + l.split("-")[1])}</option>
+              ))}
+            </Select>
+          </Field>
+          <Button variant="outline" size="sm" disabled={exporting} onClick={async () => {
+            setExporting(true);
+            try {
+              const tx = await loadAllTransactions(workspaceId);
+              const events = await base44.entities.Event.filter({ workspace_id: workspaceId }, "-start_date", 500);
+              const clients = await base44.entities.Client.filter({ workspace_id: workspaceId }, "name", 500);
+              const members = await base44.entities.TeamMember.filter({ workspace_id: workspaceId }, "name", 500);
+              const eventsById = {}, clientsById = {}, membersById = {};
+              events.forEach((e) => { eventsById[e.id] = e; });
+              clients.forEach((c) => { clientsById[c.id] = c; });
+              members.forEach((m) => { membersById[m.id] = m; });
+              const { fyLabelForDate } = await import("@/constants/financeConfig");
+              const fyTx = tx.filter((t) => fyLabelForDate(t.transaction_date) === exportFy);
+              if (fyTx.length === 0) {
+                toast({ title: "No transactions found for this period." });
+              } else {
+                exportFinancialCsv(fyTx, { eventsById, clientsById, membersById }, workspace?.currency || "INR", exportFy);
+                toast({ title: "Export ready", description: `${fyTx.length} transactions exported.` });
+              }
+            } catch (e) {
+              toast({ title: "Export failed", description: e?.message, variant: "destructive" });
+            } finally {
+              setExporting(false);
+            }
+          }}>
+            {exporting ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Exporting…</> : <><Download className="w-3.5 h-3.5" /> Export to Excel</>}
+          </Button>
+          <p className="text-xs text-muted-foreground mt-2">Exports financial activity for the selected year. Event, client, and team exports are available on their respective pages.</p>
         </Card>
         <Card title="Notifications">
-          <p className="text-sm text-muted-foreground">Payment & event reminders are a Pro feature.</p>
-          <div className="flex items-center gap-3 mt-3">
-            <Button>Enable</Button>
-            <ProBadge />
+          <div className="space-y-3">
+            <ToggleRow label="In-app notifications" checked={true} onChange={() => {}} />
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-foreground flex items-center gap-1.5"><Bell className="w-3.5 h-3.5" />Browser push notifications</span>
+              {pushSupported ? (
+                <Toggle checked={Notification.permission === "granted"} onChange={async (v) => {
+                  if (v) await Notification.requestPermission();
+                }} label="Push notifications" />
+              ) : (
+                <span className="text-xs text-muted-foreground">Not supported</span>
+              )}
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-foreground">Event reminders</span>
+              {remindersEnabled ? (
+                <Toggle checked={true} onChange={() => {}} label="Event reminders" />
+              ) : (
+                <ProBadge />
+              )}
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-foreground">Subscription expiry reminders</span>
+              <Toggle checked={true} onChange={() => {}} label="Subscription reminders" />
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">SMS / Email / WhatsApp</span>
+              <span className="text-xs text-muted-foreground">Not available in Beta</span>
+            </div>
           </div>
           <div className="mt-4 pt-4 border-t border-border space-y-3">
             <div className="text-sm font-semibold">Session</div>
             <Button variant="destructive" onClick={() => logout(true)}><LogOut className="w-4 h-4" />Log out</Button>
-            <div className="text-sm font-semibold mt-3">Reset data</div>
-            <div className="flex items-center gap-3">
-              <Select className="flex-1"><option>All data</option><option>Events only</option></Select>
-              <Button variant="destructive" disabled>Delete events…</Button>
-            </div>
           </div>
         </Card>
       </div>

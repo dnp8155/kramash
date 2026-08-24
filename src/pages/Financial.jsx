@@ -29,6 +29,7 @@ import {
 import { formatMoney } from "@/utils/format";
 import { Download, Plus, Wallet, Receipt, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { exportFinancialCsv } from "@/lib/exportUtils";
 
 const tabs = ["Payment Activity", "Financial Years"];
 
@@ -195,7 +196,13 @@ export default function Financial() {
                 <option key={l} value={l}>{l.replace("FY ", "April ")} - March {("20" + l.split("-")[1])}</option>
               ))}
             </Select>
-            <Button variant="outline" size="sm" className="ml-auto" disabled>
+            <Button
+              variant="outline"
+              size="sm"
+              className="ml-auto"
+              onClick={() => exportFinancialCsv(fyTx, { eventsById, clientsById, membersById }, currency, fy)}
+              disabled={fyTx.length === 0}
+            >
               <Download className="w-3.5 h-3.5" />
               Export to Excel
             </Button>

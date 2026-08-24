@@ -10,8 +10,9 @@ import EventForm from "@/components/events/EventForm";
 import SearchInput from "@/components/common/SearchInput";
 import Select from "@/components/common/Select";
 import Button from "@/components/common/Button";
-import { Users, Plus } from "lucide-react";
+import { Users, Plus, Download } from "lucide-react";
 import { isToday, isThisWeek, isUpcomingDate, isPastDate, isWithinFY, fyOptions, currentFY } from "@/lib/dates";
+import { exportEventsCsv } from "@/lib/exportUtils";
 
 export default function Events() {
   const { workspaceId } = useWorkspace();
@@ -112,6 +113,15 @@ export default function Events() {
               </option>
             ))}
           </Select>
+          <Button
+            variant="outline"
+            size="icon"
+            aria-label="Export"
+            onClick={() => exportEventsCsv(filtered, clients, fyFilter !== "all" ? fyFilter : null)}
+            disabled={filtered.length === 0}
+          >
+            <Download className="w-4 h-4" />
+          </Button>
           <Button variant="outline" size="icon" aria-label="Team" onClick={() => navigate("/team")}>
             <Users className="w-4 h-4" />
           </Button>

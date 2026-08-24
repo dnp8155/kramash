@@ -1,5 +1,6 @@
 import { Menu, Plus, Wifi } from "lucide-react";
 import Button from "@/components/common/Button";
+import NotificationBell from "@/components/common/NotificationBell";
 
 export default function TopHeader({ title, onMenuClick, onNewEntry }) {
   return (
@@ -19,6 +20,7 @@ export default function TopHeader({ title, onMenuClick, onNewEntry }) {
           <Wifi className="w-3.5 h-3.5" />
           Online
         </span>
+        <NotificationBell />
         <Button size="md" onClick={onNewEntry}>
           <Plus className="w-4 h-4" />
           <span className="hidden sm:inline">New Entry</span>

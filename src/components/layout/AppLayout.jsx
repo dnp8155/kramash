@@ -4,6 +4,8 @@ import Sidebar from "@/components/layout/Sidebar";
 import TopHeader from "@/components/layout/TopHeader";
 import MobileNavigation from "@/components/layout/MobileNavigation";
 import ErrorBoundary from "@/components/common/ErrorBoundary";
+import OfflineBanner from "@/components/common/OfflineBanner";
+import UpdateBanner from "@/components/common/UpdateBanner";
 
 const titles = {
   "/events": "Events",
@@ -46,6 +48,8 @@ export default function AppLayout() {
 
       {/* Main */}
       <div className="flex-1 flex flex-col min-w-0">
+        <UpdateBanner />
+        <OfflineBanner />
         <TopHeader title={title} onMenuClick={() => setMobileOpen(true)} />
         <main className="flex-1 overflow-y-auto scrollbar-thin pb-16 lg:pb-0">
           <ErrorBoundary>

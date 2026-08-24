@@ -8,7 +8,8 @@ import Button from "@/components/common/Button";
 import LoadingState from "@/components/common/LoadingState";
 import EmptyState from "@/components/common/EmptyState";
 import ClientForm from "@/components/clients/ClientForm";
-import { Plus, Pencil, Eye } from "lucide-react";
+import { Plus, Pencil, Eye, Download } from "lucide-react";
+import { exportClientsCsv } from "@/lib/exportUtils";
 
 export default function Clients() {
   const { workspaceId } = useWorkspace();
@@ -59,10 +60,16 @@ export default function Clients() {
   return (
     <div className="p-4 sm:p-6 space-y-4 max-w-[1400px] mx-auto">
       <PageHeader title="Clients">
-        <Button onClick={openNew}>
-          <Plus className="w-4 h-4" />
-          <span className="hidden sm:inline">Add Client</span>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => exportClientsCsv(filtered, eventCounts)} disabled={filtered.length === 0}>
+            <Download className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Export</span>
+          </Button>
+          <Button onClick={openNew}>
+            <Plus className="w-4 h-4" />
+            <span className="hidden sm:inline">Add Client</span>
+          </Button>
+        </div>
       </PageHeader>
 
       <SearchInput

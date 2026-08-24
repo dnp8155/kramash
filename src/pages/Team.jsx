@@ -11,10 +11,11 @@ import Button from "@/components/common/Button";
 import LoadingState from "@/components/common/LoadingState";
 import EmptyState from "@/components/common/EmptyState";
 import Card from "@/components/common/Card";
-import { Crown, Plus, AlertTriangle } from "lucide-react";
+import { Crown, Plus, AlertTriangle, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { loadTeamMembers, loadRoles, loadAssignments, ensureDefaultRoles } from "@/lib/teamService";
 import { useToast } from "@/components/ui/use-toast";
+import { exportTeamCsv } from "@/lib/exportUtils";
 
 const FREE_PLAN_LIMIT = 3;
 
@@ -153,9 +154,15 @@ export default function Team() {
             </button>
           ))}
         </div>
-        <Button variant="dark" onClick={openNew}>
-          <Plus className="w-4 h-4" /> Add Team Member
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => exportTeamCsv(filtered, rolesById)} disabled={filtered.length === 0}>
+            <Download className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Export</span>
+          </Button>
+          <Button variant="dark" onClick={openNew}>
+            <Plus className="w-4 h-4" /> Add Team Member
+          </Button>
+        </div>
       </div>
 
       {error && (
