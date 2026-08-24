@@ -156,13 +156,13 @@ export default function YourPlan() {
     <div className="p-4 sm:p-6 max-w-[900px] mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
-          <Crown className="w-5 h-5 text-amber-600" />
+        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center">
+          <Crown className="w-6 h-6 text-amber-600" />
         </div>
         <div>
-          <h2 className="text-lg font-semibold">Your Plan</h2>
+          <h1 className="text-2xl font-bold text-foreground">Your Plan</h1>
           <p className="text-sm text-muted-foreground">
-            You're currently on the <span className="font-medium">{isPro ? "Pro" : "Free"}</span> plan
+            You're currently on the <span className="font-medium text-foreground">{isPro ? "Pro" : "Free"}</span> plan
             {plan?.planStatus && plan.planStatus !== "free" && ` · ${plan.planStatus}`}
             {isExpired && " · Pro expired, Free limits apply"}
             {isSuspended && " · Workspace suspended"}
@@ -218,16 +218,25 @@ export default function YourPlan() {
             {proPricings.length === 0 ? (
               <p className="text-sm text-muted-foreground">Pro pricing not configured yet. Please contact support.</p>
             ) : (
-              proPricings.map((p) => (
-                <div key={p.id} className="bg-card border border-primary/30 rounded-lg p-5 flex flex-col">
-                  <div className="text-sm font-medium">{BILLING_LABELS[p.billing_cycle]}</div>
-                  <div className="flex items-baseline gap-1 mt-1">
-                    <span className="text-2xl font-bold">₹{p.price}</span>
+              proPricings.map((p, i) => (
+                <div key={p.id} className={cn(
+                  "bg-card border rounded-xl p-5 flex flex-col relative overflow-hidden",
+                  i === 1 ? "border-primary shadow-md" : "border-border"
+                )}>
+                  {i === 1 && (
+                    <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-[10px] font-semibold px-2.5 py-1 rounded-bl-lg uppercase tracking-wide">
+                      Popular
+                    </div>
+                  )}
+                  <div className="text-sm font-semibold text-foreground">{BILLING_LABELS[p.billing_cycle]}</div>
+                  <div className="flex items-baseline gap-1 mt-2">
+                    <span className="text-3xl font-bold text-foreground">₹{p.price}</span>
                     <span className="text-sm text-muted-foreground">{BILLING_PERIOD[p.billing_cycle]}</span>
                   </div>
+                  <div className="text-xs text-muted-foreground mt-1">{p.duration_months} month{p.duration_months > 1 ? "s" : ""} of Pro access</div>
                   {gatewayAvailable === true ? (
                     <Button
-                      variant="primary"
+                      variant={i === 1 ? "primary" : "outline"}
                       size="sm"
                       className="mt-4"
                       disabled={paying === p.id}
@@ -237,7 +246,7 @@ export default function YourPlan() {
                     </Button>
                   ) : gatewayAvailable === false ? (
                     <Button
-                      variant="primary"
+                      variant={i === 1 ? "primary" : "outline"}
                       size="sm"
                       className="mt-4"
                       disabled={requesting === p.id}
@@ -246,7 +255,7 @@ export default function YourPlan() {
                       {requesting === p.id ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Requesting…</> : "Request Upgrade"}
                     </Button>
                   ) : (
-                    <Button variant="primary" size="sm" className="mt-4" disabled>
+                    <Button variant="outline" size="sm" className="mt-4" disabled>
                       <Loader2 className="w-3.5 h-3.5 animate-spin" /> Checking…
                     </Button>
                   )}

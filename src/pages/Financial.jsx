@@ -156,6 +156,11 @@ export default function Financial() {
 
   return (
     <div className="p-4 sm:p-6 space-y-4 max-w-[1100px] mx-auto">
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">Financial</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">Track payments, expenses, and profit across financial years.</p>
+      </div>
+
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-1 border-b border-border w-full sm:w-auto">
           {tabs.map((t) => (
@@ -218,25 +223,47 @@ export default function Financial() {
           {/* Breakdown */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="bg-card border border-border rounded-lg p-4">
-              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Online</div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Rcvd</span>
+              <div className="flex items-center justify-between mb-3">
+                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Online</div>
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Wallet className="w-4 h-4 text-primary" />
+                </div>
+              </div>
+              <div className="flex justify-between text-sm py-1">
+                <span className="text-muted-foreground">Received</span>
                 <span className="font-medium text-success">{formatMoney(breakdown.online.received, currency)}</span>
               </div>
-              <div className="flex justify-between text-sm mt-1">
+              <div className="flex justify-between text-sm py-1">
                 <span className="text-muted-foreground">Paid</span>
                 <span className="font-medium text-destructive">{formatMoney(breakdown.online.paid, currency)}</span>
               </div>
+              <div className="flex justify-between text-sm pt-2 mt-1 border-t border-border">
+                <span className="font-medium text-foreground">Net</span>
+                <span className={cn("font-semibold", breakdown.online.received - breakdown.online.paid >= 0 ? "text-success" : "text-destructive")}>
+                  {formatMoney(breakdown.online.received - breakdown.online.paid, currency)}
+                </span>
+              </div>
             </div>
             <div className="bg-card border border-border rounded-lg p-4">
-              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Cash</div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Rcvd</span>
+              <div className="flex items-center justify-between mb-3">
+                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Cash</div>
+                <div className="w-8 h-8 rounded-full bg-warning/10 flex items-center justify-center">
+                  <Receipt className="w-4 h-4 text-warning" />
+                </div>
+              </div>
+              <div className="flex justify-between text-sm py-1">
+                <span className="text-muted-foreground">Received</span>
                 <span className="font-medium text-success">{formatMoney(breakdown.cash.received, currency)}</span>
               </div>
-              <div className="flex justify-between text-sm mt-1">
+              <div className="flex justify-between text-sm py-1">
                 <span className="text-muted-foreground">Paid</span>
                 <span className="font-medium text-destructive">{formatMoney(breakdown.cash.paid, currency)}</span>
+              </div>
+              <div className="flex justify-between text-sm pt-2 mt-1 border-t border-border">
+                <span className="font-medium text-foreground">Net</span>
+                <span className={cn("font-semibold", breakdown.cash.received - breakdown.cash.paid >= 0 ? "text-success" : "text-destructive")}>
+                  {formatMoney(breakdown.cash.received - breakdown.cash.paid, currency)}
+                </span>
               </div>
             </div>
           </div>

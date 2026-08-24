@@ -136,23 +136,11 @@ export default function Team() {
   const activeCount = members.filter((m) => m.status === "active").length;
 
   return (
-    <div className="p-4 sm:p-6 space-y-4 max-w-[1400px] mx-auto">
+    <div className="p-4 sm:p-6 space-y-5 max-w-[1400px] mx-auto">
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-1 border-b border-border w-full sm:w-auto">
-          {["Roster", "Availability Calendar"].map((t) => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={cn(
-                "px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors",
-                tab === t
-                  ? "border-primary text-foreground"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              )}
-            >
-              {t}
-            </button>
-          ))}
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Team</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Manage your roster, roles, and availability.</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => exportTeamCsv(filtered, rolesById)} disabled={filtered.length === 0}>
@@ -163,6 +151,39 @@ export default function Team() {
             <Plus className="w-4 h-4" /> Add Team Member
           </Button>
         </div>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <div className="bg-card border border-border rounded-lg p-4">
+          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Total Members</div>
+          <div className="mt-1 text-2xl font-bold text-foreground">{members.length}</div>
+        </div>
+        <div className="bg-card border border-border rounded-lg p-4">
+          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Active</div>
+          <div className="mt-1 text-2xl font-bold text-success">{activeCount}</div>
+        </div>
+        <div className="bg-card border border-border rounded-lg p-4">
+          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Roles</div>
+          <div className="mt-1 text-2xl font-bold text-foreground">{roles.filter((r) => r.status === "active").length}</div>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-1 border-b border-border w-full sm:w-auto">
+        {["Roster", "Availability Calendar"].map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={cn(
+              "px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors",
+              tab === t
+                ? "border-primary text-foreground"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            )}
+          >
+            {t}
+          </button>
+        ))}
       </div>
 
       {error && (

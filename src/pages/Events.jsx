@@ -81,8 +81,49 @@ export default function Events() {
   const openNew = () => { setEditingEvent(null); setShowForm(true); };
   const openEdit = (e) => { setEditingEvent(e); setShowForm(true); };
 
+  const upcomingCount = events.filter((e) => isUpcomingDate(e.start_date) && e.status !== "completed" && e.status !== "cancelled").length;
+  const completedCount = events.filter((e) => e.status === "completed").length;
+  const inProgressCount = events.filter((e) => e.status === "in-progress").length;
+
   return (
     <div className="p-4 sm:p-6 space-y-4 max-w-[1400px] mx-auto">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Events</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Manage your bookings, schedule, and event details.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => navigate("/team")}>
+            <Users className="w-4 h-4" />
+            <span className="hidden sm:inline">Team</span>
+          </Button>
+          <Button onClick={openNew}>
+            <Plus className="w-4 h-4" />
+            <span className="hidden sm:inline">Add Event</span>
+          </Button>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="bg-card border border-border rounded-lg p-4">
+          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Total</div>
+          <div className="mt-1 text-2xl font-bold text-foreground">{events.length}</div>
+        </div>
+        <div className="bg-card border border-border rounded-lg p-4">
+          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Upcoming</div>
+          <div className="mt-1 text-2xl font-bold text-primary">{upcomingCount}</div>
+        </div>
+        <div className="bg-card border border-border rounded-lg p-4">
+          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">In Progress</div>
+          <div className="mt-1 text-2xl font-bold text-warning">{inProgressCount}</div>
+        </div>
+        <div className="bg-card border border-border rounded-lg p-4">
+          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Completed</div>
+          <div className="mt-1 text-2xl font-bold text-success">{completedCount}</div>
+        </div>
+      </div>
+
       <ReminderBanner events={events} onEventClick={openEvent} />
       <UpgradeBanner used={events.length} />
 

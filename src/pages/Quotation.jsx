@@ -12,7 +12,7 @@ import { loadQuotations, deleteQuotation, loadQuotationItems } from "@/lib/quota
 import { QUOTATION_STATUSES, QUOTATION_STATUS_META } from "@/constants/quotationConfig";
 import { generateQuotationPdf } from "@/lib/quotationPdf";
 import { base44 } from "@/api/base44Client";
-import { Plus, Search, Trash2, FileDown } from "lucide-react";
+import { Plus, Search, Trash2, FileDown, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const fmtDate = (iso) => {
@@ -80,6 +80,14 @@ export default function Quotation() {
     });
   }, [quotations, search, statusFilter, clientsById, eventsById]);
 
+  const stats = useMemo(() => {
+    const totalValue = quotations.reduce((s, q) => s + (Number(q.grand_total) || 0), 0);
+    const draftCount = quotations.filter((q) => q.status === "draft").length;
+    const finalizedCount = quotations.filter((q) => q.status === "finalized").length;
+    const acceptedCount = quotations.filter((q) => q.status === "accepted").length;
+    return { totalValue, draftCount, finalizedCount, acceptedCount };
+  }, [quotations]);
+
   const onDelete = async (qt) => {
     if (!window.confirm(`Delete quotation ${qt.quotation_number}? This cannot be undone.`)) return;
     try {
@@ -108,13 +116,35 @@ export default function Quotation() {
   if (loading) return <LoadingState label="Loading quotations…" />;
 
   return (
-    <div className="p-4 sm:p-6 space-y-4 max-w-[1200px] mx-auto">
-      <div className="flex items-center justify-between flex-wrap gap-3">
+    <div className="p-4 sm:p-6 space-y-5 max-w-[1200px] mx-auto">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h2 className="text-lg font-semibold">Quotations</h2>
-          <p className="text-sm text-muted-foreground">Create, track and finalize client quotations.</p>
+          <h1 className="text-2xl font-bold text-foreground">Quotations</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Create, track and finalize client quotations.</p>
         </div>
-        <Button onClick={() => navigate("/quotation/new")}><Plus className="w-4 h-4" /> Create Quotation</Button>
+        <Button onClick={() => navigate("/quotation/new")}>
+          <Plus className="w-4 h-4" /> Create Quotation
+        </Button>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="bg-card border border-border rounded-lg p-4">
+          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Total Quotations</div>
+          <div className="mt-1 text-2xl font-bold text-foreground">{quotations.length}</div>
+        </div>
+        <div className="bg-card border border-border rounded-lg p-4">
+          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Total Value</div>
+          <div className="mt-1 text-xl font-bold text-foreground">{formatMoney(stats.totalValue, currency)}</div>
+        </div>
+        <div className="bg-card border border-border rounded-lg p-4">
+          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Accepted</div>
+          <div className="mt-1 text-2xl font-bold text-success">{stats.acceptedCount}</div>
+        </div>
+        <div className="bg-card border border-border rounded-lg p-4">
+          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Drafts</div>
+          <div className="mt-1 text-2xl font-bold text-muted-foreground">{stats.draftCount}</div>
+        </div>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">
@@ -137,6 +167,7 @@ export default function Quotation() {
         <EmptyState
           title={quotations.length === 0 ? "No quotations created yet" : "No quotations match your search"}
           description={quotations.length === 0 ? "Create a quotation for your next event." : "Try a different search or filter."}
+          action={quotations.length === 0 ? <Button onClick={() => navigate("/quotation/new")}><Plus className="w-4 h-4" /> Create Quotation</Button> : null}
         />
       ) : (
         <div className="bg-card border border-border rounded-lg overflow-hidden">

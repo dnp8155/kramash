@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useWorkspace } from "@/lib/WorkspaceContext";
-import PageHeader from "@/components/common/PageHeader";
 import SearchInput from "@/components/common/SearchInput";
 import Button from "@/components/common/Button";
 import LoadingState from "@/components/common/LoadingState";
@@ -57,9 +56,15 @@ export default function Clients() {
   const openNew = () => { setEditingClient(null); setShowForm(true); };
   const openEdit = (c) => { setEditingClient(c); setShowForm(true); };
 
+  const totalEvents = Object.values(eventCounts).reduce((s, n) => s + n, 0);
+
   return (
-    <div className="p-4 sm:p-6 space-y-4 max-w-[1400px] mx-auto">
-      <PageHeader title="Clients">
+    <div className="p-4 sm:p-6 space-y-5 max-w-[1400px] mx-auto">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Clients</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Manage your client directory and their event history.</p>
+        </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => exportClientsCsv(filtered, eventCounts)} disabled={filtered.length === 0}>
             <Download className="w-3.5 h-3.5" />
@@ -70,7 +75,23 @@ export default function Clients() {
             <span className="hidden sm:inline">Add Client</span>
           </Button>
         </div>
-      </PageHeader>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <div className="bg-card border border-border rounded-lg p-4">
+          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Total Clients</div>
+          <div className="mt-1 text-2xl font-bold text-foreground">{clients.length}</div>
+        </div>
+        <div className="bg-card border border-border rounded-lg p-4">
+          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Total Events</div>
+          <div className="mt-1 text-2xl font-bold text-foreground">{totalEvents}</div>
+        </div>
+        <div className="bg-card border border-border rounded-lg p-4">
+          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">With Events</div>
+          <div className="mt-1 text-2xl font-bold text-primary">{Object.keys(eventCounts).length}</div>
+        </div>
+      </div>
 
       <SearchInput
         placeholder="Search by name, phone, email"
