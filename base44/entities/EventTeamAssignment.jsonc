@@ -1,0 +1,73 @@
+{
+  "name": "EventTeamAssignment",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "title": "Workspace ID"
+    },
+    "event_id": {
+      "type": "string",
+      "title": "Event ID"
+    },
+    "team_member_id": {
+      "type": "string",
+      "title": "Team Member ID"
+    },
+    "role_id": {
+      "type": "string",
+      "title": "Role ID"
+    },
+    "role_name_snapshot": {
+      "type": "string",
+      "title": "Role Name Snapshot"
+    },
+    "agreed_rate": {
+      "type": "number",
+      "title": "Agreed Rate",
+      "default": 0
+    },
+    "rate_type": {
+      "type": "string",
+      "title": "Rate Type",
+      "default": "Per Event",
+      "enum": [
+        "Per Event",
+        "Per Day",
+        "Fixed"
+      ]
+    },
+    "assignment_status": {
+      "type": "string",
+      "title": "Assignment Status",
+      "default": "assigned",
+      "enum": [
+        "assigned",
+        "removed"
+      ]
+    },
+    "notes": {
+      "type": "string",
+      "title": "Notes"
+    }
+  },
+  "required": [
+    "workspace_id",
+    "event_id",
+    "team_member_id"
+  ],
+  "rls": {
+    "read": {
+      "data.workspace_id": "{{user.data.active_workspace_id}}"
+    },
+    "create": {
+      "data.workspace_id": "{{user.data.active_workspace_id}}"
+    },
+    "update": {
+      "data.workspace_id": "{{user.data.active_workspace_id}}"
+    },
+    "delete": {
+      "data.workspace_id": "{{user.data.active_workspace_id}}"
+    }
+  }
+}

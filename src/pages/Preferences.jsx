@@ -1,16 +1,23 @@
-import { useState } from "react";
-import { teamRoles, services, teamMemberTypes, themes, businessTypes } from "@/data/mockPreferences";
+import { useState, useEffect, useCallback } from "react";
+import { base44 } from "@/api/base44Client";
+import { useWorkspace } from "@/lib/WorkspaceContext";
+import { services, teamMemberTypes, themes, businessTypes } from "@/data/mockPreferences";
 import { formatINR } from "@/utils/format";
 import Button from "@/components/common/Button";
 import Select from "@/components/common/Select";
 import Toggle from "@/components/common/Toggle";
 import WorkspaceSettings from "@/components/settings/WorkspaceSettings";
+import TeamRoleForm from "@/components/team/TeamRoleForm";
+import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/lib/AuthContext";
+import { loadRoles } from "@/lib/teamService";
 import { Pencil, Trash2, ArrowUp, ArrowDown, Plus, LogOut, Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function Preferences() {
   const { logout } = useAuth();
+  const { workspaceId } = useWorkspace();
+  const { toast } = useToast();
   const [theme, setTheme] = useState("Contact Sheet");
   const [toggles, setToggles] = useState({
     statusDots: true,
@@ -23,6 +30,46 @@ export default function Preferences() {
     showLogo: false
   });
   const [businessType, setBusinessType] = useState("Photography");
+
+  // Team Roles (real backend)
+  const [roles, setRoles] = useState([]);
+  const [loadingRoles, setLoadingRoles] = useState(false);
+  const [showRoleForm, setShowRoleForm] = useState(false);
+  const [editingRole, setEditingRole] = useState(null);
+
+  const loadRolesList = useCallback(async () => {
+    if (!workspaceId) return;
+    setLoadingRoles(true);
+    try {
+      setRoles(await loadRoles(workspaceId));
+    } catch (e) {
+      setRoles([]);
+    } finally {
+      setLoadingRoles(false);
+    }
+  }, [workspaceId]);
+
+  useEffect(() => { loadRolesList(); }, [loadRolesList]);
+
+  const openAddRole = () => { setEditingRole(null); setShowRoleForm(true); };
+  const openEditRole = (r) => { setEditingRole(r); setShowRoleForm(true); };
+  const toggleRoleStatus = async (r) => {
+    try {
+      await base44.entities.TeamRole.update(r.id, { status: r.status === "active" ? "inactive" : "active" });
+      loadRolesList();
+    } catch (e) {
+      toast({ title: "Failed to update role", description: e?.message, variant: "destructive" });
+    }
+  };
+  const deleteRole = async (r) => {
+    try {
+      await base44.entities.TeamRole.delete(r.id);
+      toast({ title: "Role deleted" });
+      loadRolesList();
+    } catch (e) {
+      toast({ title: "Failed to delete role", description: e?.message, variant: "destructive" });
+    }
+  };
 
   const setT = (key) => (v) => setToggles((prev) => ({ ...prev, [key]: v }));
 
@@ -77,11 +124,28 @@ export default function Preferences() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card title="Team Roles">
           <div className="space-y-2">
-            {teamRoles.map((r) => (
-              <ReorderRow key={r.id} title={r.title} value={formatINR(r.price)} />
-            ))}
+            {loadingRoles ? (
+              <p className="text-sm text-muted-foreground py-2">Loading roles…</p>
+            ) : roles.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-2">No roles yet. Add one to get started.</p>
+            ) : (
+              roles.map((r) => (
+                <div key={r.id} className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-muted/40">
+                  <span className={`w-2 h-2 rounded-full ${r.status === "active" ? "bg-[#10b981]" : "bg-[#ef4444]"}`} />
+                  <span className={cn("text-sm flex-1", r.status === "inactive" && "text-muted-foreground line-through")}>{r.name}</span>
+                  <span className="text-sm text-muted-foreground">{formatINR(r.default_rate)}</span>
+                  <span className="text-[10px] text-muted-foreground">{r.rate_type}</span>
+                  <button onClick={() => openEditRole(r)} className="text-muted-foreground hover:text-foreground" aria-label="Edit role">
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                  <button onClick={() => toggleRoleStatus(r)} className="text-muted-foreground hover:text-warning" aria-label="Toggle status" title={r.status === "active" ? "Disable" : "Enable"}>
+                    {r.status === "active" ? <Trash2 className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              ))
+            )}
           </div>
-          <Button variant="dark" size="sm" className="mt-3"><Plus className="w-3.5 h-3.5" />Add Role</Button>
+          <Button variant="dark" size="sm" className="mt-3" onClick={openAddRole}><Plus className="w-3.5 h-3.5" />Add Role</Button>
         </Card>
         <Card title="Services">
           <div className="space-y-2">
@@ -153,6 +217,14 @@ export default function Preferences() {
           </div>
         </Card>
       </div>
+
+      <TeamRoleForm
+        open={showRoleForm}
+        onClose={() => setShowRoleForm(false)}
+        onSaved={loadRolesList}
+        role={editingRole}
+        workspaceId={workspaceId}
+      />
     </div>
   );
 }

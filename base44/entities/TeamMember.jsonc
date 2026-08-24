@@ -1,0 +1,77 @@
+{
+  "name": "TeamMember",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "title": "Workspace ID"
+    },
+    "name": {
+      "type": "string",
+      "title": "Name"
+    },
+    "phone": {
+      "type": "string",
+      "title": "Phone"
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "title": "Email"
+    },
+    "role_id": {
+      "type": "string",
+      "title": "Role ID"
+    },
+    "profession": {
+      "type": "string",
+      "title": "Profession"
+    },
+    "default_rate": {
+      "type": "number",
+      "title": "Default Rate",
+      "default": 0
+    },
+    "rate_type": {
+      "type": "string",
+      "title": "Rate Type",
+      "default": "Per Event",
+      "enum": [
+        "Per Event",
+        "Per Day",
+        "Fixed"
+      ]
+    },
+    "notes": {
+      "type": "string",
+      "title": "Notes"
+    },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "default": "active",
+      "enum": [
+        "active",
+        "inactive"
+      ]
+    }
+  },
+  "required": [
+    "workspace_id",
+    "name"
+  ],
+  "rls": {
+    "read": {
+      "data.workspace_id": "{{user.data.active_workspace_id}}"
+    },
+    "create": {
+      "data.workspace_id": "{{user.data.active_workspace_id}}"
+    },
+    "update": {
+      "data.workspace_id": "{{user.data.active_workspace_id}}"
+    },
+    "delete": {
+      "data.workspace_id": "{{user.data.active_workspace_id}}"
+    }
+  }
+}

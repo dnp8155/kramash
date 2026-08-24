@@ -25,6 +25,7 @@ export default function AppLayout() {
   let title = titles[path] || "Kramashah";
   if (path.startsWith("/events/")) title = "Event Details";
   else if (path.startsWith("/clients/")) title = "Client Details";
+  else if (path.startsWith("/team/")) title = "Team Member";
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">

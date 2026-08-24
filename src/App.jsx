@@ -20,6 +20,7 @@ import EventDetails from '@/pages/EventDetails';
 import Clients from '@/pages/Clients';
 import ClientDetails from '@/pages/ClientDetails';
 import Team from '@/pages/Team';
+import TeamMemberDetails from '@/pages/TeamMemberDetails';
 import Financial from '@/pages/Financial';
 import RateEstimator from '@/pages/RateEstimator';
 import Quotation from '@/pages/Quotation';
@@ -76,6 +77,7 @@ const AuthenticatedApp = () => {
           <Route path="/clients" element={<Clients />} />
           <Route path="/clients/:id" element={<ClientDetails />} />
           <Route path="/team" element={<Team />} />
+          <Route path="/team/:id" element={<TeamMemberDetails />} />
           <Route path="/financial" element={<Financial />} />
           <Route path="/rate-estimator" element={<RateEstimator />} />
           <Route path="/quotation" element={<Quotation />} />

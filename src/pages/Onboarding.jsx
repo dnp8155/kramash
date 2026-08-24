@@ -56,6 +56,13 @@ export default function Onboarding() {
         role: "owner",
         status: "active"
       });
+      // Seed default team roles for the new workspace.
+      try {
+        const { DEFAULT_TEAM_ROLES } = await import("@/constants/teamConfig");
+        await base44.entities.TeamRole.bulkCreate(
+          DEFAULT_TEAM_ROLES.map((r) => ({ ...r, workspace_id: workspace.id, status: "active" }))
+        );
+      } catch (e) { /* non-fatal */ }
       setStep(4);
     } catch (err) {
       setError(err.message || "Failed to create workspace. Please try again.");
