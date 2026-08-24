@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useWorkspace } from "@/lib/WorkspaceContext";
+import { useAuth } from "@/lib/AuthContext";
 import TeamMemberCard from "@/components/team/TeamMemberCard";
 import TeamMemberForm from "@/components/team/TeamMemberForm";
 import AvailabilityCalendar from "@/components/team/AvailabilityCalendar";
@@ -22,6 +23,7 @@ const FREE_PLAN_LIMIT = 3;
 
 export default function Team() {
   const { workspaceId } = useWorkspace();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -30,6 +32,7 @@ export default function Team() {
   const [roles, setRoles] = useState([]);
   const [assignments, setAssignments] = useState([]);
   const [eventsById, setEventsById] = useState({});
+  const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -48,14 +51,16 @@ export default function Team() {
     try {
       // Ensure the workspace has default roles to start with.
       await ensureDefaultRoles(workspaceId);
-      const [membs, rles, asgns] = await Promise.all([
+      const [membs, rles, asgns, txns] = await Promise.all([
         loadTeamMembers(workspaceId),
         loadRoles(workspaceId),
-        loadAssignments(workspaceId)
+        loadAssignments(workspaceId),
+        base44.entities.FinancialTransaction.filter({ workspace_id: workspaceId, transaction_type: "TEAM_PAYMENT", status: "ACTIVE" }, "-transaction_date", 1000)
       ]);
       setMembers(membs);
       setRoles(rles);
       setAssignments(asgns);
+      setTransactions(txns || []);
       // Build eventsById from assignments' event_ids.
       const evIds = [...new Set(asgns.map((a) => a.event_id))];
       const evMap = {};
@@ -161,16 +166,16 @@ export default function Team() {
         <StatCard label="Roles" value={roles.filter((r) => r.status === "active").length} icon={Crown} tone="info" />
       </div>
 
-      <div className="flex items-center gap-1 border-b border-border w-full sm:w-auto">
+      <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-lg w-full sm:w-auto">
         {["Roster", "Availability Calendar"].map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
             className={cn(
-              "px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors",
+              "px-4 py-1.5 text-sm font-medium rounded-md transition-all whitespace-nowrap flex-1 sm:flex-initial",
               tab === t
-                ? "border-primary text-foreground"
-                : "border-transparent text-muted-foreground hover:text-foreground"
+                ? "bg-card text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
             )}
           >
             {t}
@@ -221,12 +226,14 @@ export default function Team() {
               />
             </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {filtered.map((m) => (
                 <TeamMemberCard
                   key={m.id}
                   member={m}
                   assignments={assignments}
+                  transactions={transactions}
+                  currentUser={user}
                   onEdit={openEdit}
                   onArchive={toggleArchive}
                   onDelete={(mem) => setConfirmDelete(mem)}
