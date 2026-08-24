@@ -70,12 +70,13 @@ export default function Onboarding() {
           DEFAULT_EXPENSE_CATEGORIES.map((n) => ({ workspace_id: workspace.id, name: n, status: "active" }))
         );
       } catch (e) { /* non-fatal */ }
-      // Seed default services for the new workspace.
+      // Initialize Free subscription + seed default services (via backend, enforces RLS).
       try {
         const { DEFAULT_SERVICES } = await import("@/constants/quotationConfig");
-        await base44.entities.Service.bulkCreate(
-          DEFAULT_SERVICES.map((s) => ({ ...s, workspace_id: workspace.id, status: "active" }))
-        );
+        await base44.functions.invoke("initWorkspaceSubscription", {
+          workspace_id: workspace.id,
+          default_services: DEFAULT_SERVICES
+        });
       } catch (e) { /* non-fatal */ }
       setStep(4);
     } catch (err) {

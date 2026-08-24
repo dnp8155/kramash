@@ -87,6 +87,15 @@ export default function Sidebar({ mobile = false, onClose }) {
 
       {/* Footer */}
       <div className="px-2 py-2">
+        {user?.role === "admin" && (
+          <NavLink
+            to="/admin"
+            className="flex items-center gap-2 px-3 py-2 rounded-md text-xs text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-hover transition-colors"
+          >
+            <Settings className="w-3.5 h-3.5" />
+            SaaS Admin
+          </NavLink>
+        )}
         <NavLink
           to="/app-updates"
           className="flex items-center gap-2 px-3 py-2 rounded-md text-xs text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-hover transition-colors"

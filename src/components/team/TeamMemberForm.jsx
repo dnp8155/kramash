@@ -94,12 +94,20 @@ export default function TeamMemberForm({ open, onClose, onSaved, member = null, 
       if (member?.id) {
         saved = await base44.entities.TeamMember.update(member.id, payload);
       } else {
-        saved = await base44.entities.TeamMember.create(payload);
+        const res = await base44.functions.invoke("createTeamMember", payload);
+        saved = res.data;
       }
       onSaved?.(saved);
       onClose?.();
     } catch (err) {
-      setError(err?.message || "Failed to save team member. Please try again.");
+      const data = err?.response?.data || err;
+      if (data?.error === "PLAN_LIMIT_REACHED") {
+        setError(`Your Free Plan team limit has been reached (${data.current}/${data.limit}). Upgrade to Pro to add more team members.`);
+      } else if (data?.error === "This workspace is suspended. Please contact support.") {
+        setError(data.error);
+      } else {
+        setError(err?.message || "Failed to save team member. Please try again.");
+      }
     } finally {
       setSaving(false);
     }

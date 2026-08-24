@@ -29,6 +29,12 @@ import SignPdf from '@/pages/SignPdf';
 import Preferences from '@/pages/Preferences';
 import AppUpdates from '@/pages/AppUpdates';
 import YourPlan from '@/pages/YourPlan';
+import AdminRoute from '@/components/admin/AdminRoute';
+import AdminLayout from '@/components/admin/AdminLayout';
+import AdminDashboard from '@/pages/admin/AdminDashboard';
+import AdminWorkspaces from '@/pages/admin/AdminWorkspaces';
+import AdminWorkspaceDetails from '@/pages/admin/AdminWorkspaceDetails';
+import AdminPlans from '@/pages/admin/AdminPlans';
 // Add page imports here
 
 const AuthenticatedApp = () => {
@@ -88,6 +94,16 @@ const AuthenticatedApp = () => {
           <Route path="/preferences" element={<Preferences />} />
           <Route path="/app-updates" element={<AppUpdates />} />
           <Route path="/plan" element={<YourPlan />} />
+        </Route>
+      </Route>
+
+      {/* SaaS Admin — platform-level, separate from workspace app */}
+      <Route element={<AdminRoute />}>
+        <Route element={<AdminLayout />}>
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/workspaces" element={<AdminWorkspaces />} />
+          <Route path="/admin/workspaces/:id" element={<AdminWorkspaceDetails />} />
+          <Route path="/admin/plans" element={<AdminPlans />} />
         </Route>
       </Route>
 

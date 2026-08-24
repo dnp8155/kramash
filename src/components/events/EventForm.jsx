@@ -85,12 +85,20 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
       if (event?.id) {
         saved = await base44.entities.Event.update(event.id, payload);
       } else {
-        saved = await base44.entities.Event.create(payload);
+        const res = await base44.functions.invoke("createEvent", payload);
+        saved = res.data;
       }
       onSaved?.(saved);
       onClose?.();
     } catch (err) {
-      setError(err?.message || "Failed to save event. Please try again.");
+      const data = err?.response?.data || err;
+      if (data?.error === "PLAN_LIMIT_REACHED") {
+        setError(`You've reached the Free Plan event limit (${data.current}/${data.limit}). Upgrade to Pro to create more events.`);
+      } else if (data?.error === "This workspace is suspended. Please contact support.") {
+        setError(data.error);
+      } else {
+        setError(err?.message || "Failed to save event. Please try again.");
+      }
     } finally {
       setSaving(false);
     }
