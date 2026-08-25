@@ -137,3 +137,55 @@ export async function verifyStripePaymentIntent(paymentIntentId, secretKey) {
   }
   return await res.json();
 }
+
+// Verify a Razorpay payment signature.
+// Razorpay generates: HMAC-SHA256(order_id + "|" + payment_id, key_secret)
+export function verifyRazorpaySignature(orderId, paymentId, signature, keySecret) {
+  if (!orderId || !paymentId || !signature || !keySecret) {
+    throw new Error("Missing Razorpay signature parameters");
+  }
+  const body = `${orderId}|${paymentId}`;
+  const expectedSignature = crypto
+    .createHmac("sha256", keySecret)
+    .update(body, "utf8")
+    .digest("hex");
+
+  const expected = Buffer.from(expectedSignature, "utf8");
+  const actual = Buffer.from(signature, "utf8");
+  if (expected.length !== actual.length || !crypto.timingSafeEqual(expected, actual)) {
+    throw new Error("Razorpay signature verification failed");
+  }
+  return true;
+}
+
+// Fetch a Razorpay payment by ID (to verify status server-side).
+export async function verifyRazorpayPayment(paymentId, keyId, keySecret) {
+  const auth = Buffer.from(`${keyId}:${keySecret}`).toString("base64");
+  const res = await fetch(`https://api.razorpay.com/v1/payments/${paymentId}`, {
+    headers: { Authorization: `Basic ${auth}` }
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Razorpay API error: ${err}`);
+  }
+  return await res.json();
+}
+
+// Verify a Razorpay webhook signature.
+// X-Razorpay-Signature = HMAC-SHA256(rawBody, webhookSecret)
+export function verifyRazorpayWebhookSignature(rawBody, signature, webhookSecret) {
+  if (!signature || !webhookSecret) {
+    throw new Error("Missing Razorpay webhook signature or secret");
+  }
+  const expectedSignature = crypto
+    .createHmac("sha256", webhookSecret)
+    .update(rawBody, "utf8")
+    .digest("hex");
+
+  const expected = Buffer.from(expectedSignature, "utf8");
+  const actual = Buffer.from(signature, "utf8");
+  if (expected.length !== actual.length || !crypto.timingSafeEqual(expected, actual)) {
+    throw new Error("Razorpay webhook signature verification failed");
+  }
+  return true;
+}

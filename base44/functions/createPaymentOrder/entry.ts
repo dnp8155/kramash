@@ -1,13 +1,14 @@
 // createPaymentOrder backend function.
-// Creates a Stripe Checkout Session for Pro subscription purchase.
+// Creates a Razorpay order for Pro subscription purchase.
 //
 // SECURITY:
 // - Amount comes from the trusted PlanPricing record in the database — never from the client.
 // - Verifies the caller is a member of the workspace.
 // - Verifies the pricing is active and belongs to the Pro plan.
-// - Stripe secret key is read from process.env.STRIPE_SECRET_KEY (app secret).
+// - Razorpay key_id and key_secret are read from process.env.
 //
-// If Stripe is not configured, returns a clear "not configured" error.
+// If Razorpay is not configured, returns a clear "not configured" error.
+// If check_only is true, just reports whether the gateway is configured without creating an order.
 
 import { verifyWorkspaceMembership } from "../../shared/planEngine.ts";
 
@@ -20,19 +21,25 @@ export default async function (req) {
     if (!user) return Response.json({ error: "Authentication required" }, { status: 401 });
 
     const body = await req.json();
-    const { workspace_id, pricing_id } = body;
+    const { workspace_id, pricing_id, check_only } = body;
 
     if (!workspace_id || !pricing_id) {
       return Response.json({ error: "workspace_id and pricing_id are required" }, { status: 400 });
     }
 
-    // Check if Stripe is configured.
-    const secretKey = process.env.STRIPE_SECRET_KEY;
-    if (!secretKey) {
+    // Check if Razorpay is configured.
+    const keyId = process.env.RAZORPAY_KEY_ID;
+    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    if (!keyId || !keySecret) {
       return Response.json(
         { error: "Online payment is not yet available. Please use the Request Upgrade option or contact support.", gatewayStatus: "pending" },
         { status: 503 }
       );
+    }
+
+    // If just checking availability, return now without creating an order.
+    if (check_only) {
+      return Response.json({ ok: true, configured: true });
     }
 
     // Verify workspace membership.
@@ -54,39 +61,34 @@ export default async function (req) {
       return Response.json({ error: "Selected pricing is not a Pro plan option." }, { status: 400 });
     }
 
-    // Determine the origin for success/cancel URLs.
-    const origin = new URL(req.url).origin;
-    const successUrl = `${origin}/plan?payment=success&session_id={CHECKOUT_SESSION_ID}`;
-    const cancelUrl = `${origin}/plan?payment=cancelled`;
-
-    // Create Stripe Checkout Session.
-    const sessionRes = await fetch("https://api.stripe.com/v1/checkout/sessions", {
+    // Create Razorpay order.
+    const auth = Buffer.from(`${keyId}:${keySecret}`).toString("base64");
+    const amountInPaise = Math.round(pricing.price * 100);
+    const orderRes = await fetch("https://api.razorpay.com/v1/orders", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${secretKey}`,
-        "Content-Type": "application/x-www-form-urlencoded"
+        Authorization: `Basic ${auth}`,
+        "Content-Type": "application/json"
       },
-      body: new URLSearchParams({
-        mode: "payment",
-        "line_items[0][price_data][currency]": (pricing.currency || "INR").toLowerCase(),
-        "line_items[0][price_data][unit_amount]": String(Math.round(pricing.price * 100)),
-        "line_items[0][price_data][product_data][name]": `Kramashah Pro — ${pricing.billing_cycle}`,
-        "line_items[0][quantity]": "1",
-        "metadata[workspace_id]": workspace_id,
-        "metadata[pricing_id]": pricing_id,
-        "metadata[plan_id]": proPlan.id,
-        "metadata[user_id]": user.id,
-        success_url: successUrl,
-        cancel_url: cancelUrl
+      body: JSON.stringify({
+        amount: amountInPaise,
+        currency: pricing.currency || "INR",
+        receipt: `rcpt_${Date.now()}`,
+        notes: {
+          workspace_id,
+          pricing_id,
+          plan_id: proPlan.id,
+          user_id: user.id
+        }
       })
     });
 
-    if (!sessionRes.ok) {
-      const err = await sessionRes.text();
-      return Response.json({ error: "Failed to create payment session. Please try again.", details: err }, { status: 502 });
+    if (!orderRes.ok) {
+      const err = await orderRes.text();
+      return Response.json({ error: "Failed to create payment order. Please try again.", details: err }, { status: 502 });
     }
 
-    const session = await sessionRes.json();
+    const order = await orderRes.json();
 
     // Create a SubscriptionPayment record with status CREATED.
     const payment = await base44.asServiceRole.entities.SubscriptionPayment.create({
@@ -95,16 +97,16 @@ export default async function (req) {
       pricing_id: pricing.id,
       amount: pricing.price,
       currency: pricing.currency || "INR",
-      gateway: "stripe",
-      gateway_order_id: session.id,
+      gateway: "razorpay",
+      gateway_order_id: order.id,
       billing_cycle_snapshot: pricing.billing_cycle,
       status: "CREATED"
     });
 
     return Response.json({
       ok: true,
-      checkout_url: session.url,
-      session_id: session.id,
+      order_id: order.id,
+      key_id: keyId,
       payment_id: payment.id,
       amount: pricing.price,
       currency: pricing.currency || "INR"

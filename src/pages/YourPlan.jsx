@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
 import { Crown, Check, Loader2, Lock, CreditCard, AlertCircle } from "lucide-react";
 import Button from "@/components/common/Button";
 import { useWorkspace } from "@/lib/WorkspaceContext";
@@ -8,7 +7,7 @@ import { base44 } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
 import { PLAN_UNLIMITED } from "@/lib/planService";
-import { createPaymentOrder, verifyPayment } from "@/lib/paymentService";
+import { createPaymentOrder, verifyPayment, openRazorpayCheckout } from "@/lib/paymentService";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
 
 const BILLING_LABELS = { MONTHLY: "Monthly", SIX_MONTHS: "6 Months", ANNUAL: "Annual" };
@@ -27,10 +26,8 @@ export default function YourPlan() {
   const { plan, usage, loading, reload } = usePlan();
   const { toast } = useToast();
   const term = useBusinessTerminology();
-  const [searchParams, setSearchParams] = useSearchParams();
   const [requesting, setRequesting] = useState(null);
   const [paying, setPaying] = useState(null);
-  const [verifying, setVerifying] = useState(false);
   const [gatewayAvailable, setGatewayAvailable] = useState(null); // null = unknown, true/false
 
   const isPro = plan?.planCode === "PRO" && !plan?.isExpired;
@@ -48,14 +45,12 @@ export default function YourPlan() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await createPaymentOrder(workspace.id, proPricings[0].id);
+        const res = await createPaymentOrder(workspace.id, proPricings[0].id, true);
         if (!cancelled) {
-          if (res?.gatewayStatus === "pending") {
-            setGatewayAvailable(false);
-          } else if (res?.checkout_url) {
-            // Gateway works but we created a real session — cancel it by not using it.
-            // Actually, we should not create a session just to check. Let's just set true.
+          if (res?.configured) {
             setGatewayAvailable(true);
+          } else {
+            setGatewayAvailable(false);
           }
         }
       } catch (e) {
@@ -71,37 +66,6 @@ export default function YourPlan() {
     })();
     return () => { cancelled = true; };
   }, [isPro, workspace?.id, gatewayAvailable, proPricings.length]);
-
-  // Handle payment redirect (success or cancelled).
-  useEffect(() => {
-    const status = searchParams.get("payment");
-    const sessionId = searchParams.get("session_id");
-    if (status === "success" && sessionId) {
-      setVerifying(true);
-      verifyPayment(sessionId)
-        .then((res) => {
-          if (res?.ok) {
-            toast({ title: "Pro activated!", description: "Your subscription is now active." });
-            reload();
-          } else {
-            toast({ title: "Payment verification failed", description: res?.error || "Please contact support.", variant: "destructive" });
-          }
-        })
-        .catch((e) => {
-          toast({ title: "Payment verification failed", description: e?.message, variant: "destructive" });
-        })
-        .finally(() => {
-          setVerifying(false);
-          searchParams.delete("payment");
-          searchParams.delete("session_id");
-          setSearchParams(searchParams, { replace: true });
-        });
-    } else if (status === "cancelled") {
-      toast({ title: "Payment cancelled", description: "Your plan remains unchanged." });
-      searchParams.delete("payment");
-      setSearchParams(searchParams, { replace: true });
-    }
-  }, [searchParams]);
 
   const submitUpgradeRequest = async (pricingId) => {
     setRequesting(pricingId);
@@ -122,28 +86,53 @@ export default function YourPlan() {
     setPaying(pricingId);
     try {
       const res = await createPaymentOrder(workspace.id, pricingId);
-      if (res?.checkout_url) {
-        window.location.href = res.checkout_url;
-      } else {
+      if (!res?.order_id) {
         setGatewayAvailable(false);
         toast({ title: "Online payment unavailable", description: "Please use Request Upgrade instead.", variant: "destructive" });
+        return;
+      }
+      const paymentResponse = await openRazorpayCheckout({
+        orderId: res.order_id,
+        keyId: res.key_id,
+        amount: res.amount,
+        currency: res.currency,
+        name: workspace?.name || "Kramashah",
+        prefill: {
+          name: workspace?.name || "",
+          email: workspace?.email || "",
+          contact: workspace?.phone || ""
+        }
+      });
+      const verifyRes = await verifyPayment(
+        paymentResponse.razorpay_order_id,
+        paymentResponse.razorpay_payment_id,
+        paymentResponse.razorpay_signature
+      );
+      if (verifyRes?.ok) {
+        toast({ title: "Pro activated!", description: "Your subscription is now active." });
+        reload();
+      } else {
+        toast({ title: "Payment verification failed", description: verifyRes?.error || "Please contact support.", variant: "destructive" });
       }
     } catch (e) {
       const msg = e?.message || "";
       if (msg.includes("not yet available") || msg.includes("not configured")) {
         setGatewayAvailable(false);
+      } else if (msg === "Payment cancelled") {
+        toast({ title: "Payment cancelled", description: "Your plan remains unchanged." });
+      } else {
+        toast({ title: "Could not complete payment", description: msg, variant: "destructive" });
       }
-      toast({ title: "Could not start payment", description: msg, variant: "destructive" });
     } finally {
       setPaying(null);
     }
   };
 
-  if (loading || verifying) {
+  if (loading) {
     return (
       <div className="p-6 max-w-[900px] mx-auto flex items-center justify-center gap-2">
         <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-        <span className="text-sm text-muted-foreground">{verifying ? "Verifying payment…" : "Loading…"}</span>
+        <span className="text-sm text-muted-foreground">Loading…</span>
       </div>
     );
   }

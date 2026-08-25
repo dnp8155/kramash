@@ -1,12 +1,12 @@
 // verifyPayment backend function.
-// Verifies a Stripe Checkout Session and activates Pro if payment succeeded.
+// Verifies a Razorpay payment signature and activates Pro if payment succeeded.
 //
-// This is called by the client after redirecting back from Stripe checkout.
-// It re-verifies with the Stripe API — never trusts the client's claim of success.
+// This is called by the client after the Razorpay checkout modal closes.
+// It verifies the signature server-side — never trusts the client's claim of success.
 //
 // Idempotent: if the payment was already verified, returns the existing subscription.
 
-import { verifyStripeSession, activateProFromPayment, markPaymentFailed } from "../../shared/paymentEngine.ts";
+import { verifyRazorpaySignature, verifyRazorpayPayment, activateProFromPayment, markPaymentFailed } from "../../shared/paymentEngine.ts";
 
 export default async function (req) {
   try {
@@ -17,24 +17,28 @@ export default async function (req) {
     if (!user) return Response.json({ error: "Authentication required" }, { status: 401 });
 
     const body = await req.json();
-    const { session_id } = body;
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = body;
 
-    if (!session_id) {
-      return Response.json({ error: "Session ID is required." }, { status: 400 });
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+      return Response.json({ error: "razorpay_order_id, razorpay_payment_id, and razorpay_signature are required." }, { status: 400 });
     }
 
-    const secretKey = process.env.STRIPE_SECRET_KEY;
-    if (!secretKey) {
+    const keyId = process.env.RAZORPAY_KEY_ID;
+    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    if (!keyId || !keySecret) {
       return Response.json({ error: "Payment gateway is not configured." }, { status: 503 });
     }
 
-    // Find the payment record by session ID.
+    // Verify the Razorpay signature.
+    verifyRazorpaySignature(razorpay_order_id, razorpay_payment_id, razorpay_signature, keySecret);
+
+    // Find the payment record by order ID.
     const payments = await base44.asServiceRole.entities.SubscriptionPayment.filter({
-      gateway_order_id: session_id
+      gateway_order_id: razorpay_order_id
     });
     const payment = (payments && payments[0]) || null;
     if (!payment) {
-      return Response.json({ error: "Payment record not found for this session." }, { status: 404 });
+      return Response.json({ error: "Payment record not found for this order." }, { status: 404 });
     }
 
     // Idempotency: already verified.
@@ -42,33 +46,31 @@ export default async function (req) {
       return Response.json({ ok: true, alreadyVerified: true, subscription_id: payment.subscription_id });
     }
 
-    // Verify with Stripe API.
-    const session = await verifyStripeSession(session_id, secretKey);
-
-    if (session.payment_status === "paid") {
-      // Get pricing and plan from DB.
-      const pricing = await base44.asServiceRole.entities.PlanPricing.get(payment.pricing_id);
-      const proPlans = await base44.asServiceRole.entities.Plan.filter({ code: "PRO" });
-      const proPlan = (proPlans && proPlans[0]) || null;
-
-      if (!pricing || !proPlan) {
-        await markPaymentFailed(base44, payment.id, "Pricing or plan configuration missing");
-        return Response.json({ error: "Plan configuration error. Please contact support." }, { status: 500 });
-      }
-
-      // Update payment with gateway payment ID.
-      await base44.asServiceRole.entities.SubscriptionPayment.update(payment.id, {
-        gateway_payment_id: session.payment_intent || ""
-      });
-
-      // Activate Pro.
-      const result = await activateProFromPayment(base44, { ...payment, gateway_payment_id: session.payment_intent || "" }, pricing, proPlan);
-      return Response.json({ ok: true, activated: true, ...result });
-    } else {
-      // Payment not completed.
-      await markPaymentFailed(base44, payment.id, `Payment status: ${session.payment_status}`);
-      return Response.json({ ok: false, error: "Payment was not completed.", status: session.payment_status }, { status: 400 });
+    // Double-check payment status with Razorpay API.
+    const razorpayPayment = await verifyRazorpayPayment(razorpay_payment_id, keyId, keySecret);
+    if (razorpayPayment.status !== "captured") {
+      await markPaymentFailed(base44, payment.id, `Razorpay status: ${razorpayPayment.status}`);
+      return Response.json({ ok: false, error: "Payment was not completed.", status: razorpayPayment.status }, { status: 400 });
     }
+
+    // Get pricing and plan from DB.
+    const pricing = await base44.asServiceRole.entities.PlanPricing.get(payment.pricing_id);
+    const proPlans = await base44.asServiceRole.entities.Plan.filter({ code: "PRO" });
+    const proPlan = (proPlans && proPlans[0]) || null;
+
+    if (!pricing || !proPlan) {
+      await markPaymentFailed(base44, payment.id, "Pricing or plan configuration missing");
+      return Response.json({ error: "Plan configuration error. Please contact support." }, { status: 500 });
+    }
+
+    // Update payment with gateway payment ID.
+    await base44.asServiceRole.entities.SubscriptionPayment.update(payment.id, {
+      gateway_payment_id: razorpay_payment_id
+    });
+
+    // Activate Pro.
+    const result = await activateProFromPayment(base44, { ...payment, gateway_payment_id: razorpay_payment_id }, pricing, proPlan);
+    return Response.json({ ok: true, activated: true, ...result });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
