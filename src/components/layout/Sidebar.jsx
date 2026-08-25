@@ -1,27 +1,23 @@
-import { NavLink, useNavigate } from "react-router-dom";
-import { mainNav, moreNav } from "@/constants/navigation";
+import { useState } from "react";
+import { NavLink, useLocation } from "react-router-dom";
+import { mainNav, moreNav, moreGroup } from "@/constants/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { useWorkspace } from "@/lib/WorkspaceContext";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
 import { categoryLabel } from "@/lib/businessTerminology";
-import { ChevronLeft, X, Settings, LogOut, Gem } from "lucide-react";
+import { ChevronDown, ChevronUp, Settings, Info, X, ChevronLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { base44 } from "@/api/base44Client";
-
-// Split moreNav into tool-based and settings-based groups.
-const TOOL_PATHS = ["/rate-estimator", "/quotation", "/sign-pdf"];
-const SETTING_PATHS = ["/preferences", "/app-updates", "/plan"];
 
 export default function Sidebar({ mobile = false, onClose, onToggleSidebar }) {
-  const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const { workspace } = useWorkspace();
   const term = useBusinessTerminology();
+  const moreActive = moreNav.some((item) => location.pathname === item.path);
+  const [moreOpen, setMoreOpen] = useState(moreActive);
 
+  // Resolve a dynamic label for a nav item (Events -> Projects for Architecture/Other).
   const navLabel = (item) => (item.path === "/events" ? term.workItemPlural : item.label);
-
-  const toolsNav = moreNav.filter((item) => TOOL_PATHS.includes(item.path));
-  const settingsNav = moreNav.filter((item) => SETTING_PATHS.includes(item.path));
 
   const itemClass = ({ isActive }) =>
     cn(
@@ -31,10 +27,18 @@ export default function Sidebar({ mobile = false, onClose, onToggleSidebar }) {
         : "text-muted-foreground hover:bg-muted hover:text-foreground"
     );
 
-  const renderItem = (item) => {
+  const subItemClass = ({ isActive }) =>
+    cn(
+      "relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
+      isActive
+        ? "bg-success/10 text-foreground font-medium"
+        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+    );
+
+  const renderItem = (item, cls = itemClass) => {
     const Icon = item.icon;
     return (
-      <NavLink key={item.path} to={item.path} className={itemClass}>
+      <NavLink key={item.path} to={item.path} className={cls}>
         {({ isActive }) => (
           <>
             {isActive && (
@@ -46,10 +50,6 @@ export default function Sidebar({ mobile = false, onClose, onToggleSidebar }) {
         )}
       </NavLink>
     );
-  };
-
-  const handleLogout = async () => {
-    await base44.auth.logout();
   };
 
   return (
@@ -85,84 +85,61 @@ export default function Sidebar({ mobile = false, onClose, onToggleSidebar }) {
       <div className="h-px bg-border" />
 
       {/* Nav */}
-      <nav className="flex-1 overflow-y-auto scrollbar-thin px-3 py-3 space-y-4">
-        {/* MANAGE section */}
-        <div className="space-y-1">
-          <div className="px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-1">
-            Manage
-          </div>
-          {mainNav.map(renderItem)}
-        </div>
+      <nav className="flex-1 overflow-y-auto scrollbar-thin px-3 py-3 space-y-1">
+        {mainNav.map((item) => renderItem(item))}
 
-        {/* TOOLS section */}
-        <div className="space-y-1">
-          <div className="px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-1">
-            Tools
-          </div>
-          {toolsNav.map(renderItem)}
-        </div>
+        <button
+          onClick={() => setMoreOpen((v) => !v)}
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+        >
+          <moreGroup.icon className="w-4 h-4 shrink-0" />
+          <span className="flex-1 text-left">{moreGroup.label}</span>
+          {moreOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+        </button>
 
-        {/* Pro CTA card */}
-        <div className="px-1">
-          <div className="rounded-xl bg-card border border-border shadow-card p-3 space-y-2.5">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-success/10 flex items-center justify-center shrink-0">
-                <Gem className="w-4 h-4 text-success" />
-              </div>
-              <div className="min-w-0">
-                <div className="text-sm font-semibold text-foreground leading-tight">Upgrade to Pro</div>
-                <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Kramashah Pro</div>
-              </div>
-            </div>
-            <button
-              onClick={() => navigate("/plan")}
-              className="w-full h-8 rounded-lg bg-foreground text-background text-xs font-medium hover:opacity-90 transition-opacity"
-            >
-              Start Today
-            </button>
+        {moreOpen && (
+          <div className="space-y-1 pl-3 border-l border-border ml-3">
+            {moreNav.map((item) => renderItem(item, subItemClass))}
           </div>
-        </div>
-
-        {/* SETTINGS section */}
-        <div className="space-y-1">
-          <div className="px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-1">
-            Settings
-          </div>
-          {settingsNav.map(renderItem)}
-          {user?.role === "admin" && (
-            <NavLink to="/admin" className={itemClass}>
-              {({ isActive }) => (
-                <>
-                  {isActive && (
-                    <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-1 rounded-r-full bg-success" />
-                  )}
-                  <Settings className="w-4 h-4 shrink-0" />
-                  <span>SaaS Admin</span>
-                </>
-              )}
-            </NavLink>
-          )}
-        </div>
+        )}
       </nav>
 
-      {/* User profile */}
-      <div className="border-t border-border px-3 py-3">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground font-semibold text-sm shrink-0">
-            {(user?.full_name || user?.email || "K").charAt(0).toUpperCase()}
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-sm font-semibold truncate">{user?.full_name || "User"}</div>
-            <div className="text-xs text-muted-foreground truncate">{user?.email || workspace?.name || "—"}</div>
-          </div>
-          <button
-            onClick={handleLogout}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
-            aria-label="Logout"
+      {/* Footer */}
+      <div className="px-3 py-2 space-y-1">
+        {user?.role === "admin" && (
+          <NavLink
+            to="/admin"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
           >
-            <LogOut className="w-4 h-4" />
-          </button>
+            <Settings className="w-3.5 h-3.5" />
+            SaaS Admin
+          </NavLink>
+        )}
+        <NavLink
+          to="/app-updates"
+          className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+        >
+          <Info className="w-3.5 h-3.5" />
+          About & Legal
+        </NavLink>
+      </div>
+
+      <div className="h-px bg-border" />
+
+      <div className="flex items-center gap-3 px-3 py-3">
+        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground font-semibold text-sm shrink-0">
+          {(user?.full_name || user?.email || "K").charAt(0).toUpperCase()}
         </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-sm font-medium truncate">{user?.full_name || "User"}</div>
+          <div className="text-xs text-muted-foreground truncate">{workspace?.name || "—"}</div>
+        </div>
+        <button
+          className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
+          aria-label="Settings"
+        >
+          <Settings className="w-4 h-4" />
+        </button>
       </div>
     </div>
   );
