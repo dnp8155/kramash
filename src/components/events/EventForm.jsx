@@ -12,15 +12,18 @@ import { EVENT_STATUS, EVENT_STATUS_ORDER } from "@/constants/statusConfig";
 import ClientForm from "@/components/clients/ClientForm";
 import { Plus } from "lucide-react";
 
-const EVENT_TYPES = ["Wedding", "Pre-Wedding", "Reception", "Engagement", "Haldi", "Mehndi", "Birthday", "Corporate", "Portfolio", "Other"];
+const PHOTO_EVENT_TYPES = ["Wedding", "Pre-Wedding", "Reception", "Engagement", "Haldi", "Mehndi", "Birthday", "Corporate", "Portfolio", "Other"];
+const GENERIC_WORK_TYPES = ["Project", "Assignment", "Consultation", "Site Visit", "Contract", "Other"];
 
 const empty = {
-  client_id: "", title: "", event_type: "Wedding",
+  client_id: "", title: "", event_type: "",
   start_date: "", end_date: "", venue: "", venue_address: "",
   status: "upcoming", contract_value: 0, description: "", notes: ""
 };
 
-export default function EventForm({ open, onClose, onSaved, event = null, workspaceId }) {
+export default function EventForm({ open, onClose, onSaved, event = null, workspaceId, term }) {
+  const t = term || {};
+  const workTypes = t.category === "ARCHITECTURE" || t.category === "OTHER" ? GENERIC_WORK_TYPES : PHOTO_EVENT_TYPES;
   const [form, setForm] = useState(empty);
   const [clients, setClients] = useState([]);
   const [loadingClients, setLoadingClients] = useState(false);
@@ -138,9 +141,9 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label>Event Type</Label>
+                <Label>{t.workItemTypeLabel || "Event Type"}</Label>
                 <Select value={form.event_type} onChange={(e) => set("event_type", e.target.value)} className="w-full">
-                  {EVENT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                  {workTypes.map((wt) => <option key={wt} value={wt}>{wt}</option>)}
                 </Select>
               </div>
               <div className="space-y-1.5">

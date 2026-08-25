@@ -6,27 +6,29 @@ import MobileNavigation from "@/components/layout/MobileNavigation";
 import ErrorBoundary from "@/components/common/ErrorBoundary";
 import OfflineBanner from "@/components/common/OfflineBanner";
 import UpdateBanner from "@/components/common/UpdateBanner";
-
-const titles = {
-  "/events": "Events",
-  "/clients": "Clients",
-  "/team": "Team",
-  "/financial": "Payment Activity",
-  "/rate-estimator": "Rate Estimator",
-  "/quotation": "Quotation & Agreement",
-  "/sign-pdf": "Sign a PDF",
-  "/preferences": "Preferences",
-  "/app-updates": "App & Updates",
-  "/plan": "Your Plan"
-};
+import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
 
 export default function AppLayout() {
   const location = useLocation();
+  const term = useBusinessTerminology();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const path = location.pathname;
+
+  const titles = {
+    "/events": term.workItemPlural,
+    "/clients": "Clients",
+    "/team": term.teamLabel,
+    "/financial": "Payment Activity",
+    "/rate-estimator": "Rate Estimator",
+    "/quotation": "Quotation & Agreement",
+    "/sign-pdf": "Sign a PDF",
+    "/preferences": "Preferences",
+    "/app-updates": "App & Updates",
+    "/plan": "Your Plan"
+  };
   let title = titles[path] || "Kramashah";
-  if (path.startsWith("/events/")) title = "Event Details";
+  if (path.startsWith("/events/")) title = term.workItemDetailsLabel;
   else if (path.startsWith("/clients/")) title = "Client Details";
   else if (path.startsWith("/team/")) title = "Team Member";
 

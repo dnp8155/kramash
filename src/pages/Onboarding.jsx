@@ -5,12 +5,21 @@ import { useAuth } from "@/lib/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Check, Building2, MapPin, Receipt, PartyPopper } from "lucide-react";
-import { businessTypes } from "@/constants/preferencesConfig";
+import { Loader2, Check, Building2, MapPin, Receipt, PartyPopper, Camera, PartyPopper as PartyIcon, Briefcase, Compass } from "lucide-react";
+import { BUSINESS_CATEGORIES, BUSINESS_CATEGORY_OPTIONS, categoryLabel } from "@/lib/businessTerminology";
+import { getIndustryPresets } from "@/constants/industryPresets";
+import { DEFAULT_EXPENSE_CATEGORIES } from "@/constants/financeConfig";
 
 const currencies = ["INR (₹)", "USD ($)", "EUR (€)", "AED (د.إ)"];
 const timezones = ["Asia/Kolkata", "UTC", "Asia/Dubai", "America/New_York"];
 const gstRates = [0, 5, 12, 18, 28];
+
+const CATEGORY_ICONS = {
+  PHOTOGRAPHY: Camera,
+  EVENT_MANAGEMENT: PartyIcon,
+  ARCHITECTURE: Building2,
+  OTHER: Briefcase
+};
 
 export default function Onboarding() {
   const { user } = useAuth();
@@ -22,7 +31,9 @@ export default function Onboarding() {
 
   const [form, setForm] = useState({
     name: "",
-    business_type: "Photography",
+    business_category: "",
+    custom_business_type: "",
+    business_type: "",
     phone: "",
     email: user?.email || "",
     city: "",
@@ -44,8 +55,14 @@ export default function Onboarding() {
     setSaving(true);
     setError("");
     try {
+      const category = form.business_category || BUSINESS_CATEGORIES.OTHER;
+      const businessType = category === BUSINESS_CATEGORIES.OTHER
+        ? (form.custom_business_type || "Other")
+        : categoryLabel(category);
       const workspace = await base44.entities.Workspace.create({
         ...form,
+        business_category: category,
+        business_type: businessType,
         owner_user_id: user.id,
         plan_type: "free",
         plan_status: "active"
@@ -56,29 +73,30 @@ export default function Onboarding() {
         role: "owner",
         status: "active"
       });
-      // Seed default team roles for the new workspace.
+      // Seed industry-specific team roles for the new workspace.
       try {
-        const { DEFAULT_TEAM_ROLES } = await import("@/constants/teamConfig");
-        await base44.entities.TeamRole.bulkCreate(
-          DEFAULT_TEAM_ROLES.map((r) => ({ ...r, workspace_id: workspace.id, status: "active" }))
-        );
+        const presets = getIndustryPresets(category);
+        if (presets.roles.length > 0) {
+          await base44.entities.TeamRole.bulkCreate(
+            presets.roles.map((r) => ({ ...r, workspace_id: workspace.id, status: "active" }))
+          );
+        }
       } catch (e) { /* non-fatal */ }
       // Seed default expense categories for the new workspace.
       try {
-        const { DEFAULT_EXPENSE_CATEGORIES } = await import("@/constants/financeConfig");
         await base44.entities.ExpenseCategory.bulkCreate(
           DEFAULT_EXPENSE_CATEGORIES.map((n) => ({ workspace_id: workspace.id, name: n, status: "active" }))
         );
       } catch (e) { /* non-fatal */ }
-      // Initialize Free subscription + seed default services (via backend, enforces RLS).
+      // Initialize Free subscription + seed category-specific services (via backend, enforces RLS).
       try {
-        const { DEFAULT_SERVICES } = await import("@/constants/quotationConfig");
+        const presets = getIndustryPresets(category);
         await base44.functions.invoke("initWorkspaceSubscription", {
           workspace_id: workspace.id,
-          default_services: DEFAULT_SERVICES
+          default_services: presets.services
         });
       } catch (e) { /* non-fatal */ }
-      setStep(4);
+      setStep(5);
     } catch (err) {
       setError(err.message || "Failed to create workspace. Please try again.");
     } finally {
@@ -88,15 +106,16 @@ export default function Onboarding() {
 
   const enterApp = () => navigate("/events");
 
-  const canNext1 = form.name.trim() && form.business_type;
-  const canNext2 = form.city.trim() && form.country;
+  const canNext1 = !!form.business_category && (form.business_category !== BUSINESS_CATEGORIES.OTHER || form.custom_business_type.trim());
+  const canNext2 = form.name.trim();
+  const canNext3 = form.city.trim() && form.country;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 py-8">
       <div className="w-full max-w-lg">
         {/* Stepper */}
         <div className="flex items-center justify-between mb-8">
-          {[1, 2, 3].map((s) => (
+          {[1, 2, 3, 4].map((s) => (
             <div key={s} className="flex items-center flex-1 last:flex-none">
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
@@ -105,7 +124,7 @@ export default function Onboarding() {
               >
                 {step > s ? <Check className="w-4 h-4" /> : s}
               </div>
-              {s < 3 && (
+              {s < 4 && (
                 <div className={`h-0.5 flex-1 mx-2 ${step > s ? "bg-primary" : "bg-muted"}`} />
               )}
             </div>
@@ -118,18 +137,55 @@ export default function Onboarding() {
           )}
 
           {step === 1 && (
+            <StepShell icon={Compass} title="What type of business do you run?" subtitle="Choose your industry — you can change this later.">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {BUSINESS_CATEGORY_OPTIONS.map((opt) => {
+                  const Icon = CATEGORY_ICONS[opt.value];
+                  const selected = form.business_category === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => set("business_category", opt.value)}
+                      className={`text-left p-4 rounded-xl border-2 transition-all ${
+                        selected
+                          ? "border-primary bg-primary/5"
+                          : "border-border hover:border-primary/40 hover:bg-muted/40"
+                      }`}
+                    >
+                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center mb-2 ${selected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
+                        <Icon className="w-4.5 h-4.5" />
+                      </div>
+                      <div className="text-sm font-semibold text-foreground">{opt.label}</div>
+                      <div className="text-xs text-muted-foreground mt-0.5 leading-snug">{opt.description}</div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {form.business_category === BUSINESS_CATEGORIES.OTHER && (
+                <div className="space-y-1.5 animate-fade-in">
+                  <Label>Business Type / Industry Name <span className="text-destructive">*</span></Label>
+                  <Input
+                    value={form.custom_business_type}
+                    onChange={(e) => set("custom_business_type", e.target.value)}
+                    placeholder="e.g. Interior Design, Consulting, Production House"
+                    autoFocus
+                  />
+                  <p className="text-xs text-muted-foreground">Tell us what you do — this customises your workspace.</p>
+                </div>
+              )}
+
+              <Button className="w-full h-12 mt-2" disabled={!canNext1} onClick={() => setStep(2)}>
+                Continue
+              </Button>
+            </StepShell>
+          )}
+
+          {step === 2 && (
             <StepShell icon={Building2} title="Business Details" subtitle="Tell us about your business.">
               <Field label="Business / Workspace Name *">
                 <Input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="Krishna Shah Photography" autoFocus />
-              </Field>
-              <Field label="Business Type *">
-                <select
-                  value={form.business_type}
-                  onChange={(e) => set("business_type", e.target.value)}
-                  className="w-full h-12 px-3 bg-card border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-ring/40"
-                >
-                  {businessTypes.map((b) => <option key={b}>{b}</option>)}
-                </select>
               </Field>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Field label="Phone">
@@ -139,13 +195,14 @@ export default function Onboarding() {
                   <Input value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="you@example.com" />
                 </Field>
               </div>
-              <Button className="w-full h-12 mt-2" disabled={!canNext1} onClick={() => setStep(2)}>
-                Continue
-              </Button>
+              <div className="flex gap-2 mt-2">
+                <Button variant="outline" className="flex-1 h-12" onClick={() => setStep(1)}>Back</Button>
+                <Button className="flex-1 h-12" disabled={!canNext2} onClick={() => setStep(3)}>Continue</Button>
+              </div>
             </StepShell>
           )}
 
-          {step === 2 && (
+          {step === 3 && (
             <StepShell icon={MapPin} title="Location & Preferences" subtitle="Where is your business based?">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Field label="City *">
@@ -177,13 +234,13 @@ export default function Onboarding() {
                 </Field>
               </div>
               <div className="flex gap-2 mt-2">
-                <Button variant="outline" className="flex-1 h-12" onClick={() => setStep(1)}>Back</Button>
-                <Button className="flex-1 h-12" disabled={!canNext2} onClick={() => setStep(3)}>Continue</Button>
+                <Button variant="outline" className="flex-1 h-12" onClick={() => setStep(2)}>Back</Button>
+                <Button className="flex-1 h-12" disabled={!canNext3} onClick={() => setStep(4)}>Continue</Button>
               </div>
             </StepShell>
           )}
 
-          {step === 3 && (
+          {step === 4 && (
             <StepShell icon={Receipt} title="GST Registration" subtitle="Is your business GST registered?">
               <div className="grid grid-cols-2 gap-3">
                 <button
@@ -229,7 +286,7 @@ export default function Onboarding() {
               )}
 
               <div className="flex gap-2 mt-2">
-                <Button variant="outline" className="flex-1 h-12" onClick={() => setStep(2)}>Back</Button>
+                <Button variant="outline" className="flex-1 h-12" onClick={() => setStep(3)}>Back</Button>
                 <Button className="flex-1 h-12" disabled={saving || (form.gst_enabled && (!form.gstin || !form.gst_business_name || !form.gst_billing_address || !form.gst_state))} onClick={createWorkspace}>
                   {saving ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />Creating…</>) : "Create Workspace"}
                 </Button>
@@ -237,7 +294,7 @@ export default function Onboarding() {
             </StepShell>
           )}
 
-          {step === 4 && (
+          {step === 5 && (
             <div className="text-center py-6">
               <div className="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-4">
                 <PartyPopper className="w-8 h-8 text-success" />

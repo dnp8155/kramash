@@ -3,6 +3,8 @@ import { NavLink, useLocation } from "react-router-dom";
 import { mainNav, moreNav, moreGroup } from "@/constants/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { useWorkspace } from "@/lib/WorkspaceContext";
+import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
+import { categoryLabel } from "@/lib/businessTerminology";
 import { ChevronDown, ChevronUp, Settings, Info, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -10,8 +12,12 @@ export default function Sidebar({ mobile = false, onClose }) {
   const location = useLocation();
   const { user } = useAuth();
   const { workspace } = useWorkspace();
+  const term = useBusinessTerminology();
   const moreActive = moreNav.some((item) => location.pathname === item.path);
   const [moreOpen, setMoreOpen] = useState(moreActive);
+
+  // Resolve a dynamic label for a nav item (Events -> Projects for Architecture/Other).
+  const navLabel = (item) => (item.path === "/events" ? term.workItemPlural : item.label);
 
   const itemClass = ({ isActive }) =>
     cn(
@@ -38,7 +44,7 @@ export default function Sidebar({ mobile = false, onClose }) {
         </div>
         <div className="flex-1">
           <div className="font-semibold text-sm leading-tight">Kramashah</div>
-          <div className="text-xs text-sidebar-muted">Event Management</div>
+          <div className="text-xs text-sidebar-muted">{categoryLabel(term.category)}</div>
         </div>
         {mobile && (
           <button onClick={onClose} className="text-sidebar-muted hover:text-sidebar-foreground">
@@ -56,7 +62,7 @@ export default function Sidebar({ mobile = false, onClose }) {
           return (
             <NavLink key={item.path} to={item.path} className={itemClass}>
               <Icon className="w-4 h-4 shrink-0" />
-              <span>{item.label}</span>
+              <span>{navLabel(item)}</span>
             </NavLink>
           );
         })}

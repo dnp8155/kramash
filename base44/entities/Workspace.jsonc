@@ -10,6 +10,29 @@
       "type": "string",
       "title": "Business Type"
     },
+    "business_category": {
+      "type": "string",
+      "title": "Business Category",
+      "default": "OTHER",
+      "enum": [
+        "PHOTOGRAPHY",
+        "EVENT_MANAGEMENT",
+        "ARCHITECTURE",
+        "OTHER"
+      ]
+    },
+    "custom_business_type": {
+      "type": "string",
+      "title": "Custom Business Type (for OTHER category)"
+    },
+    "custom_work_label_singular": {
+      "type": "string",
+      "title": "Custom Work Item Label (Singular)"
+    },
+    "custom_work_label_plural": {
+      "type": "string",
+      "title": "Custom Work Item Label (Plural)"
+    },
     "owner_user_id": {
       "type": "string",
       "title": "Owner User ID"

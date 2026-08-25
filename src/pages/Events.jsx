@@ -14,10 +14,12 @@ import { Users, Plus, Download, CalendarCheck, Clock, CheckCircle2, CalendarDays
 import StatCard from "@/components/common/StatCard";
 import { isToday, isThisWeek, isUpcomingDate, isPastDate, isWithinFY, fyOptions, currentFY } from "@/lib/dates";
 import { exportEventsCsv } from "@/lib/exportUtils";
+import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
 
 export default function Events() {
   const { workspaceId } = useWorkspace();
   const navigate = useNavigate();
+  const term = useBusinessTerminology();
 
   const [events, setEvents] = useState([]);
   const [clients, setClients] = useState({});
@@ -90,27 +92,27 @@ export default function Events() {
     <div className="p-4 sm:p-6 space-y-4 max-w-[1400px] mx-auto">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">Events</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Manage your bookings, schedule, and event details.</p>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">{term.workItemPlural}</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Manage your bookings, schedule, and {term.workItemSingular.toLowerCase()} details.</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => navigate("/team")}>
             <Users className="w-4 h-4" />
-            <span className="hidden sm:inline">Team</span>
+            <span className="hidden sm:inline">{term.teamLabel}</span>
           </Button>
           <Button onClick={openNew}>
             <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">Add Event</span>
+            <span className="hidden sm:inline">{term.addWorkItemLabel}</span>
           </Button>
         </div>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <StatCard label="Total" value={events.length} icon={CalendarDays} tone="primary" />
-        <StatCard label="Upcoming" value={upcomingCount} icon={Clock} tone="info" />
+        <StatCard label={term.totalWorkLabel} value={events.length} icon={CalendarDays} tone="primary" />
+        <StatCard label={term.activeWorkLabel} value={upcomingCount} icon={Clock} tone="info" />
         <StatCard label="In Progress" value={inProgressCount} icon={Clock} tone="warning" />
-        <StatCard label="Completed" value={completedCount} icon={CheckCircle2} tone="success" />
+        <StatCard label={term.completedWorkLabel} value={completedCount} icon={CheckCircle2} tone="success" />
       </div>
 
       <ReminderBanner events={events} onEventClick={openEvent} />
@@ -119,14 +121,14 @@ export default function Events() {
       {/* Toolbar */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-2">
         <SearchInput
-          placeholder="Search events, clients, venue"
+          placeholder={term.searchPlaceholder}
           className="sm:max-w-xs"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
         <div className="flex items-center gap-2 sm:ml-auto">
           <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-            <option value="all">All Events ({events.length})</option>
+            <option value="all">All {term.workItemPlural} ({events.length})</option>
             <option value="today">Today</option>
             <option value="week">This Week</option>
             <option value="upcoming">Upcoming</option>
@@ -147,7 +149,7 @@ export default function Events() {
             variant="outline"
             size="icon"
             aria-label="Export"
-            onClick={() => exportEventsCsv(filtered, clients, fyFilter !== "all" ? fyFilter : null)}
+            onClick={() => exportEventsCsv(filtered, clients, fyFilter !== "all" ? fyFilter : null, term)}
             disabled={filtered.length === 0}
           >
             <Download className="w-4 h-4" />
@@ -157,7 +159,7 @@ export default function Events() {
           </Button>
           <Button onClick={openNew}>
             <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">Add Event</span>
+            <span className="hidden sm:inline">{term.addWorkItemLabel}</span>
           </Button>
         </div>
       </div>
@@ -178,8 +180,9 @@ export default function Events() {
           onEditEvent={openEdit}
           onAdd={openNew}
           canAdd
+          term={term}
         />
-        <EventsRightPanel events={events} onEventClick={openEvent} />
+        <EventsRightPanel events={events} onEventClick={openEvent} term={term} />
       </div>
 
       <EventForm

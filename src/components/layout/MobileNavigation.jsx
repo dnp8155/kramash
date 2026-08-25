@@ -1,11 +1,14 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { mainNav, moreNav } from "@/constants/navigation";
+import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
 import { cn } from "@/lib/utils";
 
 export default function MobileNavigation() {
   const location = useLocation();
+  const term = useBusinessTerminology();
 
   const isActive = (path) => location.pathname === path;
+  const navLabel = (item) => (item.path === "/events" ? term.workItemPlural : item.label);
 
   return (
     <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-card border-t border-border flex items-center justify-around px-1 py-1">
@@ -22,7 +25,7 @@ export default function MobileNavigation() {
             )}
           >
             <Icon className="w-5 h-5" />
-            {item.label}
+            {navLabel(item)}
           </NavLink>
         );
       })}

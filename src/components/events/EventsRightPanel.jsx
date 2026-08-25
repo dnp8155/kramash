@@ -3,7 +3,8 @@ import Button from "@/components/common/Button";
 import { formatEventDate, isUpcomingDate } from "@/lib/dates";
 import { useNavigate } from "react-router-dom";
 
-export default function EventsRightPanel({ events = [], onEventClick }) {
+export default function EventsRightPanel({ events = [], onEventClick, term }) {
+  const t = term || {};
   const navigate = useNavigate();
   const now = new Date();
   const dateStr = now.toLocaleDateString("en-IN", {
@@ -32,11 +33,11 @@ export default function EventsRightPanel({ events = [], onEventClick }) {
       {/* Upcoming */}
       <div className="bg-card border border-border rounded-lg p-4">
         <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-          Upcoming Events
+          {t.activeWorkLabel || "Upcoming Events"}
         </div>
         <div className="space-y-1">
           {upcoming.length === 0 && (
-            <div className="text-sm text-muted-foreground py-2">No upcoming events.</div>
+            <div className="text-sm text-muted-foreground py-2">No {t.activeWorkLabel?.toLowerCase() || "upcoming events"}.</div>
           )}
           {upcoming.map((e) => (
             <button
@@ -55,7 +56,7 @@ export default function EventsRightPanel({ events = [], onEventClick }) {
       {/* Quick actions */}
       <Button variant="outline" className="w-full justify-start" onClick={() => navigate("/team")}>
         <Users className="w-4 h-4" />
-        Team Availability
+        {t.teamLabel || "Team"} Availability
       </Button>
     </div>
   );

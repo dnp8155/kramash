@@ -8,11 +8,12 @@ import { EVENT_STATUS } from "@/constants/statusConfig";
 import { formatEventDate, isThisWeek } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 
-export default function EventsTable({ events, clients, loading, onEventClick, onEditEvent, onAdd, canAdd }) {
+export default function EventsTable({ events, clients, loading, onEventClick, onEditEvent, onAdd, canAdd, term }) {
+  const t = term || {};
   if (loading) {
     return (
       <div className="bg-card border border-border rounded-lg">
-        <LoadingState label="Loading events…" />
+        <LoadingState label={`Loading ${t.workItemPlural?.toLowerCase() || "events"}…`} />
       </div>
     );
   }
@@ -21,9 +22,9 @@ export default function EventsTable({ events, clients, loading, onEventClick, on
     return (
       <div className="bg-card border border-border rounded-lg">
         <EmptyState
-          title="No events yet"
-          description="Create your first event to get started."
-          action={canAdd ? <Button onClick={onAdd}>+ Add Event</Button> : null}
+          title={t.emptyTitle || "No events yet"}
+          description={t.emptyDescription || "Create your first event to get started."}
+          action={canAdd ? <Button onClick={onAdd}>+ {t.addWorkItemLabel || "Add Event"}</Button> : null}
         />
       </div>
     );
@@ -48,10 +49,10 @@ export default function EventsTable({ events, clients, loading, onEventClick, on
       {weekEvents.length > 0 && (
         <>
           <div className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide bg-muted/30">
-            {weekEvents.length} Event{weekEvents.length > 1 ? "s" : ""} This Week
+            {weekEvents.length} {t.workItemSingular || "Event"}{weekEvents.length > 1 ? "s" : ""} This Week
           </div>
           {weekEvents.map((e) => (
-            <Row key={e.id} event={e} clientName={clientName(e.client_id)} onClick={() => onEventClick(e)} onEdit={() => onEditEvent(e)} />
+            <Row key={e.id} event={e} term={t} clientName={clientName(e.client_id)} onClick={() => onEventClick(e)} onEdit={() => onEditEvent(e)} />
           ))}
         </>
       )}
@@ -59,10 +60,10 @@ export default function EventsTable({ events, clients, loading, onEventClick, on
       {laterEvents.length > 0 && (
         <>
           <div className={cn("px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide bg-muted/30", weekEvents.length > 0 && "border-t border-border")}>
-            All Events
+            All {t.workItemPlural || "Events"}
           </div>
           {laterEvents.map((e) => (
-            <Row key={e.id} event={e} clientName={clientName(e.client_id)} onClick={() => onEventClick(e)} onEdit={() => onEditEvent(e)} />
+            <Row key={e.id} event={e} term={t} clientName={clientName(e.client_id)} onClick={() => onEventClick(e)} onEdit={() => onEditEvent(e)} />
           ))}
         </>
       )}
@@ -70,7 +71,7 @@ export default function EventsTable({ events, clients, loading, onEventClick, on
   );
 }
 
-function Row({ event, clientName, onClick, onEdit }) {
+function Row({ event, clientName, onClick, onEdit, term }) {
   const [open, setOpen] = useState(false);
   const shortId = `#${event.id.slice(-4)}`;
 
@@ -140,7 +141,7 @@ function Row({ event, clientName, onClick, onEdit }) {
               </div>
             )}
             {!event.venue && !event.description && !event.notes && (
-              <p className="text-xs text-muted-foreground">No additional details. Click "View Details" for the full event page.</p>
+              <p className="text-xs text-muted-foreground">No additional details. Click "View Details" for the full {(term?.workItemSingular || "event").toLowerCase()} page.</p>
             )}
           </div>
         </div>
