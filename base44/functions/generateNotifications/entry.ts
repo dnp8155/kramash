@@ -26,6 +26,7 @@ export default async function (req) {
     }
 
     let created = 0;
+    let skipped = 0;
     const now = new Date();
     const todayISO = now.toISOString().split("T")[0];
     const in48h = new Date(now.getTime() + 48 * 60 * 60 * 1000).toISOString().split("T")[0];
@@ -37,7 +38,7 @@ export default async function (req) {
       workspace_id: workspaceId,
       status: "active"
     });
-    if (!members || members.length === 0) return Response.json({ ok: true, created: 0 });
+    if (!members || members.length === 0) return Response.json({ ok: true, created: 0, skipped: 0 });
 
     // Resolve category-aware terminology for notification messages.
     const workspace = await base44.asServiceRole.entities.Workspace.get(workspaceId).catch(() => null);
@@ -68,7 +69,7 @@ export default async function (req) {
       if (ev.start_date >= todayISO && ev.start_date <= in48h) {
         for (const m of members) {
           const key = `${m.user_id}:event_reminder:${ev.id}`;
-          if (existingKeys.has(key)) continue;
+          if (existingKeys.has(key)) { skipped++; continue; }
           const is24 = ev.start_date <= in24h;
           await base44.asServiceRole.entities.Notification.create({
             workspace_id: workspaceId,
@@ -95,7 +96,8 @@ export default async function (req) {
       if (isExpired) {
         for (const m of members) {
           const key = `${m.user_id}:subscription_expired:${planCtx.subscription.id}`;
-          if (!existingKeys.has(key)) {
+          if (existingKeys.has(key)) { skipped++; continue; }
+          {
             await base44.asServiceRole.entities.Notification.create({
               workspace_id: workspaceId,
               user_id: m.user_id,
@@ -113,7 +115,8 @@ export default async function (req) {
       } else if (expiry <= in7days) {
         for (const m of members) {
           const key = `${m.user_id}:subscription_expiring:${planCtx.subscription.id}`;
-          if (!existingKeys.has(key)) {
+          if (existingKeys.has(key)) { skipped++; continue; }
+          {
             const daysLeft = Math.ceil((new Date(expiry + "T00:00:00").getTime() - now.getTime()) / (24 * 60 * 60 * 1000));
             await base44.asServiceRole.entities.Notification.create({
               workspace_id: workspaceId,
@@ -132,7 +135,7 @@ export default async function (req) {
       }
     }
 
-    return Response.json({ ok: true, created });
+    return Response.json({ ok: true, created, skipped });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
