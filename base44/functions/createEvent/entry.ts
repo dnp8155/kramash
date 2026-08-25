@@ -21,6 +21,12 @@ export default async function (req) {
     const isMember = await verifyWorkspaceMembership(base44, user.id, workspace_id);
     if (!isMember) return Response.json({ error: "Not a workspace member" }, { status: 403 });
 
+    // Validate client belongs to this workspace (prevent cross-workspace linking)
+    const client = await base44.asServiceRole.entities.Client.get(payload.client_id).catch(() => null);
+    if (!client || client.workspace_id !== workspace_id) {
+      return Response.json({ error: "Client not found in this workspace" }, { status: 400 });
+    }
+
     const ctx = await resolvePlanContext(base44, workspace_id);
     if (ctx.subscription && ctx.subscription.status === SUB_STATUS.SUSPENDED) {
       return Response.json({ error: "This workspace is suspended. Please contact support." }, { status: 403 });
