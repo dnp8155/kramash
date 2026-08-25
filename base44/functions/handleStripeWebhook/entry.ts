@@ -7,7 +7,7 @@
 // - Never trusts arbitrary payloads.
 // - Idempotent: duplicate events don't extend subscriptions multiple times.
 
-import { verifyStripeSession, activateProFromPayment } from "../../shared/paymentEngine.ts";
+import { verifyStripeSession, activateProFromPayment, verifyStripeSignature } from "../../shared/paymentEngine.ts";
 
 export default async function (req) {
   try {
@@ -24,18 +24,8 @@ export default async function (req) {
     const sig = req.headers.get("stripe-signature") || "";
     const rawBody = await req.text();
 
-    // Verify Stripe signature.
-    // In a full implementation, use the Stripe SDK's webhook construction:
-    // const event = Stripe.webhooks.constructEvent(rawBody, sig, webhookSecret);
-    // For now, we do a simplified verification and parse the event.
-    //
-    // --- Signature verification placeholder ---
-    // The actual crypto verification requires the Stripe SDK or manual
-    // HMAC-SHA256 verification of the Stripe-Signature header.
-    // Uncomment and implement when STRIPE_WEBHOOK_SECRET is configured:
-    // const event = await verifyStripeSignature(rawBody, sig, webhookSecret);
-
-    const event = JSON.parse(rawBody);
+    // Verify Stripe signature — rejects forged or replayed webhooks.
+    const event = verifyStripeSignature(rawBody, sig, webhookSecret);
 
     if (event.type === "checkout.session.completed") {
       const session = event.data.object;

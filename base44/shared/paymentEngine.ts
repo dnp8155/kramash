@@ -1,7 +1,54 @@
 // Shared payment engine for subscription payment verification and Pro activation.
 // Used by verifyPayment and handleStripeWebhook to avoid duplicate logic.
 
+import crypto from "node:crypto";
 import { computeExpiry, PLAN_CODES, SUB_STATUS } from "./planEngine.ts";
+
+// Verify a Stripe webhook signature (HMAC-SHA256).
+// Stripe-Signature header format: "t=TIMESTAMP,v1=HEX_SIGNATURE"
+// Returns the parsed event payload on success; throws on any failure.
+export function verifyStripeSignature(rawBody, signatureHeader, webhookSecret, toleranceSeconds = 300) {
+  if (!signatureHeader || !webhookSecret) {
+    throw new Error("Missing Stripe signature or webhook secret");
+  }
+
+  const parts = {};
+  for (const item of signatureHeader.split(",")) {
+    const [key, ...rest] = item.split("=");
+    parts[key] = rest.join("=");
+  }
+
+  if (!parts.t || !parts.v1) {
+    throw new Error("Invalid Stripe-Signature header format");
+  }
+
+  const timestamp = parseInt(parts.t, 10);
+  if (isNaN(timestamp)) {
+    throw new Error("Invalid timestamp in Stripe signature");
+  }
+
+  // Replay protection: reject stale signatures.
+  const now = Math.floor(Date.now() / 1000);
+  if (now - timestamp > toleranceSeconds) {
+    throw new Error("Stripe signature timestamp outside tolerance window");
+  }
+
+  // Compute expected HMAC-SHA256 signature.
+  const signedPayload = `${timestamp}.${rawBody}`;
+  const expectedSignature = crypto
+    .createHmac("sha256", webhookSecret)
+    .update(signedPayload, "utf8")
+    .digest("hex");
+
+  // Timing-safe comparison.
+  const expected = Buffer.from(expectedSignature, "utf8");
+  const actual = Buffer.from(parts.v1, "utf8");
+  if (expected.length !== actual.length || !crypto.timingSafeEqual(expected, actual)) {
+    throw new Error("Stripe signature verification failed");
+  }
+
+  return JSON.parse(rawBody);
+}
 
 // Activate Pro subscription after verified payment.
 // Idempotent: if a SUCCESS payment already activated a subscription, skip.
