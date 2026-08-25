@@ -191,6 +191,7 @@ export default function Events() {
         onSaved={load}
         event={editingEvent}
         workspaceId={workspaceId}
+        term={term}
       />
     </div>
   );

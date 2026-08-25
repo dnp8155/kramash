@@ -180,18 +180,18 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
             </div>
 
             <div className="space-y-1.5">
-              <Label>Venue</Label>
-              <Input value={form.venue} onChange={(e) => set("venue", e.target.value)} placeholder="Venue name" />
+              <Label>{t.locationLabel || "Venue"}</Label>
+              <Input value={form.venue} onChange={(e) => set("venue", e.target.value)} placeholder={t.locationLabel || "Venue"} />
             </div>
 
             <div className="space-y-1.5">
-              <Label>Venue Address</Label>
-              <Textarea value={form.venue_address} onChange={(e) => set("venue_address", e.target.value)} placeholder="Full venue address" rows={2} />
+              <Label>{t.locationAddressLabel || "Venue Address"}</Label>
+              <Textarea value={form.venue_address} onChange={(e) => set("venue_address", e.target.value)} placeholder={`Full ${(t.locationLabel || "venue").toLowerCase()} address`} rows={2} />
             </div>
 
             <div className="space-y-1.5">
               <Label>Description</Label>
-              <Textarea value={form.description} onChange={(e) => set("description", e.target.value)} placeholder="Event description" rows={2} />
+              <Textarea value={form.description} onChange={(e) => set("description", e.target.value)} placeholder={`${t.workItemSingular || "Event"} description`} rows={2} />
             </div>
 
             <div className="space-y-1.5">
@@ -204,7 +204,7 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
             <DialogFooter className="pt-2">
               <Button type="button" variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
               <Button type="submit" disabled={saving}>
-                {saving ? "Saving…" : event ? "Save Changes" : "Add Event"}
+                {saving ? "Saving…" : event ? "Save Changes" : t.addWorkItemLabel || "Add Event"}
               </Button>
             </DialogFooter>
           </form>
