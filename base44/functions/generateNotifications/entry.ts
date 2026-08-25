@@ -39,6 +39,16 @@ export default async function (req) {
     });
     if (!members || members.length === 0) return Response.json({ ok: true, created: 0 });
 
+    // Resolve category-aware terminology for notification messages.
+    const workspace = await base44.asServiceRole.entities.Workspace.get(workspaceId).catch(() => null);
+    const category = workspace?.business_category || "OTHER";
+    const isProjectCategory = category === "ARCHITECTURE" || category === "OTHER";
+    const workSingular = workspace?.custom_work_label_singular?.trim() || (isProjectCategory ? "Project" : "Event");
+    const workPlural = workspace?.custom_work_label_plural?.trim() || (isProjectCategory ? "Projects" : "Events");
+    const reminderTomorrow = isProjectCategory ? `${workSingular} starts tomorrow` : `${workSingular} tomorrow`;
+    const reminderComing = isProjectCategory ? `${workSingular} coming up` : `${workSingular} coming up`;
+    const reminderVerb = isProjectCategory ? "starts on" : "is scheduled for";
+
     // Get existing unread notifications to avoid duplicates.
     const existingNotifs = await base44.asServiceRole.entities.Notification.filter({
       workspace_id: workspaceId
@@ -64,8 +74,8 @@ export default async function (req) {
             workspace_id: workspaceId,
             user_id: m.user_id,
             type: "event_reminder",
-            title: is24 ? "Event tomorrow" : "Event coming up",
-            message: `"${ev.title}" is scheduled for ${ev.start_date}${ev.venue ? ` at ${ev.venue}` : ""}.`,
+            title: is24 ? reminderTomorrow : reminderComing,
+            message: `"${ev.title}" ${reminderVerb} ${ev.start_date}${ev.venue ? ` at ${ev.venue}` : ""}.`,
             related_entity_type: "event",
             related_entity_id: ev.id,
             read: false

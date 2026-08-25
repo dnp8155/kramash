@@ -14,6 +14,7 @@ import { generateQuotationPdf } from "@/lib/quotationPdf";
 import { base44 } from "@/api/base44Client";
 import { Plus, Search, Trash2, FileDown, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
 
 const fmtDate = (iso) => {
   if (!iso) return "—";
@@ -27,6 +28,7 @@ export default function Quotation() {
   const { workspaceId, workspace } = useWorkspace();
   const { toast } = useToast();
   const currency = workspace?.currency || "INR";
+  const term = useBusinessTerminology();
 
   const [loading, setLoading] = useState(true);
   const [quotations, setQuotations] = useState([]);
@@ -153,7 +155,7 @@ export default function Quotation() {
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by number, client, event…"
+            placeholder={`Search by number, client, ${term.workItemSingular.toLowerCase()}…`}
             className="pl-9"
           />
         </div>
@@ -166,7 +168,7 @@ export default function Quotation() {
       {filtered.length === 0 ? (
         <EmptyState
           title={quotations.length === 0 ? "No quotations created yet" : "No quotations match your search"}
-          description={quotations.length === 0 ? "Create a quotation for your next event." : "Try a different search or filter."}
+          description={quotations.length === 0 ? `Create a quotation for your next ${term.workItemSingular.toLowerCase()}.` : "Try a different search or filter."}
           action={quotations.length === 0 ? <Button onClick={() => navigate("/quotation/new")}><Plus className="w-4 h-4" /> Create Quotation</Button> : null}
         />
       ) : (
@@ -177,7 +179,7 @@ export default function Quotation() {
                 <tr>
                   <th className="text-left px-4 py-3 font-medium">Quotation No</th>
                   <th className="text-left px-4 py-3 font-medium">Client</th>
-                  <th className="text-left px-4 py-3 font-medium">Event</th>
+                  <th className="text-left px-4 py-3 font-medium">{term.workItemSingular}</th>
                   <th className="text-left px-4 py-3 font-medium">Date</th>
                   <th className="text-right px-4 py-3 font-medium">Total</th>
                   <th className="text-left px-4 py-3 font-medium">Status</th>

@@ -10,10 +10,12 @@ import ClientForm from "@/components/clients/ClientForm";
 import { Plus, Pencil, Eye, Download, Users, CalendarCheck, UserCheck } from "lucide-react";
 import { exportClientsCsv } from "@/lib/exportUtils";
 import StatCard from "@/components/common/StatCard";
+import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
 
 export default function Clients() {
   const { workspaceId } = useWorkspace();
   const navigate = useNavigate();
+  const term = useBusinessTerminology();
 
   const [clients, setClients] = useState([]);
   const [eventCounts, setEventCounts] = useState({});
@@ -64,7 +66,7 @@ export default function Clients() {
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold text-foreground tracking-tight">Clients</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Manage your client directory and their event history.</p>
+          <p className="text-sm text-muted-foreground mt-0.5">Manage your client directory and their {term.workItemSingular.toLowerCase()} history.</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => exportClientsCsv(filtered, eventCounts)} disabled={filtered.length === 0}>
@@ -81,8 +83,8 @@ export default function Clients() {
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         <StatCard label="Total Clients" value={clients.length} icon={Users} tone="primary" />
-        <StatCard label="Total Events" value={totalEvents} icon={CalendarCheck} tone="info" />
-        <StatCard label="With Events" value={Object.keys(eventCounts).length} icon={UserCheck} tone="success" />
+        <StatCard label={`Total ${term.workItemPlural}`} value={totalEvents} icon={CalendarCheck} tone="info" />
+        <StatCard label={`With ${term.workItemPlural}`} value={Object.keys(eventCounts).length} icon={UserCheck} tone="success" />
       </div>
 
       <SearchInput
@@ -106,7 +108,7 @@ export default function Clients() {
         <div className="bg-card border border-border rounded-lg">
           <EmptyState
             title={query ? "No clients found" : "No clients yet"}
-            description={query ? "Try a different search term." : "Add a client to create and manage events."}
+            description={query ? "Try a different search term." : `Add a client to create and manage ${term.workItemPlural.toLowerCase()}.`}
             action={!query ? <Button onClick={openNew}>+ Add Client</Button> : null}
           />
         </div>
@@ -116,7 +118,7 @@ export default function Clients() {
             <span>Name</span>
             <span>Phone</span>
             <span>Email</span>
-            <span>Events</span>
+            <span>{term.workItemPlural}</span>
             <span />
             <span />
           </div>

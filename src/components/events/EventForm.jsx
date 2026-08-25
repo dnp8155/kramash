@@ -56,7 +56,8 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
   const validate = () => {
-    if (!form.title.trim()) return "Event title is required.";
+    const workLabel = t.workItemSingular || "Event";
+    if (!form.title.trim()) return `${workLabel} title is required.`;
     if (!form.client_id) return "Please select a client.";
     if (!form.start_date) return "Start date is required.";
     if (form.end_date && form.end_date < form.start_date) return "End date cannot be before start date.";
@@ -96,11 +97,12 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
     } catch (err) {
       const data = err?.response?.data || err;
       if (data?.error === "PLAN_LIMIT_REACHED") {
-        setError(`You've reached the Free Plan event limit (${data.current}/${data.limit}). Upgrade to Pro to create more events.`);
+        const wl = (t.workItemSingular || "event").toLowerCase();
+        setError(`You've reached the Free Plan ${wl} limit (${data.current}/${data.limit}). Upgrade to Pro to create more ${wl}s.`);
       } else if (data?.error === "This workspace is suspended. Please contact support.") {
         setError(data.error);
       } else {
-        setError(err?.message || "Failed to save event. Please try again.");
+        setError(err?.message || `Failed to save ${t.workItemSingular?.toLowerCase() || "event"}. Please try again.`);
       }
     } finally {
       setSaving(false);
@@ -112,16 +114,16 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
       <Dialog open={open && !showClientForm} onOpenChange={(o) => !o && onClose?.()}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{event ? "Edit Event" : "Add Event"}</DialogTitle>
+            <DialogTitle>{event ? t.editWorkItemLabel || "Edit Event" : t.addWorkItemLabel || "Add Event"}</DialogTitle>
             <DialogDescription>
-              {event ? "Update event details." : "Create a new event for a client."}
+              {event ? `Update ${t.workItemSingular?.toLowerCase() || "event"} details.` : `Create a new ${t.workItemSingular?.toLowerCase() || "event"} for a client.`}
             </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-3">
             <div className="space-y-1.5">
-              <Label>Event Title <span className="text-destructive">*</span></Label>
-              <Input value={form.title} onChange={(e) => set("title", e.target.value)} placeholder="e.g. Meera & Dev" autoFocus />
+              <Label>{t.workItemTitleLabel || "Event Title"} <span className="text-destructive">*</span></Label>
+              <Input value={form.title} onChange={(e) => set("title", e.target.value)} placeholder={t.category === "ARCHITECTURE" || t.category === "OTHER" ? "e.g. Riverside Villa Project" : "e.g. Meera & Dev"} autoFocus />
             </div>
 
             <div className="space-y-1.5">

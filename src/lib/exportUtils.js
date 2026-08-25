@@ -42,14 +42,19 @@ export function downloadCsv(csv, filename) {
   URL.revokeObjectURL(url);
 }
 
-// Export events to CSV.
-export function exportEventsCsv(events, clientsMap, fyLabel) {
+// Export events to CSV. `term` is the resolved business terminology for the
+// active workspace (column headers + filename adapt to the work-item label).
+export function exportEventsCsv(events, clientsMap, fyLabel, term) {
+  const t = term || {};
+  const workSingular = t.workItemSingular || "Event";
+  const workPlural = t.workItemPlural || "Events";
+  const locationLabel = t.locationLabel || "Venue";
   const columns = [
-    { key: "title", label: "Event Name" },
+    { key: "title", label: `${workSingular} Name` },
     { key: "client_name", label: "Client" },
     { key: "start_date", label: "Start Date" },
     { key: "end_date", label: "End Date" },
-    { key: "venue", label: "Venue" },
+    { key: "venue", label: locationLabel },
     { key: "status", label: "Status" },
     { key: "contract_value", label: "Contract Value" },
   ];
@@ -61,7 +66,8 @@ export function exportEventsCsv(events, clientsMap, fyLabel) {
   }));
   const csv = rowsToCsv(rows, columns);
   const fy = fyLabel ? sanitizeFilename(fyLabel) : "All";
-  downloadCsv(csv, `Kramashah_Events_${fy}.csv`);
+  const prefix = sanitizeFilename(t.exportPrefix || workPlural);
+  downloadCsv(csv, `Kramashah_${prefix}_${fy}.csv`);
 }
 
 // Export clients to CSV.
@@ -72,7 +78,7 @@ export function exportClientsCsv(clients, eventCounts) {
     { key: "email", label: "Email" },
     { key: "city", label: "City" },
     { key: "state", label: "State" },
-    { key: "event_count", label: "Events" },
+    { key: "event_count", label: "Work Items" },
   ];
   const rows = clients.map((c) => ({
     name: c.name || "",
@@ -120,7 +126,7 @@ export function exportFinancialCsv(transactions, display, currency, fyLabel) {
   };
   const columns = [
     { key: "transaction_date", label: "Date" },
-    { key: "event_title", label: "Event" },
+    { key: "event_title", label: "Work Item" },
     { key: "type_label", label: "Type" },
     { key: "party", label: "Client/Team/Expense" },
     { key: "amount", label: "Amount" },

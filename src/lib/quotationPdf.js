@@ -5,6 +5,7 @@ import { jsPDF } from "jspdf";
 import { CURRENCY_SYMBOLS } from "@/constants/financeConfig";
 import { parseSnapshot } from "@/lib/quotationService";
 import { formatEventDate } from "@/lib/dates";
+import { getBusinessTerminology } from "@/lib/businessTerminology";
 
 const PRIMARY = [31, 56, 92];
 const MUTED = [110, 120, 135];
@@ -80,6 +81,7 @@ export async function generateQuotationPdf({
   const pageH = doc.internal.pageSize.getHeight();
   const M = 15;
   const contentW = pageW - M * 2;
+  const term = getBusinessTerminology(workspace);
 
   // Prefer finalized snapshots, fall back to live objects.
   const biz = parseSnapshot(quotation.business_snapshot) || {
@@ -161,7 +163,7 @@ export async function generateQuotationPdf({
   doc.setFontSize(8.5);
   doc.setTextColor(...MUTED);
   doc.text("BILL TO", M, y);
-  if (evSnap.title) doc.text("EVENT", M + colW, y);
+  if (evSnap.title) doc.text(term.quotationSectionLabel || "EVENT", M + colW, y);
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
@@ -388,6 +390,7 @@ export async function generateJobSheetPdf({
   const pageH = doc.internal.pageSize.getHeight();
   const M = 15;
   const contentW = pageW - M * 2;
+  const term = getBusinessTerminology(workspace);
 
   let y = M;
   doc.setFont("helvetica", "bold");
@@ -418,7 +421,7 @@ export async function generateJobSheetPdf({
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
   doc.setTextColor(0, 0, 0);
-  doc.text(event?.title || "Event", M, y);
+  doc.text(event?.title || term.workItemSingular || "Event", M, y);
   y += 6;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
@@ -509,6 +512,6 @@ export async function generateJobSheetPdf({
     doc.text(`Page ${p} of ${pageCount}`, pageW - M, pageH - 6, { align: "right" });
   }
 
-  doc.save(`Kramashah_JobSheet_${sanitizeFilename(event?.title || "Event")}.pdf`);
+  doc.save(`Kramashah_JobSheet_${sanitizeFilename(event?.title || term.workItemSingular || "Event")}.pdf`);
   return true;
 }

@@ -279,7 +279,7 @@ export default function Team() {
                 <h3 className="text-sm font-semibold">Delete {confirmDelete.name}?</h3>
                 <p className="text-xs text-muted-foreground mt-1">
                   {assignments.filter((a) => a.team_member_id === confirmDelete.id && a.assignment_status !== "removed").length > 0
-                    ? "This member has existing event assignments and will be set to Inactive to preserve history."
+                    ? "This member has existing work assignments and will be set to Inactive to preserve history."
                     : "This will permanently remove the team member. This cannot be undone."}
                 </p>
               </div>

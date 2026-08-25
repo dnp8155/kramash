@@ -26,12 +26,14 @@ import {
   CalendarPlus, Share2, Receipt, StickyNote, Camera, User
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
 
 export default function EventDetails() {
   const { id } = useParams();
   const { workspaceId, workspace } = useWorkspace();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const term = useBusinessTerminology();
 
   const [event, setEvent] = useState(null);
   const [client, setClient] = useState(null);
@@ -119,7 +121,7 @@ export default function EventDetails() {
   const removeAssignment = async (a) => {
     try {
       await base44.entities.EventTeamAssignment.update(a.id, { assignment_status: "removed" });
-      toast({ title: "Team member removed from event" });
+      toast({ title: `Team member removed from ${term.workItemSingular.toLowerCase()}` });
       load();
     } catch (e) {
       toast({ title: "Failed to remove assignment", description: e?.message, variant: "destructive" });
@@ -128,7 +130,7 @@ export default function EventDetails() {
 
   const shareAssignment = async (a) => {
     const m = membersById[a.team_member_id];
-    const text = `${m?.name || "Team member"} assigned to ${event?.title || "event"} — Rate: ${formatMoney(a.agreed_rate, currency)}`;
+    const text = `${m?.name || "Team member"} ${term.bookedLabel} ${event?.title || term.workItemSingular.toLowerCase()} — Rate: ${formatMoney(a.agreed_rate, currency)}`;
     if (navigator.share) {
       try { await navigator.share({ text }); } catch (e) { /* cancelled */ }
     } else {
@@ -142,7 +144,7 @@ export default function EventDetails() {
     const start = event.start_date ? event.start_date.replace(/-/g, "") : "";
     const end = event.end_date ? event.end_date.replace(/-/g, "") : start;
     const ics = [
-      "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Kramashah//Event//EN",
+      "BEGIN:VCALENDAR", "VERSION:2.0",       "PRODID:-//Kramashah//WorkItem//EN",
       "BEGIN:VEVENT",
       `UID:${event.id}@kramashah`,
       `DTSTART;VALUE=DATE:${start}`,
@@ -155,7 +157,7 @@ export default function EventDetails() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${event.title || "event"}.ics`;
+    a.download = `${event.title || term.workItemSingular.toLowerCase()}.ics`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -166,22 +168,22 @@ export default function EventDetails() {
       return;
     }
     const due = Math.max(0, fin.pending);
-    const msg = `Hi ${client.name}, this is a gentle reminder about your pending balance of ${formatMoney(due, currency)} for ${event?.title || "your event"}. Thank you!`;
+    const msg = `Hi ${client.name}, this is a gentle reminder about your pending balance of ${formatMoney(due, currency)} for ${event?.title || `your ${term.workItemSingular.toLowerCase()}`}. Thank you!`;
     const phone = client.phone.replace(/\D/g, "");
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, "_blank");
   };
 
-  if (loading) return <div className="p-6"><LoadingState label="Loading event…" /></div>;
+  if (loading) return <div className="p-6"><LoadingState label={`Loading ${term.workItemSingular.toLowerCase()}…`} /></div>;
 
   if (notFound || !event) {
     return (
       <div className="p-6 max-w-2xl mx-auto">
         <Button variant="ghost" onClick={() => navigate("/events")} className="mb-4">
-          <ArrowLeft className="w-4 h-4" /> Back to Events
+          <ArrowLeft className="w-4 h-4" /> Back to {term.workItemPlural}
         </Button>
         <Card className="p-8 text-center">
-          <h2 className="text-lg font-semibold">Event not found</h2>
-          <p className="text-sm text-muted-foreground mt-1">This event may not exist or you don't have access to it.</p>
+          <h2 className="text-lg font-semibold">{term.workItemSingular} not found</h2>
+          <p className="text-sm text-muted-foreground mt-1">This {term.workItemSingular.toLowerCase()} may not exist or you don't have access to it.</p>
         </Card>
       </div>
     );
@@ -226,10 +228,10 @@ export default function EventDetails() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Client / Event Name" value={event.title} />
-          <Field label="Event Type" value={event.event_type || "—"} />
-          <Field label="Event Start Date" value={event.start_date || "—"} icon={Calendar} />
-          <Field label="Event End Date" value={event.end_date || "—"} icon={Calendar} />
+          <Field label={`Client / ${term.workItemSingular} Name`} value={event.title} />
+          <Field label={term.workItemTypeLabel} value={event.event_type || "—"} />
+          <Field label={term.startDateLabel} value={event.start_date || "—"} icon={Calendar} />
+          <Field label={term.endDateLabel} value={event.end_date || "—"} icon={Calendar} />
         </div>
 
         {/* Date chips */}
@@ -239,14 +241,14 @@ export default function EventDetails() {
             {event.end_date && event.end_date !== event.start_date && <DateChip date={event.end_date} />}
           </div>
           <p className="text-xs text-muted-foreground mt-2">
-            Tap a day to include/exclude it — not every day in the range has to be a shoot day.
+            Tap a day to include/exclude it from the schedule.
           </p>
         </div>
 
         {/* Additional fields */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
           <Field label="Contact Number (optional)" value={client?.phone || "—"} icon={Phone} />
-          <Field label="Event Venue (optional)" value={event.venue || "—"} icon={MapPin} />
+          <Field label={`${term.locationLabel} (optional)`} value={event.venue || "—"} icon={MapPin} />
           <div className="sm:col-span-2">
             <Field label="Address (optional)" value={[client?.address, client?.city].filter(Boolean).join(", ") || "—"} icon={MapPin} />
           </div>
@@ -326,7 +328,7 @@ export default function EventDetails() {
             <Card className="p-6">
               <EmptyState
                 title="No team assigned"
-                description="Add team members to this event to track their payments."
+                description={`Add team members to this ${term.workItemSingular.toLowerCase()} to track their payments.`}
                 action={
                   <Button size="sm" onClick={() => setShowAssign(true)}>
                     <Plus className="w-3.5 h-3.5" /> Add Team Member
@@ -377,7 +379,7 @@ export default function EventDetails() {
             </div>
           </div>
           {eventTransactions.length === 0 ? (
-            <EmptyState title="No transactions yet" description="Record client payments or expenses for this event." />
+            <EmptyState title="No transactions yet" description={`Record client payments or expenses for this ${term.workItemSingular.toLowerCase()}.`} />
           ) : (
             <div className="divide-y divide-border">
               {eventTransactions.map((t) => (
@@ -424,7 +426,7 @@ export default function EventDetails() {
               )}
             </div>
           ) : (
-            <EmptyState title="No notes" description="Edit the event to add notes or a description." />
+            <EmptyState title="No notes" description={`Edit the ${term.workItemSingular.toLowerCase()} to add notes or a description.`} />
           )}
         </Card>
       )}
@@ -443,6 +445,7 @@ export default function EventDetails() {
         onSaved={load}
         event={event}
         workspaceId={workspaceId}
+        term={term}
       />
 
       <AssignTeamDialog

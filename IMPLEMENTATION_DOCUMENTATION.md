@@ -8,7 +8,14 @@
 
 ## 1. Product Overview
 
-Kramashah is a SaaS application for photographers and production teams to manage events, clients, team members, financials, quotations, and business operations. It provides workspace-based multi-tenant isolation, allowing each business to maintain completely separate data while sharing the same application infrastructure.
+Kramashah is a flexible Service Business, Team, Project & Financial Management SaaS. It helps service businesses manage clients, projects/events, teams, services, quotations and finances from one workspace. The platform supports multiple industries through a central dynamic terminology system:
+
+- **Photography** — weddings, shoots, pre-wedding & studio work (work items labelled "Events")
+- **Event Management** — weddings, corporate & social events coordination (work items labelled "Events")
+- **Architecture** — projects, site visits & design assignments (work items labelled "Projects")
+- **Other Service Business** — interior design, consulting, agencies, contracting & more (work items labelled "Projects", with a custom business type)
+
+Each workspace selects its business category during onboarding, and all user-facing terminology adapts dynamically. The underlying data model uses a single `Event` entity (retained as a compatibility layer) with category-aware label resolution, so no data migration is required when switching categories. The platform provides workspace-based multi-tenant isolation, allowing each business to maintain completely separate data while sharing the same application infrastructure.
 
 ---
 
@@ -31,6 +38,53 @@ The delivered Beta includes:
 - PWA foundation (installable, offline shell caching)
 - CSV data exports for Events, Clients, Team, and Financials
 - In-app notifications system
+- **Multi-Industry Support** — Photography, Event Management, Architecture, and Other Service Business categories with dynamic terminology and industry-specific presets
+
+---
+
+## 2A. Multi-Industry Support
+
+### Primary Categories
+
+| Category | Main Work Label | Location Label | Team Label |
+|----------|----------------|----------------|-----------|
+| Photography | Event | Venue | Team / Crew |
+| Event Management | Event | Venue | Team |
+| Architecture | Project | Project Site | Project Team |
+| Other | Project | Location | Team |
+
+### Business Category Field
+
+The `Workspace` entity includes a `business_category` field (`PHOTOGRAPHY`, `EVENT_MANAGEMENT`, `ARCHITECTURE`, `OTHER`). For `OTHER`, a `custom_business_type` field (e.g. "Interior Design", "Consulting") is required during onboarding. Existing workspaces that predate the field are safely defaulted via `inferCategoryFromType()` based on their legacy `business_type` string.
+
+### Dynamic Terminology
+
+All category-sensitive user-facing labels are resolved through a central terminology system (`src/lib/businessTerminology.js`) consumed via the `useBusinessTerminology()` hook. The resolver returns a flat object of labels (work item singular/plural, location label, date labels, search placeholder, empty states, export prefix, notification wording, etc.) based on the active workspace's category. Optional custom work-label overrides (`custom_work_label_singular` / `custom_work_label_plural`) are supported via Preferences.
+
+### Generic Work Architecture
+
+The platform uses a single `Event` entity as the underlying work-item record (compatibility layer / Option B). No destructive `Event → WorkItem` migration was performed — only user-facing terminology is resolved dynamically. Internal technical identifiers (`event_id`, `EventTeamAssignment`, `Event` entity name) are retained as compatibility naming and documented as such. This avoids data duplication, orphaned records, and migration risk while presenting category-appropriate labels to users.
+
+### Industry Presets
+
+New workspaces receive category-specific starter data during onboarding (`src/constants/industryPresets.js`):
+- **Photography:** roles (Photographer, Videographer, Drone Operator, Editor, Assistant) + services (Photography, Videography, Drone Coverage, Album, Editing)
+- **Event Management:** roles (Event Coordinator, Decorator, Lighting/Sound Technicians, Assistant) + services (Coordination, Decoration, Lighting, Sound, Setup)
+- **Architecture:** roles (Architect, Designer, Civil Engineer, Site Supervisor, Draftsman) + services (Planning, Site Visit, 3D Visualization, Interior Design, Consultation)
+- **Other:** no preset roles or services (blank slate for custom configuration)
+
+Presets are applied **only** on new workspace creation — never force-applied to existing workspaces or on category change. All preset data is editable/removable by the user after seeding.
+
+### Existing Data Compatibility
+
+Workspaces created before Phase 10 continue to work without modification:
+- `business_category` defaults safely via `inferCategoryFromType()` when absent
+- All existing Clients, Events, Team, Services, Quotations, Payments, and Subscriptions remain intact
+- No data migration, duplication, or deletion occurs
+
+### Category Change Behavior
+
+Changing a workspace's business category updates only terminology and settings — it does **not** overwrite existing Team Roles, Services, or rates. Existing records remain untouched; any category presets are optional and offered only for new workspaces.
 
 ---
 
@@ -745,12 +799,12 @@ Authorized SaaS Admins can:
 ## Client Handover Notes
 
 ### What Beta Includes
-Kramashah Beta is a complete event management system for photographers and production teams. You can:
-- Register and set up your business workspace
-- Manage clients and events
+Kramashah Beta is a flexible service business management platform for Photography, Event Management, Architecture, and Other service businesses. You can:
+- Register and set up your business workspace with your industry category
+- Manage clients and work items (events or projects, depending on your industry)
 - Assign team members and track availability
 - Record payments and expenses
-- Track profit per event and across your business
+- Track profit per work item and across your business
 - Create quotations with optional GST and generate branded PDFs
 - Use the rate estimator for quick pricing
 - Export your data to CSV
@@ -781,4 +835,37 @@ Kramashah Beta is a complete event management system for photographers and produ
 - Configure Firebase, Stripe, and Google OAuth
 - Supply branded PWA icons
 - Run runtime QA testing
-- Gather Beta user feedback for Phase 10 enhancements
+- Gather Beta user feedback for future enhancements
+
+---
+
+## Implementation History
+
+### Phase 10 — Multi-Industry Upgrade
+**Date:** 25 August 2026  
+**Status:** Completed
+
+Upgraded Kramashah from a photography/event-only platform into a multi-industry SaaS supporting Photography, Event Management, Architecture, and Other Service Business categories. Key deliverables:
+- Central terminology system (`src/lib/businessTerminology.js`) with per-category label resolution
+- `useBusinessTerminology()` hook reading the active workspace from WorkspaceContext
+- Industry-specific presets (`src/constants/industryPresets.js`) for roles and services, applied only on new workspace creation
+- `Workspace.business_category` field with safe defaulting for existing workspaces via `inferCategoryFromType()`
+- `OTHER` category with required custom business type field in onboarding
+- Dynamic terminology integrated into Sidebar, MobileNavigation, AppLayout, Events page/table/form/right panel
+- No destructive data migration — `Event` entity retained as compatibility layer
+
+### Phase 11 — Multi-Industry Regression, Final QA & Documentation
+**Date:** 25 August 2026  
+**Status:** Completed  
+**Release Status:** READY WITH MINOR KNOWN ISSUES
+
+Final validation phase verifying the Phase 10 multi-industry architecture works correctly across all supported categories without breaking Phases 1–9 functionality. Key activities and fixes:
+- **Terminology audit:** Identified and fixed hardcoded "Event" terminology in pages that were not yet wired to the central terminology system: EventDetails, Clients, ClientDetails, Quotation, QuotationEditor, YourPlan
+- **Export bug fix:** `exportEventsCsv` was called with a `term` argument that the function signature did not accept — fixed to accept and use terminology for column headers and filename prefix; `exportClientsCsv` and `exportFinancialCsv` column headers made category-neutral
+- **EventForm term prop:** EventDetails was not passing `term` to EventForm, causing Architecture/Other workspaces to incorrectly receive photography event types — fixed
+- **PDF terminology:** Quotation and Job Sheet PDFs now use category-aware section labels (e.g. "PROJECT" instead of "EVENT" for Architecture)
+- **Notification terminology:** `generateNotifications` backend function now resolves the workspace's business category and uses category-appropriate reminder wording ("Project starts tomorrow" vs "Event tomorrow")
+- **Photography-specific copy removed:** Removed photography-specific "shoot day" phrasing from EventDetails date chip helper text
+- Documentation updated to reflect the actual multi-industry product positioning
+
+See `PHASE11_REPORT.md` for the full regression report and test matrix.

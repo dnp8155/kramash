@@ -10,11 +10,13 @@ import EmptyState from "@/components/common/EmptyState";
 import ClientForm from "@/components/clients/ClientForm";
 import { formatEventDate } from "@/lib/dates";
 import { ArrowLeft, Pencil, Phone, Mail, MapPin, Calendar, ArrowRight, StickyNote } from "lucide-react";
+import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
 
 export default function ClientDetails() {
   const { id } = useParams();
   const { workspaceId } = useWorkspace();
   const navigate = useNavigate();
+  const term = useBusinessTerminology();
 
   const [client, setClient] = useState(null);
   const [events, setEvents] = useState([]);
@@ -95,11 +97,11 @@ export default function ClientDetails() {
       <Card className="p-5">
         <div className="flex items-center justify-between mb-3">
           <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-            Events ({events.length})
+            {term.clientWorkLabel} ({events.length})
           </div>
         </div>
         {events.length === 0 ? (
-          <EmptyState title="No events yet" description="Create an event for this client to see it here." />
+          <EmptyState title={`No ${term.workItemPlural.toLowerCase()} yet`} description={`Create a ${term.workItemSingular.toLowerCase()} for this client to see it here.`} />
         ) : (
           <div className="divide-y divide-border">
             {events.map((e) => (

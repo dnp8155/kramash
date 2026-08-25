@@ -24,6 +24,7 @@ import {
   ArrowLeft, Plus, Trash2, FileDown, Save, CheckCircle2, Copy, AlertTriangle, FileText, Users
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -36,6 +37,7 @@ export default function QuotationEditor() {
   const { toast } = useToast();
   const currency = workspace?.currency || "INR";
   const gstWorkspaceEnabled = !!workspace?.gst_enabled;
+  const term = useBusinessTerminology();
 
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -314,10 +316,11 @@ export default function QuotationEditor() {
     try {
       const ev = eventId ? await base44.entities.Event.get(eventId) : null;
       const prev = ev ? (Number(ev.contract_value) || 0) : 0;
+      const wl = term.workItemSingular.toLowerCase();
       const proceed = window.confirm(
         ev
-          ? `This event currently has a contract value of ${formatMoney(prev, currency)}.\n\nUpdate it to the accepted quotation total of ${formatMoney(existingQuotation.grand_total, currency)}?`
-          : "Mark this quotation as Accepted? (No event linked, so contract value will not be updated.)"
+          ? `This ${wl} currently has a contract value of ${formatMoney(prev, currency)}.\n\nUpdate it to the accepted quotation total of ${formatMoney(existingQuotation.grand_total, currency)}?`
+          : `Mark this quotation as Accepted? (No ${wl} linked, so contract value will not be updated.)`
       );
       if (!proceed) { setAccepting(false); return; }
       const { eventUpdated } = await acceptQuotation(workspaceId, id, { updateContractValue: !!ev });
@@ -374,7 +377,7 @@ export default function QuotationEditor() {
   };
 
   const downloadJobSheet = async () => {
-    if (!event) { toast({ title: "Select an event to generate a job sheet" }); return; }
+    if (!event) { toast({ title: `Select a ${term.workItemSingular.toLowerCase()} to generate a job sheet` }); return; }
     setGenerating(true);
     try {
       const [asgns, members] = await Promise.all([
@@ -440,9 +443,9 @@ export default function QuotationEditor() {
               {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </Select>
           </Field>
-          <Field label="Event">
+          <Field label={term.workItemSingular}>
             <Select value={eventId} onChange={(e) => onEventChange(e.target.value)} disabled={readOnly} className="w-full">
-              <option value="">— Select event —</option>
+              <option value="">— Select {term.workItemSingular.toLowerCase()} —</option>
               {availableEvents.map((e) => <option key={e.id} value={e.id}>{e.title}</option>)}
             </Select>
           </Field>

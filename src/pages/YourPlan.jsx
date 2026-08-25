@@ -9,12 +9,13 @@ import { useToast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
 import { PLAN_UNLIMITED } from "@/lib/planService";
 import { createPaymentOrder, verifyPayment } from "@/lib/paymentService";
+import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
 
 const BILLING_LABELS = { MONTHLY: "Monthly", SIX_MONTHS: "6 Months", ANNUAL: "Annual" };
 const BILLING_PERIOD = { MONTHLY: "/month", SIX_MONTHS: "/6 months", ANNUAL: "/year" };
 
 const LIMIT_LABELS = {
-  max_events: "Events",
+  max_events: "Work Items",
   max_team_members: "Team Members",
   max_services: "Services",
   pdf_export_enabled: "PDF Export",
@@ -25,6 +26,7 @@ export default function YourPlan() {
   const { workspace } = useWorkspace();
   const { plan, usage, loading, reload } = usePlan();
   const { toast } = useToast();
+  const term = useBusinessTerminology();
   const [searchParams, setSearchParams] = useSearchParams();
   const [requesting, setRequesting] = useState(null);
   const [paying, setPaying] = useState(null);
@@ -147,7 +149,7 @@ export default function YourPlan() {
   }
 
   const usageRows = [
-    { key: "max_events", label: "Events", current: usage?.events || 0 },
+    { key: "max_events", label: term.workItemPlural, current: usage?.events || 0 },
     { key: "max_team_members", label: "Team Members", current: usage?.team_members || 0 },
     { key: "max_services", label: "Services", current: usage?.services || 0 }
   ];
@@ -290,7 +292,7 @@ export default function YourPlan() {
               </tr>
             </thead>
             <tbody>
-              <CompareRow label="Events" free={plan?.limits?.max_events} pro="Unlimited" />
+              <CompareRow label={term.workItemPlural} free={plan?.limits?.max_events} pro="Unlimited" />
               <CompareRow label="Team Members" free={plan?.limits?.max_team_members} pro="Up to 50" />
               <CompareRow label="Services" free={plan?.limits?.max_services} pro="Unlimited" />
               <CompareRow label="PDF Export" free={false} pro={true} />
