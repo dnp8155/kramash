@@ -23,16 +23,16 @@ export default function Sidebar({ mobile = false, onClose, onToggleSidebar }) {
     cn(
       "relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
       isActive
-        ? "bg-success/10 text-foreground font-medium"
-        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+        ? "bg-success/10 text-foreground font-semibold"
+        : "text-muted-foreground font-medium hover:bg-muted hover:text-foreground"
     );
 
   const subItemClass = ({ isActive }) =>
     cn(
       "relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
       isActive
-        ? "bg-success/10 text-foreground font-medium"
-        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+        ? "bg-success/10 text-foreground font-semibold"
+        : "text-muted-foreground font-medium hover:bg-muted hover:text-foreground"
     );
 
   const renderItem = (item, cls = itemClass) => {
@@ -131,7 +131,7 @@ export default function Sidebar({ mobile = false, onClose, onToggleSidebar }) {
           {(user?.full_name || user?.email || "K").charAt(0).toUpperCase()}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-sm font-medium truncate">{user?.full_name || "User"}</div>
+          <div className="text-sm font-semibold truncate">{user?.full_name || "User"}</div>
           <div className="text-xs text-muted-foreground truncate">{workspace?.name || "—"}</div>
         </div>
         <button
