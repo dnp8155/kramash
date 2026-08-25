@@ -40,7 +40,7 @@ export default function AppLayout() {
           sidebarCollapsed ? "w-0" : "w-64"
         }`}
       >
-        <Sidebar />
+        <Sidebar onToggleSidebar={() => setSidebarCollapsed((v) => !v)} />
       </aside>
 
       {/* Mobile drawer */}
