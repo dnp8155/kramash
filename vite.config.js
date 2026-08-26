@@ -4,6 +4,8 @@ import { defineConfig } from 'vite'
 
 // https://vite.dev/config/
 export default defineConfig({
+  // Expose BASE44_* prefixed env vars to client-side code (in addition to VITE_).
+  envPrefix: ['VITE_', 'BASE44_'],
   plugins: [
     base44({
       // Support for legacy code that imports the base44 SDK with @/integrations, @/entities, etc.
