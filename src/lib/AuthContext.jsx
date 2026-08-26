@@ -119,10 +119,10 @@ export const AuthProvider = ({ children }) => {
     setIsAuthenticated(false);
     
     if (shouldRedirect) {
-      // Use the SDK's logout method which handles token cleanup and redirect
-      base44.auth.logout(window.location.href);
+      // Clear token then hard-redirect to /login (SPA route) so Vercel serves index.html
+      base44.auth.logout();
+      window.location.href = '/login';
     } else {
-      // Just remove the token without redirect
       base44.auth.logout();
     }
   };
