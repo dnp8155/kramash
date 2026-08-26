@@ -1,47 +1,20 @@
 import { useState } from "react";
-import { Outlet, useLocation } from "react-router-dom";
+import { Outlet } from "react-router-dom";
 import Sidebar from "@/components/layout/Sidebar";
 import TopHeader from "@/components/layout/TopHeader";
 import MobileNavigation from "@/components/layout/MobileNavigation";
 import ErrorBoundary from "@/components/common/ErrorBoundary";
 import OfflineBanner from "@/components/common/OfflineBanner";
 import UpdateBanner from "@/components/common/UpdateBanner";
-import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
 
 export default function AppLayout() {
-  const location = useLocation();
-  const term = useBusinessTerminology();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const path = location.pathname;
-
-  const titles = {
-    "/events": term.workItemPlural,
-    "/clients": "Clients",
-    "/team": term.teamLabel,
-    "/financial": "Payment Activity",
-    "/rate-estimator": "Rate Estimator",
-    "/quotation": "Quotation & Agreement",
-    "/sign-pdf": "Sign a PDF",
-    "/preferences": "Preferences",
-    "/settings": "Settings",
-    "/app-updates": "App & Updates",
-    "/plan": "Your Plan"
-  };
-  let title = titles[path] || "Kramashah";
-  if (path.startsWith("/events/")) title = term.workItemDetailsLabel;
-  else if (path.startsWith("/clients/")) title = "Client Details";
-  else if (path.startsWith("/team/")) title = "Team Member";
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       {/* Desktop sidebar */}
-      <aside
-        className={`hidden lg:block shrink-0 transition-[width] duration-200 ease-in-out overflow-hidden ${
-          sidebarCollapsed ? "w-0" : "w-64"
-        }`}
-      >
-        <Sidebar onToggleSidebar={() => setSidebarCollapsed((v) => !v)} />
+      <aside className="hidden lg:block shrink-0 w-64 overflow-hidden">
+        <Sidebar />
       </aside>
 
       {/* Mobile drawer */}
@@ -58,12 +31,7 @@ export default function AppLayout() {
       <div className="flex-1 flex flex-col min-w-0">
         <UpdateBanner />
         <OfflineBanner />
-        <TopHeader
-          title={title}
-          onMenuClick={() => setMobileOpen(true)}
-          onToggleSidebar={() => setSidebarCollapsed((v) => !v)}
-          sidebarCollapsed={sidebarCollapsed}
-        />
+        <TopHeader onMenuClick={() => setMobileOpen(true)} />
         <main className="flex-1 overflow-y-auto scrollbar-thin pb-16 lg:pb-0">
           <ErrorBoundary>
             <Outlet />
