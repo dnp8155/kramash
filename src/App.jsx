@@ -37,6 +37,7 @@ import AdminDashboard from '@/pages/admin/AdminDashboard';
 import AdminWorkspaces from '@/pages/admin/AdminWorkspaces';
 import AdminWorkspaceDetails from '@/pages/admin/AdminWorkspaceDetails';
 import AdminPlans from '@/pages/admin/AdminPlans';
+import ClientQuotationView from '@/pages/ClientQuotationView';
 // Add page imports here
 
 const AuthenticatedApp = () => {
@@ -74,6 +75,9 @@ const AuthenticatedApp = () => {
 
       {/* Public landing page */}
       <Route path="/" element={<Landing />} />
+
+      {/* Public client-facing quotation view + online signing */}
+      <Route path="/q/:id" element={<ClientQuotationView />} />
 
       {/* Authenticated but no workspace yet → onboarding */}
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>

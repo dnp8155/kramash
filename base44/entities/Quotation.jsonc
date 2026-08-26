@@ -126,6 +126,19 @@
     "event_snapshot": {
       "type": "string",
       "title": "Event Snapshot (JSON)"
+    },
+    "client_signature": {
+      "type": "string",
+      "title": "Client Signature (data URL)"
+    },
+    "signed_by_name": {
+      "type": "string",
+      "title": "Signed By (client name)"
+    },
+    "signed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Signed At"
     }
   },
   "required": [
