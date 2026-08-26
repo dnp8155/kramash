@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { useWorkspace } from "@/lib/WorkspaceContext";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
 import { categoryLabel } from "@/lib/businessTerminology";
-import { ChevronDown, ChevronUp, Settings, Info, X, ChevronLeft, LogOut } from "lucide-react";
+import { ChevronDown, ChevronUp, Settings, Info, X, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function Sidebar({ mobile = false, onClose, onToggleSidebar }) {
@@ -64,21 +64,13 @@ export default function Sidebar({ mobile = false, onClose, onToggleSidebar }) {
           <div className="font-bold text-sm leading-tight tracking-wide uppercase">Kramashah</div>
           <div className="text-xs text-muted-foreground truncate">{categoryLabel(term.category)}</div>
         </div>
-        {mobile ? (
+        {mobile && (
           <button
             onClick={onClose}
             className="w-8 h-8 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
             aria-label="Close"
           >
             <X className="w-4 h-4" />
-          </button>
-        ) : (
-          <button
-            onClick={onToggleSidebar}
-            className="w-8 h-8 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
-            aria-label="Collapse sidebar"
-          >
-            <ChevronLeft className="w-4 h-4" />
           </button>
         )}
       </div>
