@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import SettingsNav from "@/components/settings/SettingsNav";
 import ProfileSection from "@/components/settings/ProfileSection";
 import AppearanceSection from "@/components/settings/AppearanceSection";
@@ -17,14 +17,16 @@ const sections = [
 ];
 
 export default function Settings() {
-  const [active, setActive] = useState("profile");
+  const { section } = useParams();
+  const navigate = useNavigate();
+  const active = sections.find((s) => s.id === section)?.id || "profile";
   const ActiveComponent = sections.find((s) => s.id === active)?.component || ProfileSection;
 
   return (
     <div className="p-4 sm:p-6 max-w-[1200px] mx-auto">
       <h1 className="text-2xl font-bold mb-5">Settings</h1>
       <div className="flex flex-col lg:flex-row gap-6">
-        <SettingsNav sections={sections} active={active} onSelect={setActive} />
+        <SettingsNav sections={sections} active={active} onSelect={(id) => navigate(`/settings/${id}`)} />
         <div className="flex-1 min-w-0">
           <ActiveComponent />
         </div>

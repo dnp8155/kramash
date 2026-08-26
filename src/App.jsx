@@ -100,7 +100,7 @@ const AuthenticatedApp = () => {
           <Route path="/quotation/:id" element={<QuotationEditor />} />
           <Route path="/sign-pdf" element={<SignPdf />} />
           <Route path="/preferences" element={<Preferences />} />
-          <Route path="/settings" element={<Settings />} />
+          <Route path="/settings/:section?" element={<Settings />} />
           <Route path="/app-updates" element={<AppUpdates />} />
           <Route path="/plan" element={<YourPlan />} />
         </Route>
