@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { mainNav, moreNav, moreGroup } from "@/constants/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { useWorkspace } from "@/lib/WorkspaceContext";
@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 
 export default function Sidebar({ mobile = false, onClose, onToggleSidebar }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { workspace } = useWorkspace();
   const term = useBusinessTerminology();
@@ -135,6 +136,7 @@ export default function Sidebar({ mobile = false, onClose, onToggleSidebar }) {
           <div className="text-xs text-muted-foreground truncate">{workspace?.name || "—"}</div>
         </div>
         <button
+          onClick={() => navigate("/preferences")}
           className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
           aria-label="Settings"
         >
