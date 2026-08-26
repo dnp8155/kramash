@@ -187,6 +187,10 @@ export default function YourPlan() {
                 </div>
               );
             })}
+            <div className="flex justify-between text-sm pt-1.5 border-t border-border mt-1.5">
+              <span className="text-muted-foreground">Database Storage</span>
+              <span className="font-medium">{plan?.storageGb ? `${plan.storageGb} GB` : "—"}</span>
+            </div>
           </div>
         </div>
 

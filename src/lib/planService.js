@@ -65,6 +65,16 @@ export async function resolveWorkspacePlan(workspaceId) {
   }
 
   const limits = config.limitsByPlan[planCode] || {};
+
+  // Resolve per-billing-cycle storage from the active subscription's pricing.
+  let storageGb = limits.max_storage_gb || 0;
+  if (activeSub && activeSub.pricing_id && !isExpired) {
+    const subPricing = config.pricings.find((p) => p.id === activeSub.pricing_id);
+    if (subPricing && typeof subPricing.storage_gb === "number") {
+      storageGb = subPricing.storage_gb;
+    }
+  }
+
   return {
     planCode,
     planStatus,
@@ -72,6 +82,7 @@ export async function resolveWorkspacePlan(workspaceId) {
     expiresAt,
     subscription,
     limits,
+    storageGb,
     plans: config.plans,
     pricings: config.pricings
   };
