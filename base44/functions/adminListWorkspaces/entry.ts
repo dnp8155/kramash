@@ -53,6 +53,7 @@ export default async function (req) {
         plan_status: ctx.planStatus,
         expires_at: ctx.expiresAt,
         subscription_status: sub ? sub.status : "ACTIVE",
+        storage_gb: ctx.storageGb || 0,
         usage
       });
     }

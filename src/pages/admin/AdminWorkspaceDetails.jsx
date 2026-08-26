@@ -135,6 +135,7 @@ export default function AdminWorkspaceDetails() {
           <Row label="Status" value={plan.plan_status} />
           <Row label="Expiry" value={plan.expires_at ? new Date(plan.expires_at).toLocaleDateString() : "—"} />
           <Row label="Expired" value={plan.is_expired ? "Yes" : "No"} />
+          <Row label="Storage (GB)" value={plan.storage_gb || 0} />
           <div className="pt-2 border-t border-border mt-2">
             <div className="text-xs text-muted-foreground mb-1">Limits</div>
             {Object.entries(plan.limits).map(([k, v]) => (
@@ -145,10 +146,11 @@ export default function AdminWorkspaceDetails() {
       </div>
 
       <Section title="Usage">
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <UsageCard label="Events" value={usage.events} />
           <UsageCard label="Team Members" value={usage.team_members} />
           <UsageCard label="Services" value={usage.services} />
+          <UsageCard label="Storage (GB)" value={plan.storage_gb || 0} />
         </div>
       </Section>
 

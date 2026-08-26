@@ -71,6 +71,7 @@ export default function AdminWorkspaces() {
                 <th className="px-3 py-2 font-medium">Plan</th>
                 <th className="px-3 py-2 font-medium">Status</th>
                 <th className="px-3 py-2 font-medium">Expiry</th>
+                <th className="px-3 py-2 font-medium">Storage</th>
                 <th className="px-3 py-2 font-medium">Usage</th>
                 <th className="px-3 py-2"></th>
               </tr>
@@ -94,6 +95,9 @@ export default function AdminWorkspaces() {
                   <td className="px-3 py-2 text-muted-foreground capitalize">{r.plan_status}</td>
                   <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
                     {r.expires_at ? new Date(r.expires_at).toLocaleDateString() : "—"}
+                  </td>
+                  <td className="px-3 py-2 text-xs whitespace-nowrap">
+                    <span className="font-medium text-foreground">{r.storage_gb || 0} GB</span>
                   </td>
                   <td className="px-3 py-2 text-xs text-muted-foreground whitespace-nowrap">
                     {r.usage.events}E · {r.usage.team_members}T · {r.usage.services}S

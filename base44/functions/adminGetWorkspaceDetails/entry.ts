@@ -56,6 +56,7 @@ export default async function (req) {
         plan_status: ctx.planStatus,
         expires_at: ctx.expiresAt,
         is_expired: ctx.isExpired,
+        storage_gb: ctx.storageGb || 0,
         limits: ctx.limits
       },
       usage,

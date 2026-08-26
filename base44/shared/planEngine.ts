@@ -79,7 +79,16 @@ export async function resolvePlanContext(base44, workspaceId) {
     }
   }
 
-  return { planCode, planStatus, isExpired, expiresAt, subscription, limits, planRecord };
+  // Resolve per-billing-cycle storage from the active subscription's pricing.
+  let storageGb = limits.max_storage_gb || 0;
+  if (activeSub && activeSub.pricing_id && !isExpired) {
+    try {
+      const pricing = await base44.asServiceRole.entities.PlanPricing.get(activeSub.pricing_id);
+      if (pricing && typeof pricing.storage_gb === "number") storageGb = pricing.storage_gb;
+    } catch (e) { /* pricing may have been removed */ }
+  }
+
+  return { planCode, planStatus, isExpired, expiresAt, subscription, limits, planRecord, storageGb };
 }
 
 export async function countUsage(base44, workspaceId, resourceKey) {
