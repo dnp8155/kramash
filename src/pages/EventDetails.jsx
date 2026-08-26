@@ -14,7 +14,7 @@ import AssignTeamDialog from "@/components/team/AssignTeamDialog";
 import RecordPaymentDialog from "@/components/financial/RecordPaymentDialog";
 import RecordExpenseDialog from "@/components/financial/RecordExpenseDialog";
 import { useToast } from "@/components/ui/use-toast";
-import { formatEventDate } from "@/lib/dates";
+import { formatEventDate, currentFY, fyRange } from "@/lib/dates";
 import { formatMoney } from "@/utils/format";
 import {
   eventFinancialSummary,
@@ -260,7 +260,14 @@ export default function EventDetails() {
           <div>
             <div className="text-xs font-medium text-muted-foreground mb-1">Financial Year</div>
             <div className="text-sm font-semibold text-foreground px-3 py-1.5 bg-muted/50 rounded-md border border-border">
-              April 2026 - March 2027 (Current)
+              {(() => {
+                const r = fyRange(currentFY());
+                if (!r) return "—";
+                const s = r.start.split("-");
+                const e = r.end.split("-");
+                const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                return `${months[Number(s[1]) - 1]} ${s[0]} - ${months[Number(e[1]) - 1]} ${e[0]} (Current)`;
+              })()}
             </div>
           </div>
         </div>

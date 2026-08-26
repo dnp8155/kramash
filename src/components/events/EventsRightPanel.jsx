@@ -16,7 +16,7 @@ export default function EventsRightPanel({ events = [], onEventClick, term }) {
     <div className="space-y-4">
       {/* Upcoming */}
       <div className="bg-card border border-border rounded-lg p-4">
-        <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+        <div className="text-sm font-semibold text-foreground mb-2">
           {t.activeWorkLabel || "Upcoming Events"}
         </div>
         <div className="space-y-1">

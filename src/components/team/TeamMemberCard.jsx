@@ -41,7 +41,7 @@ export default function TeamMemberCard({ member, assignments = [], transactions 
         >
           <span className="truncate">{member.name}</span>
           {isSelf && (
-            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-primary/10 text-primary uppercase tracking-wide shrink-0">
+            <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary shrink-0">
               Self
             </span>
           )}
@@ -101,7 +101,7 @@ export default function TeamMemberCard({ member, assignments = [], transactions 
       </div>
 
       {!active && (
-        <div className="mt-2 text-[10px] font-semibold text-destructive uppercase tracking-wide">
+        <div className="mt-2 text-xs font-medium text-destructive">
           {TEAM_MEMBER_STATUS.inactive.label}
         </div>
       )}
