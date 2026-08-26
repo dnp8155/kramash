@@ -1,5 +1,6 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useWorkspace } from "@/lib/WorkspaceContext";
 import { useAuth } from "@/lib/AuthContext";
@@ -30,28 +31,17 @@ export default function Team() {
   const { plan } = usePlan();
 
   const [tab, setTab] = useState("Roster");
-  const [members, setMembers] = useState([]);
-  const [roles, setRoles] = useState([]);
-  const [assignments, setAssignments] = useState([]);
-  const [eventsById, setEventsById] = useState({});
-  const [transactions, setTransactions] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
   const [query, setQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
-
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const queryClient = useQueryClient();
 
-  const load = useCallback(async () => {
-    if (!workspaceId) return;
-    setLoading(true);
-    setError("");
-    try {
-      // Ensure the workspace has default roles to start with.
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["team", workspaceId],
+    queryFn: async () => {
       await ensureDefaultRoles(workspaceId);
       const [membs, rles, asgns, txns] = await Promise.all([
         loadTeamMembers(workspaceId),
@@ -59,12 +49,7 @@ export default function Team() {
         loadAssignments(workspaceId),
         base44.entities.FinancialTransaction.filter({ workspace_id: workspaceId, transaction_type: "TEAM_PAYMENT", status: "ACTIVE" }, "-transaction_date", 1000)
       ]);
-      setMembers(membs);
-      setRoles(rles);
-      setAssignments(asgns);
-      setTransactions(txns || []);
-      // Build eventsById from assignments' event_ids.
-      const evIds = [...new Set(asgns.map((a) => a.event_id))];
+      const evIds = [...new Set((asgns || []).map((a) => a.event_id))];
       const evMap = {};
       await Promise.all(
         evIds.map(async (id) => {
@@ -74,16 +59,16 @@ export default function Team() {
           } catch (e) { /* event may be gone */ }
         })
       );
-      setEventsById(evMap);
-    } catch (e) {
-      setError(e?.message || "Failed to load team.");
-      setMembers([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [workspaceId]);
-
-  useEffect(() => { load(); }, [load]);
+      return { members: membs || [], roles: rles || [], assignments: asgns || [], transactions: txns || [], eventsById: evMap };
+    },
+    enabled: !!workspaceId
+  });
+  const members = data?.members || [];
+  const roles = data?.roles || [];
+  const assignments = data?.assignments || [];
+  const transactions = data?.transactions || [];
+  const eventsById = data?.eventsById || {};
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ["team", workspaceId] });
 
   const rolesById = useMemo(() => {
     const m = {}; roles.forEach((r) => { m[r.id] = r; }); return m;
@@ -115,7 +100,7 @@ export default function Team() {
     try {
       await base44.entities.TeamMember.update(m.id, { status: next });
       toast({ title: next === "inactive" ? "Member set inactive" : "Member reactivated" });
-      load();
+      invalidate();
     } catch (e) {
       toast({ title: "Failed to update member", description: e?.message, variant: "destructive" });
     }
@@ -135,7 +120,7 @@ export default function Team() {
         toast({ title: "Member deleted" });
       }
       setConfirmDelete(null);
-      load();
+      invalidate();
     } catch (e) {
       toast({ title: "Failed to delete member", description: e?.message, variant: "destructive" });
     }
@@ -187,7 +172,7 @@ export default function Team() {
 
       {error && (
         <div className="text-sm text-destructive bg-destructive/5 border border-destructive/20 rounded-md px-3 py-2">
-          {error}
+          {error?.message || "Failed to load team."}
         </div>
       )}
 
@@ -217,7 +202,7 @@ export default function Team() {
             </div>
           </div>
 
-          {loading ? (
+          {isLoading ? (
             <CardGridSkeleton count={4} />
           ) : filtered.length === 0 ? (
             <Card className="p-0">
@@ -258,7 +243,7 @@ export default function Team() {
           })()}
         </>
       ) : (
-        loading ? (
+        isLoading ? (
           <Skeleton className="h-96 w-full rounded-lg" />
         ) : (
           <AvailabilityCalendar
@@ -273,7 +258,7 @@ export default function Team() {
       <TeamMemberForm
         open={showForm}
         onClose={() => setShowForm(false)}
-        onSaved={load}
+        onSaved={invalidate}
         member={editing}
         workspaceId={workspaceId}
       />

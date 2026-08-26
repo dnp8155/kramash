@@ -1,5 +1,6 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useWorkspace } from "@/lib/WorkspaceContext";
 import { useToast } from "@/components/ui/use-toast";
 import Button from "@/components/common/Button";
@@ -32,34 +33,31 @@ export default function Quotation() {
   const currency = workspace?.currency || "INR";
   const term = useBusinessTerminology();
 
-  const [loading, setLoading] = useState(true);
-  const [quotations, setQuotations] = useState([]);
-  const [clients, setClients] = useState([]);
-  const [events, setEvents] = useState([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [generatingId, setGeneratingId] = useState("");
+  const queryClient = useQueryClient();
 
-  const load = useCallback(async () => {
-    if (!workspaceId) return;
-    setLoading(true);
-    try {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["quotations", workspaceId],
+    queryFn: async () => {
       const [qs, cl, ev] = await Promise.all([
         loadQuotations(workspaceId),
         base44.entities.Client.filter({ workspace_id: workspaceId }, "name", 500),
         base44.entities.Event.filter({ workspace_id: workspaceId }, "-start_date", 500)
       ]);
-      setQuotations(qs);
-      setClients(cl || []);
-      setEvents(ev || []);
-    } catch (e) {
-      toast({ title: "Failed to load quotations", description: e?.message, variant: "destructive" });
-    } finally {
-      setLoading(false);
-    }
-  }, [workspaceId, toast]);
+      return { quotations: qs || [], clients: cl || [], events: ev || [] };
+    },
+    enabled: !!workspaceId
+  });
+  const quotations = data?.quotations || [];
+  const clients = data?.clients || [];
+  const events = data?.events || [];
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ["quotations", workspaceId] });
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    if (error) toast({ title: "Failed to load quotations", description: error?.message, variant: "destructive" });
+  }, [error, toast]);
 
   const clientsById = useMemo(() => {
     const m = {};
@@ -97,7 +95,7 @@ export default function Quotation() {
     try {
       await deleteQuotation(workspaceId, qt.id);
       toast({ title: "Quotation deleted" });
-      load();
+      invalidate();
     } catch (e) {
       toast({ title: "Delete failed", description: e?.message, variant: "destructive" });
     }
@@ -117,7 +115,7 @@ export default function Quotation() {
     }
   };
 
-  if (loading) return (
+  if (isLoading) return (
     <div className="p-4 sm:p-6 space-y-5 max-w-[1200px] mx-auto">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>

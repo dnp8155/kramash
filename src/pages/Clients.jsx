@@ -1,5 +1,6 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useWorkspace } from "@/lib/WorkspaceContext";
 import SearchInput from "@/components/common/SearchInput";
@@ -18,36 +19,27 @@ export default function Clients() {
   const navigate = useNavigate();
   const term = useBusinessTerminology();
 
-  const [clients, setClients] = useState([]);
-  const [eventCounts, setEventCounts] = useState({});
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [query, setQuery] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editingClient, setEditingClient] = useState(null);
+  const queryClient = useQueryClient();
 
-  const load = useCallback(async () => {
-    if (!workspaceId) return;
-    setLoading(true);
-    setError("");
-    try {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["clients", workspaceId],
+    queryFn: async () => {
       const [clList, evList] = await Promise.all([
         base44.entities.Client.filter({ workspace_id: workspaceId }, "name", 500),
         base44.entities.Event.filter({ workspace_id: workspaceId }, "-start_date", 500)
       ]);
-      setClients(clList || []);
       const counts = {};
       (evList || []).forEach((e) => { counts[e.client_id] = (counts[e.client_id] || 0) + 1; });
-      setEventCounts(counts);
-    } catch (e) {
-      setError(e?.message || "Failed to load clients.");
-      setClients([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [workspaceId]);
-
-  useEffect(() => { load(); }, [load]);
+      return { clients: clList || [], eventCounts: counts };
+    },
+    enabled: !!workspaceId
+  });
+  const clients = data?.clients || [];
+  const eventCounts = data?.eventCounts || {};
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ["clients", workspaceId] });
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -97,11 +89,11 @@ export default function Clients() {
 
       {error && (
         <div className="text-sm text-destructive bg-destructive/5 border border-destructive/20 rounded-md px-3 py-2">
-          {error}
+          {error?.message || "Failed to load clients."}
         </div>
       )}
 
-      {loading ? (
+      {isLoading ? (
         <TableSkeleton rows={6} />
       ) : filtered.length === 0 ? (
         <div className="bg-card border border-border rounded-lg">
@@ -147,7 +139,7 @@ export default function Clients() {
       <ClientForm
         open={showForm}
         onClose={() => setShowForm(false)}
-        onSaved={load}
+        onSaved={invalidate}
         client={editingClient}
         workspaceId={workspaceId}
       />

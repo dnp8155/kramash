@@ -1,5 +1,6 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useWorkspace } from "@/lib/WorkspaceContext";
 import ReminderBanner from "@/components/events/ReminderBanner";
@@ -21,40 +22,29 @@ export default function Events() {
   const navigate = useNavigate();
   const term = useBusinessTerminology();
 
-  const [events, setEvents] = useState([]);
-  const [clients, setClients] = useState({});
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [fyFilter, setFyFilter] = useState("all");
-
   const [showForm, setShowForm] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
+  const queryClient = useQueryClient();
 
-  const load = useCallback(async () => {
-    if (!workspaceId) return;
-    setLoading(true);
-    setError("");
-    try {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["events", workspaceId],
+    queryFn: async () => {
       const [evList, clList] = await Promise.all([
         base44.entities.Event.filter({ workspace_id: workspaceId }, "-start_date", 500),
         base44.entities.Client.filter({ workspace_id: workspaceId }, "name", 500)
       ]);
-      setEvents(evList || []);
       const map = {};
       (clList || []).forEach((c) => { map[c.id] = c; });
-      setClients(map);
-    } catch (e) {
-      setError(e?.message || "Failed to load events.");
-      setEvents([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [workspaceId]);
-
-  useEffect(() => { load(); }, [load]);
+      return { events: evList || [], clients: map };
+    },
+    enabled: !!workspaceId
+  });
+  const events = data?.events || [];
+  const clients = data?.clients || {};
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ["events", workspaceId] });
 
   const clientName = (id) => clients[id]?.name || "";
 
@@ -166,7 +156,7 @@ export default function Events() {
 
       {error && (
         <div className="text-sm text-destructive bg-destructive/5 border border-destructive/20 rounded-md px-3 py-2">
-          {error}
+          {error?.message || "Failed to load events."}
         </div>
       )}
 
@@ -175,7 +165,7 @@ export default function Events() {
         <EventsTable
           events={filtered}
           clients={clients}
-          loading={loading}
+          loading={isLoading}
           onEventClick={openEvent}
           onEditEvent={openEdit}
           onAdd={openNew}
@@ -188,7 +178,7 @@ export default function Events() {
       <EventForm
         open={showForm}
         onClose={() => setShowForm(false)}
-        onSaved={load}
+        onSaved={invalidate}
         event={editingEvent}
         workspaceId={workspaceId}
         term={term}

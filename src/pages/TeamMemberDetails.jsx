@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useWorkspace } from "@/lib/WorkspaceContext";
 import Card from "@/components/common/Card";
@@ -22,42 +23,26 @@ export default function TeamMemberDetails() {
   const { workspaceId, workspace } = useWorkspace();
   const navigate = useNavigate();
 
-  const [member, setMember] = useState(null);
-  const [assignments, setAssignments] = useState([]);
-  const [events, setEvents] = useState([]);
-  const [transactions, setTransactions] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [payAssignment, setPayAssignment] = useState(null);
+  const queryClient = useQueryClient();
 
-  const load = useCallback(async () => {
-    if (!id) return;
-    setLoading(true);
-    setNotFound(false);
-    try {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["team-member", id, workspaceId],
+    queryFn: async () => {
       const m = await base44.entities.TeamMember.get(id);
-      if (!m || m.workspace_id !== workspaceId) {
-        setNotFound(true);
-        return;
-      }
-      setMember(m);
+      if (!m || m.workspace_id !== workspaceId) return { notFound: true };
       const asgns = await base44.entities.EventTeamAssignment.filter(
         { workspace_id: workspaceId, team_member_id: id },
         "-created_date",
         1000
       );
-      setAssignments(asgns || []);
-      // Load team payment transactions for this member.
+      let tx = [];
       try {
-        const tx = await base44.entities.FinancialTransaction.filter(
+        tx = await base44.entities.FinancialTransaction.filter(
           { workspace_id: workspaceId, team_member_id: id }, "-transaction_date", 500
         );
-        setTransactions(tx || []);
-      } catch (e) {
-        setTransactions([]);
-      }
-      // Load related events.
+      } catch (e) { tx = []; }
       const evIds = [...new Set((asgns || []).map((a) => a.event_id))];
       const evs = [];
       await Promise.all(
@@ -68,17 +53,18 @@ export default function TeamMemberDetails() {
           } catch (e) { /* skip */ }
         })
       );
-      setEvents(evs);
-    } catch (e) {
-      setNotFound(true);
-    } finally {
-      setLoading(false);
-    }
-  }, [id, workspaceId]);
+      return { notFound: false, member: m, assignments: asgns || [], transactions: tx || [], events: evs };
+    },
+    enabled: !!id && !!workspaceId
+  });
+  const member = data?.member || null;
+  const assignments = data?.assignments || [];
+  const transactions = data?.transactions || [];
+  const events = data?.events || [];
+  const notFound = !!data?.notFound || !!error;
+  const load = () => queryClient.invalidateQueries({ queryKey: ["team-member", id, workspaceId] });
 
-  useEffect(() => { load(); }, [load]);
-
-  if (loading) return <DetailSkeleton />;
+  if (isLoading) return <DetailSkeleton />;
 
   if (notFound || !member) {
     return (

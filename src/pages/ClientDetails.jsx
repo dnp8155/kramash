@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useWorkspace } from "@/lib/WorkspaceContext";
 import Card from "@/components/common/Card";
@@ -19,35 +20,25 @@ export default function ClientDetails() {
   const navigate = useNavigate();
   const term = useBusinessTerminology();
 
-  const [client, setClient] = useState(null);
-  const [events, setEvents] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const queryClient = useQueryClient();
 
-  const load = useCallback(async () => {
-    if (!id) return;
-    setLoading(true);
-    setNotFound(false);
-    try {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["client", id, workspaceId],
+    queryFn: async () => {
       const cl = await base44.entities.Client.get(id);
-      if (!cl || cl.workspace_id !== workspaceId) {
-        setNotFound(true);
-        return;
-      }
-      setClient(cl);
+      if (!cl || cl.workspace_id !== workspaceId) return { notFound: true };
       const evList = await base44.entities.Event.filter({ workspace_id: workspaceId, client_id: id }, "-start_date", 200);
-      setEvents(evList || []);
-    } catch (e) {
-      setNotFound(true);
-    } finally {
-      setLoading(false);
-    }
-  }, [id, workspaceId]);
+      return { notFound: false, client: cl, events: evList || [] };
+    },
+    enabled: !!id && !!workspaceId
+  });
+  const client = data?.client || null;
+  const events = data?.events || [];
+  const notFound = !!data?.notFound || !!error;
+  const load = () => queryClient.invalidateQueries({ queryKey: ["client", id, workspaceId] });
 
-  useEffect(() => { load(); }, [load]);
-
-  if (loading) return <DetailSkeleton />;
+  if (isLoading) return <DetailSkeleton />;
 
   if (notFound || !client) {
     return (

@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useWorkspace } from "@/lib/WorkspaceContext";
 import SummaryCard from "@/components/financial/SummaryCard";
@@ -46,24 +47,16 @@ export default function Financial() {
   const [type, setType] = useState("All");
   const [fy, setFy] = useState(currentFinancialYearLabel());
 
-  const [allTx, setAllTx] = useState([]);
-  const [events, setEvents] = useState([]);
-  const [clients, setClients] = useState([]);
-  const [members, setMembers] = useState([]);
-  const [assignments, setAssignments] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
-
   const [showClientPayment, setShowClientPayment] = useState(false);
   const [showTeamPayment, setShowTeamPayment] = useState(false);
   const [showExpense, setShowExpense] = useState(false);
   const [editing, setEditing] = useState(null);
   const [voiding, setVoiding] = useState(null);
+  const queryClient = useQueryClient();
 
-  const load = useCallback(async () => {
-    if (!workspaceId) return;
-    setLoading(true);
-    try {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["financial", workspaceId],
+    queryFn: async () => {
       await ensureDefaultExpenseCategories(workspaceId);
       const [tx, evs, cls, membs, asgns, cats] = await Promise.all([
         loadAllTransactions(workspaceId),
@@ -73,21 +66,21 @@ export default function Financial() {
         base44.entities.EventTeamAssignment.filter({ workspace_id: workspaceId }, "-created_date", 1000),
         loadExpenseCategories(workspaceId)
       ]);
-      setAllTx(tx);
-      setEvents(evs || []);
-      setClients(cls || []);
-      setMembers(membs || []);
-      setAssignments(asgns || []);
-      setCategories(cats);
-    } catch (e) {
-      setAllTx([]);
-      toast({ title: "Failed to load financial activity", description: e?.message, variant: "destructive" });
-    } finally {
-      setLoading(false);
-    }
-  }, [workspaceId]);
+      return { allTx: tx || [], events: evs || [], clients: cls || [], members: membs || [], assignments: asgns || [], categories: cats || [] };
+    },
+    enabled: !!workspaceId
+  });
+  const allTx = data?.allTx || [];
+  const events = data?.events || [];
+  const clients = data?.clients || [];
+  const members = data?.members || [];
+  const assignments = data?.assignments || [];
+  const categories = data?.categories || [];
+  const load = () => queryClient.invalidateQueries({ queryKey: ["financial", workspaceId] });
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    if (error) toast({ title: "Failed to load financial activity", description: error?.message, variant: "destructive" });
+  }, [error, toast]);
 
   const clientsById = useMemo(() => {
     const m = {}; clients.forEach((c) => { m[c.id] = c; }); return m;
@@ -156,7 +149,7 @@ export default function Financial() {
     }
   };
 
-  if (loading) return (
+  if (isLoading) return (
     <div className="p-4 sm:p-6 space-y-4 max-w-[1100px] mx-auto">
       <div>
         <h1 className="text-2xl font-bold text-foreground tracking-tight">Financial</h1>

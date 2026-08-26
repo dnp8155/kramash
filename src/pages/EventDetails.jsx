@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useWorkspace } from "@/lib/WorkspaceContext";
 import Card from "@/components/common/Card";
@@ -36,34 +37,19 @@ export default function EventDetails() {
   const { toast } = useToast();
   const term = useBusinessTerminology();
 
-  const [event, setEvent] = useState(null);
-  const [client, setClient] = useState(null);
-  const [members, setMembers] = useState([]);
-  const [roles, setRoles] = useState([]);
-  const [assignments, setAssignments] = useState([]);
-  const [eventsById, setEventsById] = useState({});
-  const [transactions, setTransactions] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [showAssign, setShowAssign] = useState(false);
   const [showClientPayment, setShowClientPayment] = useState(false);
   const [showExpense, setShowExpense] = useState(false);
   const [teamPayAssignment, setTeamPayAssignment] = useState(null);
   const [tab, setTab] = useState("Team");
+  const queryClient = useQueryClient();
 
-  const load = useCallback(async () => {
-    if (!id) return;
-    setLoading(true);
-    setNotFound(false);
-    try {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["event", id, workspaceId],
+    queryFn: async () => {
       const ev = await base44.entities.Event.get(id);
-      if (!ev || ev.workspace_id !== workspaceId) {
-        setNotFound(true);
-        return;
-      }
-      setEvent(ev);
+      if (!ev || ev.workspace_id !== workspaceId) return { notFound: true };
       const [clList, membs, rles, asgns, tx, cats] = await Promise.all([
         ev.client_id ? base44.entities.Client.get(ev.client_id).catch(() => null) : Promise.resolve(null),
         base44.entities.TeamMember.filter({ workspace_id: workspaceId }, "name", 500),
@@ -72,12 +58,6 @@ export default function EventDetails() {
         base44.entities.FinancialTransaction.filter({ workspace_id: workspaceId, event_id: ev.id }, "-transaction_date", 500),
         loadExpenseCategories(workspaceId)
       ]);
-      if (clList && clList.workspace_id === workspaceId) setClient(clList);
-      setMembers(membs || []);
-      setRoles(rles || []);
-      setAssignments(asgns || []);
-      setTransactions(tx || []);
-      setCategories(cats || []);
       const evIds = [...new Set((asgns || []).map((a) => a.event_id))];
       const evMap = {};
       evMap[ev.id] = ev;
@@ -89,15 +69,30 @@ export default function EventDetails() {
           } catch (e) { /* skip */ }
         })
       );
-      setEventsById(evMap);
-    } catch (e) {
-      setNotFound(true);
-    } finally {
-      setLoading(false);
-    }
-  }, [id, workspaceId]);
-
-  useEffect(() => { load(); }, [load]);
+      return {
+        notFound: false,
+        event: ev,
+        client: clList && clList.workspace_id === workspaceId ? clList : null,
+        members: membs || [],
+        roles: rles || [],
+        assignments: asgns || [],
+        transactions: tx || [],
+        categories: cats || [],
+        eventsById: evMap
+      };
+    },
+    enabled: !!id && !!workspaceId
+  });
+  const event = data?.event || null;
+  const client = data?.client || null;
+  const members = data?.members || [];
+  const roles = data?.roles || [];
+  const assignments = data?.assignments || [];
+  const transactions = data?.transactions || [];
+  const categories = data?.categories || [];
+  const eventsById = data?.eventsById || {};
+  const notFound = !!data?.notFound || !!error;
+  const load = () => queryClient.invalidateQueries({ queryKey: ["event", id, workspaceId] });
 
   const eventAssignments = useMemo(
     () => assignments.filter((a) => a.event_id === id && a.assignment_status !== "removed"),
@@ -174,7 +169,7 @@ export default function EventDetails() {
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, "_blank");
   };
 
-  if (loading) return <DetailSkeleton />;
+  if (isLoading) return <DetailSkeleton />;
 
   if (notFound || !event) {
     return (
