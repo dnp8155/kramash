@@ -4,11 +4,7 @@
   "properties": {
     "code": {
       "type": "string",
-      "title": "Plan Code",
-      "enum": [
-        "FREE",
-        "PRO"
-      ]
+      "title": "Plan Code"
     },
     "name": {
       "type": "string",
