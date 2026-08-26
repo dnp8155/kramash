@@ -7,6 +7,8 @@ import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
 import LoadingState from "@/components/common/LoadingState";
 import EmptyState from "@/components/common/EmptyState";
+import { StatGridSkeleton, TableSkeleton } from "@/components/common/Skeletons";
+import { Skeleton } from "@/components/ui/skeleton";
 import { formatMoney } from "@/utils/format";
 import { loadQuotations, deleteQuotation, loadQuotationItems } from "@/lib/quotationService";
 import { QUOTATION_STATUSES, QUOTATION_STATUS_META } from "@/constants/quotationConfig";
@@ -115,7 +117,25 @@ export default function Quotation() {
     }
   };
 
-  if (loading) return <LoadingState label="Loading quotations…" />;
+  if (loading) return (
+    <div className="p-4 sm:p-6 space-y-5 max-w-[1200px] mx-auto">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Quotations</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Create, track and finalize client quotations.</p>
+        </div>
+        <Button onClick={() => navigate("/quotation/new")}>
+          <Plus className="w-4 h-4" /> Create Quotation
+        </Button>
+      </div>
+      <StatGridSkeleton count={4} />
+      <div className="flex flex-col sm:flex-row gap-3">
+        <Skeleton className="h-9 flex-1 rounded-md" />
+        <Skeleton className="h-9 sm:w-44 rounded-md" />
+      </div>
+      <TableSkeleton />
+    </div>
+  );
 
   return (
     <div className="p-4 sm:p-6 space-y-5 max-w-[1200px] mx-auto">

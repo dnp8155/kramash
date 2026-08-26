@@ -11,6 +11,8 @@ import {
   ComposedChart, Bar, Line, Legend
 } from "recharts";
 import LoadingState from "@/components/common/LoadingState";
+import { StatGridSkeleton, ChartSkeleton } from "@/components/common/Skeletons";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 const CATEGORY_LABELS = {
@@ -45,7 +47,22 @@ export default function AdminDashboard() {
     staleTime: 30 * 1000,
   });
 
-  if (loading && !stats) return <LoadingState label="Loading dashboard…" />;
+  if (loading && !stats) return (
+    <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto space-y-6">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-xl font-bold text-foreground">Platform Dashboard</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Overview of workspaces, subscriptions, and revenue</p>
+        </div>
+        <Skeleton className="h-10 w-40 rounded-lg" />
+      </div>
+      <StatGridSkeleton count={4} />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <ChartSkeleton />
+        <ChartSkeleton />
+      </div>
+    </div>
+  );
   if (error && !stats) return <div className="p-6 text-sm text-destructive">{error?.message || "Failed to load stats"}</div>;
   if (!stats) return null;
 

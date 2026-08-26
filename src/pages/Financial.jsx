@@ -10,6 +10,8 @@ import EditTransactionDialog from "@/components/financial/EditTransactionDialog"
 import Button from "@/components/common/Button";
 import Select from "@/components/common/Select";
 import LoadingState from "@/components/common/LoadingState";
+import { StatGridSkeleton, TableSkeleton } from "@/components/common/Skeletons";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/use-toast";
 import { PAYMENT_METHODS, PAYMENT_TYPES } from "@/constants/statusConfig";
 import {
@@ -153,7 +155,21 @@ export default function Financial() {
     }
   };
 
-  if (loading) return <div className="p-6"><LoadingState label="Loading financial activity…" /></div>;
+  if (loading) return (
+    <div className="p-4 sm:p-6 space-y-4 max-w-[1100px] mx-auto">
+      <div>
+        <h1 className="text-2xl font-bold text-foreground tracking-tight">Financial</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">Track payments, expenses, and profit across financial years.</p>
+      </div>
+      <div className="h-10" />
+      <StatGridSkeleton count={3} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <Skeleton className="h-40 w-full rounded-lg" />
+        <Skeleton className="h-40 w-full rounded-lg" />
+      </div>
+      <TableSkeleton />
+    </div>
+  );
 
   return (
     <div className="p-4 sm:p-6 space-y-4 max-w-[1100px] mx-auto">

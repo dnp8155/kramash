@@ -11,6 +11,8 @@ import Select from "@/components/common/Select";
 import Button from "@/components/common/Button";
 import LoadingState from "@/components/common/LoadingState";
 import EmptyState from "@/components/common/EmptyState";
+import { CardGridSkeleton } from "@/components/common/Skeletons";
+import { Skeleton } from "@/components/ui/skeleton";
 import Card from "@/components/common/Card";
 import { Crown, Plus, AlertTriangle, Download, Users, UserCheck, UserX, CalendarClock } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -216,7 +218,7 @@ export default function Team() {
           </div>
 
           {loading ? (
-            <LoadingState label="Loading team…" />
+            <CardGridSkeleton count={4} />
           ) : filtered.length === 0 ? (
             <Card className="p-0">
               <EmptyState
@@ -250,7 +252,7 @@ export default function Team() {
         </>
       ) : (
         loading ? (
-          <LoadingState label="Loading availability…" />
+          <Skeleton className="h-96 w-full rounded-lg" />
         ) : (
           <AvailabilityCalendar
             members={members}

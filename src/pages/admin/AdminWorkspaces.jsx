@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { Search, ChevronRight } from "lucide-react";
 import LoadingState from "@/components/common/LoadingState";
 import EmptyState from "@/components/common/EmptyState";
+import { TableSkeleton } from "@/components/common/Skeletons";
 
 const planBadge = (plan, status) => {
   const map = {
@@ -48,7 +49,7 @@ export default function AdminWorkspaces() {
       </div>
 
       {loading ? (
-        <LoadingState label="Loading workspaces…" />
+        <TableSkeleton />
       ) : error ? (
         <div className="text-sm text-destructive">{error?.message || "Failed to load workspaces"}</div>
       ) : rows.length === 0 ? (

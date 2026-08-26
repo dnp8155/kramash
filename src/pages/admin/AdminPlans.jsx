@@ -6,6 +6,7 @@ import Button from "@/components/common/Button";
 import Input from "@/components/common/Input";
 import { Switch } from "@/components/ui/switch";
 import LoadingState from "@/components/common/LoadingState";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Save, Crown, Sparkles, Check, X, Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CreatePlanDialog, AddLimitDialog, AddPricingDialog } from "@/components/admin/PlanDialogs";
@@ -161,7 +162,21 @@ export default function AdminPlans() {
     }
   };
 
-  if (loading) return <LoadingState label="Loading plan configuration…" />;
+  if (loading) return (
+    <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto space-y-6">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-xl font-bold text-foreground">Plans & Pricing</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Configure plan limits and subscription pricing</p>
+        </div>
+        <Skeleton className="h-9 w-28 rounded-md" />
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Skeleton className="h-64 w-full rounded-xl" />
+        <Skeleton className="h-64 w-full rounded-xl" />
+      </div>
+    </div>
+  );
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto space-y-6">
