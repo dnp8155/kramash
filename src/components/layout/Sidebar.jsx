@@ -5,13 +5,13 @@ import { useAuth } from "@/lib/AuthContext";
 import { useWorkspace } from "@/lib/WorkspaceContext";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
 import { categoryLabel } from "@/lib/businessTerminology";
-import { ChevronDown, ChevronUp, Settings, Info, X, ChevronLeft } from "lucide-react";
+import { ChevronDown, ChevronUp, Settings, Info, X, ChevronLeft, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function Sidebar({ mobile = false, onClose, onToggleSidebar }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { workspace } = useWorkspace();
   const term = useBusinessTerminology();
   const moreActive = moreNav.some((item) => location.pathname === item.path);
@@ -138,11 +138,12 @@ export default function Sidebar({ mobile = false, onClose, onToggleSidebar }) {
           <div className="text-xs text-muted-foreground truncate">{workspace?.name || "—"}</div>
         </div>
         <button
-          onClick={() => navigate("/settings")}
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
-          aria-label="Settings"
+          onClick={() => logout()}
+          className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-colors shrink-0"
+          aria-label="Log out"
+          title="Log out"
         >
-          <Settings className="w-4 h-4" />
+          <LogOut className="w-4 h-4" />
         </button>
       </div>
     </div>
