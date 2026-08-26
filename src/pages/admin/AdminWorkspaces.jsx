@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Link } from "react-router-dom";
 import { Search, ChevronRight } from "lucide-react";
@@ -17,28 +18,20 @@ const planBadge = (plan, status) => {
 };
 
 export default function AdminWorkspaces() {
-  const [rows, setRows] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [search, setSearch] = useState("");
-
-  const load = async (s) => {
-    setLoading(true);
-    setError("");
-    try {
-      const res = await base44.functions.invoke("adminListWorkspaces", { search: s || "" });
-      setRows(res.data.workspaces || []);
-    } catch (e) {
-      setError(e?.message || "Failed to load workspaces");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [debouncedSearch, setDebouncedSearch] = useState("");
 
   useEffect(() => {
-    const t = setTimeout(() => load(search), 300);
+    const t = setTimeout(() => setDebouncedSearch(search), 300);
     return () => clearTimeout(t);
   }, [search]);
+
+  const { data, isLoading: loading, error } = useQuery({
+    queryKey: ["admin", "workspaces", debouncedSearch],
+    queryFn: async () => (await base44.functions.invoke("adminListWorkspaces", { search: debouncedSearch })).data,
+    staleTime: 30 * 1000,
+  });
+  const rows = data?.workspaces || [];
 
   return (
     <div className="p-4 sm:p-6 max-w-6xl mx-auto">
@@ -57,7 +50,7 @@ export default function AdminWorkspaces() {
       {loading ? (
         <LoadingState label="Loading workspaces…" />
       ) : error ? (
-        <div className="text-sm text-destructive">{error}</div>
+        <div className="text-sm text-destructive">{error?.message || "Failed to load workspaces"}</div>
       ) : rows.length === 0 ? (
         <EmptyState title="No workspaces found" />
       ) : (

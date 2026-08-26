@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import {
   Building2, Crown, CheckCircle2, XCircle, Users, TrendingUp,
@@ -38,26 +39,14 @@ function dateShort(d) {
 }
 
 export default function AdminDashboard() {
-  const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const { data: stats, isLoading: loading, error } = useQuery({
+    queryKey: ["admin", "dashboard-stats"],
+    queryFn: async () => (await base44.functions.invoke("adminDashboardStats", {})).data,
+    staleTime: 30 * 1000,
+  });
 
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
-      try {
-        const res = await base44.functions.invoke("adminDashboardStats", {});
-        setStats(res.data);
-      } catch (e) {
-        setError(e?.message || "Failed to load stats");
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
-
-  if (loading) return <LoadingState label="Loading dashboard…" />;
-  if (error) return <div className="p-6 text-sm text-destructive">{error}</div>;
+  if (loading && !stats) return <LoadingState label="Loading dashboard…" />;
+  if (error && !stats) return <div className="p-6 text-sm text-destructive">{error?.message || "Failed to load stats"}</div>;
   if (!stats) return null;
 
   // Growth trend (this month vs last month)

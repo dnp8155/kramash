@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";
 import Button from "@/components/common/Button";
@@ -33,34 +34,44 @@ const KEY_HINTS = {
 
 export default function AdminPlans() {
   const { toast } = useToast();
-  const [plans, setPlans] = useState([]);
-  const [limits, setLimits] = useState([]);
-  const [pricings, setPricings] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [createOpen, setCreateOpen] = useState(false);
-  const [limitDialog, setLimitDialog] = useState(null); // planId
-  const [pricingDialog, setPricingDialog] = useState(null); // planId
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
+  const queryClient = useQueryClient();
+  const { data, isLoading: loading } = useQuery({
+    queryKey: ["admin", "plans-config"],
+    queryFn: async () => {
       const [p, l, pr] = await Promise.all([
         base44.entities.Plan.list(),
         base44.entities.PlanLimit.list(),
         base44.entities.PlanPricing.list()
       ]);
-      setPlans(p.sort((a, b) => a.sort_order - b.sort_order));
-      setLimits(l);
-      setPricings(pr.sort((a, b) => a.sort_order - b.sort_order));
-    } catch (e) {
-      toast({ title: "Failed to load plan config", description: e?.message, variant: "destructive" });
-    } finally {
-      setLoading(false);
-    }
-  }, [toast]);
+      return {
+        plans: p.sort((a, b) => a.sort_order - b.sort_order),
+        limits: l,
+        pricings: pr.sort((a, b) => a.sort_order - b.sort_order)
+      };
+    },
+    staleTime: 30 * 1000,
+  });
 
-  useEffect(() => { load(); }, [load]);
+  const [plans, setPlans] = useState(() => data?.plans || []);
+  const [limits, setLimits] = useState(() => data?.limits || []);
+  const [pricings, setPricings] = useState(() => data?.pricings || []);
+  const [saving, setSaving] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [limitDialog, setLimitDialog] = useState(null); // planId
+  const [pricingDialog, setPricingDialog] = useState(null); // planId
+
+  const reload = useCallback(
+    () => queryClient.invalidateQueries({ queryKey: ["admin", "plans-config"] }),
+    [queryClient]
+  );
+
+  useEffect(() => {
+    if (data) {
+      setPlans(data.plans);
+      setLimits(data.limits);
+      setPricings(data.pricings);
+    }
+  }, [data]);
 
   const getLimit = (planId, key) => limits.find((l) => l.plan_id === planId && l.limit_key === key);
 
@@ -81,6 +92,7 @@ export default function AdminPlans() {
     try {
       await base44.entities.PlanLimit.update(limit.id, { limit_value: String(limit.limit_value), enabled: true });
       toast({ title: `${KEY_LABELS[key]} updated` });
+      reload();
     } catch (e) {
       toast({ title: "Failed to update limit", description: e?.message, variant: "destructive" });
     } finally {
@@ -96,6 +108,7 @@ export default function AdminPlans() {
       await base44.entities.PlanLimit.delete(limit.id);
       setLimits((prev) => prev.filter((l) => l.id !== limit.id));
       toast({ title: `${KEY_LABELS[key]} removed` });
+      reload();
     } catch (e) {
       toast({ title: "Failed to remove limit", description: e?.message, variant: "destructive" });
     }
@@ -114,6 +127,7 @@ export default function AdminPlans() {
         is_active: p.is_active
       });
       toast({ title: `${BILLING_LABELS[p.billing_cycle]} pricing updated` });
+      reload();
     } catch (e) {
       toast({ title: "Failed to update pricing", description: e?.message, variant: "destructive" });
     } finally {
@@ -127,6 +141,7 @@ export default function AdminPlans() {
       await base44.entities.PlanPricing.update(p.id, { is_active: !p.is_active });
       setPricings((prev) => prev.map((x) => (x.id === p.id ? { ...x, is_active: !x.is_active } : x)));
       toast({ title: `${BILLING_LABELS[p.billing_cycle]} ${p.is_active ? "disabled" : "enabled"}` });
+      reload();
     } catch (e) {
       toast({ title: "Failed to toggle pricing", description: e?.message, variant: "destructive" });
     } finally {
@@ -140,6 +155,7 @@ export default function AdminPlans() {
       await base44.entities.PlanPricing.delete(p.id);
       setPricings((prev) => prev.filter((x) => x.id !== p.id));
       toast({ title: "Pricing removed" });
+      reload();
     } catch (e) {
       toast({ title: "Failed to remove pricing", description: e?.message, variant: "destructive" });
     }
@@ -336,7 +352,7 @@ export default function AdminPlans() {
       <CreatePlanDialog
         open={createOpen}
         onOpenChange={setCreateOpen}
-        onCreated={() => load()}
+        onCreated={reload}
       />
       {limitDialog && (
         <AddLimitDialog
@@ -344,7 +360,7 @@ export default function AdminPlans() {
           onOpenChange={(v) => !v && setLimitDialog(null)}
           planId={limitDialog}
           existingKeys={limits.filter((l) => l.plan_id === limitDialog).map((l) => l.limit_key)}
-          onAdded={() => load()}
+          onAdded={reload}
         />
       )}
       {pricingDialog && (
@@ -353,7 +369,7 @@ export default function AdminPlans() {
           onOpenChange={(v) => !v && setPricingDialog(null)}
           planId={pricingDialog}
           existingCycles={pricings.filter((p) => p.plan_id === pricingDialog).map((p) => p.billing_cycle)}
-          onAdded={() => load()}
+          onAdded={reload}
         />
       )}
     </div>
