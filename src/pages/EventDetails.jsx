@@ -23,7 +23,7 @@ import {
 } from "@/lib/financeService";
 import {
   ArrowLeft, Pencil, Wallet, FileText, MapPin, Calendar, Phone, Plus,
-  CalendarPlus, Share2, Receipt, StickyNote, Camera, User
+  CalendarPlus, Share2, Receipt, StickyNote
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
@@ -204,9 +204,6 @@ export default function EventDetails() {
             <h1 className="text-xl font-bold text-foreground">{event.title}</h1>
             <div className="flex items-center gap-2 mt-0.5">
               <StatusBadge status={event.status} />
-              <span className="flex items-center gap-1 text-xs text-success font-medium">
-                <span className="w-1.5 h-1.5 rounded-full bg-success" /> Online
-              </span>
             </div>
           </div>
         </div>
@@ -257,11 +254,11 @@ export default function EventDetails() {
         {/* Contract value + FY */}
         <div className="flex items-end gap-4 mt-4 pt-4 border-t border-border flex-wrap">
           <div className="flex-1 min-w-[200px]">
-            <div className="text-xs font-semibold text-muted-foreground uppercase mb-1">Contract Value (₹)</div>
+            <div className="text-xs font-medium text-muted-foreground mb-1">Contract Value</div>
             <div className="text-2xl font-bold text-foreground">{formatMoney(event.contract_value || 0, currency)}</div>
           </div>
           <div>
-            <div className="text-xs font-semibold text-muted-foreground uppercase mb-1">Financial Year</div>
+            <div className="text-xs font-medium text-muted-foreground mb-1">Financial Year</div>
             <div className="text-sm font-semibold text-foreground px-3 py-1.5 bg-muted/50 rounded-md border border-border">
               April 2026 - March 2027 (Current)
             </div>
@@ -280,11 +277,6 @@ export default function EventDetails() {
 
       {/* Actions row */}
       <div className="flex items-center gap-2 flex-wrap">
-        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-          <Camera className="w-4 h-4" />
-          <User className="w-4 h-4" />
-          <span className="capitalize">{event.status}</span>
-        </div>
         <Button size="sm" variant="outline" onClick={addToCalendar}>
           <CalendarPlus className="w-3.5 h-3.5" /> Add to Calendar
         </Button>
@@ -318,9 +310,9 @@ export default function EventDetails() {
         <div className="space-y-4">
           {/* Team summary cards */}
           <div className="grid grid-cols-3 gap-3">
-            <TeamStatCard label="TOTAL RATE" value={formatMoney(teamTotalRate, currency)} />
-            <TeamStatCard label="TOTAL PAYMENTS" value={formatMoney(teamTotalPaid, currency)} />
-            <TeamStatCard label="TOTAL REMAINING" value={formatMoney(teamTotalRemaining, currency)} tone="warning" />
+            <TeamStatCard label="Total Rate" value={formatMoney(teamTotalRate, currency)} />
+            <TeamStatCard label="Total Payments" value={formatMoney(teamTotalPaid, currency)} />
+            <TeamStatCard label="Total Remaining" value={formatMoney(teamTotalRemaining, currency)} tone="warning" />
           </div>
 
           {/* Assignments */}
@@ -366,7 +358,7 @@ export default function EventDetails() {
       {tab === "Payments" && (
         <Card className="p-5">
           <div className="flex items-center justify-between mb-3">
-            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+            <div className="text-sm font-semibold text-foreground">
               Transactions ({eventTransactions.length})
             </div>
             <div className="flex gap-2">
@@ -408,19 +400,19 @@ export default function EventDetails() {
         <Card className="p-5">
           <div className="flex items-center gap-2 mb-3">
             <StickyNote className="w-4 h-4 text-muted-foreground" />
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Notes</span>
+            <span className="text-sm font-semibold text-foreground">Notes</span>
           </div>
           {event.notes || event.description ? (
             <div className="space-y-3">
               {event.description && (
                 <div>
-                  <div className="text-xs font-semibold text-muted-foreground uppercase mb-1">Description</div>
+                  <div className="text-xs font-medium text-muted-foreground mb-1">Description</div>
                   <p className="text-sm text-foreground whitespace-pre-wrap">{event.description}</p>
                 </div>
               )}
               {event.notes && (
                 <div>
-                  <div className="text-xs font-semibold text-muted-foreground uppercase mb-1">Notes</div>
+                  <div className="text-xs font-medium text-muted-foreground mb-1">Notes</div>
                   <p className="text-sm text-foreground whitespace-pre-wrap">{event.notes}</p>
                 </div>
               )}
@@ -504,7 +496,7 @@ export default function EventDetails() {
 function Field({ label, value, icon: Icon }) {
   return (
     <div>
-      <div className="text-xs font-semibold text-muted-foreground uppercase mb-1">{label}</div>
+      <div className="text-xs font-medium text-muted-foreground mb-1">{label}</div>
       <div className="flex items-center gap-2 text-sm font-medium text-foreground">
         {Icon && <Icon className="w-3.5 h-3.5 text-muted-foreground" />}
         {value}
@@ -528,12 +520,12 @@ function DateChip({ date }) {
 
 function TeamStatCard({ label, value, tone = "default" }) {
   return (
-    <Card className="p-3 border-2 border-border rounded-xl">
-      <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">{label}</div>
+    <div className="bg-card border border-border rounded-lg p-3">
+      <div className="text-xs font-medium text-muted-foreground">{label}</div>
       <div className={cn(
-        "text-base font-bold mt-1",
+        "text-base font-bold mt-1 tabular-nums",
         tone === "warning" ? "text-warning" : "text-foreground"
       )}>{value}</div>
-    </Card>
+    </div>
   );
 }

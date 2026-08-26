@@ -31,7 +31,7 @@ export default function TeamMemberCard({ member, assignments = [], transactions 
     member.email.toLowerCase() === currentUser.email.toLowerCase();
 
   return (
-    <div className="bg-card border border-border rounded-xl p-4 shadow-card transition-all duration-200 hover:shadow-card-hover hover:-translate-y-0.5">
+    <div className="bg-card border border-border rounded-lg p-4">
       {/* Header: status dot + name + SELF badge + role + actions */}
       <div className="flex items-center gap-2">
         <span className={cn("w-2.5 h-2.5 rounded-full shrink-0", status.dot)} />
@@ -77,11 +77,11 @@ export default function TeamMemberCard({ member, assignments = [], transactions 
       {/* Financial footer: RATE / PAID / REMAINING */}
       <div className="mt-3 grid grid-cols-3 gap-2 pt-3 border-t border-border">
         <div>
-          <div className="text-[10px] text-muted-foreground uppercase tracking-wide font-semibold">Rate</div>
+          <div className="text-xs text-muted-foreground font-medium">Rate</div>
           <div className="text-sm font-bold text-foreground tabular-nums mt-0.5">{formatINR(totalRate)}</div>
         </div>
         <div>
-          <div className="text-[10px] text-muted-foreground uppercase tracking-wide font-semibold">Paid</div>
+          <div className="text-xs text-muted-foreground font-medium">Paid</div>
           <div className={cn(
             "text-sm font-bold tabular-nums mt-0.5",
             totalPaid >= totalRate && totalRate > 0 ? "text-success" : "text-foreground"
@@ -90,7 +90,7 @@ export default function TeamMemberCard({ member, assignments = [], transactions 
           </div>
         </div>
         <div>
-          <div className="text-[10px] text-muted-foreground uppercase tracking-wide font-semibold">Remaining</div>
+          <div className="text-xs text-muted-foreground font-medium">Remaining</div>
           <div className={cn(
             "text-sm font-bold tabular-nums mt-0.5",
             remaining > 0 ? "text-warning" : "text-success"

@@ -72,7 +72,7 @@ export default function ProfileSection() {
       {/* Avatar with upload */}
       <div className="flex items-center gap-4 mb-5">
         <div className="relative group shrink-0">
-          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground font-bold text-xl overflow-hidden">
+          <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center text-foreground font-bold text-xl overflow-hidden border border-border">
             {profileImage
               ? <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
               : <span>{(user?.full_name || user?.email || "K").charAt(0).toUpperCase()}</span>}

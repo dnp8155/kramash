@@ -14,11 +14,11 @@ export default function UpgradeBanner({ used = 0 }) {
   const over = used >= limit;
 
   return (
-    <div className="flex items-center gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-lg">
-      <Crown className="w-4 h-4 text-amber-600 shrink-0" />
-      <p className="text-sm text-amber-900">
+    <div className="flex items-center gap-3 px-4 py-3 bg-warning/10 border border-warning/20 rounded-lg">
+      <Crown className="w-4 h-4 text-warning shrink-0" />
+      <p className="text-sm text-foreground">
         Free plan: {used} / {limit} events used —{" "}
-        <Link to="/plan" className="font-medium underline">upgrade to Pro for unlimited</Link>.
+        <Link to="/plan" className="font-medium text-warning underline">upgrade to Pro for unlimited</Link>.
       </p>
     </div>
   );

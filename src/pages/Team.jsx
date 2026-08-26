@@ -243,8 +243,8 @@ export default function Team() {
             </div>
           )}
 
-          <div className="flex items-center gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
-            <Crown className="w-4 h-4" />
+          <div className="flex items-center gap-2 text-sm text-foreground bg-warning/10 border border-warning/20 rounded-lg px-4 py-3">
+            <Crown className="w-4 h-4 text-warning" />
             Free plan: up to {FREE_PLAN_LIMIT} active team members — {activeCount}/{FREE_PLAN_LIMIT} used. Upgrade to Pro for unlimited.
           </div>
         </>

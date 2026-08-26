@@ -57,7 +57,7 @@ export default function Sidebar({ mobile = false, onClose, onToggleSidebar }) {
     <div className="flex h-full flex-col bg-card text-foreground border-r border-border">
       {/* Brand */}
       <div className="flex items-center gap-3 px-4 py-4">
-        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground font-bold text-lg shadow-sm">
+        <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-lg">
           K
         </div>
         <div className="flex-1 min-w-0">
@@ -128,7 +128,7 @@ export default function Sidebar({ mobile = false, onClose, onToggleSidebar }) {
       <div className="h-px bg-border" />
 
       <div className="flex items-center gap-3 px-3 py-3">
-        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground font-semibold text-sm shrink-0 overflow-hidden">
+        <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center text-foreground font-semibold text-sm shrink-0 overflow-hidden border border-border">
           {user?.data?.profile_image || user?.profile_image
             ? <img src={user.data?.profile_image || user.profile_image} alt="Profile" className="w-full h-full object-cover" />
             : (user?.full_name || user?.email || "K").charAt(0).toUpperCase()}

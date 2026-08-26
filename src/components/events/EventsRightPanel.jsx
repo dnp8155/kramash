@@ -6,11 +6,6 @@ import { useNavigate } from "react-router-dom";
 export default function EventsRightPanel({ events = [], onEventClick, term }) {
   const t = term || {};
   const navigate = useNavigate();
-  const now = new Date();
-  const dateStr = now.toLocaleDateString("en-IN", {
-    weekday: "short", day: "numeric", month: "short", year: "numeric"
-  });
-  const timeStr = now.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
 
   const upcoming = events
     .filter((e) => e.status === "upcoming" || (e.status === "in-progress" && isUpcomingDate(e.start_date)))
@@ -19,17 +14,6 @@ export default function EventsRightPanel({ events = [], onEventClick, term }) {
 
   return (
     <div className="space-y-4">
-      {/* Time module */}
-      <div className="bg-card border border-border rounded-lg p-4">
-        <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Right Now</div>
-        <div className="mt-1 text-sm font-medium text-foreground">{dateStr}</div>
-        <div className="text-sm text-muted-foreground">{timeStr}</div>
-        <div className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
-          <span className="w-1.5 h-1.5 rounded-full bg-success" />
-          India
-        </div>
-      </div>
-
       {/* Upcoming */}
       <div className="bg-card border border-border rounded-lg p-4">
         <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
