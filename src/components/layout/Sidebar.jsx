@@ -7,7 +7,7 @@ import { ChevronDown, ChevronUp, Settings, Info, X, LogOut } from "lucide-react"
 import { cn } from "@/lib/utils";
 import WorkspaceSwitcher from "@/components/layout/WorkspaceSwitcher";
 
-export default function Sidebar({ mobile = false, onClose }) {
+export default function Sidebar({ mobile = false, onClose, collapsed = false, onToggleCollapse }) {
   const location = useLocation();
   const { user, logout } = useAuth();
   const term = useBusinessTerminology();
@@ -19,41 +19,84 @@ export default function Sidebar({ mobile = false, onClose }) {
 
   const itemClass = ({ isActive }) =>
     cn(
-      "relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
+      "relative flex items-center rounded-lg text-sm transition-colors",
+      collapsed ? "justify-center px-0 py-2 mx-auto w-10" : "gap-3 px-3 py-2",
       isActive
         ? "bg-success/10 text-foreground font-semibold"
         : "text-muted-foreground font-medium hover:bg-muted hover:text-foreground"
     );
 
-  const subItemClass = ({ isActive }) =>
-    cn(
-      "relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
-      isActive
-        ? "bg-success/10 text-foreground font-semibold"
-        : "text-muted-foreground font-medium hover:bg-muted hover:text-foreground"
-    );
-
-  const renderItem = (item, cls = itemClass) => {
+  const renderItem = (item) => {
     const Icon = item.icon;
     return (
-      <NavLink key={item.path} to={item.path} className={cls}>
+      <NavLink key={item.path} to={item.path} className={itemClass} title={collapsed ? navLabel(item) : undefined}>
         {({ isActive }) => (
           <>
-            {isActive && (
+            {isActive && !collapsed && (
               <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-1 rounded-r-full bg-success" />
             )}
             <Icon className="w-4 h-4 shrink-0" />
-            <span>{navLabel(item)}</span>
+            {!collapsed && <span>{navLabel(item)}</span>}
           </>
         )}
       </NavLink>
     );
   };
 
+  if (collapsed) {
+    return (
+      <div className="flex h-full flex-col bg-card text-foreground border-r border-border w-16">
+        <WorkspaceSwitcher mobile={mobile} collapsed onToggleCollapse={onToggleCollapse} />
+        <div className="h-px bg-border" />
+        <nav className="flex-1 overflow-y-auto scrollbar-thin px-2 py-3 space-y-1 flex flex-col items-center">
+          {mainNav.map((item) => renderItem(item))}
+          <button
+            onClick={() => setMoreOpen((v) => !v)}
+            className="w-10 h-10 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+            title={moreGroup.label}
+          >
+            <moreGroup.icon className="w-4 h-4 shrink-0" />
+          </button>
+          {moreOpen && (
+            <div className="space-y-1 w-full flex flex-col items-center">
+              {moreNav.map((item) => renderItem(item))}
+            </div>
+          )}
+        </nav>
+        <div className="px-2 py-2 space-y-1 flex flex-col items-center">
+          {user?.role === "admin" && (
+            <NavLink to="/admin" className="w-10 h-10 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" title="SaaS Admin">
+              <Settings className="w-3.5 h-3.5" />
+            </NavLink>
+          )}
+          <NavLink to="/app-updates" className="w-10 h-10 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" title="About & Legal">
+            <Info className="w-3.5 h-3.5" />
+          </NavLink>
+        </div>
+        <div className="h-px bg-border" />
+        <div className="flex flex-col items-center gap-2 px-2 py-3">
+          <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center text-foreground font-semibold text-sm overflow-hidden border border-border">
+            {user?.data?.profile_image || user?.profile_image
+              ? <img src={user.data?.profile_image || user.profile_image} alt="Profile" className="w-full h-full object-cover" />
+              : (user?.full_name || user?.email || "K").charAt(0).toUpperCase()}
+          </div>
+          <button
+            onClick={() => logout()}
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-colors"
+            aria-label="Log out"
+            title="Log out"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex h-full flex-col bg-card text-foreground border-r border-border">
+    <div className="relative flex h-full flex-col bg-card text-foreground border-r border-border">
       {/* Workspace switcher */}
-      <WorkspaceSwitcher mobile={mobile} onClose={onClose} />
+      <WorkspaceSwitcher mobile={mobile} onClose={onClose} onToggleCollapse={onToggleCollapse} />
       {mobile && (
         <button
           onClick={onClose}
@@ -81,7 +124,7 @@ export default function Sidebar({ mobile = false, onClose }) {
 
         {moreOpen && (
           <div className="space-y-1 pl-3 border-l border-border ml-3">
-            {moreNav.map((item) => renderItem(item, subItemClass))}
+            {moreNav.map((item) => renderItem(item))}
           </div>
         )}
       </nav>

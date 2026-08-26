@@ -9,12 +9,17 @@ import UpdateBanner from "@/components/common/UpdateBanner";
 
 export default function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       {/* Desktop sidebar */}
-      <aside className="hidden lg:block shrink-0 w-64 overflow-hidden">
-        <Sidebar />
+      <aside
+        className={`hidden lg:block shrink-0 transition-[width] duration-200 ease-in-out overflow-hidden ${
+          sidebarCollapsed ? "w-16" : "w-64"
+        }`}
+      >
+        <Sidebar collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed((v) => !v)} />
       </aside>
 
       {/* Mobile drawer */}
