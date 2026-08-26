@@ -2,9 +2,12 @@ import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import {
   Building2, Crown, CheckCircle2, XCircle, Users, TrendingUp,
-  IndianRupee, ArrowRight, PauseCircle, Sparkles
+  IndianRupee, ArrowRight, Sparkles, Filter, Zap
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import {
+  AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid
+} from "recharts";
 import LoadingState from "@/components/common/LoadingState";
 import { cn } from "@/lib/utils";
 
@@ -17,6 +20,13 @@ const CATEGORY_LABELS = {
 
 function money(n) {
   return `₹${Number(n || 0).toLocaleString("en-IN")}`;
+}
+
+function moneyShort(n) {
+  if (n >= 10000000) return `₹${(n / 10000000).toFixed(1)}Cr`;
+  if (n >= 100000) return `₹${(n / 100000).toFixed(1)}L`;
+  if (n >= 1000) return `₹${(n / 1000).toFixed(1)}K`;
+  return `₹${n}`;
 }
 
 function dateShort(d) {
@@ -49,16 +59,52 @@ export default function AdminDashboard() {
   if (error) return <div className="p-6 text-sm text-destructive">{error}</div>;
   if (!stats) return null;
 
+  // Growth trend (this month vs last month)
+  const growthMonths = stats.monthly_growth || [];
+  const lastMonth = growthMonths[growthMonths.length - 1]?.count || 0;
+  const prevMonth = growthMonths[growthMonths.length - 2]?.count || 0;
+  const growthTrend = prevMonth > 0 ? Math.round(((lastMonth - prevMonth) / prevMonth) * 100) : (lastMonth > 0 ? 100 : 0);
+
+  const revMonths = stats.monthly_revenue || [];
+  const lastRev = revMonths[revMonths.length - 1]?.amount || 0;
+  const prevRev = revMonths[revMonths.length - 2]?.amount || 0;
+  const revTrend = prevRev > 0 ? Math.round(((lastRev - prevRev) / prevRev) * 100) : (lastRev > 0 ? 100 : 0);
+
   const kpis = [
-    { label: "Total Workspaces", value: stats.total_workspaces, icon: Building2, tone: "bg-primary/10 text-primary", sub: `${stats.suspended_workspaces} suspended` },
-    { label: "Pro Workspaces", value: stats.pro_workspaces, icon: Crown, tone: "bg-amber-100 text-amber-600", sub: `${stats.active_pro} active · ${stats.expired_pro} expired` },
-    { label: "Total Users", value: stats.total_users, icon: Users, tone: "bg-blue-100 text-blue-600", sub: `${stats.conversion_rate}% conversion to Pro` },
-    { label: "Revenue Collected", value: money(stats.total_revenue), icon: IndianRupee, tone: "bg-success/10 text-success", sub: `${stats.recent_payments?.length || 0} recent payments` },
+    {
+      label: "Total Workspaces", value: stats.total_workspaces, icon: Building2,
+      tone: "bg-primary/10 text-primary",
+      sub: `${stats.suspended_workspaces} suspended`,
+      trend: growthTrend, trendUp: growthTrend >= 0,
+    },
+    {
+      label: "Pro Workspaces", value: stats.pro_workspaces, icon: Crown,
+      tone: "bg-amber-100 text-amber-600",
+      sub: `${stats.active_pro} active · ${stats.expired_pro} expired`,
+    },
+    {
+      label: "Total Users", value: stats.total_users, icon: Users,
+      tone: "bg-blue-100 text-blue-600",
+      sub: `${stats.conversion_rate}% conversion to Pro`,
+    },
+    {
+      label: "Revenue Collected", value: moneyShort(stats.total_revenue), icon: IndianRupee,
+      tone: "bg-success/10 text-success",
+      sub: `ARPU ${money(stats.arpu)} · ${stats.recent_payments?.length || 0} payments`,
+      trend: revTrend, trendUp: revTrend >= 0,
+    },
   ];
 
-  const maxGrowth = Math.max(...stats.monthly_growth.map((m) => m.count), 1);
+  const maxGrowth = Math.max(...growthMonths.map((m) => m.count), 1);
   const totalCat = Object.values(stats.category_distribution || {}).reduce((s, n) => s + n, 0) || 1;
   const catEntries = Object.entries(stats.category_distribution || {}).sort((a, b) => b[1] - a[1]);
+
+  // Funnel stages
+  const funnel = [
+    { label: "Total Workspaces", value: stats.total_workspaces, color: "bg-primary", width: 100 },
+    { label: "Pro Subscribed", value: stats.pro_workspaces, color: "bg-amber-500", width: stats.total_workspaces ? (stats.pro_workspaces / stats.total_workspaces) * 100 : 0 },
+    { label: "Active Pro", value: stats.active_pro, color: "bg-success", width: stats.total_workspaces ? (stats.active_pro / stats.total_workspaces) * 100 : 0 },
+  ];
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto space-y-6">
@@ -88,6 +134,15 @@ export default function AdminDashboard() {
                 <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", c.tone)}>
                   <Icon className="w-5 h-5" />
                 </div>
+                {typeof c.trend === "number" && (
+                  <span className={cn(
+                    "inline-flex items-center gap-0.5 text-xs font-semibold px-1.5 py-0.5 rounded-md",
+                    c.trendUp ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"
+                  )}>
+                    <TrendingUp className={cn("w-3 h-3", !c.trendUp && "rotate-180")} />
+                    {c.trendUp ? "+" : ""}{c.trend}%
+                  </span>
+                )}
               </div>
               <div className="text-2xl font-bold mt-3 text-foreground">{c.value}</div>
               <div className="text-sm font-medium text-foreground mt-0.5">{c.label}</div>
@@ -98,14 +153,78 @@ export default function AdminDashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Monthly growth chart */}
+        {/* Revenue trend chart */}
+        <div className="lg:col-span-2 bg-card border border-border rounded-xl p-5 shadow-card">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <IndianRupee className="w-4 h-4 text-success" />
+              <h2 className="text-sm font-semibold text-foreground">Revenue Trend (6 months)</h2>
+            </div>
+            <span className="text-xs text-muted-foreground">Total: {money(stats.total_revenue)}</span>
+          </div>
+          <div className="h-44">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={revMonths} margin={{ top: 5, right: 5, left: -10, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="hsl(var(--success))" stopOpacity={0.3} />
+                    <stop offset="100%" stopColor="hsl(var(--success))" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                <XAxis dataKey="label" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} tickFormatter={moneyShort} />
+                <Tooltip
+                  contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
+                  formatter={(v) => [money(v), "Revenue"]}
+                />
+                <Area type="monotone" dataKey="amount" stroke="hsl(var(--success))" strokeWidth={2} fill="url(#revGrad)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Conversion funnel */}
+        <div className="bg-card border border-border rounded-xl p-5 shadow-card">
+          <div className="flex items-center gap-2 mb-4">
+            <Filter className="w-4 h-4 text-primary" />
+            <h2 className="text-sm font-semibold text-foreground">Conversion Funnel</h2>
+          </div>
+          <div className="space-y-3">
+            {funnel.map((f, i) => (
+              <div key={f.label}>
+                <div className="flex items-center justify-between text-sm mb-1">
+                  <span className="text-foreground font-medium">{f.label}</span>
+                  <span className="text-muted-foreground">{f.value}</span>
+                </div>
+                <div className="h-7 bg-muted rounded-md overflow-hidden">
+                  <div
+                    className={cn("h-full rounded-md flex items-center justify-end px-2 transition-all", f.color)}
+                    style={{ width: `${Math.max(f.width, f.value > 0 ? 12 : 0)}%` }}
+                  >
+                    {f.value > 0 && <span className="text-[10px] font-semibold text-white">{Math.round(f.width)}%</span>}
+                  </div>
+                </div>
+                {i < funnel.length - 1 && (
+                  <div className="text-[10px] text-muted-foreground text-right mt-0.5">
+                    {funnel[i + 1].value} of {f.value} → {f.value > 0 ? Math.round((funnel[i + 1].value / f.value) * 100) : 0}%
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Workspace growth chart */}
         <div className="lg:col-span-2 bg-card border border-border rounded-xl p-5 shadow-card">
           <div className="flex items-center gap-2 mb-4">
             <TrendingUp className="w-4 h-4 text-primary" />
             <h2 className="text-sm font-semibold text-foreground">Workspace Growth (6 months)</h2>
           </div>
           <div className="flex items-end justify-between gap-3 h-40">
-            {stats.monthly_growth.map((m) => (
+            {growthMonths.map((m) => (
               <div key={m.key} className="flex-1 flex flex-col items-center gap-2">
                 <div className="text-xs font-semibold text-foreground">{m.count}</div>
                 <div className="w-full bg-muted rounded-t-md overflow-hidden flex items-end" style={{ height: "120px" }}>
@@ -206,7 +325,10 @@ export default function AdminDashboard() {
       {/* Recent payments */}
       {stats.recent_payments?.length > 0 && (
         <div className="bg-card border border-border rounded-xl shadow-card overflow-hidden">
-          <h2 className="text-sm font-semibold text-foreground px-5 py-4 border-b border-border">Recent Payments</h2>
+          <div className="flex items-center gap-2 px-5 py-4 border-b border-border">
+            <Zap className="w-4 h-4 text-success" />
+            <h2 className="text-sm font-semibold text-foreground">Recent Payments</h2>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>

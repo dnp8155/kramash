@@ -58,6 +58,27 @@ export default async function (req) {
     const successPayments = (payments || []).filter((p) => p.status === "SUCCESS");
     const totalRevenue = successPayments.reduce((s, p) => s + (p.amount || 0), 0);
 
+    // Monthly revenue — last 6 months
+    const revenueMonths = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      revenueMonths.push({
+        key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`,
+        label: d.toLocaleString("en-IN", { month: "short" }),
+        amount: 0,
+      });
+    }
+    for (const p of successPayments) {
+      const cd = p.created_date ? new Date(p.created_date) : null;
+      if (!cd) continue;
+      const key = `${cd.getFullYear()}-${String(cd.getMonth() + 1).padStart(2, "0")}`;
+      const m = revenueMonths.find((x) => x.key === key);
+      if (m) m.amount += p.amount || 0;
+    }
+
+    // Avg revenue per pro workspace
+    const arpu = activePro > 0 ? Math.round(totalRevenue / activePro) : 0;
+
     // Monthly growth — workspaces created per month for last 6 months
     const months = [];
     for (let i = 5; i >= 0; i--) {
@@ -125,8 +146,10 @@ export default async function (req) {
       suspended_workspaces: suspendedWs,
       total_users: users.length,
       total_revenue: totalRevenue,
+      arpu: arpu,
       conversion_rate: conversionRate,
       monthly_growth: months,
+      monthly_revenue: revenueMonths,
       category_distribution: categoryDist,
       recent_workspaces: recentWorkspaces,
       recent_payments: recentPayments,
