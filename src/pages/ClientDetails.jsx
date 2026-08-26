@@ -6,6 +6,7 @@ import Card from "@/components/common/Card";
 import Button from "@/components/common/Button";
 import StatusBadge from "@/components/common/StatusBadge";
 import LoadingState from "@/components/common/LoadingState";
+import DetailSkeleton from "@/components/common/DetailSkeleton";
 import EmptyState from "@/components/common/EmptyState";
 import ClientForm from "@/components/clients/ClientForm";
 import { formatEventDate } from "@/lib/dates";
@@ -46,7 +47,7 @@ export default function ClientDetails() {
 
   useEffect(() => { load(); }, [load]);
 
-  if (loading) return <div className="p-6"><LoadingState label="Loading client…" /></div>;
+  if (loading) return <DetailSkeleton />;
 
   if (notFound || !client) {
     return (

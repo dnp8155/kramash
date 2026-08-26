@@ -81,6 +81,7 @@ export default function Financial() {
       setCategories(cats);
     } catch (e) {
       setAllTx([]);
+      toast({ title: "Failed to load financial activity", description: e?.message, variant: "destructive" });
     } finally {
       setLoading(false);
     }

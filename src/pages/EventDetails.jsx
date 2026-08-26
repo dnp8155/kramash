@@ -6,6 +6,7 @@ import Card from "@/components/common/Card";
 import Button from "@/components/common/Button";
 import StatusBadge from "@/components/common/StatusBadge";
 import LoadingState from "@/components/common/LoadingState";
+import DetailSkeleton from "@/components/common/DetailSkeleton";
 import EmptyState from "@/components/common/EmptyState";
 import EventForm from "@/components/events/EventForm";
 import EventFinancialCards from "@/components/events/EventFinancialCards";
@@ -173,7 +174,7 @@ export default function EventDetails() {
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, "_blank");
   };
 
-  if (loading) return <div className="p-6"><LoadingState label={`Loading ${term.workItemSingular.toLowerCase()}…`} /></div>;
+  if (loading) return <DetailSkeleton />;
 
   if (notFound || !event) {
     return (
@@ -445,6 +446,7 @@ export default function EventDetails() {
         event={event}
         workspaceId={workspaceId}
         term={term}
+        currency={currency}
       />
 
       <AssignTeamDialog

@@ -9,6 +9,7 @@ import Select from "@/components/common/Select";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { EVENT_STATUS, EVENT_STATUS_ORDER } from "@/constants/statusConfig";
+import { CURRENCY_SYMBOLS } from "@/constants/financeConfig";
 import ClientForm from "@/components/clients/ClientForm";
 import { Plus } from "lucide-react";
 
@@ -21,7 +22,7 @@ const empty = {
   status: "upcoming", contract_value: 0, description: "", notes: ""
 };
 
-export default function EventForm({ open, onClose, onSaved, event = null, workspaceId, term }) {
+export default function EventForm({ open, onClose, onSaved, event = null, workspaceId, term, currency = "INR" }) {
   const t = term || {};
   const workTypes = t.category === "ARCHITECTURE" || t.category === "OTHER" ? GENERIC_WORK_TYPES : PHOTO_EVENT_TYPES;
   const [form, setForm] = useState(empty);
@@ -157,7 +158,7 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
             </div>
 
             <div className="space-y-1.5">
-              <Label>Contract Value (₹)</Label>
+              <Label>Contract Value ({CURRENCY_SYMBOLS[currency] || currency})</Label>
               <Input
                 type="number"
                 min="0"

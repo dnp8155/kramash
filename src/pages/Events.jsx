@@ -17,7 +17,7 @@ import { exportEventsCsv } from "@/lib/exportUtils";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
 
 export default function Events() {
-  const { workspaceId } = useWorkspace();
+  const { workspaceId, workspace } = useWorkspace();
   const navigate = useNavigate();
   const term = useBusinessTerminology();
 
@@ -192,6 +192,7 @@ export default function Events() {
         event={editingEvent}
         workspaceId={workspaceId}
         term={term}
+        currency={workspace?.currency || "INR"}
       />
     </div>
   );
