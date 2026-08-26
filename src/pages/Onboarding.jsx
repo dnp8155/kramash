@@ -30,6 +30,7 @@ export default function Onboarding() {
   const [error, setError] = useState("");
 
   const [form, setForm] = useState({
+    your_name: user?.full_name || "",
     name: "",
     business_category: "",
     custom_business_type: "",
@@ -59,6 +60,10 @@ export default function Onboarding() {
       const businessType = category === BUSINESS_CATEGORIES.OTHER
         ? (form.custom_business_type || "Other")
         : categoryLabel(category);
+      // Save the user's personal name on their profile.
+      if (form.your_name.trim() && form.your_name.trim() !== user?.full_name) {
+        try { await base44.auth.updateMe({ full_name: form.your_name.trim() }); } catch (e) { /* non-fatal */ }
+      }
       const workspace = await base44.entities.Workspace.create({
         ...form,
         business_category: category,
@@ -107,7 +112,7 @@ export default function Onboarding() {
   const enterApp = () => navigate("/events");
 
   const canNext1 = !!form.business_category && (form.business_category !== BUSINESS_CATEGORIES.OTHER || form.custom_business_type.trim());
-  const canNext2 = form.name.trim();
+  const canNext2 = form.name.trim() && form.your_name.trim();
   const canNext3 = form.city.trim() && form.country;
 
   return (
@@ -184,8 +189,11 @@ export default function Onboarding() {
 
           {step === 2 && (
             <StepShell icon={Building2} title="Business Details" subtitle="Tell us about your business.">
+              <Field label="Your Name *">
+                <Input value={form.your_name} onChange={(e) => set("your_name", e.target.value)} placeholder="Krishna Shah" autoFocus />
+              </Field>
               <Field label="Business / Workspace Name *">
-                <Input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="Krishna Shah Photography" autoFocus />
+                <Input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="Krishna Shah Photography" />
               </Field>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Field label="Phone">
