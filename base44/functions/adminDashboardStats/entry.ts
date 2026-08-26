@@ -1,4 +1,4 @@
-import { createClientFromRequest } from "npm:@base44/sdk@0.8.40";
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 export default async function (req) {
   try {
@@ -8,36 +8,41 @@ export default async function (req) {
       return Response.json({ error: "Admin only" }, { status: 403 });
     }
 
-    const workspaces = await base44.asServiceRole.entities.Workspace.list("-created_date", 1000);
-    const users = await base44.asServiceRole.entities.User.list("-created_date", 2000);
-    const subs = await base44.asServiceRole.entities.WorkspaceSubscription.list("-created_date", 2000);
+    const [workspaces, users, subs, plans, payments] = await Promise.all([
+      base44.asServiceRole.entities.Workspace.list("-created_date", 1000),
+      base44.asServiceRole.entities.User.list("-created_date", 2000),
+      base44.asServiceRole.entities.WorkspaceSubscription.list("-created_date", 2000),
+      base44.asServiceRole.entities.Plan.list("sort_order", 50),
+      base44.asServiceRole.entities.SubscriptionPayment.list("-created_date", 500),
+    ]);
+
+    const planMap = {};
+    for (const p of plans) { planMap[p.id] = p.code; }
 
     const now = new Date();
     let freeCount = 0;
     let proCount = 0;
     let activePro = 0;
     let expiredPro = 0;
+    let suspendedWs = 0;
 
     const subByWs = {};
     for (const s of subs) {
       if (s.status === "ACTIVE" && !subByWs[s.workspace_id]) subByWs[s.workspace_id] = s;
     }
 
+    const wsOwnerMap = {};
     for (const ws of workspaces) {
       const sub = subByWs[ws.id];
-      if (!sub) {
-        freeCount++;
-        continue;
-      }
-      // Determine plan code via plan_id
       let planCode = "FREE";
-      if (sub.plan_id) {
-        try {
-          const plan = await base44.asServiceRole.entities.Plan.get(sub.plan_id);
-          if (plan) planCode = plan.code;
-        } catch (e) { /* ignore */ }
+      let subStatus = "none";
+      let expiresAt = null;
+      if (sub) {
+        planCode = planMap[sub.plan_id] || "FREE";
+        subStatus = sub.status;
+        expiresAt = sub.expires_at;
       }
-      const isExpired = sub.expires_at && new Date(sub.expires_at + "T00:00:00") < now;
+      const isExpired = expiresAt && new Date(expiresAt + "T00:00:00") < now;
       if (planCode === "PRO") {
         proCount++;
         if (isExpired) expiredPro++;
@@ -45,7 +50,71 @@ export default async function (req) {
       } else {
         freeCount++;
       }
+      if (ws.plan_status === "suspended") suspendedWs++;
+      wsOwnerMap[ws.id] = { planCode, subStatus, isExpired, owner_id: ws.owner_user_id };
     }
+
+    // Revenue: sum of SUCCESS payments
+    const successPayments = (payments || []).filter((p) => p.status === "SUCCESS");
+    const totalRevenue = successPayments.reduce((s, p) => s + (p.amount || 0), 0);
+
+    // Monthly growth — workspaces created per month for last 6 months
+    const months = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      months.push({
+        key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`,
+        label: d.toLocaleString("en-IN", { month: "short" }),
+        count: 0,
+      });
+    }
+    for (const ws of workspaces) {
+      const cd = ws.created_date ? new Date(ws.created_date) : null;
+      if (!cd) continue;
+      const key = `${cd.getFullYear()}-${String(cd.getMonth() + 1).padStart(2, "0")}`;
+      const m = months.find((x) => x.key === key);
+      if (m) m.count++;
+    }
+
+    // Category distribution
+    const categoryDist = {};
+    for (const ws of workspaces) {
+      const cat = ws.business_category || "OTHER";
+      categoryDist[cat] = (categoryDist[cat] || 0) + 1;
+    }
+
+    // Recent workspaces (latest 8) with owner email
+    const ownerIdSet = new Set(workspaces.slice(0, 8).map((w) => w.owner_user_id));
+    const ownerUsers = ownerIdSet.size
+      ? (users || []).filter((u) => ownerIdSet.has(u.id))
+      : [];
+    const ownerEmailMap = {};
+    for (const u of ownerUsers) ownerEmailMap[u.id] = u.email;
+
+    const recentWorkspaces = workspaces.slice(0, 8).map((ws) => ({
+      id: ws.id,
+      name: ws.name,
+      business_category: ws.business_category || "OTHER",
+      plan: wsOwnerMap[ws.id]?.planCode || "FREE",
+      plan_status: ws.plan_status || "active",
+      created_date: ws.created_date,
+      owner_email: ownerEmailMap[ws.owner_user_id] || "—",
+    }));
+
+    // Recent successful payments (latest 5)
+    const recentPayments = successPayments.slice(0, 5).map((p) => ({
+      id: p.id,
+      amount: p.amount,
+      currency: p.currency || "INR",
+      status: p.status,
+      gateway: p.gateway,
+      created_date: p.created_date,
+      workspace_id: p.workspace_id,
+    }));
+
+    const conversionRate = workspaces.length > 0
+      ? Math.round((proCount / workspaces.length) * 100)
+      : 0;
 
     return Response.json({
       total_workspaces: workspaces.length,
@@ -53,7 +122,14 @@ export default async function (req) {
       pro_workspaces: proCount,
       active_pro: activePro,
       expired_pro: expiredPro,
-      total_users: users.length
+      suspended_workspaces: suspendedWs,
+      total_users: users.length,
+      total_revenue: totalRevenue,
+      conversion_rate: conversionRate,
+      monthly_growth: months,
+      category_distribution: categoryDist,
+      recent_workspaces: recentWorkspaces,
+      recent_payments: recentPayments,
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
