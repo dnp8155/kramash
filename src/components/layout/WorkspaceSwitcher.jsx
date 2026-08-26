@@ -8,14 +8,16 @@ export default function WorkspaceSwitcher({ mobile = false, collapsed = false, o
   const { workspace } = useWorkspace();
   const term = useBusinessTerminology();
 
-  const name = workspace?.name || "Kramashah";
-  const sub = categoryLabel(term.category);
+  const sub =
+    workspace?.business_category === "OTHER" && workspace?.custom_business_type
+      ? workspace.custom_business_type
+      : categoryLabel(term.category);
 
   if (collapsed) {
     return (
       <div className="flex flex-col items-center gap-2 px-2 py-3">
         <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-lg shrink-0">
-          {(name || "K").charAt(0).toUpperCase()}
+          K
         </div>
         <button
           onClick={onToggleCollapse}
@@ -34,13 +36,13 @@ export default function WorkspaceSwitcher({ mobile = false, collapsed = false, o
       <div className="flex items-center gap-2.5">
         {/* Avatar */}
         <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-lg shrink-0">
-          {(name || "K").charAt(0).toUpperCase()}
+          K
         </div>
 
         {/* Text */}
         <div className="flex-1 min-w-0">
           <div className="font-bold text-sm leading-tight tracking-wide uppercase text-foreground truncate">
-            {name}
+            KRAMASHAH
           </div>
           <div className="text-xs text-muted-foreground truncate">{sub}</div>
         </div>
