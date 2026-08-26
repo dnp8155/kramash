@@ -21,6 +21,7 @@ const LIMIT_KEYS = [
   { key: "max_events", label: "Max Events", type: "number" },
   { key: "max_team_members", label: "Max Team Members", type: "number" },
   { key: "max_services", label: "Max Services", type: "number" },
+  { key: "max_storage_gb", label: "Database Storage (GB)", type: "number" },
   { key: "pdf_export_enabled", label: "PDF Export", type: "boolean" },
   { key: "reminders_enabled", label: "Reminders", type: "boolean" }
 ];

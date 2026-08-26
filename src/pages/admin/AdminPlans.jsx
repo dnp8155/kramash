@@ -11,13 +11,14 @@ import { CreatePlanDialog, AddLimitDialog, AddPricingDialog } from "@/components
 
 const BILLING_LABELS = { MONTHLY: "Monthly", SIX_MONTHS: "6 Months", ANNUAL: "Annual" };
 
-const NUMERIC_KEYS = ["max_events", "max_team_members", "max_services"];
+const NUMERIC_KEYS = ["max_events", "max_team_members", "max_services", "max_storage_gb"];
 const BOOLEAN_KEYS = ["pdf_export_enabled", "reminders_enabled"];
 const ALL_LIMIT_KEYS = [...NUMERIC_KEYS, ...BOOLEAN_KEYS];
 const KEY_LABELS = {
   max_events: "Max Events",
   max_team_members: "Max Team Members",
   max_services: "Max Services",
+  max_storage_gb: "Database Storage (GB)",
   pdf_export_enabled: "PDF Export",
   reminders_enabled: "Reminders"
 };
@@ -25,6 +26,7 @@ const KEY_HINTS = {
   max_events: "Use 999999 for unlimited",
   max_team_members: "Use 999999 for unlimited",
   max_services: "Use 999999 for unlimited",
+  max_storage_gb: "Total DB storage in GB (e.g. 5, 50)",
   pdf_export_enabled: "Allow quotation PDF export",
   reminders_enabled: "Enable event reminders"
 };

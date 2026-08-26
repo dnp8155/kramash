@@ -13,6 +13,7 @@
         "max_events",
         "max_team_members",
         "max_services",
+        "max_storage_gb",
         "pdf_export_enabled",
         "reminders_enabled"
       ]
