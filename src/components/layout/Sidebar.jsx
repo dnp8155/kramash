@@ -1,18 +1,15 @@
 import { useState } from "react";
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { mainNav, moreNav, moreGroup } from "@/constants/navigation";
 import { useAuth } from "@/lib/AuthContext";
-import { useWorkspace } from "@/lib/WorkspaceContext";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
-import { categoryLabel } from "@/lib/businessTerminology";
 import { ChevronDown, ChevronUp, Settings, Info, X, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
+import WorkspaceSwitcher from "@/components/layout/WorkspaceSwitcher";
 
-export default function Sidebar({ mobile = false, onClose, onToggleSidebar }) {
+export default function Sidebar({ mobile = false, onClose }) {
   const location = useLocation();
-  const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const { workspace } = useWorkspace();
   const term = useBusinessTerminology();
   const moreActive = moreNav.some((item) => location.pathname === item.path);
   const [moreOpen, setMoreOpen] = useState(moreActive);
@@ -55,25 +52,17 @@ export default function Sidebar({ mobile = false, onClose, onToggleSidebar }) {
 
   return (
     <div className="flex h-full flex-col bg-card text-foreground border-r border-border">
-      {/* Brand */}
-      <div className="flex items-center gap-3 px-4 py-4">
-        <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-lg">
-          K
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="font-bold text-sm leading-tight tracking-wide uppercase">Kramashah</div>
-          <div className="text-xs text-muted-foreground truncate">{categoryLabel(term.category)}</div>
-        </div>
-        {mobile && (
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
-            aria-label="Close"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        )}
-      </div>
+      {/* Workspace switcher */}
+      <WorkspaceSwitcher mobile={mobile} onClose={onClose} />
+      {mobile && (
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3 w-8 h-8 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+          aria-label="Close"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      )}
 
       <div className="h-px bg-border" />
 
@@ -127,7 +116,7 @@ export default function Sidebar({ mobile = false, onClose, onToggleSidebar }) {
         </div>
         <div className="flex-1 min-w-0">
           <div className="text-sm font-semibold truncate">{user?.full_name || "User"}</div>
-          <div className="text-xs text-muted-foreground truncate">{workspace?.name || "—"}</div>
+          <div className="text-xs text-muted-foreground truncate">{user?.email || "—"}</div>
         </div>
         <button
           onClick={() => logout()}
