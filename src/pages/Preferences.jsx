@@ -25,7 +25,21 @@ export default function Preferences() {
   const { workspaceId, workspace } = useWorkspace();
   const { toast } = useToast();
   const { plan } = usePlan();
-  const [theme, setTheme] = useState("Contact Sheet");
+  const [theme, setTheme] = useState(() => {
+    if (typeof window === "undefined") return "Contact Sheet";
+    return localStorage.getItem("app-theme") || "Contact Sheet";
+  });
+
+  // Apply theme to <html> — "Night" enables dark mode, others are light.
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === "Night") {
+      root.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
+    }
+    localStorage.setItem("app-theme", theme);
+  }, [theme]);
   const [exportFy, setExportFy] = useState(currentFinancialYearLabel());
   const [exporting, setExporting] = useState(false);
   const remindersEnabled = !!plan?.limits?.reminders_enabled;
