@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { useWorkspace } from "@/lib/WorkspaceContext";
-import { teamMemberTypes, themes, businessTypes } from "@/constants/preferencesConfig";
+import { teamMemberTypes, businessTypes } from "@/constants/preferencesConfig";
 import { formatINR } from "@/utils/format";
 import Button from "@/components/common/Button";
 import Select from "@/components/common/Select";
@@ -10,45 +10,20 @@ import WorkspaceSettings from "@/components/settings/WorkspaceSettings";
 import TeamRoleForm from "@/components/team/TeamRoleForm";
 import ServiceForm from "@/components/services/ServiceForm";
 import { useToast } from "@/components/ui/use-toast";
-import { useAuth } from "@/lib/AuthContext";
 import { loadRoles } from "@/lib/teamService";
 import { loadAllServices } from "@/lib/quotationService";
-import { Pencil, Trash2, ArrowUp, ArrowDown, Plus, LogOut, Crown, Download, Loader2, Bell } from "lucide-react";
+import { Pencil, Trash2, ArrowUp, ArrowDown, Plus, Download, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { exportFinancialCsv } from "@/lib/exportUtils";
 import { loadAllTransactions } from "@/lib/financeService";
 import { financialYearLabels, currentFinancialYearLabel } from "@/constants/financeConfig";
-import { usePlan } from "@/hooks/usePlan";
 
 export default function Preferences() {
-  const { logout } = useAuth();
   const { workspaceId, workspace } = useWorkspace();
   const { toast } = useToast();
-  const { plan } = usePlan();
-  const [theme, setTheme] = useState(() => {
-    if (typeof window === "undefined") return "Contact Sheet";
-    return localStorage.getItem("app-theme") || "Contact Sheet";
-  });
-
-  // Apply theme to <html> — "Night" enables dark mode, others are light.
-  useEffect(() => {
-    const root = document.documentElement;
-    if (theme === "Night") {
-      root.classList.add("dark");
-    } else {
-      root.classList.remove("dark");
-    }
-    localStorage.setItem("app-theme", theme);
-  }, [theme]);
   const [exportFy, setExportFy] = useState(currentFinancialYearLabel());
   const [exporting, setExporting] = useState(false);
-  const remindersEnabled = !!plan?.limits?.reminders_enabled;
-  const pushSupported = typeof window !== "undefined" && "Notification" in window;
   const [toggles, setToggles] = useState({
-    statusDots: true,
-    groupUpcoming: true,
-    eventStatus: true,
-    menubarLabels: true,
     showTeam: true,
     showServices: false,
     showAddress: false,
@@ -145,33 +120,6 @@ export default function Preferences() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Owner & workspace (live) */}
         <WorkspaceSettings />
-
-        {/* Appearance */}
-        <Card title="Appearance">
-          <Field label="Theme">
-            <div className="grid grid-cols-3 gap-2">
-              {themes.map((t) => (
-                <button
-                  key={t}
-                  onClick={() => setTheme(t)}
-                  className={cn(
-                    "px-3 py-2 rounded-md text-sm border transition-colors",
-                    theme === t ? "border-primary bg-primary/5 text-foreground" : "border-border text-muted-foreground hover:bg-muted/40"
-                  )}
-                >
-                  {t}
-                </button>
-              ))}
-            </div>
-          </Field>
-          <div className="space-y-3 mt-3">
-            <ToggleRow label="Show status dots" checked={toggles.statusDots} onChange={setT("statusDots")} />
-            <ToggleRow label="Group upcoming events" checked={toggles.groupUpcoming} onChange={setT("groupUpcoming")} />
-            <ToggleRow label="Show event status" checked={toggles.eventStatus} onChange={setT("eventStatus")} />
-            <ToggleRow label="Show menubar labels" checked={toggles.menubarLabels} onChange={setT("menubarLabels")} />
-          </div>
-          <Button variant="outline" size="sm" className="mt-4">Re-run first-time setup</Button>
-        </Card>
       </div>
 
       {/* Business type */}
@@ -312,41 +260,6 @@ export default function Preferences() {
           </Button>
           <p className="text-xs text-muted-foreground mt-2">Exports financial activity for the selected year. Event, client, and team exports are available on their respective pages.</p>
         </Card>
-        <Card title="Notifications">
-          <div className="space-y-3">
-            <ToggleRow label="In-app notifications" checked={true} onChange={() => {}} />
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-foreground flex items-center gap-1.5"><Bell className="w-3.5 h-3.5" />Browser push notifications</span>
-              {pushSupported ? (
-                <Toggle checked={Notification.permission === "granted"} onChange={async (v) => {
-                  if (v) await Notification.requestPermission();
-                }} label="Push notifications" />
-              ) : (
-                <span className="text-xs text-muted-foreground">Not supported</span>
-              )}
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-foreground">Event reminders</span>
-              {remindersEnabled ? (
-                <Toggle checked={true} onChange={() => {}} label="Event reminders" />
-              ) : (
-                <ProBadge />
-              )}
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-foreground">Subscription expiry reminders</span>
-              <Toggle checked={true} onChange={() => {}} label="Subscription reminders" />
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">SMS / Email / WhatsApp</span>
-              <span className="text-xs text-muted-foreground">Not available in Beta</span>
-            </div>
-          </div>
-          <div className="mt-4 pt-4 border-t border-border space-y-3">
-            <div className="text-sm font-semibold">Session</div>
-            <Button variant="destructive" onClick={() => logout(true)}><LogOut className="w-4 h-4" />Log out</Button>
-          </div>
-        </Card>
       </div>
 
       <TeamRoleForm
@@ -408,13 +321,5 @@ function ReorderRow({ title, value }) {
       <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
       <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
     </div>
-  );
-}
-
-function ProBadge() {
-  return (
-    <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 uppercase tracking-wide">
-      <Crown className="w-3 h-3" />Pro
-    </span>
   );
 }

@@ -28,6 +28,7 @@ import Quotation from '@/pages/Quotation';
 import QuotationEditor from '@/pages/QuotationEditor';
 import SignPdf from '@/pages/SignPdf';
 import Preferences from '@/pages/Preferences';
+import Settings from '@/pages/Settings';
 import AppUpdates from '@/pages/AppUpdates';
 import YourPlan from '@/pages/YourPlan';
 import AdminRoute from '@/components/admin/AdminRoute';
@@ -95,6 +96,7 @@ const AuthenticatedApp = () => {
           <Route path="/quotation/:id" element={<QuotationEditor />} />
           <Route path="/sign-pdf" element={<SignPdf />} />
           <Route path="/preferences" element={<Preferences />} />
+          <Route path="/settings" element={<Settings />} />
           <Route path="/app-updates" element={<AppUpdates />} />
           <Route path="/plan" element={<YourPlan />} />
         </Route>

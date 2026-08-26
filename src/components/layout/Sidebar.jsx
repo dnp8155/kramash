@@ -136,7 +136,7 @@ export default function Sidebar({ mobile = false, onClose, onToggleSidebar }) {
           <div className="text-xs text-muted-foreground truncate">{workspace?.name || "—"}</div>
         </div>
         <button
-          onClick={() => navigate("/preferences")}
+          onClick={() => navigate("/settings")}
           className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
           aria-label="Settings"
         >

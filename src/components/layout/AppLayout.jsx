@@ -24,6 +24,7 @@ export default function AppLayout() {
     "/quotation": "Quotation & Agreement",
     "/sign-pdf": "Sign a PDF",
     "/preferences": "Preferences",
+    "/settings": "Settings",
     "/app-updates": "App & Updates",
     "/plan": "Your Plan"
   };

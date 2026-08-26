@@ -10,7 +10,8 @@ import {
   Smartphone,
   Crown,
   Grid,
-  ChevronDown
+  ChevronDown,
+  Settings
 } from "lucide-react";
 
 export const mainNav = [
@@ -24,6 +25,7 @@ export const moreNav = [
   { label: "Rate Estimator", path: "/rate-estimator", icon: Calculator },
   { label: "Quotation & Agreement", path: "/quotation", icon: FileText },
   { label: "Sign a PDF", path: "/sign-pdf", icon: PenLine },
+  { label: "Settings", path: "/settings", icon: Settings },
   { label: "Preferences", path: "/preferences", icon: SlidersHorizontal },
   { label: "App & Updates", path: "/app-updates", icon: Smartphone },
   { label: "Your Plan", path: "/plan", icon: Crown }
