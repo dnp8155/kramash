@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Bot, X, Send, Sparkles } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
@@ -66,8 +67,8 @@ export default function AgentBot() {
         <Bot className="w-5 h-5 text-foreground" />
       </button>
 
-      {open && (
-        <div className="fixed inset-0 z-50 flex justify-end">
+      {open && createPortal(
+        <div className="fixed inset-0 z-[100] flex justify-end">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setOpen(false)} />
           <div className="relative w-full max-w-sm h-full bg-card border-l border-border flex flex-col shadow-xl animate-fade-in">
             {/* Header */}
@@ -142,7 +143,8 @@ export default function AgentBot() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
