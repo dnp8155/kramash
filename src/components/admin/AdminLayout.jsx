@@ -18,9 +18,9 @@ export default function AdminLayout() {
     );
 
   return (
-    <div className="min-h-screen bg-background flex flex-col md:flex-row">
+    <div className="h-screen bg-background flex flex-col md:flex-row overflow-hidden">
       {/* Sidebar */}
-      <aside className="md:w-60 border-b md:border-b-0 md:border-r border-border bg-card flex md:flex-col">
+      <aside className="md:w-60 shrink-0 border-b md:border-b-0 md:border-r border-border bg-card flex md:flex-col md:h-screen">
         <div className="flex items-center gap-2 px-4 py-4 border-b border-border md:block">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm">
@@ -55,7 +55,7 @@ export default function AdminLayout() {
       </aside>
 
       {/* Content */}
-      <main className="flex-1 overflow-x-hidden">
+      <main className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin">
         <Outlet />
       </main>
     </div>
