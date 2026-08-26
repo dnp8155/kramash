@@ -6,25 +6,26 @@ import { useToast } from "@/components/ui/use-toast";
 import Button from "@/components/common/Button";
 import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
-import Toggle from "@/components/common/Toggle";
 import LoadingState from "@/components/common/LoadingState";
 import EmptyState from "@/components/common/EmptyState";
 import { formatMoney } from "@/utils/format";
-import { computeTotals, lineTotal } from "@/lib/quotationCalc";
+import { computeTotals } from "@/lib/quotationCalc";
 import {
-  loadServices, loadQuotation, loadQuotationItems,
+  loadServices, loadQuotation,
   generateQuotationNumber, createQuotation, updateQuotation,
   duplicateQuotation, deleteQuotation, acceptQuotation,
   verifyQuotationRefs, buildClientSnapshot, buildBusinessSnapshot, buildEventSnapshot
 } from "@/lib/quotationService";
 import { generateQuotationPdf, generateJobSheetPdf } from "@/lib/quotationPdf";
-import { DEFAULT_QUOTATION_TERMS, GST_MODES, QUOTATION_STATUS_META } from "@/constants/quotationConfig";
+import { DEFAULT_QUOTATION_TERMS, QUOTATION_STATUS_META } from "@/constants/quotationConfig";
 import { loadRoles } from "@/lib/teamService";
-import {
-  ArrowLeft, Plus, Trash2, FileDown, Save, CheckCircle2, Copy, AlertTriangle, FileText, Users
-} from "lucide-react";
+import { ArrowLeft, AlertTriangle, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
+import QuotationItemsEditor from "@/components/quotation/QuotationItemsEditor";
+import QuotationPricingPanel from "@/components/quotation/QuotationPricingPanel";
+import QuotationActions from "@/components/quotation/QuotationActions";
+import { Section, Field } from "@/components/quotation/QuotationParts";
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -456,167 +457,40 @@ export default function QuotationEditor() {
       </Section>
 
       {/* Items */}
-      <Section title="Items & Deliverables">
-        {!readOnly && (
-          <div className="flex flex-wrap gap-3 items-end mb-3">
-            <div className="flex flex-col gap-1 flex-1 min-w-[180px]">
-              <span className="text-xs font-medium text-muted-foreground">Add Service</span>
-              <div className="flex gap-2">
-                <Select value={addServiceId} onChange={(e) => setAddServiceId(e.target.value)} className="flex-1">
-                  <option value="">— choose —</option>
-                  {services.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-                </Select>
-                <Button size="sm" variant="outline" onClick={addService} disabled={!addServiceId}><Plus className="w-3.5 h-3.5" />Add</Button>
-              </div>
-            </div>
-            <div className="flex flex-col gap-1 flex-1 min-w-[180px]">
-              <span className="text-xs font-medium text-muted-foreground">Add Role</span>
-              <div className="flex gap-2">
-                <Select value={addRoleId} onChange={(e) => setAddRoleId(e.target.value)} className="flex-1">
-                  <option value="">— choose —</option>
-                  {roles.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
-                </Select>
-                <Button size="sm" variant="outline" onClick={addRole} disabled={!addRoleId}><Plus className="w-3.5 h-3.5" />Add</Button>
-              </div>
-            </div>
-            <Button size="sm" variant="dark" onClick={addCustom} className="shrink-0"><Plus className="w-3.5 h-3.5" />Custom Item</Button>
-          </div>
-        )}
-
-        {items.length === 0 ? (
-          <EmptyState title="No items yet" description="Add services, roles, or a custom item." />
-        ) : (
-          <div className="overflow-x-auto -mx-2 px-2">
-            <table className="w-full text-sm min-w-[640px]">
-              <thead>
-                <tr className="text-xs text-muted-foreground border-b border-border">
-                  <th className="text-left py-2 pr-2 font-medium">Item</th>
-                  <th className="text-right py-2 px-1 font-medium w-16">Qty</th>
-                  <th className="text-right py-2 px-1 font-medium w-16">Days</th>
-                  <th className="text-right py-2 px-1 font-medium w-28">Rate</th>
-                  {gstApplicable && <th className="text-right py-2 px-1 font-medium w-20">GST%</th>}
-                  <th className="text-right py-2 px-1 font-medium w-28">Amount</th>
-                  {!readOnly && <th className="w-8"></th>}
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((it, idx) => (
-                  <tr key={idx} className="border-b border-border/60">
-                    <td className="py-2 pr-2">
-                      <Input
-                        value={it.name}
-                        onChange={(e) => updateItem(idx, "name", e.target.value)}
-                        disabled={readOnly}
-                        className="h-8"
-                        placeholder="Item name"
-                      />
-                      <input
-                        value={it.description || ""}
-                        onChange={(e) => updateItem(idx, "description", e.target.value)}
-                        disabled={readOnly}
-                        placeholder="Description"
-                        className="w-full text-xs text-muted-foreground bg-transparent border-0 focus:outline-none mt-0.5 placeholder:text-muted-foreground/60"
-                      />
-                    </td>
-                    <td className="py-2 px-1">
-                      <Input type="number" min="0" value={it.quantity} onChange={(e) => updateItem(idx, "quantity", Number(e.target.value))} disabled={readOnly} className="h-8 text-right" />
-                    </td>
-                    <td className="py-2 px-1">
-                      <Input
-                        type="number" min="0"
-                        value={it.rate_type === "Per Day" ? it.days : 1}
-                        onChange={(e) => updateItem(idx, "days", Number(e.target.value))}
-                        disabled={readOnly || it.rate_type !== "Per Day"}
-                        className="h-8 text-right"
-                      />
-                    </td>
-                    <td className="py-2 px-1">
-                      <Input type="number" min="0" value={it.unit_rate} onChange={(e) => updateItem(idx, "unit_rate", Number(e.target.value))} disabled={readOnly} className="h-8 text-right" />
-                    </td>
-                    {gstApplicable && (
-                      <td className="py-2 px-1">
-                        <Input type="number" min="0" step="0.5" value={it.gst_rate} onChange={(e) => updateItem(idx, "gst_rate", Number(e.target.value))} disabled={readOnly} className="h-8 text-right" />
-                      </td>
-                    )}
-                    <td className="py-2 px-1 text-right font-medium">{formatMoney(lineTotal(it), currency)}</td>
-                    {!readOnly && (
-                      <td className="py-2">
-                        <button onClick={() => removeItem(idx)} className="text-muted-foreground hover:text-destructive" aria-label="Remove item">
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </td>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Section>
+      <QuotationItemsEditor
+        items={items}
+        updateItem={updateItem}
+        removeItem={removeItem}
+        addService={addService}
+        addRole={addRole}
+        addCustom={addCustom}
+        addServiceId={addServiceId}
+        setAddServiceId={setAddServiceId}
+        addRoleId={addRoleId}
+        setAddRoleId={setAddRoleId}
+        services={services}
+        roles={roles}
+        gstApplicable={gstApplicable}
+        readOnly={readOnly}
+        currency={currency}
+      />
 
       {/* Pricing + GST */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Section title="Discount & GST">
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Discount Type">
-              <Select value={discountType} onChange={(e) => setDiscountType(e.target.value)} disabled={readOnly} className="w-full">
-                <option value="percent">Percentage (%)</option>
-                <option value="fixed">Fixed Amount</option>
-              </Select>
-            </Field>
-            <Field label="Discount Value">
-              <Input type="number" min="0" value={discountValue} onChange={(e) => setDiscountValue(Number(e.target.value))} disabled={readOnly} />
-            </Field>
-          </div>
-
-          {gstWorkspaceEnabled && (
-            <div className="mt-3 pt-3 border-t border-border space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Apply GST to this quotation</span>
-                <Toggle checked={gstApplicable} onChange={setGstApplicable} label="Apply GST" />
-              </div>
-              {gstApplicable && (
-                <Field label="GST Mode">
-                  <Select value={gstMode} onChange={(e) => setGstMode(e.target.value)} disabled={readOnly} className="w-full">
-                    {GST_MODES.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
-                  </Select>
-                </Field>
-              )}
-              {gstApplicable && !workspace.gstin && (
-                <p className="text-xs text-warning flex items-center gap-1">
-                  <AlertTriangle className="w-3.5 h-3.5" /> Your workspace GSTIN is not set. Add it in Preferences before finalizing.
-                </p>
-              )}
-            </div>
-          )}
-          {!gstWorkspaceEnabled && (
-            <p className="text-xs text-muted-foreground mt-3">GST is not enabled for this workspace. Enable it in Preferences to use GST on quotations.</p>
-          )}
-        </Section>
-
-        <Section title="Totals">
-          <div className="space-y-1.5">
-            <Row label="Subtotal" value={formatMoney(totals.subtotal, currency)} />
-            {totals.discountAmount > 0 && (
-              <Row label={`Discount (${discountType === "percent" ? discountValue + "%" : "Fixed"})`} value={"-" + formatMoney(totals.discountAmount, currency)} />
-            )}
-            <Row label="Taxable Amount" value={formatMoney(totals.taxableAmount, currency)} />
-            {gstApplicable && gstMode === "cgst_sgst" && (
-              <>
-                <Row label="CGST" value={formatMoney(totals.cgstAmount, currency)} />
-                <Row label="SGST" value={formatMoney(totals.sgstAmount, currency)} />
-              </>
-            )}
-            {gstApplicable && gstMode === "igst" && (
-              <Row label="IGST" value={formatMoney(totals.igstAmount, currency)} />
-            )}
-            <div className="flex justify-between text-sm py-2 mt-2 border-t border-border">
-              <span className="font-semibold">Grand Total</span>
-              <span className="font-bold text-primary">{formatMoney(totals.grandTotal, currency)}</span>
-            </div>
-          </div>
-        </Section>
-      </div>
+      <QuotationPricingPanel
+        discountType={discountType}
+        setDiscountType={setDiscountType}
+        discountValue={discountValue}
+        setDiscountValue={setDiscountValue}
+        gstApplicable={gstApplicable}
+        setGstApplicable={setGstApplicable}
+        gstMode={gstMode}
+        setGstMode={setGstMode}
+        gstWorkspaceEnabled={gstWorkspaceEnabled}
+        workspaceGstin={workspace?.gstin}
+        totals={totals}
+        currency={currency}
+        readOnly={readOnly}
+      />
 
       {/* Terms & notes */}
       <Section icon={FileText} title="Terms & Conditions">
@@ -639,67 +513,25 @@ export default function QuotationEditor() {
       </Section>
 
       {/* Actions */}
-      <div className="flex flex-wrap gap-2">
-        {!readOnly && (
-          <Button onClick={saveDraft} disabled={saving || finalizing}>
-            <Save className="w-4 h-4" /> {saving ? "Saving…" : isNew ? "Save Draft" : "Save Changes"}
-          </Button>
-        )}
-        {!readOnly && (
-          <Button variant="dark" onClick={finalize} disabled={saving || finalizing}>
-            {finalizing ? "Finalizing…" : <><CheckCircle2 className="w-4 h-4" /> Finalize</>}
-          </Button>
-        )}
-        {isFinalized && status !== "accepted" && (
-          <Button variant="success" onClick={accept} disabled={accepting}>
-            {accepting ? "Accepting…" : <><CheckCircle2 className="w-4 h-4" /> Mark Accepted</>}
-          </Button>
-        )}
-        {isFinalized && (
-          <Button variant="outline" onClick={downloadPdf} disabled={generating}>
-            <FileDown className="w-4 h-4" /> {generating ? "Generating…" : "Download PDF"}
-          </Button>
-        )}
-        <Button variant="outline" onClick={downloadJobSheet} disabled={generating || !event}>
-          <Users className="w-4 h-4" /> Job Sheet
-        </Button>
-        {existingQuotation && (
-          <Button variant="outline" onClick={onDuplicate}><Copy className="w-4 h-4" /> Duplicate</Button>
-        )}
-        {existingQuotation && (
-          <Button variant="destructive" onClick={onDelete}><Trash2 className="w-4 h-4" /> Delete</Button>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function Section({ icon: Icon, title, children }) {
-  return (
-    <div className="bg-card border border-border rounded-lg p-4">
-      <div className="flex items-center gap-2 mb-3">
-        {Icon && <Icon className="w-4 h-4 text-muted-foreground" />}
-        <h3 className="text-sm font-semibold">{title}</h3>
-      </div>
-      <div className="space-y-3">{children}</div>
-    </div>
-  );
-}
-
-function Field({ label, children }) {
-  return (
-    <div>
-      <label className="block text-xs font-medium text-muted-foreground mb-1">{label}</label>
-      {children}
-    </div>
-  );
-}
-
-function Row({ label, value }) {
-  return (
-    <div className="flex justify-between text-sm">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="font-medium">{value}</span>
+      <QuotationActions
+        isNew={isNew}
+        readOnly={readOnly}
+        isFinalized={isFinalized}
+        status={status}
+        saving={saving}
+        finalizing={finalizing}
+        accepting={accepting}
+        generating={generating}
+        saveDraft={saveDraft}
+        finalize={finalize}
+        accept={accept}
+        downloadPdf={downloadPdf}
+        downloadJobSheet={downloadJobSheet}
+        onDuplicate={onDuplicate}
+        onDelete={onDelete}
+        existingQuotation={existingQuotation}
+        hasEvent={!!event}
+      />
     </div>
   );
 }
