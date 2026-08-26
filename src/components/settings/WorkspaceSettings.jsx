@@ -6,7 +6,7 @@ import Button from "@/components/common/Button";
 import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
 import Toggle from "@/components/common/Toggle";
-import { Upload, Loader2 } from "lucide-react";
+import { Upload, Loader2, Pencil, Check } from "lucide-react";
 import { businessTypes } from "@/constants/preferencesConfig";
 import { toast } from "@/components/ui/use-toast";
 
@@ -20,6 +20,7 @@ export default function WorkspaceSettings() {
   const [form, setForm] = useState(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [emailEditing, setEmailEditing] = useState(false);
   const fileRef = useRef(null);
 
   useEffect(() => {
@@ -141,7 +142,38 @@ export default function WorkspaceSettings() {
         </Field>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Field label="Business Phone"><Input value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="+91…" /></Field>
-          <Field label="Business Email"><Input value={form.email} onChange={(e) => set("email", e.target.value)} /></Field>
+          <Field label="Business Email">
+            <div className="flex items-center gap-2">
+              <Input
+                value={form.email}
+                onChange={(e) => set("email", e.target.value)}
+                readOnly={!emailEditing}
+                placeholder="you@example.com"
+                className={emailEditing ? "" : "bg-muted/50 cursor-not-allowed text-muted-foreground"}
+              />
+              {emailEditing ? (
+                <button
+                  type="button"
+                  onClick={() => { setEmailEditing(false); }}
+                  className="shrink-0 w-9 h-9 rounded-md border border-border flex items-center justify-center text-success hover:bg-success/10 transition-colors"
+                  aria-label="Confirm email edit"
+                  title="Done"
+                >
+                  <Check className="w-4 h-4" />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setEmailEditing(true)}
+                  className="shrink-0 w-9 h-9 rounded-md border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                  aria-label="Edit email"
+                  title="Edit email"
+                >
+                  <Pencil className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          </Field>
         </div>
         <Field label="Business Address"><Input value={form.address} onChange={(e) => set("address", e.target.value)} /></Field>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
