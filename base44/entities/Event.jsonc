@@ -72,9 +72,7 @@
       "data.workspace_id": "{{user.data.active_workspace_id}}"
     },
     "create": {
-      "user_condition": {
-        "role": "admin"
-      }
+      "data.workspace_id": "{{user.data.active_workspace_id}}"
     },
     "update": {
       "data.workspace_id": "{{user.data.active_workspace_id}}"
