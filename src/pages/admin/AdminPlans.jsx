@@ -102,13 +102,17 @@ export default function AdminPlans() {
   };
 
   const updatePricing = (id, field, value) => {
-    setPricings((prev) => prev.map((p) => (p.id === id ? { ...p, [field]: field === "price" ? Number(value) : value } : p)));
+    setPricings((prev) => prev.map((p) => (p.id === id ? { ...p, [field]: ["price", "storage_gb"].includes(field) ? Number(value) : value } : p)));
   };
 
   const savePricing = async (p) => {
     setSaving(true);
     try {
-      await base44.entities.PlanPricing.update(p.id, { price: Number(p.price) || 0, is_active: p.is_active });
+      await base44.entities.PlanPricing.update(p.id, {
+        price: Number(p.price) || 0,
+        storage_gb: Number(p.storage_gb) || 0,
+        is_active: p.is_active
+      });
       toast({ title: `${BILLING_LABELS[p.billing_cycle]} pricing updated` });
     } catch (e) {
       toast({ title: "Failed to update pricing", description: e?.message, variant: "destructive" });
@@ -280,9 +284,17 @@ export default function AdminPlans() {
                           type="number"
                           value={p.price}
                           onChange={(e) => updatePricing(p.id, "price", e.target.value)}
-                          className="w-28"
+                          className="w-24"
                         />
                         <span className="text-xs text-muted-foreground">INR</span>
+                        <Input
+                          type="number"
+                          value={p.storage_gb ?? 0}
+                          onChange={(e) => updatePricing(p.id, "storage_gb", e.target.value)}
+                          className="w-20"
+                          title="Database storage (GB) for this billing cycle"
+                        />
+                        <span className="text-xs text-muted-foreground">GB</span>
                         <Button variant="outline" size="sm" onClick={() => savePricing(p)} disabled={saving} className="shrink-0">
                           <Save className="w-3.5 h-3.5" /> Save
                         </Button>

@@ -190,6 +190,7 @@ export function AddPricingDialog({ open, onOpenChange, planId, existingCycles, o
   const { toast } = useToast();
   const [cycle, setCycle] = useState("MONTHLY");
   const [price, setPrice] = useState(0);
+  const [storageGb, setStorageGb] = useState(0);
   const [saving, setSaving] = useState(false);
 
   const availableCycles = Object.keys(BILLING_LABELS).filter((c) => !existingCycles.includes(c));
@@ -209,6 +210,7 @@ export function AddPricingDialog({ open, onOpenChange, planId, existingCycles, o
         price: Number(price) || 0,
         currency: "INR",
         duration_months: BILLING_DURATION[cycle],
+        storage_gb: Number(storageGb) || 0,
         is_active: true,
         sort_order: 0
       });
@@ -242,6 +244,11 @@ export function AddPricingDialog({ open, onOpenChange, planId, existingCycles, o
           <div className="space-y-1.5">
             <Label>Price (₹)</Label>
             <Input type="number" value={price} onChange={(e) => setPrice(e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Database Storage (GB)</Label>
+            <Input type="number" value={storageGb} onChange={(e) => setStorageGb(e.target.value)} placeholder="e.g. 5, 50, 100" />
+            <p className="text-[11px] text-muted-foreground">Storage allotted for this billing cycle.</p>
           </div>
         </div>
         <DialogFooter>
