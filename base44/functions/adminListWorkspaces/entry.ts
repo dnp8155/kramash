@@ -9,8 +9,8 @@ export default async function (req) {
       return Response.json({ error: "Admin only" }, { status: 403 });
     }
 
-    const url = new URL(req.url);
-    const search = (url.searchParams.get("search") || "").toLowerCase();
+    const body = await req.json().catch(() => ({}));
+    const search = (body.search || "").toLowerCase();
 
     const workspaces = await base44.asServiceRole.entities.Workspace.list("-created_date", 500);
     const members = await base44.asServiceRole.entities.WorkspaceMember.list("-created_date", 2000);
