@@ -6,7 +6,8 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
-  AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid
+  AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
+  ComposedChart, Bar, Line, Legend
 } from "recharts";
 import LoadingState from "@/components/common/LoadingState";
 import { cn } from "@/lib/utils";
@@ -69,6 +70,15 @@ export default function AdminDashboard() {
   const lastRev = revMonths[revMonths.length - 1]?.amount || 0;
   const prevRev = revMonths[revMonths.length - 2]?.amount || 0;
   const revTrend = prevRev > 0 ? Math.round(((lastRev - prevRev) / prevRev) * 100) : (lastRev > 0 ? 100 : 0);
+
+  const eventMonths = stats.monthly_active_events || [];
+  const perfData = revMonths.map((m) => {
+    const ev = eventMonths.find((e) => e.key === m.key) || { count: 0 };
+    return { label: m.label, revenue: m.amount, events: ev.count };
+  });
+  const lastEvents = eventMonths[eventMonths.length - 1]?.count || 0;
+  const prevEvents = eventMonths[eventMonths.length - 2]?.count || 0;
+  const eventTrend = prevEvents > 0 ? Math.round(((lastEvents - prevEvents) / prevEvents) * 100) : (lastEvents > 0 ? 100 : 0);
 
   const kpis = [
     {
@@ -150,6 +160,53 @@ export default function AdminDashboard() {
             </div>
           );
         })}
+      </div>
+
+      {/* Business performance — revenue + active events combined */}
+      <div className="bg-card border border-border rounded-xl p-5 shadow-card">
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="w-4 h-4 text-primary" />
+            <h2 className="text-sm font-semibold text-foreground">Business Performance (6 months)</h2>
+          </div>
+          <div className="flex items-center gap-3 text-xs">
+            <span className="inline-flex items-center gap-1 text-muted-foreground">
+              <span className="w-2.5 h-2.5 rounded-sm bg-success" /> Revenue
+              <span className={cn("ml-1 font-semibold", eventTrend >= 0 ? "text-success" : "text-destructive")}>
+                {eventTrend >= 0 ? "+" : ""}{eventTrend}% MoM
+              </span>
+            </span>
+            <span className="inline-flex items-center gap-1 text-muted-foreground">
+              <span className="w-2.5 h-2.5 rounded-sm bg-primary" /> Active Events
+              <span className={cn("ml-1 font-semibold", eventTrend >= 0 ? "text-success" : "text-destructive")}>
+                {eventTrend >= 0 ? "+" : ""}{eventTrend}% MoM
+              </span>
+            </span>
+          </div>
+        </div>
+        <div className="h-56">
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart data={perfData} margin={{ top: 5, right: 5, left: -10, bottom: 0 }}>
+              <defs>
+                <linearGradient id="perfRevGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="hsl(var(--success))" stopOpacity={0.25} />
+                  <stop offset="100%" stopColor="hsl(var(--success))" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+              <XAxis dataKey="label" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
+              <YAxis yAxisId="rev" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} tickFormatter={moneyShort} />
+              <YAxis yAxisId="ev" orientation="right" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} allowDecimals={false} />
+              <Tooltip
+                contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
+                formatter={(v, name) => name === "Revenue" ? [money(v), name] : [v, "Active Events"]}
+              />
+              <Legend wrapperStyle={{ fontSize: 11 }} />
+              <Bar yAxisId="ev" dataKey="events" name="Active Events" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} barSize={22} />
+              <Area yAxisId="rev" type="monotone" dataKey="revenue" name="Revenue" stroke="hsl(var(--success))" strokeWidth={2} fill="url(#perfRevGrad)" />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">

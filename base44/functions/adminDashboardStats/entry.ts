@@ -8,12 +8,13 @@ export default async function (req) {
       return Response.json({ error: "Admin only" }, { status: 403 });
     }
 
-    const [workspaces, users, subs, plans, payments] = await Promise.all([
+    const [workspaces, users, subs, plans, payments, events] = await Promise.all([
       base44.asServiceRole.entities.Workspace.list("-created_date", 1000),
       base44.asServiceRole.entities.User.list("-created_date", 2000),
       base44.asServiceRole.entities.WorkspaceSubscription.list("-created_date", 2000),
       base44.asServiceRole.entities.Plan.list("sort_order", 50),
       base44.asServiceRole.entities.SubscriptionPayment.list("-created_date", 500),
+      base44.asServiceRole.entities.Event.list("-created_date", 2000),
     ]);
 
     const planMap = {};
@@ -74,6 +75,24 @@ export default async function (req) {
       const key = `${cd.getFullYear()}-${String(cd.getMonth() + 1).padStart(2, "0")}`;
       const m = revenueMonths.find((x) => x.key === key);
       if (m) m.amount += p.amount || 0;
+    }
+
+    // Monthly active events — events per month (by start_date) for last 6 months
+    const eventMonths = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      eventMonths.push({
+        key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`,
+        label: d.toLocaleString("en-IN", { month: "short" }),
+        count: 0,
+      });
+    }
+    for (const ev of (events || [])) {
+      const sd = ev.start_date ? new Date(ev.start_date + "T00:00:00") : null;
+      if (!sd) continue;
+      const key = `${sd.getFullYear()}-${String(sd.getMonth() + 1).padStart(2, "0")}`;
+      const m = eventMonths.find((x) => x.key === key);
+      if (m) m.count++;
     }
 
     // Avg revenue per pro workspace
@@ -150,6 +169,7 @@ export default async function (req) {
       conversion_rate: conversionRate,
       monthly_growth: months,
       monthly_revenue: revenueMonths,
+      monthly_active_events: eventMonths,
       category_distribution: categoryDist,
       recent_workspaces: recentWorkspaces,
       recent_payments: recentPayments,
