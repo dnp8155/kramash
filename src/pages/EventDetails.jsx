@@ -212,7 +212,9 @@ export default function EventDetails() {
       <Card className="p-5">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <div className="text-xs text-muted-foreground">{event.start_date?.slice(8)}-{event.start_date?.slice(0, 4)}</div>
+            <div className="text-xs text-muted-foreground">
+              {event.start_date ? new Date(event.start_date + "T00:00:00").toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : ""}
+            </div>
             <h2 className="text-base font-semibold">{event.event_type} · {formatEventDate(event.start_date, event.end_date)}</h2>
           </div>
           <Button size="sm" variant="outline" onClick={() => setShowForm(true)}>
