@@ -74,16 +74,16 @@ export default function GlobalSearch() {
   const total = results.events.length + results.clients.length + results.team.length;
 
   return (
-    <div className="relative w-full max-w-md" ref={containerRef}>
+    <div className="relative w-full max-w-2xl" ref={containerRef}>
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
         <input
           type="text"
           value={query}
           onChange={(e) => onChange(e.target.value)}
           onFocus={() => query.trim() && setOpen(true)}
           placeholder="Search events, clients, team…"
-          className="w-full h-9 pl-9 pr-8 rounded-lg bg-muted/60 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:bg-card transition-colors"
+          className="w-full h-10 pl-10 pr-9 rounded-lg bg-muted/60 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:bg-card transition-colors"
         />
         {query && (
           <button
