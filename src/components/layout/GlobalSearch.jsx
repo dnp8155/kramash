@@ -74,7 +74,7 @@ export default function GlobalSearch() {
   const total = results.events.length + results.clients.length + results.team.length;
 
   return (
-    <div className="relative flex-1 max-w-xl" ref={containerRef}>
+    <div className="relative w-full max-w-md" ref={containerRef}>
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
         <input
