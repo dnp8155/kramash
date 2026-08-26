@@ -128,8 +128,10 @@ export default function Sidebar({ mobile = false, onClose, onToggleSidebar }) {
       <div className="h-px bg-border" />
 
       <div className="flex items-center gap-3 px-3 py-3">
-        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground font-semibold text-sm shrink-0">
-          {(user?.full_name || user?.email || "K").charAt(0).toUpperCase()}
+        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground font-semibold text-sm shrink-0 overflow-hidden">
+          {user?.data?.profile_image || user?.profile_image
+            ? <img src={user.data?.profile_image || user.profile_image} alt="Profile" className="w-full h-full object-cover" />
+            : (user?.full_name || user?.email || "K").charAt(0).toUpperCase()}
         </div>
         <div className="flex-1 min-w-0">
           <div className="text-sm font-semibold truncate">{user?.full_name || "User"}</div>
