@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/AuthContext";
 import TeamMemberCard from "@/components/team/TeamMemberCard";
 import TeamMemberForm from "@/components/team/TeamMemberForm";
 import AvailabilityCalendar from "@/components/team/AvailabilityCalendar";
+import UpcomingBookingsList from "@/components/team/UpcomingBookingsList";
 import SearchInput from "@/components/common/SearchInput";
 import Select from "@/components/common/Select";
 import Button from "@/components/common/Button";
@@ -246,12 +247,20 @@ export default function Team() {
         isLoading ? (
           <Skeleton className="h-96 w-full rounded-lg" />
         ) : (
-          <AvailabilityCalendar
-            members={members}
-            assignments={assignments}
-            eventsById={eventsById}
-            onEventClick={(ev) => navigate(`/events/${ev.id}`)}
-          />
+          <div className="space-y-4">
+            <AvailabilityCalendar
+              members={members}
+              assignments={assignments}
+              eventsById={eventsById}
+              onEventClick={(ev) => navigate(`/events/${ev.id}`)}
+            />
+            <UpcomingBookingsList
+              members={members}
+              assignments={assignments}
+              eventsById={eventsById}
+              onEventClick={(ev) => navigate(`/events/${ev.id}`)}
+            />
+          </div>
         )
       )}
 

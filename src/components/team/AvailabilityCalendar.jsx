@@ -130,15 +130,24 @@ export default function AvailabilityCalendar({ members = [], assignments = [], e
                 )}>
                   {day}
                 </span>
-                {hasBooked && booked.length === 1 && (
-                  <span className="text-[8px] text-muted-foreground truncate w-full px-1 leading-tight">
-                    {booked[0].event?.title}
-                  </span>
-                )}
-                {hasMultiple && (
-                  <span className="text-[8px] text-[#d97706] font-semibold leading-tight">
-                    {booked.length} events
-                  </span>
+                {hasBooked && (
+                  <div className="flex flex-wrap items-center justify-center gap-0.5 px-1 w-full overflow-hidden">
+                    {booked.slice(0, 2).map((b) => (
+                      <span
+                        key={b.member.id}
+                        title={`${b.member.name} — ${b.event?.title || ""}`}
+                        className={cn(
+                          "text-[7px] font-semibold px-1 py-0.5 rounded leading-none truncate max-w-[44px]",
+                          hasMultiple ? "bg-[#f39c12]/15 text-[#d97706]" : "bg-[#e74c3c]/15 text-[#e74c3c]"
+                        )}
+                      >
+                        {b.member.name.split(" ")[0]}
+                      </span>
+                    ))}
+                    {booked.length > 2 && (
+                      <span className="text-[7px] font-semibold text-[#d97706] leading-none">+{booked.length - 2}</span>
+                    )}
+                  </div>
                 )}
               </button>
             );
