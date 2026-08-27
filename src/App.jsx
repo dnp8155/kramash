@@ -16,6 +16,7 @@ import ResetPassword from '@/pages/ResetPassword';
 import PhoneLogin from '@/pages/PhoneLogin';
 import Onboarding from '@/pages/Onboarding';
 import Landing from '@/pages/Landing';
+import Dashboard from '@/pages/Dashboard';
 import Events from '@/pages/Events';
 import EventDetails from '@/pages/EventDetails';
 import Clients from '@/pages/Clients';
@@ -87,6 +88,7 @@ const AuthenticatedApp = () => {
       {/* Authenticated + workspace → application */}
       <Route element={<WorkspaceRoute unauthenticatedElement={<Navigate to="/login" replace />} noWorkspaceElement={<Navigate to="/onboarding" replace />} />}>
         <Route element={<AppLayout />}>
+          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/events" element={<Events />} />
           <Route path="/events/:id" element={<EventDetails />} />
           <Route path="/clients" element={<Clients />} />

@@ -1,4 +1,5 @@
 import {
+  LayoutDashboard,
   CalendarDays,
   Users,
   UserCheck,
@@ -21,6 +22,7 @@ import {
 } from "lucide-react";
 
 export const mainNav = [
+  { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
   { label: "Events", path: "/events", icon: CalendarDays },
   { label: "Clients", path: "/clients", icon: Users },
   { label: "Team", path: "/team", icon: UserCheck },
