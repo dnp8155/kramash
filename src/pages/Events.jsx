@@ -16,11 +16,13 @@ import StatCard from "@/components/common/StatCard";
 import { isToday, isThisWeek, isUpcomingDate, isPastDate, isWithinFY, fyOptions, currentFY } from "@/lib/dates";
 import { exportEventsCsv } from "@/lib/exportUtils";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
+import { useT } from "@/hooks/useT";
 
 export default function Events() {
   const { workspaceId, workspace } = useWorkspace();
   const navigate = useNavigate();
   const term = useBusinessTerminology();
+  const t = useT();
 
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -101,7 +103,7 @@ export default function Events() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <StatCard label={term.totalWorkLabel} value={events.length} icon={CalendarDays} tone="primary" />
         <StatCard label={term.activeWorkLabel} value={upcomingCount} icon={Clock} tone="info" />
-        <StatCard label="In Progress" value={inProgressCount} icon={Clock} tone="warning" />
+        <StatCard label={t("In Progress")} value={inProgressCount} icon={Clock} tone="warning" />
         <StatCard label={term.completedWorkLabel} value={completedCount} icon={CheckCircle2} tone="success" />
       </div>
 
@@ -119,19 +121,19 @@ export default function Events() {
         <div className="flex items-center gap-2 sm:ml-auto">
           <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
             <option value="all">All {term.workItemPlural} ({events.length})</option>
-            <option value="today">Today</option>
-            <option value="week">This Week</option>
-            <option value="upcoming">Upcoming</option>
-            <option value="past">Past</option>
-            <option value="completed">Completed</option>
-            <option value="in-progress">In Progress</option>
-            <option value="cancelled">Cancelled</option>
+            <option value="today">{t("Today")}</option>
+            <option value="week">{t("This Week")}</option>
+            <option value="upcoming">{t("Upcoming")}</option>
+            <option value="past">{t("Past")}</option>
+            <option value="completed">{t("Completed")}</option>
+            <option value="in-progress">{t("In Progress")}</option>
+            <option value="cancelled">{t("Cancelled")}</option>
           </Select>
           <Select value={fyFilter} onChange={(e) => setFyFilter(e.target.value)}>
-            <option value="all">All Years</option>
+            <option value="all">{t("All Years")}</option>
             {fyOptions(3).map((f) => (
               <option key={f.value} value={f.value}>
-                {f.label}{f.value === currentFY() ? " (Current)" : ""}
+                {f.label}{f.value === currentFY() ? ` ${t("(Current)")}` : ""}
               </option>
             ))}
           </Select>
@@ -156,7 +158,7 @@ export default function Events() {
 
       {error && (
         <div className="text-sm text-destructive bg-destructive/5 border border-destructive/20 rounded-md px-3 py-2">
-          {error?.message || "Failed to load events."}
+          {error?.message || t("Failed to load events.")}
         </div>
       )}
 

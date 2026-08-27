@@ -13,11 +13,13 @@ import { Plus, Pencil, Eye, Download, Users, CalendarCheck, UserCheck } from "lu
 import { exportClientsCsv } from "@/lib/exportUtils";
 import StatCard from "@/components/common/StatCard";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
+import { useT } from "@/hooks/useT";
 
 export default function Clients() {
   const { workspaceId } = useWorkspace();
   const navigate = useNavigate();
   const term = useBusinessTerminology();
+  const t = useT();
 
   const [query, setQuery] = useState("");
   const [showForm, setShowForm] = useState(false);
@@ -64,24 +66,24 @@ export default function Clients() {
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => exportClientsCsv(filtered, eventCounts)} disabled={filtered.length === 0}>
             <Download className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Export</span>
+            <span className="hidden sm:inline">{t("Export")}</span>
           </Button>
           <Button onClick={openNew}>
             <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">Add Client</span>
+            <span className="hidden sm:inline">{t("Add Client")}</span>
           </Button>
         </div>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        <StatCard label="Total Clients" value={clients.length} icon={Users} tone="primary" />
+        <StatCard label={t("Total Clients")} value={clients.length} icon={Users} tone="primary" />
         <StatCard label={`Total ${term.workItemPlural}`} value={totalEvents} icon={CalendarCheck} tone="info" />
         <StatCard label={`With ${term.workItemPlural}`} value={Object.keys(eventCounts).length} icon={UserCheck} tone="success" />
       </div>
 
       <SearchInput
-        placeholder="Search by name, phone, email"
+        placeholder={t("Search by name, phone, email")}
         className="sm:max-w-xs"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
@@ -89,7 +91,7 @@ export default function Clients() {
 
       {error && (
         <div className="text-sm text-destructive bg-destructive/5 border border-destructive/20 rounded-md px-3 py-2">
-          {error?.message || "Failed to load clients."}
+          {error?.message || t("Failed to load clients.")}
         </div>
       )}
 
@@ -98,17 +100,17 @@ export default function Clients() {
       ) : filtered.length === 0 ? (
         <div className="bg-card border border-border rounded-lg">
           <EmptyState
-            title={query ? "No clients found" : "No clients yet"}
-            description={query ? "Try a different search term." : `Add a client to create and manage ${term.workItemPlural.toLowerCase()}.`}
-            action={!query ? <Button onClick={openNew}>+ Add Client</Button> : null}
+            title={query ? t("No clients found") : t("No clients yet")}
+            description={query ? t("Try a different search term.") : `Add a client to create and manage ${term.workItemPlural.toLowerCase()}.`}
+            action={!query ? <Button onClick={openNew}>+ {t("Add Client")}</Button> : null}
           />
         </div>
       ) : (
         <div className="bg-card border border-border rounded-lg overflow-hidden">
           <div className="hidden sm:grid grid-cols-[1.4fr_1fr_1.4fr_1fr_80px_auto] gap-4 items-center px-4 py-2.5 border-b border-border text-xs font-medium text-muted-foreground uppercase tracking-wide">
-            <span>Name</span>
-            <span>Phone</span>
-            <span>Email</span>
+            <span>{t("Name")}</span>
+            <span>{t("Phone")}</span>
+            <span>{t("Email")}</span>
             <span>{term.workItemPlural}</span>
             <span />
             <span />
