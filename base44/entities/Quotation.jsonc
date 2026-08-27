@@ -147,17 +147,17 @@
     "quotation_date"
   ],
   "rls": {
-    "read": {
-      "data.workspace_id": "{{user.data.active_workspace_id}}"
-    },
     "create": {
-      "data.workspace_id": "{{user.data.active_workspace_id}}"
+      "created_by_id": "{{user.id}}"
+    },
+    "read": {
+      "created_by_id": "{{user.id}}"
     },
     "update": {
-      "data.workspace_id": "{{user.data.active_workspace_id}}"
+      "created_by_id": "{{user.id}}"
     },
     "delete": {
-      "data.workspace_id": "{{user.data.active_workspace_id}}"
+      "created_by_id": "{{user.id}}"
     }
   }
 }

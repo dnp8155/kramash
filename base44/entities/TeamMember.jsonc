@@ -61,17 +61,19 @@
     "name"
   ],
   "rls": {
-    "read": {
-      "data.workspace_id": "{{user.data.active_workspace_id}}"
-    },
     "create": {
-      "data.workspace_id": "{{user.data.active_workspace_id}}"
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "created_by_id": "{{user.id}}"
     },
     "update": {
-      "data.workspace_id": "{{user.data.active_workspace_id}}"
+      "created_by_id": "{{user.id}}"
     },
     "delete": {
-      "data.workspace_id": "{{user.data.active_workspace_id}}"
+      "created_by_id": "{{user.id}}"
     }
   }
 }

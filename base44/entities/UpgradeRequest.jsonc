@@ -49,10 +49,13 @@
     "status"
   ],
   "rls": {
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
     "read": {
       "$or": [
         {
-          "data.workspace_id": "{{user.data.active_workspace_id}}"
+          "created_by_id": "{{user.id}}"
         },
         {
           "user_condition": {
@@ -60,9 +63,6 @@
           }
         }
       ]
-    },
-    "create": {
-      "data.workspace_id": "{{user.data.active_workspace_id}}"
     },
     "update": {
       "user_condition": {

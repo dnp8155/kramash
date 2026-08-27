@@ -75,10 +75,15 @@
     "status"
   ],
   "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
     "read": {
       "$or": [
         {
-          "data.workspace_id": "{{user.data.active_workspace_id}}"
+          "created_by_id": "{{user.id}}"
         },
         {
           "user_condition": {
@@ -86,11 +91,6 @@
           }
         }
       ]
-    },
-    "create": {
-      "user_condition": {
-        "role": "admin"
-      }
     },
     "update": {
       "user_condition": {
