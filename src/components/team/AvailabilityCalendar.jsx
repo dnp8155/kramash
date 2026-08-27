@@ -9,8 +9,19 @@ const MONTHS = ["January", "February", "March", "April", "May", "June", "July", 
 
 export default function AvailabilityCalendar({ members = [], assignments = [], eventsById = {}, onEventClick }) {
   const [view, setView] = useState(() => {
-    const d = new Date();
-    return { y: d.getFullYear(), m: d.getMonth() };
+    // Default to the month of the nearest upcoming booking, if any.
+    const now = new Date();
+    let target = now;
+    for (const a of assignments) {
+      if (a.assignment_status === "removed") continue;
+      const ev = eventsById[a.event_id];
+      if (!ev || ev.status === "cancelled") continue;
+      const start = parseISODate(ev.start_date);
+      if (start && start >= now && (target === now || start < target)) {
+        target = start;
+      }
+    }
+    return { y: target.getFullYear(), m: target.getMonth() };
   });
   const [selected, setSelected] = useState(null);
 
