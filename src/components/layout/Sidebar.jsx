@@ -3,6 +3,7 @@ import { NavLink, useLocation } from "react-router-dom";
 import { mainNav, moreNav, moreGroup, settingsNav, settingsGroup } from "@/constants/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
+import { useT } from "@/hooks/useT";
 import { ChevronDown, ChevronUp, Settings, Info, X, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import WorkspaceSwitcher from "@/components/layout/WorkspaceSwitcher";
@@ -11,13 +12,14 @@ export default function Sidebar({ mobile = false, onClose, collapsed = false, on
   const location = useLocation();
   const { user, logout } = useAuth();
   const term = useBusinessTerminology();
+  const t = useT();
   const moreActive = moreNav.some((item) => location.pathname === item.path);
   const [moreOpen, setMoreOpen] = useState(moreActive);
   const settingsActive = settingsNav.some((item) => location.pathname === item.path);
   const [settingsOpen, setSettingsOpen] = useState(settingsActive);
 
   // Resolve a dynamic label for a nav item (Events -> Projects for Architecture/Other).
-  const navLabel = (item) => (item.path === "/events" ? term.workItemPlural : item.label);
+  const navLabel = (item) => t(item.path === "/events" ? term.workItemPlural : item.label);
 
   const itemClass = ({ isActive }) =>
     cn(
@@ -55,7 +57,7 @@ export default function Sidebar({ mobile = false, onClose, collapsed = false, on
           <button
             onClick={() => setMoreOpen((v) => !v)}
             className="w-10 h-10 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-            title={moreGroup.label}
+            title={t(moreGroup.label)}
           >
             <moreGroup.icon className="w-4 h-4 shrink-0" />
           </button>
@@ -67,7 +69,7 @@ export default function Sidebar({ mobile = false, onClose, collapsed = false, on
           <button
             onClick={() => setSettingsOpen((v) => !v)}
             className="w-10 h-10 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-            title={settingsGroup.label}
+            title={t(settingsGroup.label)}
           >
             <settingsGroup.icon className="w-4 h-4 shrink-0" />
           </button>
@@ -79,11 +81,11 @@ export default function Sidebar({ mobile = false, onClose, collapsed = false, on
         </nav>
         <div className="px-2 py-2 space-y-1 flex flex-col items-center">
           {user?.role === "admin" && (
-            <NavLink to="/admin" className="w-10 h-10 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" title="SaaS Admin">
+            <NavLink to="/admin" className="w-10 h-10 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" title={t("SaaS Admin")}>
               <Settings className="w-3.5 h-3.5" />
             </NavLink>
           )}
-          <NavLink to="/app-updates" className="w-10 h-10 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" title="About & Legal">
+          <NavLink to="/app-updates" className="w-10 h-10 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" title={t("About & Legal")}>
             <Info className="w-3.5 h-3.5" />
           </NavLink>
         </div>
@@ -97,8 +99,8 @@ export default function Sidebar({ mobile = false, onClose, collapsed = false, on
           <button
             onClick={() => logout()}
             className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-colors"
-            aria-label="Log out"
-            title="Log out"
+            aria-label={t("Log out")}
+            title={t("Log out")}
           >
             <LogOut className="w-4 h-4" />
           </button>
@@ -132,7 +134,7 @@ export default function Sidebar({ mobile = false, onClose, collapsed = false, on
           className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
         >
           <moreGroup.icon className="w-4 h-4 shrink-0" />
-          <span className="flex-1 text-left">{moreGroup.label}</span>
+          <span className="flex-1 text-left">{t(moreGroup.label)}</span>
           {moreOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
         </button>
 
@@ -147,7 +149,7 @@ export default function Sidebar({ mobile = false, onClose, collapsed = false, on
           className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
         >
           <settingsGroup.icon className="w-4 h-4 shrink-0" />
-          <span className="flex-1 text-left">{settingsGroup.label}</span>
+          <span className="flex-1 text-left">{t(settingsGroup.label)}</span>
           {settingsOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
         </button>
 
@@ -166,7 +168,7 @@ export default function Sidebar({ mobile = false, onClose, collapsed = false, on
             className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
           >
             <Settings className="w-3.5 h-3.5" />
-            SaaS Admin
+            {t("SaaS Admin")}
           </NavLink>
         )}
         <NavLink
@@ -174,7 +176,7 @@ export default function Sidebar({ mobile = false, onClose, collapsed = false, on
           className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
         >
           <Info className="w-3.5 h-3.5" />
-          About & Legal
+          {t("About & Legal")}
         </NavLink>
       </div>
 
@@ -187,14 +189,14 @@ export default function Sidebar({ mobile = false, onClose, collapsed = false, on
             : (user?.full_name || user?.email || "K").charAt(0).toUpperCase()}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-sm font-semibold truncate">{user?.full_name || "User"}</div>
+          <div className="text-sm font-semibold truncate">{user?.full_name || t("User")}</div>
           <div className="text-xs text-muted-foreground truncate">{user?.email || "—"}</div>
         </div>
         <button
           onClick={() => logout()}
           className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-colors shrink-0"
-          aria-label="Log out"
-          title="Log out"
+          aria-label={t("Log out")}
+          title={t("Log out")}
         >
           <LogOut className="w-4 h-4" />
         </button>

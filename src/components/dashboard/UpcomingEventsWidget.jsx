@@ -3,8 +3,10 @@ import { formatMoney } from "@/utils/format";
 import StatusBadge from "@/components/common/StatusBadge";
 import EmptyState from "@/components/common/EmptyState";
 import { CalendarDays, MapPin, ArrowRight, Plus } from "lucide-react";
+import { useT } from "@/hooks/useT";
 
 export default function UpcomingEventsWidget({ events = [], clientsById = {}, currency = "INR", isLoading, onEventClick, onSeeAll, workItemLabel = "Events" }) {
+  const t = useT();
   const list = events.slice(0, 5);
 
   return (
@@ -12,10 +14,10 @@ export default function UpcomingEventsWidget({ events = [], clientsById = {}, cu
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
         <div className="flex items-center gap-2">
           <CalendarDays className="w-4 h-4 text-primary" />
-          <h3 className="text-sm font-semibold text-foreground">Upcoming {workItemLabel}</h3>
+          <h3 className="text-sm font-semibold text-foreground">{t(`Upcoming ${workItemLabel}`)}</h3>
         </div>
         <button onClick={onSeeAll} className="text-xs font-medium text-primary hover:underline flex items-center gap-1">
-          View all <ArrowRight className="w-3 h-3" />
+          {t("View all")} <ArrowRight className="w-3 h-3" />
         </button>
       </div>
 
@@ -32,7 +34,7 @@ export default function UpcomingEventsWidget({ events = [], clientsById = {}, cu
             description="Schedule your next booking to see it here."
             action={
               <Link to="/events" className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline">
-                <Plus className="w-3.5 h-3.5" /> Add {workItemLabel.toLowerCase().replace(/s$/, "")}
+                <Plus className="w-3.5 h-3.5" /> {t(`Add ${workItemLabel.toLowerCase().replace(/s$/, "")}`)}
               </Link>
             }
           />

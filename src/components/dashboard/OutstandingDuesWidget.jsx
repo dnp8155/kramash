@@ -1,17 +1,19 @@
 import { formatMoney } from "@/utils/format";
 import EmptyState from "@/components/common/EmptyState";
 import { AlertCircle, ArrowRight, CheckCircle2 } from "lucide-react";
+import { useT } from "@/hooks/useT";
 
 export default function OutstandingDuesWidget({ dues = [], currency = "INR", onClientClick, onSeeAll }) {
+  const t = useT();
   return (
     <div className="bg-card border border-border rounded-lg">
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
         <div className="flex items-center gap-2">
           <AlertCircle className="w-4 h-4 text-warning" />
-          <h3 className="text-sm font-semibold text-foreground">Outstanding Receivables</h3>
+          <h3 className="text-sm font-semibold text-foreground">{t("Outstanding Receivables")}</h3>
         </div>
         <button onClick={onSeeAll} className="text-xs font-medium text-primary hover:underline flex items-center gap-1">
-          Financials <ArrowRight className="w-3 h-3" />
+          {t("Financials")} <ArrowRight className="w-3 h-3" />
         </button>
       </div>
 
@@ -44,7 +46,7 @@ export default function OutstandingDuesWidget({ dues = [], currency = "INR", onC
                 </div>
                 <div className="text-right shrink-0">
                   <div className="text-sm font-bold text-warning tabular-nums">{formatMoney(due, currency)}</div>
-                  <div className="text-xs text-muted-foreground">due</div>
+                  <div className="text-xs text-muted-foreground">{t("due")}</div>
                 </div>
               </button>
             ))}

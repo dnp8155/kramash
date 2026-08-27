@@ -4,8 +4,10 @@ import { Search, Calendar, Users, User, X } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useWorkspace } from "@/lib/WorkspaceContext";
 import { cn } from "@/lib/utils";
+import { useT } from "@/hooks/useT";
 
 export default function GlobalSearch() {
+  const t = useT();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState({ events: [], clients: [], team: [] });
   const [open, setOpen] = useState(false);
@@ -82,7 +84,7 @@ export default function GlobalSearch() {
           value={query}
           onChange={(e) => onChange(e.target.value)}
           onFocus={() => query.trim() && setOpen(true)}
-          placeholder="Search events, clients, team…"
+          placeholder={t("Search events, clients, team…")}
           className="w-full h-10 pl-10 pr-9 rounded-lg bg-muted/60 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:bg-card transition-colors"
         />
         {query && (

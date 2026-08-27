@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { useWorkspace } from "@/lib/WorkspaceContext";
 import { useAuth } from "@/lib/AuthContext";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
+import { useT } from "@/hooks/useT";
+import { getAppLanguage, DATE_LOCALES } from "@/lib/i18n";
 import { base44 } from "@/api/base44Client";
 import { loadTransactions, activeTransactions } from "@/lib/financeService";
 import { loadTeamMembers, loadAssignments, loadBlockDates, splitAvailability } from "@/lib/teamService";
@@ -21,6 +23,8 @@ export default function Dashboard() {
   const { workspaceId, workspace } = useWorkspace();
   const { user } = useAuth();
   const term = useBusinessTerminology();
+  const t = useT();
+  const lang = getAppLanguage(user);
   const navigate = useNavigate();
   const currency = workspace?.currency || "INR";
 
@@ -116,18 +120,19 @@ export default function Dashboard() {
   }, [members, assignments, eventsById, blockDates]);
 
   const isLoading = loadingEvents || loadingTx;
-  const greeting = (() => {
+  const greeting = t((() => {
     const h = new Date().getHours();
     if (h < 12) return "Good morning";
     if (h < 17) return "Good afternoon";
     return "Good evening";
-  })();
+  })());
+  const dateLocale = DATE_LOCALES[lang] || DATE_LOCALES.en;
 
   return (
     <div className="p-4 sm:p-6 space-y-6 max-w-[1400px] mx-auto">
       <PageHeader
-        title={`${greeting}, ${user?.full_name?.split(" ")[0] || "there"}`}
-        subtitle={`${workspace?.name || "Your workspace"} · ${new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}`}
+        title={`${greeting}, ${user?.full_name?.split(" ")[0] || t("there")}`}
+        subtitle={`${workspace?.name || "Your workspace"} · ${new Date().toLocaleDateString(dateLocale, { weekday: "long", day: "numeric", month: "long", year: "numeric" })}`}
       />
 
       {/* Stat cards */}
@@ -136,32 +141,32 @@ export default function Dashboard() {
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
           <StatCard
-            label={`Upcoming ${term.workItemPlural}`}
+            label={t(`Upcoming ${term.workItemPlural}`)}
             value={stats.upcoming.length}
             icon={CalendarDays}
             tone="primary"
-            sub={stats.upcoming[0] ? `Next: ${formatEventDate(stats.upcoming[0].start_date, stats.upcoming[0].end_date)}` : "Nothing scheduled"}
+            sub={stats.upcoming[0] ? `${t("Next:")} ${formatEventDate(stats.upcoming[0].start_date, stats.upcoming[0].end_date)}` : t("Nothing scheduled")}
           />
           <StatCard
-            label="Received this month"
+            label={t("Received this month")}
             value={formatMoney(stats.monthRevenue, currency)}
             icon={Wallet}
             tone="success"
-            sub="Client receipts"
+            sub={t("Client receipts")}
           />
           <StatCard
-            label="Outstanding dues"
+            label={t("Outstanding dues")}
             value={formatMoney(stats.outstanding, currency)}
             icon={AlertCircle}
             tone="warning"
-            sub={stats.topDues.length > 0 ? `${stats.topDues.length} clients with dues` : "All settled"}
+            sub={stats.topDues.length > 0 ? `${stats.topDues.length} ${t("clients with dues")}` : t("All settled")}
           />
           <StatCard
-            label="Active team"
+            label={t("Active team")}
             value={stats.activeMembers}
             icon={UserCheck}
             tone="info"
-            sub={`${todayAvail.available.length} free today`}
+            sub={`${todayAvail.available.length} ${t("free today")}`}
           />
         </div>
       )}

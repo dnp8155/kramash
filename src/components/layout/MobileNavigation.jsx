@@ -2,6 +2,7 @@ import { useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { mainNav, moreNav, settingsNav } from "@/constants/navigation";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
+import { useT } from "@/hooks/useT";
 import { cn } from "@/lib/utils";
 import { Grid, X } from "lucide-react";
 
@@ -9,10 +10,11 @@ export default function MobileNavigation() {
   const location = useLocation();
   const navigate = useNavigate();
   const term = useBusinessTerminology();
+  const t = useT();
   const [moreOpen, setMoreOpen] = useState(false);
 
   const isActive = (path) => location.pathname === path;
-  const navLabel = (item) => (item.path === "/events" ? term.workItemPlural : item.label);
+  const navLabel = (item) => t(item.path === "/events" ? term.workItemPlural : item.label);
 
   // Bottom bar shows the 4 most-used destinations; the rest go in the More sheet.
   const bottomNavPaths = ["/dashboard", "/events", "/team", "/financial"];
@@ -48,7 +50,7 @@ export default function MobileNavigation() {
           )}
         >
           <Grid className="w-5 h-5" />
-          More
+          {t("More")}
         </button>
       </nav>
 
@@ -60,7 +62,7 @@ export default function MobileNavigation() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-foreground">More</h3>
+              <h3 className="text-sm font-semibold text-foreground">{t("More")}</h3>
               <button
                 onClick={() => setMoreOpen(false)}
                 className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-muted"

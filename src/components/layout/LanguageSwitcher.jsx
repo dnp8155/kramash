@@ -3,6 +3,7 @@ import { Globe, Check } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
 import { cn } from "@/lib/utils";
+import { getAppLanguage } from "@/lib/i18n";
 
 const LANGUAGES = [
   { code: "en", label: "English", short: "EN" },
@@ -10,9 +11,7 @@ const LANGUAGES = [
   { code: "gu", label: "ગુજરાતી", short: "ગુ" },
 ];
 
-export function getAppLanguage(user) {
-  return user?.data?.language || "en";
-}
+export { getAppLanguage };
 
 export default function LanguageSwitcher() {
   const { user, checkUserAuth } = useAuth();

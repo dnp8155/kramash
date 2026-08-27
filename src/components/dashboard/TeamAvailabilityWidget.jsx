@@ -1,7 +1,9 @@
 import EmptyState from "@/components/common/EmptyState";
 import { UserCheck, ArrowRight, Ban } from "lucide-react";
+import { useT } from "@/hooks/useT";
 
 export default function TeamAvailabilityWidget({ avail = {}, isLoading, onSeeAll }) {
+  const t = useT();
   const { available = [], booked = [], blocked = [] } = avail;
 
   return (
@@ -9,10 +11,10 @@ export default function TeamAvailabilityWidget({ avail = {}, isLoading, onSeeAll
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
         <div className="flex items-center gap-2">
           <UserCheck className="w-4 h-4 text-primary" />
-          <h3 className="text-sm font-semibold text-foreground">Team Today</h3>
+          <h3 className="text-sm font-semibold text-foreground">{t("Team Today")}</h3>
         </div>
         <button onClick={onSeeAll} className="text-xs font-medium text-primary hover:underline flex items-center gap-1">
-          Team <ArrowRight className="w-3 h-3" />
+          {t("Team")} <ArrowRight className="w-3 h-3" />
         </button>
       </div>
 
@@ -27,9 +29,9 @@ export default function TeamAvailabilityWidget({ avail = {}, isLoading, onSeeAll
           <EmptyState title="No active team" description="Add team members to track availability." />
         ) : (
           <>
-            <AvailRow label="Available" count={available.length} tone="success" members={available} />
-            <AvailRow label="Booked" count={booked.length} tone="primary" members={booked.map((b) => b.member)} />
-            <AvailRow label="On leave" count={blocked.length} tone="muted" members={blocked.map((b) => b.member)} icon={Ban} />
+            <AvailRow label={t("Available")} count={available.length} tone="success" members={available} />
+            <AvailRow label={t("Booked")} count={booked.length} tone="primary" members={booked.map((b) => b.member)} />
+            <AvailRow label={t("On leave")} count={blocked.length} tone="muted" members={blocked.map((b) => b.member)} icon={Ban} />
           </>
         )}
       </div>
