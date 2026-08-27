@@ -1,0 +1,57 @@
+{
+  "name": "TeamBlockDate",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "title": "Workspace ID"
+    },
+    "team_member_id": {
+      "type": "string",
+      "title": "Team Member ID"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Start Date"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date",
+      "title": "End Date"
+    },
+    "reason": {
+      "type": "string",
+      "title": "Reason",
+      "default": "Leave"
+    },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "default": "active",
+      "enum": [
+        "active",
+        "cancelled"
+      ]
+    }
+  },
+  "required": [
+    "workspace_id",
+    "team_member_id",
+    "start_date"
+  ],
+  "rls": {
+    "read": {
+      "data.workspace_id": "{{user.data.active_workspace_id}}"
+    },
+    "create": {
+      "data.workspace_id": "{{user.data.active_workspace_id}}"
+    },
+    "update": {
+      "data.workspace_id": "{{user.data.active_workspace_id}}"
+    },
+    "delete": {
+      "data.workspace_id": "{{user.data.active_workspace_id}}"
+    }
+  }
+}

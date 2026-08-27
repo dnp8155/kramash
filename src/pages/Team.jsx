@@ -16,9 +16,10 @@ import EmptyState from "@/components/common/EmptyState";
 import { CardGridSkeleton } from "@/components/common/Skeletons";
 import { Skeleton } from "@/components/ui/skeleton";
 import Card from "@/components/common/Card";
-import { Crown, Plus, AlertTriangle, Download, Users, UserCheck, UserX, CalendarClock } from "lucide-react";
+import { Crown, Plus, AlertTriangle, Download, Users, UserCheck, UserX, CalendarClock, Ban } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { loadTeamMembers, loadRoles, loadAssignments, ensureDefaultRoles } from "@/lib/teamService";
+import { loadTeamMembers, loadRoles, loadAssignments, loadBlockDates, ensureDefaultRoles } from "@/lib/teamService";
+import BlockDateDialog from "@/components/team/BlockDateDialog";
 import { useToast } from "@/components/ui/use-toast";
 import { exportTeamCsv } from "@/lib/exportUtils";
 import StatCard from "@/components/common/StatCard";
@@ -38,17 +39,20 @@ export default function Team() {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [showBlock, setShowBlock] = useState(false);
+  const [blockPreselect, setBlockPreselect] = useState({ memberId: null, date: null });
   const queryClient = useQueryClient();
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["team", workspaceId],
     queryFn: async () => {
       await ensureDefaultRoles(workspaceId);
-      const [membs, rles, asgns, txns] = await Promise.all([
+      const [membs, rles, asgns, txns, blocks] = await Promise.all([
         loadTeamMembers(workspaceId),
         loadRoles(workspaceId),
         loadAssignments(workspaceId),
-        base44.entities.FinancialTransaction.filter({ workspace_id: workspaceId, transaction_type: "TEAM_PAYMENT", status: "ACTIVE" }, "-transaction_date", 1000)
+        base44.entities.FinancialTransaction.filter({ workspace_id: workspaceId, transaction_type: "TEAM_PAYMENT", status: "ACTIVE" }, "-transaction_date", 1000),
+        loadBlockDates(workspaceId)
       ]);
       const evIds = [...new Set((asgns || []).map((a) => a.event_id))];
       const evMap = {};
@@ -60,7 +64,7 @@ export default function Team() {
           } catch (e) { /* event may be gone */ }
         })
       );
-      return { members: membs || [], roles: rles || [], assignments: asgns || [], transactions: txns || [], eventsById: evMap };
+      return { members: membs || [], roles: rles || [], assignments: asgns || [], transactions: txns || [], blockDates: blocks || [], eventsById: evMap };
     },
     enabled: !!workspaceId
   });
@@ -68,6 +72,7 @@ export default function Team() {
   const roles = data?.roles || [];
   const assignments = data?.assignments || [];
   const transactions = data?.transactions || [];
+  const blockDates = data?.blockDates || [];
   const eventsById = data?.eventsById || {};
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["team", workspaceId] });
 
@@ -248,11 +253,18 @@ export default function Team() {
           <Skeleton className="h-96 w-full rounded-lg" />
         ) : (
           <div className="space-y-4">
+            <div className="flex justify-end">
+              <Button variant="outline" size="sm" onClick={() => { setBlockPreselect({ memberId: null, date: null }); setShowBlock(true); }}>
+                <Ban className="w-3.5 h-3.5" /> Block Dates
+              </Button>
+            </div>
             <AvailabilityCalendar
               members={members}
               assignments={assignments}
               eventsById={eventsById}
+              blockDates={blockDates}
               onEventClick={(ev) => navigate(`/events/${ev.id}`)}
+              onBlockDate={(date) => { setBlockPreselect({ memberId: null, date }); setShowBlock(true); }}
             />
             <UpcomingBookingsList
               members={members}
@@ -270,6 +282,16 @@ export default function Team() {
         onSaved={invalidate}
         member={editing}
         workspaceId={workspaceId}
+      />
+
+      <BlockDateDialog
+        open={showBlock}
+        onClose={() => setShowBlock(false)}
+        onSaved={invalidate}
+        workspaceId={workspaceId}
+        members={members}
+        preselectedMemberId={blockPreselect.memberId}
+        preselectedDate={blockPreselect.date}
       />
 
       {/* Delete confirmation */}

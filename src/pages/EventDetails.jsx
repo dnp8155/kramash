@@ -50,13 +50,14 @@ export default function EventDetails() {
     queryFn: async () => {
       const ev = await base44.entities.Event.get(id);
       if (!ev || ev.workspace_id !== workspaceId) return { notFound: true };
-      const [clList, membs, rles, asgns, tx, cats] = await Promise.all([
+      const [clList, membs, rles, asgns, tx, cats, blocks] = await Promise.all([
         ev.client_id ? base44.entities.Client.get(ev.client_id).catch(() => null) : Promise.resolve(null),
         base44.entities.TeamMember.filter({ workspace_id: workspaceId }, "name", 500),
         base44.entities.TeamRole.filter({ workspace_id: workspaceId }, "name", 200),
         base44.entities.EventTeamAssignment.filter({ workspace_id: workspaceId }, "-created_date", 1000),
         base44.entities.FinancialTransaction.filter({ workspace_id: workspaceId, event_id: ev.id }, "-transaction_date", 500),
-        loadExpenseCategories(workspaceId)
+        loadExpenseCategories(workspaceId),
+        base44.entities.TeamBlockDate.filter({ workspace_id: workspaceId }, "-start_date", 500)
       ]);
       const evIds = [...new Set((asgns || []).map((a) => a.event_id))];
       const evMap = {};
@@ -78,6 +79,7 @@ export default function EventDetails() {
         assignments: asgns || [],
         transactions: tx || [],
         categories: cats || [],
+        blockDates: blocks || [],
         eventsById: evMap
       };
     },
@@ -90,6 +92,7 @@ export default function EventDetails() {
   const assignments = data?.assignments || [];
   const transactions = data?.transactions || [];
   const categories = data?.categories || [];
+  const blockDates = data?.blockDates || [];
   const eventsById = data?.eventsById || {};
   const notFound = !!data?.notFound || !!error;
   const load = () => queryClient.invalidateQueries({ queryKey: ["event", id, workspaceId] });
@@ -456,6 +459,7 @@ export default function EventDetails() {
         roles={roles.filter((r) => r.status === "active")}
         assignments={assignments}
         eventsById={eventsById}
+        blockDates={blockDates}
       />
 
       <RecordPaymentDialog

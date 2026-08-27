@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription
@@ -8,14 +8,14 @@ import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
 import { Label } from "@/components/ui/label";
 import { RATE_TYPES } from "@/constants/teamConfig";
-import { findConflicts } from "@/lib/teamService";
-import { formatEventDate } from "@/lib/dates";
-import { AlertTriangle } from "lucide-react";
+import { findConflicts, isBlockedOnDate } from "@/lib/teamService";
+import { formatEventDate, parseISODate, toISODate } from "@/lib/dates";
+import { AlertTriangle, Ban } from "lucide-react";
 
 export default function AssignTeamDialog({
   open, onClose, onSaved,
   event, workspaceId,
-  members = [], roles = [], assignments = [], eventsById = {}
+  members = [], roles = [], assignments = [], eventsById = {}, blockDates = []
 }) {
   const [memberId, setMemberId] = useState("");
   const [roleId, setRoleId] = useState("");
@@ -43,6 +43,26 @@ export default function AssignTeamDialog({
     ? findConflicts(memberId, event.start_date, event.end_date, assignments, eventsById, event.id)
     : [];
 
+  // Block-date conflicts: check each day in the event range for a block entry.
+  const blockConflicts = useMemo(() => {
+    if (!memberId || !event) return [];
+    const start = parseISODate(event.start_date);
+    const end = parseISODate(event.end_date || event.start_date);
+    if (!start || !end) return [];
+    const hits = [];
+    let cur = new Date(start);
+    while (cur <= end) {
+      const iso = toISODate(cur);
+      const blk = (blockDates || []).find((b) =>
+        b.team_member_id === memberId && b.status !== "cancelled" &&
+        iso >= b.start_date && iso <= (b.end_date || b.start_date)
+      );
+      if (blk) hits.push(blk);
+      cur.setDate(cur.getDate() + 1);
+    }
+    return hits;
+  }, [memberId, event, blockDates]);
+
   const onMemberChange = (id) => {
     setMemberId(id);
     setOverrideConflict(false);
@@ -67,6 +87,7 @@ export default function AssignTeamDialog({
     if (!memberId) return "Please select a team member.";
     if (!rateType) return "Please select a rate type.";
     if (conflicts.length > 0 && !overrideConflict) return "Please confirm the booking conflict to proceed.";
+    if (blockConflicts.length > 0 && !overrideConflict) return "This member has blocked dates — please confirm to proceed.";
     return "";
   };
 
@@ -183,6 +204,34 @@ export default function AssignTeamDialog({
                 />
                 I understand the conflict — assign anyway
               </label>
+            </div>
+          )}
+
+          {blockConflicts.length > 0 && (
+            <div className="rounded-md border border-slate-300 bg-slate-50 p-3 space-y-2">
+              <div className="flex items-start gap-2 text-slate-700">
+                <Ban className="w-4 h-4 mt-0.5 shrink-0" />
+                <div className="text-sm">
+                  <div className="font-semibold">
+                    {selectedMember?.name} has blocked dates overlapping this event:
+                  </div>
+                  <ul className="mt-1 list-disc list-inside text-xs">
+                    {[...new Map(blockConflicts.map((b) => [b.id, b])).values()].map((b) => (
+                      <li key={b.id}>{formatEventDate(b.start_date, b.end_date)}{b.reason ? ` — ${b.reason}` : ""}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+              {conflicts.length === 0 && (
+                <label className="flex items-center gap-2 text-xs text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={overrideConflict}
+                    onChange={(e) => setOverrideConflict(e.target.checked)}
+                  />
+                  I understand the block — assign anyway
+                </label>
+              )}
             </div>
           )}
 

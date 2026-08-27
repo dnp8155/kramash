@@ -57,6 +57,23 @@ export async function ensureDefaultRoles(workspaceId) {
   return Array.isArray(created) ? created.length : 0;
 }
 
+// Load block dates / leave entries for a workspace.
+export async function loadBlockDates(workspaceId) {
+  if (!workspaceId) return [];
+  const list = await base44.entities.TeamBlockDate.filter({ workspace_id: workspaceId }, "-start_date", 500);
+  return list || [];
+}
+
+// Check if a member is blocked on a given ISO date.
+export function isBlockedOnDate(memberId, dateISO, blockDates) {
+  return (blockDates || []).some((b) => {
+    if (b.team_member_id !== memberId) return false;
+    if (b.status === "cancelled") return false;
+    const end = b.end_date || b.start_date;
+    return dateISO >= b.start_date && dateISO <= end;
+  });
+}
+
 // ---- Date-range overlap & conflict detection ----
 
 // Two date ranges (inclusive, "YYYY-MM-DD") overlap when:
@@ -92,9 +109,15 @@ export function findConflicts(memberId, startDate, endDate, assignments, eventsB
 // ---- Availability ----
 
 // Derive availability status for a member on a given ISO date.
-// Returns "available" | "booked" | "inactive".
-export function availabilityForDate(member, dateISO, assignments, eventsById) {
+// Returns "available" | "booked" | "blocked" | "inactive".
+export function availabilityForDate(member, dateISO, assignments, eventsById, blockDates = []) {
   if (member.status === "inactive") return "inactive";
+  for (const b of blockDates) {
+    if (b.team_member_id !== member.id) continue;
+    if (b.status === "cancelled") continue;
+    const end = b.end_date || b.start_date;
+    if (dateISO >= b.start_date && dateISO <= end) return "blocked";
+  }
   for (const a of assignments) {
     if (a.team_member_id !== member.id) continue;
     if (a.assignment_status === "removed") continue;
@@ -106,12 +129,13 @@ export function availabilityForDate(member, dateISO, assignments, eventsById) {
   return "available";
 }
 
-// Split members into available / booked lists for a date.
-export function splitAvailability(members, dateISO, assignments, eventsById) {
+// Split members into available / booked / blocked lists for a date.
+export function splitAvailability(members, dateISO, assignments, eventsById, blockDates = []) {
   const available = [];
   const booked = [];
+  const blocked = [];
   for (const m of members) {
-    const st = availabilityForDate(m, dateISO, assignments, eventsById);
+    const st = availabilityForDate(m, dateISO, assignments, eventsById, blockDates);
     if (st === "inactive") continue;
     if (st === "booked") {
       const ev = assignments
@@ -119,11 +143,14 @@ export function splitAvailability(members, dateISO, assignments, eventsById) {
         .map((a) => eventsById[a.event_id])
         .find((e) => e && e.status !== "cancelled" && dateISO >= e.start_date && dateISO <= (e.end_date || e.start_date));
       booked.push({ member: m, event: ev });
+    } else if (st === "blocked") {
+      const blk = (blockDates || []).find((b) => b.team_member_id === m.id && b.status !== "cancelled" && dateISO >= b.start_date && dateISO <= (b.end_date || b.start_date));
+      blocked.push({ member: m, block: blk });
     } else {
       available.push(m);
     }
   }
-  return { available, booked };
+  return { available, booked, blocked };
 }
 
 // ---- Cost ----

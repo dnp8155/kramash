@@ -1,13 +1,13 @@
 import { useState, useMemo } from "react";
 import { parseISODate, toISODate, todayISO } from "@/lib/dates";
-import { splitAvailability } from "@/lib/teamService";
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, MousePointerClick } from "lucide-react";
+import { splitAvailability, isBlockedOnDate } from "@/lib/teamService";
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, MousePointerClick, Ban } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const WEEKDAYS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
-export default function AvailabilityCalendar({ members = [], assignments = [], eventsById = {}, onEventClick }) {
+export default function AvailabilityCalendar({ members = [], assignments = [], eventsById = {}, blockDates = [], onEventClick, onBlockDate }) {
   const [view, setView] = useState(() => {
     // Default to the month of the nearest upcoming booking, if any.
     const now = new Date();
@@ -66,10 +66,32 @@ export default function AvailabilityCalendar({ members = [], assignments = [], e
     return map;
   }, [members, assignments, eventsById]);
 
+  // Map: dateISO -> array of { member, block } for blocked members.
+  const blockedByDate = useMemo(() => {
+    const map = {};
+    for (const b of blockDates) {
+      if (b.status === "cancelled") continue;
+      const m = members.find((mm) => mm.id === b.team_member_id);
+      if (!m || m.status === "inactive") continue;
+      let cur = parseISODate(b.start_date);
+      const endD = parseISODate(b.end_date || b.start_date);
+      if (!cur || !endD) continue;
+      while (cur <= endD) {
+        const iso = toISODate(cur);
+        if (!map[iso]) map[iso] = [];
+        if (!map[iso].some((x) => x.member.id === m.id)) {
+          map[iso].push({ member: m, block: b });
+        }
+        cur.setDate(cur.getDate() + 1);
+      }
+    }
+    return map;
+  }, [members, blockDates]);
+
   const selectedInfo = useMemo(() => {
     if (!selected) return null;
-    return splitAvailability(members, selected, assignments, eventsById);
-  }, [members, selected, assignments, eventsById]);
+    return splitAvailability(members, selected, assignments, eventsById, blockDates);
+  }, [members, selected, assignments, eventsById, blockDates]);
 
   const prevMonth = () => setView((v) => {
     const m = v.m - 1;
@@ -116,8 +138,10 @@ export default function AvailabilityCalendar({ members = [], assignments = [], e
             const isToday = iso === todayISO();
             const isSelected = iso === selected;
             const booked = bookingsByDate[iso] || [];
+            const blocked = blockedByDate[iso] || [];
             const hasMultiple = booked.length > 1;
             const hasBooked = booked.length > 0;
+            const hasBlocked = blocked.length > 0;
 
             return (
               <button
@@ -131,13 +155,15 @@ export default function AvailabilityCalendar({ members = [], assignments = [], e
                     ? "border-[#f39c12] bg-[#f39c12]/5 hover:border-[#f39c12]"
                     : hasBooked
                     ? "border-[#e74c3c] bg-[#e74c3c]/5 hover:border-[#e74c3c]"
+                    : hasBlocked
+                    ? "border-[#6b7280] bg-[#6b7280]/5 hover:border-[#6b7280]"
                     : "border-[#27ae60] bg-[#27ae60]/5 hover:border-[#27ae60]",
                   isToday && !isSelected && "ring-2 ring-primary/30"
                 )}
               >
                 <span className={cn(
                   "font-semibold text-[11px] leading-none self-center",
-                  hasMultiple ? "text-[#d97706]" : hasBooked ? "text-[#e74c3c]" : "text-[#27ae60]"
+                  hasMultiple ? "text-[#d97706]" : hasBooked ? "text-[#e74c3c]" : hasBlocked ? "text-[#6b7280]" : "text-[#27ae60]"
                 )}>
                   {day}
                 </span>
@@ -160,6 +186,23 @@ export default function AvailabilityCalendar({ members = [], assignments = [], e
                     )}
                   </div>
                 )}
+                {!hasBooked && hasBlocked && (
+                  <div className="flex flex-col gap-0.5 w-full overflow-hidden mt-0.5">
+                    {blocked.slice(0, 2).map((b) => (
+                      <span
+                        key={b.member.id}
+                        title={`${b.member.name} — ${b.block?.reason || "Blocked"}`}
+                        className="text-[9px] font-medium px-1 py-0.5 rounded leading-tight truncate bg-[#6b7280]/15 text-[#6b7280] flex items-center gap-0.5"
+                      >
+                        <Ban className="w-2 h-2 shrink-0" />
+                        {b.member.name.split(" ")[0]}
+                      </span>
+                    ))}
+                    {blocked.length > 2 && (
+                      <span className="text-[9px] font-semibold text-[#6b7280] leading-tight px-1">+{blocked.length - 2}</span>
+                    )}
+                  </div>
+                )}
               </button>
             );
           })}
@@ -175,6 +218,9 @@ export default function AvailabilityCalendar({ members = [], assignments = [], e
           </span>
           <span className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-[#f39c12]" /> Multiple Bookings
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#6b7280]" /> Blocked / Leave
           </span>
         </div>
       </div>
@@ -193,10 +239,20 @@ export default function AvailabilityCalendar({ members = [], assignments = [], e
           </div>
         ) : (
           <>
-            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
-              {parseISODate(selected)
-                ? parseISODate(selected).toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })
-                : selected}
+            <div className="flex items-center justify-between mb-1">
+              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                {parseISODate(selected)
+                  ? parseISODate(selected).toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })
+                  : selected}
+              </div>
+              {onBlockDate && (
+                <button
+                  onClick={() => onBlockDate(selected)}
+                  className="text-xs font-medium text-warning hover:underline flex items-center gap-1"
+                >
+                  <Ban className="w-3 h-3" /> Block
+                </button>
+              )}
             </div>
 
             <div className="mt-3 space-y-3">
@@ -239,6 +295,22 @@ export default function AvailabilityCalendar({ members = [], assignments = [], e
                   </ul>
                 )}
               </div>
+
+              {selectedInfo.blocked.length > 0 && (
+                <div className="pt-3 border-t border-border">
+                  <div className="flex items-center gap-1.5 text-sm font-semibold mb-1.5">
+                    <span className="w-2 h-2 rounded-full bg-[#6b7280]" /> Blocked ({selectedInfo.blocked.length})
+                  </div>
+                  <ul className="space-y-1.5 pl-3.5">
+                    {selectedInfo.blocked.map(({ member, block }) => (
+                      <li key={member.id} className="text-sm">
+                        <span className="text-foreground font-medium">{member.name}</span>
+                        {block?.reason ? <span className="text-muted-foreground"> — {block.reason}</span> : null}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           </>
         )}
