@@ -2,12 +2,13 @@ import { useState, useMemo } from "react";
 import { parseISODate, toISODate, todayISO } from "@/lib/dates";
 import { splitAvailability, isBlockedOnDate } from "@/lib/teamService";
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, MousePointerClick, Ban } from "lucide-react";
+import DayBookingsPopup from "@/components/team/DayBookingsPopup";
 import { cn } from "@/lib/utils";
 
 const WEEKDAYS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
-export default function AvailabilityCalendar({ members = [], assignments = [], eventsById = {}, blockDates = [], onEventClick, onBlockDate }) {
+export default function AvailabilityCalendar({ members = [], assignments = [], eventsById = {}, blockDates = [], onEventClick, onBlockDate, currency = "INR" }) {
   const [view, setView] = useState(() => {
     // Default to the month of the nearest upcoming booking, if any.
     const now = new Date();
@@ -24,6 +25,7 @@ export default function AvailabilityCalendar({ members = [], assignments = [], e
     return { y: target.getFullYear(), m: target.getMonth() };
   });
   const [selected, setSelected] = useState(null);
+  const [popupDate, setPopupDate] = useState(null);
 
   // Build the calendar grid (Sunday-first) for the viewed month.
   const grid = useMemo(() => {
@@ -57,7 +59,7 @@ export default function AvailabilityCalendar({ members = [], assignments = [], e
           if (!map[iso]) map[iso] = [];
           // Avoid duplicate event entries on the same day.
           if (!map[iso].some((b) => b.event?.id === ev.id)) {
-            map[iso].push({ member: m, event: ev });
+            map[iso].push({ member: m, event: ev, assignment: a });
           }
           cur.setDate(cur.getDate() + 1);
         }
@@ -146,7 +148,14 @@ export default function AvailabilityCalendar({ members = [], assignments = [], e
             return (
               <button
                 key={i}
-                onClick={() => setSelected(iso)}
+                onClick={() => {
+                  setSelected(iso);
+                  const booked = bookingsByDate[iso] || [];
+                  const blocked = blockedByDate[iso] || [];
+                  if (booked.length > 0 || blocked.length > 0) {
+                    setPopupDate(iso);
+                  }
+                }}
                 className={cn(
                   "relative h-24 rounded-lg text-xs border-2 transition-all flex flex-col items-stretch justify-start gap-0.5 p-1 overflow-hidden",
                   isSelected
@@ -315,6 +324,18 @@ export default function AvailabilityCalendar({ members = [], assignments = [], e
           </>
         )}
       </div>
+
+      {/* Day bookings popup */}
+      {popupDate && (
+        <DayBookingsPopup
+          date={popupDate}
+          bookings={bookingsByDate[popupDate] || []}
+          blocks={blockedByDate[popupDate] || []}
+          currency={currency}
+          onClose={() => setPopupDate(null)}
+          onEventClick={onEventClick}
+        />
+      )}
     </div>
   );
 }

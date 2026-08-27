@@ -26,11 +26,12 @@ import StatCard from "@/components/common/StatCard";
 import { usePlan } from "@/hooks/usePlan";
 
 export default function Team() {
-  const { workspaceId } = useWorkspace();
+  const { workspaceId, workspace } = useWorkspace();
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { plan } = usePlan();
+  const currency = workspace?.currency || "INR";
 
   const [tab, setTab] = useState("Roster");
   const [query, setQuery] = useState("");
@@ -263,6 +264,7 @@ export default function Team() {
               assignments={assignments}
               eventsById={eventsById}
               blockDates={blockDates}
+              currency={currency}
               onEventClick={(ev) => navigate(`/events/${ev.id}`)}
               onBlockDate={(date) => { setBlockPreselect({ memberId: null, date }); setShowBlock(true); }}
             />
