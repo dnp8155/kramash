@@ -8,6 +8,7 @@ import PaymentTable from "@/components/financial/PaymentTable";
 import RecordPaymentDialog from "@/components/financial/RecordPaymentDialog";
 import RecordExpenseDialog from "@/components/financial/RecordExpenseDialog";
 import EditTransactionDialog from "@/components/financial/EditTransactionDialog";
+import OutstandingReceivables from "@/components/financial/OutstandingReceivables";
 import Button from "@/components/common/Button";
 import Select from "@/components/common/Select";
 import LoadingState from "@/components/common/LoadingState";
@@ -324,6 +325,14 @@ export default function Financial() {
             currency={currency}
             onEdit={(t) => setEditing(t)}
             onVoid={(t) => setVoiding(t)}
+          />
+
+          {/* Outstanding receivables across all events (not FY-filtered) */}
+          <OutstandingReceivables
+            events={events}
+            transactions={allTx}
+            clients={clients}
+            currency={currency}
           />
         </>
       )}

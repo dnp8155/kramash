@@ -10,13 +10,15 @@ import LoadingState from "@/components/common/LoadingState";
 import DetailSkeleton from "@/components/common/DetailSkeleton";
 import EmptyState from "@/components/common/EmptyState";
 import ClientForm from "@/components/clients/ClientForm";
+import ClientFinancialSummary from "@/components/clients/ClientFinancialSummary";
 import { formatEventDate } from "@/lib/dates";
+import { formatMoney } from "@/utils/format";
 import { ArrowLeft, Pencil, Phone, Mail, MapPin, Calendar, ArrowRight, StickyNote } from "lucide-react";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
 
 export default function ClientDetails() {
   const { id } = useParams();
-  const { workspaceId } = useWorkspace();
+  const { workspaceId, workspace } = useWorkspace();
   const navigate = useNavigate();
   const term = useBusinessTerminology();
 
@@ -29,12 +31,21 @@ export default function ClientDetails() {
       const cl = await base44.entities.Client.get(id);
       if (!cl || cl.workspace_id !== workspaceId) return { notFound: true };
       const evList = await base44.entities.Event.filter({ workspace_id: workspaceId, client_id: id }, "-start_date", 200);
-      return { notFound: false, client: cl, events: evList || [] };
+      const evIds = (evList || []).map((e) => e.id);
+      let tx = [];
+      if (evIds.length > 0) {
+        try {
+          tx = await base44.entities.FinancialTransaction.filter({ workspace_id: workspaceId }, "-transaction_date", 1000);
+          tx = (tx || []).filter((t) => evIds.includes(t.event_id));
+        } catch (e) { tx = []; }
+      }
+      return { notFound: false, client: cl, events: evList || [], transactions: tx || [] };
     },
     enabled: !!id && !!workspaceId
   });
   const client = data?.client || null;
   const events = data?.events || [];
+  const transactions = data?.transactions || [];
   const notFound = !!data?.notFound || !!error;
   const load = () => queryClient.invalidateQueries({ queryKey: ["client", id, workspaceId] });
 
@@ -84,6 +95,9 @@ export default function ClientDetails() {
           </div>
         )}
       </Card>
+
+      {/* Client 360° financial summary */}
+      <ClientFinancialSummary events={events} transactions={transactions} currency={workspace?.currency || "INR"} />
 
       {/* Related events */}
       <Card className="p-5">
