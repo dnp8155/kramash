@@ -3,7 +3,9 @@
 // Add new strings to the dictionary as surfaces get localized.
 
 export function getAppLanguage(user) {
-  return user?.data?.language || "en";
+  // me() returns custom User fields at the top level (per Base44 SDK);
+  // user.data.* is kept as a fallback for safety.
+  return user?.language || user?.data?.language || "en";
 }
 
 export const DATE_LOCALES = {

@@ -12,6 +12,17 @@
       "type": "string",
       "title": "Phone Number",
       "description": "Phone number for OTP login (E.164 format, e.g. +91...)"
+    },
+    "language": {
+      "type": "string",
+      "title": "App Language",
+      "description": "Preferred UI language code (en, hi, gu)",
+      "default": "en",
+      "enum": [
+        "en",
+        "hi",
+        "gu"
+      ]
     }
   },
   "required": [
