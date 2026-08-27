@@ -6,9 +6,9 @@ import { useWorkspace } from "@/lib/WorkspaceContext";
 import Card from "@/components/common/Card";
 import Button from "@/components/common/Button";
 import StatusBadge from "@/components/common/StatusBadge";
-import LoadingState from "@/components/common/LoadingState";
 import DetailSkeleton from "@/components/common/DetailSkeleton";
 import EmptyState from "@/components/common/EmptyState";
+import DetailErrorState from "@/components/common/DetailErrorState";
 import EventForm from "@/components/events/EventForm";
 import EventFinancialCards from "@/components/events/EventFinancialCards";
 import EventAssignmentCard from "@/components/events/EventAssignmentCard";
@@ -94,7 +94,8 @@ export default function EventDetails() {
   const categories = data?.categories || [];
   const blockDates = data?.blockDates || [];
   const eventsById = data?.eventsById || {};
-  const notFound = !!data?.notFound || !!error;
+  const notFound = !!data?.notFound;
+  const hasError = !!error && !data;
   const load = () => queryClient.invalidateQueries({ queryKey: ["event", id, workspaceId] });
 
   const eventAssignments = useMemo(
@@ -174,17 +175,26 @@ export default function EventDetails() {
 
   if (isLoading) return <DetailSkeleton />;
 
+  if (hasError) {
+    return (
+      <DetailErrorState
+        title="Failed to load"
+        description={error?.message || "Something went wrong. Please try again."}
+        onBack={() => navigate("/events")}
+        onRetry={load}
+        backLabel={`Back to ${term.workItemPlural}`}
+      />
+    );
+  }
+
   if (notFound || !event) {
     return (
-      <div className="p-6 max-w-2xl mx-auto">
-        <Button variant="ghost" onClick={() => navigate("/events")} className="mb-4">
-          <ArrowLeft className="w-4 h-4" /> Back to {term.workItemPlural}
-        </Button>
-        <Card className="p-8 text-center">
-          <h2 className="text-lg font-semibold">{term.workItemSingular} not found</h2>
-          <p className="text-sm text-muted-foreground mt-1">This {term.workItemSingular.toLowerCase()} may not exist or you don't have access to it.</p>
-        </Card>
-      </div>
+      <DetailErrorState
+        title={`${term.workItemSingular} not found`}
+        description={`This ${term.workItemSingular.toLowerCase()} may not exist or you don't have access to it.`}
+        onBack={() => navigate("/events")}
+        backLabel={`Back to ${term.workItemPlural}`}
+      />
     );
   }
 

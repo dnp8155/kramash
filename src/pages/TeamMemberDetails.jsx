@@ -6,9 +6,9 @@ import { useWorkspace } from "@/lib/WorkspaceContext";
 import Card from "@/components/common/Card";
 import Button from "@/components/common/Button";
 import StatusBadge from "@/components/common/StatusBadge";
-import LoadingState from "@/components/common/LoadingState";
 import DetailSkeleton from "@/components/common/DetailSkeleton";
 import EmptyState from "@/components/common/EmptyState";
+import DetailErrorState from "@/components/common/DetailErrorState";
 import TeamMemberForm from "@/components/team/TeamMemberForm";
 import RecordPaymentDialog from "@/components/financial/RecordPaymentDialog";
 import { TEAM_MEMBER_STATUS } from "@/constants/teamConfig";
@@ -61,22 +61,32 @@ export default function TeamMemberDetails() {
   const assignments = data?.assignments || [];
   const transactions = data?.transactions || [];
   const events = data?.events || [];
-  const notFound = !!data?.notFound || !!error;
+  const notFound = !!data?.notFound;
+  const hasError = !!error && !data;
   const load = () => queryClient.invalidateQueries({ queryKey: ["team-member", id, workspaceId] });
 
   if (isLoading) return <DetailSkeleton />;
 
+  if (hasError) {
+    return (
+      <DetailErrorState
+        title="Failed to load"
+        description={error?.message || "Something went wrong. Please try again."}
+        onBack={() => navigate("/team")}
+        onRetry={load}
+        backLabel="Back to Team"
+      />
+    );
+  }
+
   if (notFound || !member) {
     return (
-      <div className="p-6 max-w-2xl mx-auto">
-        <Button variant="ghost" onClick={() => navigate("/team")} className="mb-4">
-          <ArrowLeft className="w-4 h-4" /> Back to Team
-        </Button>
-        <Card className="p-8 text-center">
-          <h2 className="text-lg font-semibold">Team member not found</h2>
-          <p className="text-sm text-muted-foreground mt-1">This member may not exist or you don't have access.</p>
-        </Card>
-      </div>
+      <DetailErrorState
+        title="Team member not found"
+        description="This member may not exist or you don't have access."
+        onBack={() => navigate("/team")}
+        backLabel="Back to Team"
+      />
     );
   }
 

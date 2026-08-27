@@ -6,9 +6,9 @@ import { useWorkspace } from "@/lib/WorkspaceContext";
 import Card from "@/components/common/Card";
 import Button from "@/components/common/Button";
 import StatusBadge from "@/components/common/StatusBadge";
-import LoadingState from "@/components/common/LoadingState";
 import DetailSkeleton from "@/components/common/DetailSkeleton";
 import EmptyState from "@/components/common/EmptyState";
+import DetailErrorState from "@/components/common/DetailErrorState";
 import ClientForm from "@/components/clients/ClientForm";
 import ClientFinancialSummary from "@/components/clients/ClientFinancialSummary";
 import { formatEventDate } from "@/lib/dates";
@@ -46,22 +46,32 @@ export default function ClientDetails() {
   const client = data?.client || null;
   const events = data?.events || [];
   const transactions = data?.transactions || [];
-  const notFound = !!data?.notFound || !!error;
+  const notFound = !!data?.notFound;
+  const hasError = !!error && !data;
   const load = () => queryClient.invalidateQueries({ queryKey: ["client", id, workspaceId] });
 
   if (isLoading) return <DetailSkeleton />;
 
+  if (hasError) {
+    return (
+      <DetailErrorState
+        title="Failed to load"
+        description={error?.message || "Something went wrong. Please try again."}
+        onBack={() => navigate("/clients")}
+        onRetry={load}
+        backLabel="Back to Clients"
+      />
+    );
+  }
+
   if (notFound || !client) {
     return (
-      <div className="p-6 max-w-2xl mx-auto">
-        <Button variant="ghost" onClick={() => navigate("/clients")} className="mb-4">
-          <ArrowLeft className="w-4 h-4" /> Back to Clients
-        </Button>
-        <Card className="p-8 text-center">
-          <h2 className="text-lg font-semibold">Client not found</h2>
-          <p className="text-sm text-muted-foreground mt-1">This client may not exist or you don't have access to it.</p>
-        </Card>
-      </div>
+      <DetailErrorState
+        title="Client not found"
+        description="This client may not exist or you don't have access to it."
+        onBack={() => navigate("/clients")}
+        backLabel="Back to Clients"
+      />
     );
   }
 
