@@ -13,12 +13,17 @@ export default function MobileNavigation() {
 
   const isActive = (path) => location.pathname === path;
   const navLabel = (item) => (item.path === "/events" ? term.workItemPlural : item.label);
-  const moreItems = [...moreNav, ...settingsNav];
+
+  // Bottom bar shows the 4 most-used destinations; the rest go in the More sheet.
+  const bottomNavPaths = ["/dashboard", "/events", "/team", "/financial"];
+  const bottomNav = mainNav.filter((item) => bottomNavPaths.includes(item.path));
+  const moreMainNav = mainNav.filter((item) => !bottomNavPaths.includes(item.path));
+  const moreItems = [...moreMainNav, ...moreNav, ...settingsNav];
 
   return (
     <>
       <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-card border-t border-border flex items-center justify-around px-1 py-1">
-        {mainNav.map((item) => {
+        {bottomNav.map((item) => {
           const Icon = item.icon;
           const active = isActive(item.path);
           return (

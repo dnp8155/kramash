@@ -124,7 +124,7 @@ export default function Dashboard() {
   })();
 
   return (
-    <div className="space-y-6">
+    <div className="p-4 sm:p-6 space-y-6 max-w-[1400px] mx-auto">
       <PageHeader
         title={`${greeting}, ${user?.full_name?.split(" ")[0] || "there"}`}
         subtitle={`${workspace?.name || "Your workspace"} · ${new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}`}
@@ -134,7 +134,7 @@ export default function Dashboard() {
       {isLoading ? (
         <DashboardStatsSkeleton />
       ) : (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
           <StatCard
             label={`Upcoming ${term.workItemPlural}`}
             value={stats.upcoming.length}
@@ -167,8 +167,8 @@ export default function Dashboard() {
       )}
 
       {/* Two-column widgets */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="md:col-span-2">
           <UpcomingEventsWidget
             events={stats.upcoming}
             clientsById={clientsById}
