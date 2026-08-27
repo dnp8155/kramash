@@ -40,6 +40,12 @@ export default async function (req) {
     });
     if (!members || members.length === 0) return Response.json({ ok: true, created: 0, skipped: 0 });
 
+    // Verify the caller is an active member of this workspace.
+    const isMember = members.some((m) => m.user_id === user.id);
+    if (!isMember) {
+      return Response.json({ error: "Access denied: not a member of this workspace" }, { status: 403 });
+    }
+
     // Resolve category-aware terminology for notification messages.
     const workspace = await base44.asServiceRole.entities.Workspace.get(workspaceId).catch(() => null);
     const category = workspace?.business_category || "OTHER";
