@@ -113,7 +113,7 @@ export default function AvailabilityCalendar({ members = [], assignments = [], e
                 key={i}
                 onClick={() => setSelected(iso)}
                 className={cn(
-                  "relative h-14 rounded-lg text-xs border-2 transition-all flex flex-col items-center justify-center gap-0.5",
+                  "relative h-24 rounded-lg text-xs border-2 transition-all flex flex-col items-stretch justify-start gap-0.5 p-1 overflow-hidden",
                   isSelected
                     ? "border-primary bg-primary/5 shadow-sm"
                     : hasMultiple
@@ -125,27 +125,27 @@ export default function AvailabilityCalendar({ members = [], assignments = [], e
                 )}
               >
                 <span className={cn(
-                  "font-semibold",
+                  "font-semibold text-[11px] leading-none self-center",
                   hasMultiple ? "text-[#d97706]" : hasBooked ? "text-[#e74c3c]" : "text-[#27ae60]"
                 )}>
                   {day}
                 </span>
                 {hasBooked && (
-                  <div className="flex flex-wrap items-center justify-center gap-0.5 px-1 w-full overflow-hidden">
-                    {booked.slice(0, 2).map((b) => (
+                  <div className="flex flex-col gap-0.5 w-full overflow-hidden mt-0.5">
+                    {booked.slice(0, 3).map((b) => (
                       <span
                         key={b.member.id}
                         title={`${b.member.name} — ${b.event?.title || ""}`}
                         className={cn(
-                          "text-[7px] font-semibold px-1 py-0.5 rounded leading-none truncate max-w-[44px]",
+                          "text-[9px] font-medium px-1 py-0.5 rounded leading-tight truncate",
                           hasMultiple ? "bg-[#f39c12]/15 text-[#d97706]" : "bg-[#e74c3c]/15 text-[#e74c3c]"
                         )}
                       >
                         {b.member.name.split(" ")[0]}
                       </span>
                     ))}
-                    {booked.length > 2 && (
-                      <span className="text-[7px] font-semibold text-[#d97706] leading-none">+{booked.length - 2}</span>
+                    {booked.length > 3 && (
+                      <span className="text-[9px] font-semibold text-[#d97706] leading-tight px-1">+{booked.length - 3} more</span>
                     )}
                   </div>
                 )}
