@@ -53,7 +53,8 @@ export default async function(req) {
 
     if (action === 'check') {
       const projected = (record.total_bytes || 0) + size;
-      const allowed = limitBytes <= 0 ? false : projected <= limitBytes;
+      // limitBytes <= 0 means no storage limit configured → treat as unlimited.
+      const allowed = limitBytes <= 0 ? true : projected <= limitBytes;
       return Response.json({
         allowed,
         current_bytes: record.total_bytes || 0,
