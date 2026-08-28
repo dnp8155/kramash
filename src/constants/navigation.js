@@ -36,8 +36,7 @@ export const moreNav = [
   { label: "Sign a PDF", path: "/sign-pdf", icon: PenLine },
   { label: "Preferences", path: "/preferences", icon: SlidersHorizontal },
   { label: "App & Updates", path: "/app-updates", icon: Smartphone },
-  { label: "Your Plan", path: "/plan", icon: Crown },
-  { label: "Help & Support", path: "/help", icon: LifeBuoy }
+  { label: "Your Plan", path: "/plan", icon: Crown }
 ];
 
 export const settingsNav = [
@@ -46,7 +45,8 @@ export const settingsNav = [
   { label: "Appearance", path: "/settings/appearance", icon: Palette },
   { label: "Notifications", path: "/settings/notifications", icon: Bell },
   { label: "Billing & Plan", path: "/settings/billing", icon: CreditCard },
-  { label: "Session", path: "/settings/session", icon: KeyRound }
+  { label: "Session", path: "/settings/session", icon: KeyRound },
+  { label: "Help & Support", path: "/help", icon: LifeBuoy }
 ];
 
 export const moreGroup = { label: "More", icon: Grid, caret: ChevronDown };
