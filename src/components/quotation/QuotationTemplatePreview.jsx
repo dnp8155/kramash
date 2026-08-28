@@ -41,13 +41,13 @@ export default function QuotationTemplatePreview({ open, onClose, templateHtml, 
       <div className="flex items-center justify-between px-4 py-3 bg-card border-b border-border">
         <h2 className="text-sm font-semibold text-foreground">Template Preview</h2>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={handlePrint}>
+          <Button size="sm" onClick={handlePrint}>
             <Printer className="w-4 h-4" /> Print
           </Button>
           <Button size="sm" onClick={handleDownload} disabled={downloading}>
             <Download className="w-4 h-4" /> {downloading ? "Generating\u2026" : "Download PDF"}
           </Button>
-          <Button variant="ghost" size="sm" onClick={onClose}>
+          <Button size="sm" onClick={onClose}>
             <X className="w-4 h-4" /> Close
           </Button>
         </div>
