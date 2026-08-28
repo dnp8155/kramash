@@ -176,6 +176,23 @@ export default function EventDetails() {
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, "_blank");
   };
 
+  const shareEventLink = async () => {
+    const url = `${window.location.origin}/track/${event.id}`;
+    const shareText = `Track your ${term.workItemSingular.toLowerCase()} "${event.title}" here: ${url}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: event.title, text: shareText, url });
+      } catch (e) { /* cancelled */ }
+    } else {
+      try {
+        await navigator.clipboard.writeText(shareText);
+        toast({ title: "Link copied!", description: "Share it with your client." });
+      } catch (e) {
+        toast({ title: "Copy this link", description: url });
+      }
+    }
+  };
+
   if (isLoading) return <DetailSkeleton />;
 
   if (hasError) {
@@ -219,9 +236,14 @@ export default function EventDetails() {
             </div>
           </div>
         </div>
-        <Button onClick={() => setShowForm(true)}>
-          <Pencil className="w-4 h-4" /> Edit Event
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={shareEventLink}>
+            <Share2 className="w-4 h-4" /> Share with Client
+          </Button>
+          <Button onClick={() => setShowForm(true)}>
+            <Pencil className="w-4 h-4" /> Edit Event
+          </Button>
+        </div>
       </div>
 
       {/* Entry details form */}
