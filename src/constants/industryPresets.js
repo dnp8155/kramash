@@ -15,9 +15,7 @@ export const INDUSTRY_PRESETS = {
     services: [
       { name: "Photography", default_rate: 30000, rate_type: "Fixed", gst_rate: 0 },
       { name: "Videography", default_rate: 25000, rate_type: "Fixed", gst_rate: 0 },
-      { name: "Drone Coverage", default_rate: 8000, rate_type: "Fixed", gst_rate: 0 },
-      { name: "Album", default_rate: 15000, rate_type: "Per Unit", gst_rate: 0 },
-      { name: "Editing", default_rate: 5000, rate_type: "Fixed", gst_rate: 0 }
+      { name: "Album", default_rate: 15000, rate_type: "Per Unit", gst_rate: 0 }
     ]
   },
   EVENT_MANAGEMENT: {
@@ -31,9 +29,7 @@ export const INDUSTRY_PRESETS = {
     services: [
       { name: "Event Coordination", default_rate: 15000, rate_type: "Fixed", gst_rate: 0 },
       { name: "Decoration", default_rate: 25000, rate_type: "Fixed", gst_rate: 0 },
-      { name: "Lighting", default_rate: 12000, rate_type: "Fixed", gst_rate: 0 },
-      { name: "Sound", default_rate: 10000, rate_type: "Fixed", gst_rate: 0 },
-      { name: "Setup", default_rate: 8000, rate_type: "Fixed", gst_rate: 0 }
+      { name: "Lighting", default_rate: 12000, rate_type: "Fixed", gst_rate: 0 }
     ]
   },
   ARCHITECTURE: {
@@ -46,9 +42,7 @@ export const INDUSTRY_PRESETS = {
     ],
     services: [
       { name: "Architectural Planning", default_rate: 50000, rate_type: "Fixed", gst_rate: 0 },
-      { name: "Site Visit", default_rate: 3000, rate_type: "Fixed", gst_rate: 0 },
       { name: "3D Visualization", default_rate: 20000, rate_type: "Fixed", gst_rate: 0 },
-      { name: "Interior Design", default_rate: 40000, rate_type: "Fixed", gst_rate: 0 },
       { name: "Consultation", default_rate: 5000, rate_type: "Fixed", gst_rate: 0 }
     ]
   },

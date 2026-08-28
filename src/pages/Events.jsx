@@ -34,18 +34,26 @@ export default function Events() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["events", workspaceId],
     queryFn: async () => {
-      const [evList, clList] = await Promise.all([
+      const [evList, clList, tmList, svList] = await Promise.all([
         base44.entities.Event.filter({ workspace_id: workspaceId }, "-start_date", 500),
-        base44.entities.Client.filter({ workspace_id: workspaceId }, "name", 500)
+        base44.entities.Client.filter({ workspace_id: workspaceId }, "name", 500),
+        base44.entities.TeamMember.filter({ workspace_id: workspaceId }, "name", 500),
+        base44.entities.Service.filter({ workspace_id: workspaceId }, "name", 500)
       ]);
       const map = {};
       (clList || []).forEach((c) => { map[c.id] = c; });
-      return { events: evList || [], clients: map };
+      const teamMap = {};
+      (tmList || []).forEach((m) => { teamMap[m.id] = m; });
+      const serviceMap = {};
+      (svList || []).forEach((s) => { serviceMap[s.id] = s; });
+      return { events: evList || [], clients: map, teamMap, serviceMap };
     },
     enabled: !!workspaceId
   });
   const events = data?.events || [];
   const clients = data?.clients || {};
+  const teamMap = data?.teamMap || {};
+  const serviceMap = data?.serviceMap || {};
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["events", workspaceId] });
 
   const clientName = (id) => clients[id]?.name || "";
@@ -167,6 +175,8 @@ export default function Events() {
         <EventsTable
           events={filtered}
           clients={clients}
+          teamMap={teamMap}
+          serviceMap={serviceMap}
           loading={isLoading}
           onEventClick={openEvent}
           onEditEvent={openEdit}

@@ -11,14 +11,18 @@ import { Label } from "@/components/ui/label";
 import { EVENT_STATUS, EVENT_STATUS_ORDER } from "@/constants/statusConfig";
 import { CURRENCY_SYMBOLS } from "@/constants/financeConfig";
 import ClientForm from "@/components/clients/ClientForm";
-import { Plus } from "lucide-react";
+import ChipPicker from "@/components/common/ChipPicker";
+import DateChipsInput from "@/components/common/DateChipsInput";
+import { Plus, Users, Briefcase } from "lucide-react";
 
 const PHOTO_EVENT_TYPES = ["Wedding", "Pre-Wedding", "Reception", "Engagement", "Haldi", "Mehndi", "Birthday", "Corporate", "Portfolio", "Other"];
 const GENERIC_WORK_TYPES = ["Project", "Assignment", "Consultation", "Site Visit", "Contract", "Other"];
 
 const empty = {
   client_id: "", title: "", event_type: "",
-  start_date: "", end_date: "", venue: "", venue_address: "",
+  start_date: "", end_date: "", event_dates: [],
+  team_member_ids: [], service_ids: [],
+  venue: "", venue_address: "",
   status: "upcoming", contract_value: 0, description: "", notes: ""
 };
 
@@ -27,6 +31,8 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
   const workTypes = t.category === "ARCHITECTURE" || t.category === "OTHER" ? GENERIC_WORK_TYPES : PHOTO_EVENT_TYPES;
   const [form, setForm] = useState(empty);
   const [clients, setClients] = useState([]);
+  const [teamMembers, setTeamMembers] = useState([]);
+  const [services, setServices] = useState([]);
   const [loadingClients, setLoadingClients] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -35,8 +41,14 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
   useEffect(() => {
     if (open) {
       setError("");
-      setForm(event ? { ...empty, ...event } : empty);
+      const base = event ? { ...empty, ...event } : empty;
+      // Backfill event_dates from legacy start_date when editing old events.
+      if (event && (!base.event_dates || base.event_dates.length === 0) && base.start_date) {
+        base.event_dates = [base.start_date];
+      }
+      setForm(base);
       loadClients();
+      loadTeamAndServices();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, event]);
@@ -54,14 +66,41 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
     }
   };
 
+  const loadTeamAndServices = async () => {
+    if (!workspaceId) return;
+    try {
+      const [team, svcs] = await Promise.all([
+        base44.entities.TeamMember.filter({ workspace_id: workspaceId, status: "active" }, "name", 200),
+        base44.entities.Service.filter({ workspace_id: workspaceId, status: "active" }, "name", 200)
+      ]);
+      setTeamMembers(team || []);
+      setServices(svcs || []);
+    } catch (e) {
+      setTeamMembers([]);
+      setServices([]);
+    }
+  };
+
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+
+  // When event_dates change, keep start_date / end_date in sync (earliest / latest).
+  const setEventDates = (dates) => {
+    setForm((f) => {
+      const sorted = [...dates].sort();
+      const next = { ...f, event_dates: sorted };
+      if (sorted.length > 0) {
+        next.start_date = sorted[0];
+        next.end_date = sorted[sorted.length - 1];
+      }
+      return next;
+    });
+  };
 
   const validate = () => {
     const workLabel = t.workItemSingular || "Event";
     if (!form.title.trim()) return `${workLabel} title is required.`;
     if (!form.client_id) return "Please select a client.";
-    if (!form.start_date) return "Start date is required.";
-    if (form.end_date && form.end_date < form.start_date) return "End date cannot be before start date.";
+    if (!form.start_date && (form.event_dates || []).length === 0) return "Add at least one date.";
     return "";
   };
 
@@ -72,13 +111,19 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
     setSaving(true);
     setError("");
     try {
+      const dates = (form.event_dates || []).slice().sort();
+      const startDate = dates[0] || form.start_date;
+      const endDate = dates[dates.length - 1] || form.end_date || startDate;
       const payload = {
         workspace_id: workspaceId,
         client_id: form.client_id,
         title: form.title.trim(),
         event_type: form.event_type,
-        start_date: form.start_date,
-        end_date: form.end_date || form.start_date,
+        start_date: startDate,
+        end_date: endDate,
+        event_dates: dates,
+        team_member_ids: form.team_member_ids || [],
+        service_ids: form.service_ids || [],
         venue: form.venue.trim(),
         venue_address: form.venue_address.trim(),
         status: form.status,
@@ -91,7 +136,7 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
         saved = await base44.entities.Event.update(event.id, payload);
       } else {
         const res = await base44.functions.invoke("createEvent", payload);
-        saved = res.data;
+        saved = res.data || res;
       }
       onSaved?.(saved);
       onClose?.();
@@ -109,6 +154,11 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
       setSaving(false);
     }
   };
+
+  const workTypeOptions = workTypes.map((wt) => ({ value: wt, label: wt }));
+  const statusOptions = EVENT_STATUS_ORDER.map((s) => ({ value: s, label: EVENT_STATUS[s].label }));
+  const teamOptions = teamMembers.map((m) => ({ value: m.id, label: m.name }));
+  const serviceOptions = services.map((s) => ({ value: s.id, label: s.name }));
 
   return (
     <>
@@ -134,27 +184,46 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
                   <Plus className="w-3 h-3" /> New Client
                 </button>
               </div>
-              <Select value={form.client_id} onChange={(e) => set("client_id", e.target.value)} className="w-full">
-                <option value="">{loadingClients ? "Loading clients…" : "Select a client"}</option>
-                {clients.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </Select>
+              {clients.length === 0 && !loadingClients ? (
+                <div className="rounded-md border border-dashed border-border p-3 text-center">
+                  <p className="text-xs text-muted-foreground mb-2">No clients yet. Add a client to create an event.</p>
+                  <Button type="button" variant="outline" size="sm" onClick={() => setShowClientForm(true)}>
+                    <Plus className="w-3.5 h-3.5" /> Add Client
+                  </Button>
+                </div>
+              ) : (
+                <Select value={form.client_id} onChange={(e) => set("client_id", e.target.value)} className="w-full">
+                  <option value="">{loadingClients ? "Loading clients…" : "Select a client"}</option>
+                  {clients.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </Select>
+              )}
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label>{t.workItemTypeLabel || "Event Type"}</Label>
-                <Select value={form.event_type} onChange={(e) => set("event_type", e.target.value)} className="w-full">
-                  {workTypes.map((wt) => <option key={wt} value={wt}>{wt}</option>)}
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Status</Label>
-                <Select value={form.status} onChange={(e) => set("status", e.target.value)} className="w-full">
-                  {EVENT_STATUS_ORDER.map((s) => <option key={s} value={s}>{EVENT_STATUS[s].label}</option>)}
-                </Select>
-              </div>
+            <div className="space-y-1.5">
+              <Label>{t.workItemTypeLabel || "Event Type"}</Label>
+              <ChipPicker
+                options={workTypeOptions}
+                value={form.event_type}
+                onChange={(v) => set("event_type", v)}
+                size="sm"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Status</Label>
+              <ChipPicker
+                options={statusOptions}
+                value={form.status}
+                onChange={(v) => set("status", v)}
+                size="sm"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Dates <span className="text-destructive">*</span></Label>
+              <DateChipsInput value={form.event_dates || []} onChange={setEventDates} />
             </div>
 
             <div className="space-y-1.5">
@@ -169,15 +238,28 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label>Start Date <span className="text-destructive">*</span></Label>
-                <Input type="date" value={form.start_date} onChange={(e) => set("start_date", e.target.value)} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>End Date</Label>
-                <Input type="date" value={form.end_date} min={form.start_date || undefined} onChange={(e) => set("end_date", e.target.value)} />
-              </div>
+            <div className="space-y-1.5">
+              <Label className="flex items-center gap-1.5"><Briefcase className="w-3.5 h-3.5" /> Services</Label>
+              <ChipPicker
+                options={serviceOptions}
+                value={form.service_ids || []}
+                onChange={(v) => set("service_ids", v)}
+                multiple
+                size="sm"
+                emptyText="No services found. Add services from the Services page."
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="flex items-center gap-1.5"><Users className="w-3.5 h-3.5" /> Team Members</Label>
+              <ChipPicker
+                options={teamOptions}
+                value={form.team_member_ids || []}
+                onChange={(v) => set("team_member_ids", v)}
+                multiple
+                size="sm"
+                emptyText="No team members found. Add team from the Team page."
+              />
             </div>
 
             <div className="space-y-1.5">

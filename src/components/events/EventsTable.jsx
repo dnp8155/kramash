@@ -1,14 +1,14 @@
 import { useState } from "react";
-import { ChevronDown, ChevronUp, Pencil, MapPin, FileText, StickyNote, ArrowRight } from "lucide-react";
+import { ChevronDown, ChevronUp, Pencil, MapPin, FileText, StickyNote, ArrowRight, Users, Briefcase } from "lucide-react";
 import StatusBadge from "@/components/common/StatusBadge";
 import LoadingState from "@/components/common/LoadingState";
 import EmptyState from "@/components/common/EmptyState";
 import Button from "@/components/common/Button";
 import { EVENT_STATUS } from "@/constants/statusConfig";
-import { formatEventDate, isThisWeek } from "@/lib/dates";
+import { formatEventDates, isThisWeek } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 
-export default function EventsTable({ events, clients, loading, onEventClick, onEditEvent, onAdd, canAdd, term }) {
+export default function EventsTable({ events, clients, teamMap = {}, serviceMap = {}, loading, onEventClick, onEditEvent, onAdd, canAdd, term }) {
   const t = term || {};
   if (loading) {
     return (
@@ -52,7 +52,7 @@ export default function EventsTable({ events, clients, loading, onEventClick, on
             {weekEvents.length} {t.workItemSingular || "Event"}{weekEvents.length > 1 ? "s" : ""} This Week
           </div>
           {weekEvents.map((e) => (
-            <Row key={e.id} event={e} term={t} clientName={clientName(e.client_id)} onClick={() => onEventClick(e)} onEdit={() => onEditEvent(e)} />
+            <Row key={e.id} event={e} term={t} clientName={clientName(e.client_id)} teamMap={teamMap} serviceMap={serviceMap} onClick={() => onEventClick(e)} onEdit={() => onEditEvent(e)} />
           ))}
         </>
       )}
@@ -63,7 +63,7 @@ export default function EventsTable({ events, clients, loading, onEventClick, on
             All {t.workItemPlural || "Events"}
           </div>
           {laterEvents.map((e) => (
-            <Row key={e.id} event={e} term={t} clientName={clientName(e.client_id)} onClick={() => onEventClick(e)} onEdit={() => onEditEvent(e)} />
+            <Row key={e.id} event={e} term={t} clientName={clientName(e.client_id)} teamMap={teamMap} serviceMap={serviceMap} onClick={() => onEventClick(e)} onEdit={() => onEditEvent(e)} />
           ))}
         </>
       )}
@@ -71,7 +71,9 @@ export default function EventsTable({ events, clients, loading, onEventClick, on
   );
 }
 
-function Row({ event, clientName, onClick, onEdit, term }) {
+function Row({ event, clientName, teamMap, serviceMap, onClick, onEdit, term }) {
+  const teamNames = (event.team_member_ids || []).map((id) => teamMap[id]?.name).filter(Boolean);
+  const serviceNames = (event.service_ids || []).map((id) => serviceMap[id]?.name).filter(Boolean);
   const [open, setOpen] = useState(false);
   const shortId = `#${event.id.slice(-4)}`;
 
@@ -86,12 +88,12 @@ function Row({ event, clientName, onClick, onEdit, term }) {
           <span className={cn("w-2 h-2 rounded-full shrink-0", EVENT_STATUS[event.status]?.dot)} />
           <div className="min-w-0">
             <div className="text-sm font-medium text-foreground truncate">{event.title}</div>
-            <div className="text-xs text-muted-foreground sm:hidden">{event.event_type} · {formatEventDate(event.start_date, event.end_date)}</div>
+            <div className="text-xs text-muted-foreground sm:hidden">{event.event_type} · {formatEventDates(event)}</div>
             <div className="text-xs text-muted-foreground hidden sm:block">{clientName}</div>
           </div>
         </div>
         <span className="text-sm text-foreground hidden sm:block">{event.event_type}</span>
-        <span className="text-sm text-muted-foreground hidden sm:block">{formatEventDate(event.start_date, event.end_date)}</span>
+        <span className="text-sm text-muted-foreground hidden sm:block">{formatEventDates(event)}</span>
         <StatusBadge status={event.status} />
         <button
           className="text-muted-foreground hover:text-foreground justify-self-end"
@@ -140,7 +142,27 @@ function Row({ event, clientName, onClick, onEdit, term }) {
                 <span className="line-clamp-2">{event.notes}</span>
               </div>
             )}
-            {!event.venue && !event.description && !event.notes && (
+            {teamNames.length > 0 && (
+              <div className="flex items-start gap-2 text-muted-foreground">
+                <Users className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                <div className="flex flex-wrap gap-1.5">
+                  {teamNames.map((n) => (
+                    <span key={n} className="rounded-full bg-primary/10 text-primary border border-primary/20 px-2.5 py-0.5 text-xs font-medium">{n}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {serviceNames.length > 0 && (
+              <div className="flex items-start gap-2 text-muted-foreground">
+                <Briefcase className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                <div className="flex flex-wrap gap-1.5">
+                  {serviceNames.map((n) => (
+                    <span key={n} className="rounded-full bg-muted text-foreground border border-border px-2.5 py-0.5 text-xs font-medium">{n}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {!event.venue && !event.description && !event.notes && teamNames.length === 0 && serviceNames.length === 0 && (
               <p className="text-xs text-muted-foreground">No additional details. Click "View Details" for the full {(term?.workItemSingular || "event").toLowerCase()} page.</p>
             )}
           </div>

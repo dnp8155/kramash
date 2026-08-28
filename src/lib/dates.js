@@ -45,6 +45,32 @@ export function formatEventDate(startStr, endStr) {
   return `${formatSingle(start)} - ${formatSingle(end)}`;
 }
 
+// Format an event's dates — prefers non-consecutive event_dates array,
+// falls back to start_date / end_date range for legacy events.
+export function formatEventDates(event) {
+  const dates = event?.event_dates;
+  if (Array.isArray(dates) && dates.length > 0) {
+    if (dates.length === 1) {
+      return formatSingle(parseISODate(dates[0]));
+    }
+    const parsed = dates.map(parseISODate).filter(Boolean).sort((a, b) => a - b);
+    if (parsed.length === 0) return "—";
+    const first = parsed[0];
+    const last = parsed[parsed.length - 1];
+    // Same month → "23, 25, 28 Apr 2026"
+    if (first.getMonth() === last.getMonth() && first.getFullYear() === last.getFullYear()) {
+      const days = parsed.map((d) => d.getDate()).join(", ");
+      return `${days} ${MONTHS[last.getMonth()]} ${last.getFullYear()}`;
+    }
+    // Spread across months → "28 Aug, 02 Sep, 10 Oct 2026"
+    const sameYear = parsed.every((d) => d.getFullYear() === first.getFullYear());
+    return parsed
+      .map((d) => `${d.getDate()} ${MONTHS[d.getMonth()]}${sameYear ? "" : ` ${d.getFullYear()}`}`)
+      .join(", ") + (sameYear ? ` ${first.getFullYear()}` : "");
+  }
+  return formatEventDate(event?.start_date, event?.end_date);
+}
+
 export function isToday(dateStr) {
   return dateStr === todayISO();
 }
