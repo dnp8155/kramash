@@ -32,6 +32,7 @@ import Preferences from '@/pages/Preferences';
 import Settings from '@/pages/Settings';
 import AppUpdates from '@/pages/AppUpdates';
 import YourPlan from '@/pages/YourPlan';
+import Help from '@/pages/Help';
 import AdminRoute from '@/components/admin/AdminRoute';
 import AdminLayout from '@/components/admin/AdminLayout';
 import AdminDashboard from '@/pages/admin/AdminDashboard';
@@ -105,6 +106,7 @@ const AuthenticatedApp = () => {
           <Route path="/settings/:section?" element={<Settings />} />
           <Route path="/app-updates" element={<AppUpdates />} />
           <Route path="/plan" element={<YourPlan />} />
+          <Route path="/help" element={<Help />} />
         </Route>
       </Route>
 

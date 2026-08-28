@@ -18,7 +18,8 @@ import {
   Palette,
   Bell,
   CreditCard,
-  KeyRound
+  KeyRound,
+  LifeBuoy
 } from "lucide-react";
 
 export const mainNav = [
@@ -35,7 +36,8 @@ export const moreNav = [
   { label: "Sign a PDF", path: "/sign-pdf", icon: PenLine },
   { label: "Preferences", path: "/preferences", icon: SlidersHorizontal },
   { label: "App & Updates", path: "/app-updates", icon: Smartphone },
-  { label: "Your Plan", path: "/plan", icon: Crown }
+  { label: "Your Plan", path: "/plan", icon: Crown },
+  { label: "Help & Support", path: "/help", icon: LifeBuoy }
 ];
 
 export const settingsNav = [
