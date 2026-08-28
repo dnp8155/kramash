@@ -27,6 +27,9 @@ import QuotationItemsEditor from "@/components/quotation/QuotationItemsEditor";
 import QuotationPricingPanel from "@/components/quotation/QuotationPricingPanel";
 import QuotationActions from "@/components/quotation/QuotationActions";
 import { Section, Field } from "@/components/quotation/QuotationParts";
+import { QUOTATION_TEMPLATES, renderTemplate } from "@/constants/quotationTemplates";
+import { CURRENCY_SYMBOLS } from "@/constants/financeConfig";
+import QuotationTemplatePreview from "@/components/quotation/QuotationTemplatePreview";
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -72,6 +75,10 @@ export default function QuotationEditor() {
 
   const [addServiceId, setAddServiceId] = useState("");
   const [addRoleId, setAddRoleId] = useState("");
+  const [templateId, setTemplateId] = useState("gold_premium");
+  const [templateConfig, setTemplateConfig] = useState({});
+  const [showTemplatePreview, setShowTemplatePreview] = useState(false);
+  const [templatePreviewHtml, setTemplatePreviewHtml] = useState("");
 
   const isFinalized = status === "finalized" || status === "accepted";
   const readOnly = isFinalized;
@@ -128,6 +135,8 @@ export default function QuotationEditor() {
         setGstMode(q.gst_mode || "cgst_sgst");
         setTerms(q.terms_and_conditions || "");
         setNotes(q.notes || "");
+        setTemplateId(q.template_id || "gold_premium");
+        try { setTemplateConfig(JSON.parse(q.template_config || "{}")); } catch { setTemplateConfig({}); }
       }
     } catch (e) {
       setError(e?.message || "Failed to load quotation.");
@@ -240,7 +249,9 @@ export default function QuotationEditor() {
     gst_applicable: gstApplicable,
     gst_mode: gstMode,
     terms_and_conditions: terms,
-    notes
+    notes,
+    template_id: templateId,
+    template_config: JSON.stringify(templateConfig)
   });
 
   const validate = () => {
@@ -436,6 +447,20 @@ export default function QuotationEditor() {
     }
   };
 
+  const previewTemplate = () => {
+    const html = renderTemplate(templateId, {
+      workspace,
+      quotation: { ...existingQuotation, ...buildData(), ...totals },
+      client,
+      event,
+      items,
+      currency,
+      templateConfig
+    });
+    setTemplatePreviewHtml(html);
+    setShowTemplatePreview(true);
+  };
+
   if (loading) return <LoadingState label="Loading quotation…" />;
   if (notFound) {
     return (
@@ -492,6 +517,11 @@ export default function QuotationEditor() {
           </Field>
           <Field label="Valid Until">
             <Input type="date" value={validUntil} onChange={(e) => setValidUntil(e.target.value)} disabled={readOnly} />
+          </Field>
+          <Field label="PDF Template">
+            <Select value={templateId} onChange={(e) => setTemplateId(e.target.value)} disabled={readOnly} className="w-full">
+              {QUOTATION_TEMPLATES.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+            </Select>
           </Field>
         </div>
       </Section>
@@ -569,6 +599,7 @@ export default function QuotationEditor() {
         downloadJobSheet={downloadJobSheet}
         previewPdf={previewPdf}
         previewJobSheet={previewJobSheet}
+        previewTemplate={previewTemplate}
         onDuplicate={onDuplicate}
         onDelete={onDelete}
         existingQuotation={existingQuotation}
@@ -581,6 +612,14 @@ export default function QuotationEditor() {
         open={preview.open}
         loading={preview.loading}
         onClose={() => setPreview((p) => ({ ...p, open: false }))}
+      />
+
+      <QuotationTemplatePreview
+        open={showTemplatePreview}
+        onClose={() => setShowTemplatePreview(false)}
+        templateHtml={templatePreviewHtml}
+        quotationNumber={quotationNumber}
+        clientName={client?.name}
       />
     </div>
   );

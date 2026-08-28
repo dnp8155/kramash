@@ -1,11 +1,11 @@
-import { Save, CheckCircle2, FileDown, Copy, Trash2, Users, Eye } from "lucide-react";
+import { Save, CheckCircle2, FileDown, Copy, Trash2, Users, Eye, FileText } from "lucide-react";
 import Button from "@/components/common/Button";
 
 export default function QuotationActions({
   isNew, readOnly, isFinalized, status,
   saving, finalizing, accepting, generating,
   saveDraft, finalize, accept, downloadPdf, downloadJobSheet,
-  previewPdf, previewJobSheet,
+  previewPdf, previewJobSheet, previewTemplate,
   onDuplicate, onDelete, existingQuotation, hasEvent
 }) {
   return (
@@ -35,6 +35,9 @@ export default function QuotationActions({
           </Button>
         </>
       )}
+      <Button variant="outline" onClick={previewTemplate}>
+        <FileText className="w-4 h-4" /> Preview Template
+      </Button>
       <Button variant="outline" onClick={previewJobSheet} disabled={generating || !hasEvent}>
         <Eye className="w-4 h-4" /> Preview Job Sheet
       </Button>

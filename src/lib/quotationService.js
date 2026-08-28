@@ -190,6 +190,8 @@ export async function createQuotation(workspaceId, data, items, opts = {}) {
     gst_mode: data.gst_mode || "cgst_sgst",
     terms_and_conditions: data.terms_and_conditions || "",
     notes: data.notes || "",
+    template_id: data.template_id || "gold_premium",
+    template_config: data.template_config || "",
     client_snapshot: opts.client_snapshot || "",
     business_snapshot: opts.business_snapshot || "",
     event_snapshot: opts.event_snapshot || ""
@@ -219,7 +221,9 @@ export async function updateQuotation(workspaceId, quotationId, data, items, opt
     gst_applicable: !!data.gst_applicable,
     gst_mode: data.gst_mode || "cgst_sgst",
     terms_and_conditions: data.terms_and_conditions || "",
-    notes: data.notes || ""
+    notes: data.notes || "",
+    template_id: data.template_id || "gold_premium",
+    template_config: data.template_config || ""
   };
   // Snapshots: only (re)capture when explicitly provided (e.g. on finalize).
   if (opts.client_snapshot !== undefined) payload.client_snapshot = opts.client_snapshot;
@@ -254,7 +258,9 @@ export async function duplicateQuotation(workspaceId, sourceQuotation, sourceIte
     gst_applicable: !!sourceQuotation.gst_applicable,
     gst_mode: sourceQuotation.gst_mode || "cgst_sgst",
     terms_and_conditions: sourceQuotation.terms_and_conditions || "",
-    notes: sourceQuotation.notes || ""
+    notes: sourceQuotation.notes || "",
+    template_id: sourceQuotation.template_id || "gold_premium",
+    template_config: sourceQuotation.template_config || ""
   };
   // Strip ids so items are fresh copies.
   const items = (sourceItems || []).map((it) => ({
