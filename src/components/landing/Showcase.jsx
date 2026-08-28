@@ -1,35 +1,37 @@
 import React from "react";
-import { Image } from "@/components/ui/image";
 import { Check } from "lucide-react";
+import QuotationPreview from "@/components/landing/previews/QuotationPreview";
+import TeamPreview from "@/components/landing/previews/TeamPreview";
+import FinancialPreview from "@/components/landing/previews/FinancialPreview";
 
 const blocks = [
   {
-    eyebrow: "Quotations",
-    title: "Professional quotes that close deals",
-    desc: "Build itemised quotations with services, roles and custom lines. Apply discounts, auto-calculate GST, and send a polished PDF to your client in minutes.",
-    image: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=1000&q=80",
-    points: ["Line-item services & roles", "CGST/SGST & IGST modes", "One-click PDF export"],
+    eyebrow: "QUOTATIONS",
+    title: "Professional quotes without the document chaos.",
+    desc: "Build quotations from your services and rates, apply discounts and optional GST, then generate a polished branded PDF.",
+    points: ["Services and custom items", "CGST/SGST & IGST support", "Branded PDF export"],
+    Preview: QuotationPreview,
   },
   {
-    eyebrow: "Team",
-    title: "See who's free, who's booked — instantly",
-    desc: "A shared availability calendar maps every crew member's assignments across events, so you never double-book your lead photographer again.",
-    image: "https://images.unsplash.com/photo-1505236858219-8359ebdaefa5?w=1000&q=80",
-    points: ["Monthly availability grid", "Per-event crew assignment", "Role-based rate tracking"],
+    eyebrow: "TEAM",
+    title: "Know who's free before you assign the work.",
+    desc: "See team availability, assignment dates and scheduling conflicts from one shared workspace.",
+    points: ["Role and rate management", "Multi-day availability", "Conflict detection"],
+    Preview: TeamPreview,
   },
   {
-    eyebrow: "Financials",
-    title: "Know your numbers, event by event",
-    desc: "Track client receipts, team payouts and expenses. Watch profit unfold per event and across financial years — no spreadsheets required.",
-    image: "https://images.unsplash.com/photo-1554224154-26032ffc0d07?w=1000&q=80",
-    points: ["Income, expense & profit view", "Yearly financial summaries", "CSV export for accounting"],
+    eyebrow: "FINANCIALS",
+    title: "Know your numbers without another spreadsheet.",
+    desc: "Track receipts, team payments, expenses, pending balances and actual profitability for every project or event.",
+    points: ["Received & pending", "Payments & expenses", "Profitability by project/event"],
+    Preview: FinancialPreview,
   },
 ];
 
 export default function Showcase() {
   return (
-    <section id="showcase" className="py-20 sm:py-24">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 space-y-20">
+    <section id="showcase" className="py-20 sm:py-24 bg-[#F7F9FC] border-y border-border/60">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 space-y-20 sm:space-y-24">
         {blocks.map((b, i) => (
           <div
             key={b.title}
@@ -37,14 +39,8 @@ export default function Showcase() {
               i % 2 === 1 ? "lg:[&>*:first-child]:order-2" : ""
             }`}
           >
-            <div className="relative rounded-2xl overflow-hidden shadow-xl border border-border group">
-              <Image
-                src={b.image}
-                alt={b.title}
-                className="w-full h-64 sm:h-80 transition-transform duration-500 group-hover:scale-105"
-                fittingType="fill"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+            <div className="overflow-hidden">
+              <b.Preview />
             </div>
             <div>
               <span className="inline-block text-xs font-semibold uppercase tracking-wider text-primary mb-3 px-3 py-1 rounded-full bg-primary/10">
