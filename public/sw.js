@@ -1,6 +1,6 @@
 // KRAMAS Service Worker
 // Safe caching: app shell + static assets only. Never caches API/auth responses.
-const SW_VERSION = "kramashah-v1";
+const SW_VERSION = "kramas-v1";
 const SHELL_CACHE = `${SW_VERSION}-shell`;
 const ASSET_CACHE = `${SW_VERSION}-assets`;
 

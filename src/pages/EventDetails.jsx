@@ -146,7 +146,7 @@ export default function EventDetails() {
     const ics = [
       "BEGIN:VCALENDAR", "VERSION:2.0",       "PRODID:-//KRAMAS//WorkItem//EN",
       "BEGIN:VEVENT",
-      `UID:${event.id}@kramashah`,
+      `UID:${event.id}@kramas`,
       `DTSTART;VALUE=DATE:${start}`,
       `DTEND;VALUE=DATE:${end}`,
       `SUMMARY:${event.title}`,
