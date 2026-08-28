@@ -3,8 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import LandingNav from "@/components/landing/LandingNav";
 import Hero from "@/components/landing/Hero";
+import StatsBar from "@/components/landing/StatsBar";
 import Features from "@/components/landing/Features";
+import HowItWorks from "@/components/landing/HowItWorks";
 import Showcase from "@/components/landing/Showcase";
+import PricingPreview from "@/components/landing/PricingPreview";
+import FAQ from "@/components/landing/FAQ";
 import CTA from "@/components/landing/CTA";
 import LandingFooter from "@/components/landing/LandingFooter";
 
@@ -39,8 +43,12 @@ export default function Landing() {
       <LandingNav />
       <main>
         <Hero />
+        <StatsBar />
         <Features />
+        <HowItWorks />
         <Showcase />
+        <PricingPreview />
+        <FAQ />
         <CTA />
       </main>
       <LandingFooter />

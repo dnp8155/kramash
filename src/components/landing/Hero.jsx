@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Play, Sparkles } from "lucide-react";
+import { ArrowRight, Play, Sparkles, ShieldCheck, Zap, TrendingUp } from "lucide-react";
 import { Image } from "@/components/ui/image";
 
 export default function Hero() {
@@ -44,7 +44,20 @@ export default function Hero() {
                 Log in
               </Link>
             </div>
-            <p className="mt-4 text-xs text-muted-foreground">No credit card required · Free plan available</p>
+            <div className="mt-6 flex flex-wrap items-center justify-center lg:justify-start gap-x-5 gap-y-2 text-xs text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-success" />
+                No credit card required
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <Zap className="w-3.5 h-3.5 text-primary" />
+                Free plan forever
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <TrendingUp className="w-3.5 h-3.5 text-warning" />
+                GST-ready
+              </span>
+            </div>
           </div>
 
           {/* Hero image */}
