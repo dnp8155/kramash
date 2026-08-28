@@ -154,13 +154,6 @@ export default function Events() {
           >
             <Download className="w-4 h-4" />
           </Button>
-          <Button variant="outline" size="icon" aria-label="Team" onClick={() => navigate("/team")}>
-            <Users className="w-4 h-4" />
-          </Button>
-          <Button onClick={openNew}>
-            <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">{term.addWorkItemLabel}</span>
-          </Button>
         </div>
       </div>
 

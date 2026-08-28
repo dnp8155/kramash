@@ -28,12 +28,12 @@ export const mainNav = [
   { label: "Clients", path: "/clients", icon: Users },
   { label: "Team", path: "/team", icon: UserCheck },
   { label: "Financial", path: "/financial", icon: Wallet },
+  { label: "Quotation & Agreement", path: "/quotation", icon: FileText },
   { label: "Help & Support", path: "/help", icon: LifeBuoy }
 ];
 
 export const moreNav = [
   { label: "Rate Estimator", path: "/rate-estimator", icon: Calculator },
-  { label: "Quotation & Agreement", path: "/quotation", icon: FileText },
   { label: "Sign a PDF", path: "/sign-pdf", icon: PenLine },
   { label: "Preferences", path: "/preferences", icon: SlidersHorizontal },
   { label: "App & Updates", path: "/app-updates", icon: Smartphone },

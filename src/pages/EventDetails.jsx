@@ -16,7 +16,7 @@ import AssignTeamDialog from "@/components/team/AssignTeamDialog";
 import RecordPaymentDialog from "@/components/financial/RecordPaymentDialog";
 import RecordExpenseDialog from "@/components/financial/RecordExpenseDialog";
 import { useToast } from "@/components/ui/use-toast";
-import { formatEventDate, currentFY, fyRange } from "@/lib/dates";
+import { formatEventDate, formatEventDates, currentFY, fyRange } from "@/lib/dates";
 import { formatMoney } from "@/utils/format";
 import {
   eventFinancialSummary,
@@ -25,7 +25,7 @@ import {
 } from "@/lib/financeService";
 import {
   ArrowLeft, Pencil, Wallet, FileText, MapPin, Calendar, Phone, Plus,
-  CalendarPlus, Share2, Receipt, StickyNote
+  CalendarPlus, Share2, Receipt, StickyNote, Briefcase
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
@@ -50,14 +50,15 @@ export default function EventDetails() {
     queryFn: async () => {
       const ev = await base44.entities.Event.get(id);
       if (!ev || ev.workspace_id !== workspaceId) return { notFound: true };
-      const [clList, membs, rles, asgns, tx, cats, blocks] = await Promise.all([
+      const [clList, membs, rles, asgns, tx, cats, blocks, svcs] = await Promise.all([
         ev.client_id ? base44.entities.Client.get(ev.client_id).catch(() => null) : Promise.resolve(null),
         base44.entities.TeamMember.filter({ workspace_id: workspaceId }, "name", 500),
         base44.entities.TeamRole.filter({ workspace_id: workspaceId }, "name", 200),
         base44.entities.EventTeamAssignment.filter({ workspace_id: workspaceId }, "-created_date", 1000),
         base44.entities.FinancialTransaction.filter({ workspace_id: workspaceId, event_id: ev.id }, "-transaction_date", 500),
         loadExpenseCategories(workspaceId),
-        base44.entities.TeamBlockDate.filter({ workspace_id: workspaceId }, "-start_date", 500)
+        base44.entities.TeamBlockDate.filter({ workspace_id: workspaceId }, "-start_date", 500),
+        base44.entities.Service.filter({ workspace_id: workspaceId }, "name", 500)
       ]);
       const evIds = [...new Set((asgns || []).map((a) => a.event_id))];
       const evMap = {};
@@ -80,6 +81,7 @@ export default function EventDetails() {
         transactions: tx || [],
         categories: cats || [],
         blockDates: blocks || [],
+        services: svcs || [],
         eventsById: evMap
       };
     },
@@ -93,6 +95,7 @@ export default function EventDetails() {
   const transactions = data?.transactions || [];
   const categories = data?.categories || [];
   const blockDates = data?.blockDates || [];
+  const services = data?.services || [];
   const eventsById = data?.eventsById || {};
   const notFound = !!data?.notFound;
   const hasError = !!error && !data;
@@ -217,7 +220,7 @@ export default function EventDetails() {
           </div>
         </div>
         <Button onClick={() => setShowForm(true)}>
-          <Plus className="w-4 h-4" /> New Entry
+          <Pencil className="w-4 h-4" /> Edit Event
         </Button>
       </div>
 
@@ -228,15 +231,12 @@ export default function EventDetails() {
             <div className="text-xs text-muted-foreground">
               {event.start_date ? new Date(event.start_date + "T00:00:00").toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : ""}
             </div>
-            <h2 className="text-base font-semibold">{event.event_type} · {formatEventDate(event.start_date, event.end_date)}</h2>
+            <h2 className="text-base font-semibold">{event.event_type} · {formatEventDates(event)}</h2>
           </div>
-          <Button size="sm" variant="outline" onClick={() => setShowForm(true)}>
-            <Pencil className="w-3.5 h-3.5" /> Edit
-          </Button>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label={`Client / ${term.workItemSingular} Name`} value={event.title} />
+          <Field label="Event Title" value={event.title} />
           <Field label={term.workItemTypeLabel} value={event.event_type || "—"} />
           <Field label={term.startDateLabel} value={event.start_date || "—"} icon={Calendar} />
           <Field label={term.endDateLabel} value={event.end_date || "—"} icon={Calendar} />
@@ -244,14 +244,31 @@ export default function EventDetails() {
 
         {/* Date chips */}
         <div className="mt-4">
+          <div className="text-xs font-medium text-muted-foreground mb-2">Schedule Dates</div>
           <div className="flex flex-wrap gap-2">
-            <DateChip date={event.start_date} />
-            {event.end_date && event.end_date !== event.start_date && <DateChip date={event.end_date} />}
+            {(event.event_dates?.length ? event.event_dates : [event.start_date]).filter(Boolean).map((d) => (
+              <DateChip key={d} date={d} />
+            ))}
           </div>
-          <p className="text-xs text-muted-foreground mt-2">
-            Tap a day to include/exclude it from the schedule.
-          </p>
         </div>
+
+        {/* Services */}
+        {event.service_ids?.length > 0 && (
+          <div className="mt-4">
+            <div className="text-xs font-medium text-muted-foreground mb-2">Services</div>
+            <div className="flex flex-wrap gap-2">
+              {event.service_ids.map((sid) => {
+                const s = services.find((x) => x.id === sid);
+                if (!s) return null;
+                return (
+                  <span key={sid} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted text-foreground border border-border text-sm font-medium">
+                    <Briefcase className="w-3.5 h-3.5" /> {s.name}
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Additional fields */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">

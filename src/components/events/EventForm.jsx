@@ -83,6 +83,44 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
+  // Sync team_member_ids on the event to EventTeamAssignment records so the
+  // EventDetails Team tab (which reads assignments) stays in sync with the form.
+  const syncTeamAssignments = async (eventId, teamMemberIds) => {
+    const existing = await base44.entities.EventTeamAssignment.filter({
+      workspace_id: workspaceId,
+      event_id: eventId,
+      assignment_status: "assigned"
+    });
+    const existingByMember = {};
+    (existing || []).forEach((a) => { existingByMember[a.team_member_id] = a; });
+    const ids = teamMemberIds || [];
+    const toCreate = ids.filter((id) => !existingByMember[id]);
+    const toRemove = (existing || []).filter((a) => !ids.includes(a.team_member_id));
+    if (toCreate.length > 0) {
+      await base44.entities.EventTeamAssignment.bulkCreate(
+        toCreate.map((id) => {
+          const m = teamMembers.find((x) => x.id === id);
+          return {
+            workspace_id: workspaceId,
+            event_id: eventId,
+            team_member_id: id,
+            role_id: m?.role_id || "",
+            role_name_snapshot: m?.profession || "",
+            agreed_rate: m?.default_rate || 0,
+            rate_type: m?.rate_type || "Per Event",
+            assignment_status: "assigned",
+            notes: ""
+          };
+        })
+      );
+    }
+    if (toRemove.length > 0) {
+      await base44.entities.EventTeamAssignment.bulkUpdate(
+        toRemove.map((a) => ({ id: a.id, assignment_status: "removed" }))
+      );
+    }
+  };
+
   // When event_dates change, keep start_date / end_date in sync (earliest / latest).
   const setEventDates = (dates) => {
     setForm((f) => {
@@ -137,6 +175,10 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
       } else {
         const res = await base44.functions.invoke("createEvent", payload);
         saved = res.data || res;
+      }
+      const eventId = saved?.id || event?.id;
+      if (eventId) {
+        try { await syncTeamAssignments(eventId, payload.team_member_ids); } catch (e) { /* non-fatal */ }
       }
       onSaved?.(saved);
       onClose?.();
