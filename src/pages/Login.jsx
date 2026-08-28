@@ -4,10 +4,24 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { LogIn, Mail, Lock, Loader2, Eye, EyeOff, Smartphone } from "lucide-react";
+import { LogIn, Mail, Lock, Loader2, Eye, EyeOff, Smartphone, ShieldCheck } from "lucide-react";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
 import { safeReturnTo } from "@/lib/authReturnTo";
+import { toast } from "@/components/ui/use-toast";
+
+// Detect an "unverified email" failure so we can guide the user to verify
+// right here instead of showing a generic "invalid credentials" error.
+function isUnverifiedError(err) {
+  if (!err) return false;
+  const status = err.status || err.code;
+  const reason = err.data?.extra_data?.reason || err.reason;
+  const msg = (err.message || err.data?.message || "").toLowerCase();
+  if (reason && String(reason).toLowerCase().includes("verif")) return true;
+  if (status === 403 && msg.includes("verif")) return true;
+  return /not verified|unverified|email not verified|verify your email|verification required/.test(msg);
+}
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -15,6 +29,10 @@ export default function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  // Email verification flow (for users who registered but never verified)
+  const [verifyMode, setVerifyMode] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
+  const [sendingOtp, setSendingOtp] = useState(false);
   // Post-login destination (e.g. the MCP OAuth consent page sends users here
   // with returnTo so the grant flow can resume). Same-origin paths only.
   const returnTo = safeReturnTo();
@@ -27,7 +45,52 @@ export default function Login() {
       await base44.auth.loginViaEmailPassword(email, password);
       window.location.href = returnTo;
     } catch (err) {
-      setError(err.message || "Invalid email or password");
+      if (isUnverifiedError(err)) {
+        // User registered but never verified their email — switch to the
+        // inline verification flow so they can verify and continue.
+        setVerifyMode(true);
+        setError("");
+        // Kick off an OTP automatically so they don't have to click resend.
+        handleSendOtp();
+      } else {
+        setError(err.message || "Invalid email or password");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSendOtp = async () => {
+    if (!email) {
+      setError("Enter your email first");
+      return;
+    }
+    setSendingOtp(true);
+    setError("");
+    try {
+      await base44.auth.resendOtp(email);
+      toast({
+        title: "Code sent",
+        description: "Check your email for the verification code.",
+      });
+    } catch (err) {
+      setError(err.message || "Failed to send code");
+    } finally {
+      setSendingOtp(false);
+    }
+  };
+
+  const handleVerify = async () => {
+    setError("");
+    setLoading(true);
+    try {
+      const result = await base44.auth.verifyOtp({ email, otpCode });
+      if (result?.access_token) {
+        base44.auth.setToken(result.access_token);
+      }
+      window.location.href = returnTo;
+    } catch (err) {
+      setError(err.message || "Invalid verification code");
     } finally {
       setLoading(false);
     }
@@ -36,6 +99,72 @@ export default function Login() {
   const handleGoogle = () => {
     base44.auth.loginWithProvider("google", returnTo);
   };
+
+  if (verifyMode) {
+    return (
+      <AuthLayout
+        icon={ShieldCheck}
+        title="Verify your email"
+        subtitle={`We sent a code to ${email}`}
+        footer={
+          <button
+            onClick={() => { setVerifyMode(false); setOtpCode(""); setError(""); }}
+            className="text-primary font-medium hover:underline"
+          >
+            Back to login
+          </button>
+        }
+      >
+        {error && (
+          <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+            {error}
+          </div>
+        )}
+        <div className="flex justify-center mb-6">
+          <InputOTP
+            maxLength={6}
+            value={otpCode}
+            onChange={setOtpCode}
+            autoFocus
+            autoComplete="one-time-code"
+          >
+            <InputOTPGroup>
+              <InputOTPSlot index={0} />
+              <InputOTPSlot index={1} />
+              <InputOTPSlot index={2} />
+              <InputOTPSlot index={3} />
+              <InputOTPSlot index={4} />
+              <InputOTPSlot index={5} />
+            </InputOTPGroup>
+          </InputOTP>
+        </div>
+        <Button
+          className="w-full h-12 font-medium"
+          onClick={handleVerify}
+          disabled={loading || otpCode.length < 6}
+        >
+          {loading ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Verifying...
+            </>
+          ) : (
+            "Verify & continue"
+          )}
+        </Button>
+        <p className="text-center text-sm text-muted-foreground mt-4">
+          Didn't receive the code?{" "}
+          <button
+            onClick={handleSendOtp}
+            disabled={sendingOtp}
+            className="text-primary font-medium hover:underline disabled:opacity-50"
+          >
+            {sendingOtp ? "Sending..." : "Resend"}
+          </button>
+        </p>
+      </AuthLayout>
+    );
+  }
 
   return (
     <AuthLayout
@@ -137,7 +266,17 @@ export default function Login() {
         </Button>
       </form>
 
-      <div className="mt-6 text-center">
+      <div className="mt-4 text-center">
+        <button
+          onClick={() => { setVerifyMode(true); setError(""); }}
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary hover:underline"
+        >
+          <ShieldCheck className="w-3.5 h-3.5" />
+          Didn't verify your email? Verify now
+        </button>
+      </div>
+
+      <div className="mt-4 text-center">
         <Link
           to={"/phone-login" + (returnTo !== "/" ? "?returnTo=" + encodeURIComponent(returnTo) : "")}
           className="inline-flex items-center gap-1.5 text-sm text-primary font-medium hover:underline"
