@@ -30,6 +30,8 @@ import { Section, Field } from "@/components/quotation/QuotationParts";
 import { QUOTATION_TEMPLATES, renderTemplate } from "@/constants/quotationTemplates";
 import { CURRENCY_SYMBOLS } from "@/constants/financeConfig";
 import QuotationTemplatePreview from "@/components/quotation/QuotationTemplatePreview";
+import QuotationTemplateSettings from "@/components/quotation/QuotationTemplateSettings";
+import { Textarea } from "@/components/ui/textarea";
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -77,6 +79,8 @@ export default function QuotationEditor() {
   const [addRoleId, setAddRoleId] = useState("");
   const [templateId, setTemplateId] = useState("gold_premium");
   const [templateConfig, setTemplateConfig] = useState({});
+  const [projectTitle, setProjectTitle] = useState("");
+  const [projectSummary, setProjectSummary] = useState("");
   const [showTemplatePreview, setShowTemplatePreview] = useState(false);
   const [templatePreviewHtml, setTemplatePreviewHtml] = useState("");
 
@@ -137,6 +141,8 @@ export default function QuotationEditor() {
         setNotes(q.notes || "");
         setTemplateId(q.template_id || "gold_premium");
         try { setTemplateConfig(JSON.parse(q.template_config || "{}")); } catch { setTemplateConfig({}); }
+        setProjectTitle(q.project_title || "");
+        setProjectSummary(q.project_summary || "");
       }
     } catch (e) {
       setError(e?.message || "Failed to load quotation.");
@@ -251,7 +257,9 @@ export default function QuotationEditor() {
     terms_and_conditions: terms,
     notes,
     template_id: templateId,
-    template_config: JSON.stringify(templateConfig)
+    template_config: JSON.stringify(templateConfig),
+    project_title: projectTitle,
+    project_summary: projectSummary
   });
 
   const validate = () => {
@@ -450,7 +458,7 @@ export default function QuotationEditor() {
   const previewTemplate = () => {
     const html = renderTemplate(templateId, {
       workspace,
-      quotation: { ...existingQuotation, ...buildData(), ...totals },
+      quotation: { ...existingQuotation, ...buildData(), ...totals, project_title: projectTitle, project_summary: projectSummary },
       client,
       event,
       items,
@@ -523,6 +531,14 @@ export default function QuotationEditor() {
               {QUOTATION_TEMPLATES.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
             </Select>
           </Field>
+          <Field label="Project Title">
+            <Input value={projectTitle} onChange={(e) => setProjectTitle(e.target.value)} disabled={readOnly} placeholder="e.g. Website Development" />
+          </Field>
+          <div className="sm:col-span-2">
+            <Field label="Project Summary">
+              <Textarea value={projectSummary} onChange={(e) => setProjectSummary(e.target.value)} disabled={readOnly} rows={2} placeholder="Brief project scope description" />
+            </Field>
+          </div>
         </div>
       </Section>
 
@@ -581,6 +597,13 @@ export default function QuotationEditor() {
           />
         </Field>
       </Section>
+
+      {/* Template Settings */}
+      <QuotationTemplateSettings
+        templateConfig={templateConfig}
+        onChange={setTemplateConfig}
+        readOnly={readOnly}
+      />
 
       {/* Actions */}
       <QuotationActions

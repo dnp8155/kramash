@@ -48,6 +48,14 @@
       "type": "string",
       "title": "Template Custom Config (JSON)"
     },
+    "project_title": {
+      "type": "string",
+      "title": "Project / Scope Title"
+    },
+    "project_summary": {
+      "type": "string",
+      "title": "Project Summary"
+    },
     "subtotal": {
       "type": "number",
       "title": "Subtotal",

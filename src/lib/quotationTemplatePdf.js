@@ -18,7 +18,6 @@ function waitForImages(doc) {
         img.onerror = () => { remaining--; if (remaining === 0) resolve(); };
       }
     });
-    // Safety timeout
     setTimeout(resolve, 5000);
   });
 }
@@ -37,15 +36,17 @@ export async function generateTemplatePdf(html, { filename = "quotation.pdf", re
     await waitForImages(doc);
     await new Promise((r) => setTimeout(r, 300));
 
-    const target = doc.querySelector(".quotation") || doc.body;
+    const target = doc.querySelector(".quotation-page") || doc.querySelector(".quotation") || doc.body;
     target.style.background = "#ffffff";
+
+    const captureWidth = target.offsetWidth || 1120;
 
     const canvas = await html2canvas(target, {
       scale: 2,
       useCORS: true,
       backgroundColor: "#ffffff",
-      width: 1120,
-      windowWidth: 1200,
+      width: captureWidth,
+      windowWidth: captureWidth + 100,
     });
 
     const pdf = new jsPDF("p", "mm", "a4");

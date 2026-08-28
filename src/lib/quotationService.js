@@ -192,6 +192,8 @@ export async function createQuotation(workspaceId, data, items, opts = {}) {
     notes: data.notes || "",
     template_id: data.template_id || "gold_premium",
     template_config: data.template_config || "",
+    project_title: data.project_title || "",
+    project_summary: data.project_summary || "",
     client_snapshot: opts.client_snapshot || "",
     business_snapshot: opts.business_snapshot || "",
     event_snapshot: opts.event_snapshot || ""
@@ -223,7 +225,9 @@ export async function updateQuotation(workspaceId, quotationId, data, items, opt
     terms_and_conditions: data.terms_and_conditions || "",
     notes: data.notes || "",
     template_id: data.template_id || "gold_premium",
-    template_config: data.template_config || ""
+    template_config: data.template_config || "",
+    project_title: data.project_title || "",
+    project_summary: data.project_summary || ""
   };
   // Snapshots: only (re)capture when explicitly provided (e.g. on finalize).
   if (opts.client_snapshot !== undefined) payload.client_snapshot = opts.client_snapshot;
@@ -260,7 +264,9 @@ export async function duplicateQuotation(workspaceId, sourceQuotation, sourceIte
     terms_and_conditions: sourceQuotation.terms_and_conditions || "",
     notes: sourceQuotation.notes || "",
     template_id: sourceQuotation.template_id || "gold_premium",
-    template_config: sourceQuotation.template_config || ""
+    template_config: sourceQuotation.template_config || "",
+    project_title: sourceQuotation.project_title || "",
+    project_summary: sourceQuotation.project_summary || ""
   };
   // Strip ids so items are fresh copies.
   const items = (sourceItems || []).map((it) => ({
