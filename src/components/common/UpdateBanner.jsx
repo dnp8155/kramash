@@ -19,7 +19,7 @@ export default function UpdateBanner() {
     <div className="bg-primary text-primary-foreground px-4 py-2.5 text-sm flex items-center justify-between gap-3 sticky top-0 z-30">
       <span className="flex items-center gap-2">
         <RefreshCw className="w-4 h-4" />
-        A new version of Kramashah is available.
+        A new version of KRAMAS is available.
       </span>
       <div className="flex items-center gap-2">
         <Button

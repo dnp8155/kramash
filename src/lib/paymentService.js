@@ -55,7 +55,7 @@ export async function openRazorpayCheckout({ orderId, keyId, amount, currency, n
       key_id: keyId,
       amount: Math.round(amount * 100), // paise
       currency: currency || "INR",
-      name: name || "Kramashah",
+      name: name || "KRAMAS",
       description: description || "Pro Plan Subscription",
       order_id: orderId,
       handler: (response) => {

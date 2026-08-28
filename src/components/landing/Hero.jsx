@@ -27,7 +27,7 @@ export default function Hero() {
               </span>
             </h1>
             <p className="mt-5 text-base sm:text-lg text-muted-foreground max-w-xl mx-auto lg:mx-0 leading-relaxed">
-              Bookings, quotations with GST billing, team availability, payments and financial reports — Kramashah brings every moving part of your event production into one calm, professional dashboard.
+              Bookings, quotations with GST billing, team availability, payments and financial reports — KRAMAS brings every moving part of your event production into one calm, professional dashboard.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
               <Link

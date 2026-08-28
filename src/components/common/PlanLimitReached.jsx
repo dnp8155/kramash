@@ -21,8 +21,8 @@ export default function PlanLimitReached({
       </h3>
       <p className="text-sm text-muted-foreground mt-1 max-w-sm">
         {featureLabel
-          ? `Upgrade to Kramashah ${requiredPlan} to access ${featureLabel.toLowerCase()}.`
-          : `${currentUsage} / ${limit} ${resource} used. Upgrade to Kramashah ${requiredPlan} to create more ${resource}.`}
+          ? `Upgrade to KRAMAS ${requiredPlan} to access ${featureLabel.toLowerCase()}.`
+          : `${currentUsage} / ${limit} ${resource} used. Upgrade to KRAMAS ${requiredPlan} to create more ${resource}.`}
       </p>
       <Link to="/plan" className="mt-4">
         <Button variant="primary" size="sm">View Pro Plans</Button>

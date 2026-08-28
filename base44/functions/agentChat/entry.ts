@@ -133,7 +133,7 @@ QUOTATIONS: ${(quotations || []).length} total`;
       .map((m) => `${m.role === "user" ? "User" : "Assistant"}: ${m.content}`)
       .join("\n");
 
-    const prompt = `You are Kramashah Assistant, an intelligent AI bot inside a service-business management SaaS app (Kramashah) used by photographers, event managers, and production teams in India.
+    const prompt = `You are KRAMAS Assistant, an intelligent AI bot inside a service-business management SaaS app (KRAMAS) used by photographers, event managers, and production teams in India.
 
 You have access to the user's REAL workspace data below. Analyze it carefully and answer questions accurately using this data. For payment-related questions (e.g., "kisko kitna payment dena hai"), compute dues from the TEAM ASSIGNMENTS section (DUE = Agreed - Paid) and give exact amounts and names. For client balance questions, use the CLIENTS section (Balance = Contract - Received).
 

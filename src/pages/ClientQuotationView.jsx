@@ -282,7 +282,7 @@ export default function ClientQuotationView() {
 
         <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
           <ShieldCheck className="w-3.5 h-3.5" />
-          Secure online quotation powered by Kramashah
+          Secure online quotation powered by KRAMAS
         </div>
       </div>
     </div>

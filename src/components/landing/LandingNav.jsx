@@ -9,7 +9,7 @@ export default function LandingNav() {
           <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground font-bold text-lg shadow-sm">
             K
           </div>
-          <span className="font-heading text-lg font-bold tracking-tight text-foreground">Kramashah</span>
+          <span className="font-heading text-lg font-bold tracking-tight text-foreground">KRAMAS</span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-muted-foreground">

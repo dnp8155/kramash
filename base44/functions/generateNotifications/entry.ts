@@ -109,7 +109,7 @@ export default async function (req) {
               user_id: m.user_id,
               type: "subscription_expired",
               title: "Pro plan expired",
-              message: `Your Kramashah Pro plan expired on ${expiry}. Free plan limits now apply. Renew to restore Pro features.`,
+              message: `Your KRAMAS Pro plan expired on ${expiry}. Free plan limits now apply. Renew to restore Pro features.`,
               related_entity_type: "subscription",
               related_entity_id: planCtx.subscription.id,
               read: false
@@ -129,7 +129,7 @@ export default async function (req) {
               user_id: m.user_id,
               type: "subscription_expiring",
               title: "Pro plan expiring soon",
-              message: `Your Kramashah Pro plan expires in ${daysLeft} day(s) (${expiry}). Renew before expiry to keep Pro features.`,
+              message: `Your KRAMAS Pro plan expires in ${daysLeft} day(s) (${expiry}). Renew before expiry to keep Pro features.`,
               related_entity_type: "subscription",
               related_entity_id: planCtx.subscription.id,
               read: false

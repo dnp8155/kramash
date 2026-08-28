@@ -309,9 +309,9 @@ export default function Onboarding() {
               </div>
               <h2 className="text-xl font-semibold">Workspace created!</h2>
               <p className="text-sm text-muted-foreground mt-1 mb-6">
-                {form.name} is ready. You're on the Free plan — welcome to Kramashah.
+                {form.name} is ready. You're on the Free plan — welcome to KRAMAS.
               </p>
-              <Button className="w-full h-12" onClick={enterApp}>Enter Kramashah</Button>
+              <Button className="w-full h-12" onClick={enterApp}>Enter KRAMAS</Button>
             </div>
           )}
         </div>

@@ -16,7 +16,7 @@ export default function AuthLayout({ icon: Icon, title, subtitle, footer, childr
               K
             </div>
             <div>
-              <div className="font-heading text-lg font-bold tracking-tight">Kramashah</div>
+              <div className="font-heading text-lg font-bold tracking-tight">KRAMAS</div>
               <div className="text-xs text-sidebar-muted">Event Management Suite</div>
             </div>
           </div>
@@ -49,7 +49,7 @@ export default function AuthLayout({ icon: Icon, title, subtitle, footer, childr
 
           {/* Footer */}
           <p className="text-xs text-sidebar-muted/70">
-            © {new Date().getFullYear()} Kramashah. All rights reserved.
+            © {new Date().getFullYear()} KRAMAS. All rights reserved.
           </p>
         </div>
       </div>
@@ -63,7 +63,7 @@ export default function AuthLayout({ icon: Icon, title, subtitle, footer, childr
               K
             </div>
             <div>
-              <div className="font-heading text-lg font-bold tracking-tight text-foreground">Kramashah</div>
+              <div className="font-heading text-lg font-bold tracking-tight text-foreground">KRAMAS</div>
               <div className="text-xs text-muted-foreground">Event Management Suite</div>
             </div>
           </div>

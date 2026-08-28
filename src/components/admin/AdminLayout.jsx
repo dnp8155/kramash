@@ -27,7 +27,7 @@ export default function AdminLayout() {
               K
             </div>
             <div>
-              <div className="font-semibold text-sm leading-tight">Kramashah</div>
+              <div className="font-semibold text-sm leading-tight">KRAMAS</div>
               <div className="text-xs text-muted-foreground">SaaS Admin</div>
             </div>
           </div>

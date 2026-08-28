@@ -144,7 +144,7 @@ export default function EventDetails() {
     const start = event.start_date ? event.start_date.replace(/-/g, "") : "";
     const end = event.end_date ? event.end_date.replace(/-/g, "") : start;
     const ics = [
-      "BEGIN:VCALENDAR", "VERSION:2.0",       "PRODID:-//Kramashah//WorkItem//EN",
+      "BEGIN:VCALENDAR", "VERSION:2.0",       "PRODID:-//KRAMAS//WorkItem//EN",
       "BEGIN:VEVENT",
       `UID:${event.id}@kramashah`,
       `DTSTART;VALUE=DATE:${start}`,

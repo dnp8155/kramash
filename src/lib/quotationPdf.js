@@ -370,7 +370,7 @@ export async function generateQuotationPdf({
     doc.text(`Page ${p} of ${pageCount}`, pageW - M, pageH - 6, { align: "right" });
   }
 
-  const fname = `Kramashah_${quotation.quotation_number}_${sanitizeFilename(cli.name || "Client")}.pdf`;
+  const fname = `KRAMAS_${quotation.quotation_number}_${sanitizeFilename(cli.name || "Client")}.pdf`;
   doc.save(fname);
   return true;
 }
@@ -512,6 +512,6 @@ export async function generateJobSheetPdf({
     doc.text(`Page ${p} of ${pageCount}`, pageW - M, pageH - 6, { align: "right" });
   }
 
-  doc.save(`Kramashah_JobSheet_${sanitizeFilename(event?.title || term.workItemSingular || "Event")}.pdf`);
+  doc.save(`KRAMAS_JobSheet_${sanitizeFilename(event?.title || term.workItemSingular || "Event")}.pdf`);
   return true;
 }
