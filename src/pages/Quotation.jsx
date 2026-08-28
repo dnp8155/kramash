@@ -17,6 +17,7 @@ import { generateQuotationPdf } from "@/lib/quotationPdf";
 import { base44 } from "@/api/base44Client";
 import { Plus, Search, Trash2, FileDown, FileText, Eye } from "lucide-react";
 import PdfPreviewModal from "@/components/common/PdfPreviewModal";
+import PageHeader from "@/components/common/PageHeader";
 import { cn } from "@/lib/utils";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
 
@@ -136,15 +137,11 @@ export default function Quotation() {
 
   if (isLoading) return (
     <div className="p-4 sm:p-6 space-y-5 max-w-[1200px] mx-auto">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Quotations</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Create, track and finalize client quotations.</p>
-        </div>
+      <PageHeader title="Quotations" subtitle="Create, track and finalize client quotations.">
         <Button onClick={() => navigate("/quotation/new")}>
           <Plus className="w-4 h-4" /> Create Quotation
         </Button>
-      </div>
+      </PageHeader>
       <StatGridSkeleton count={4} />
       <div className="flex flex-col sm:flex-row gap-3">
         <Skeleton className="h-9 flex-1 rounded-md" />
@@ -156,15 +153,11 @@ export default function Quotation() {
 
   return (
     <div className="p-4 sm:p-6 space-y-5 max-w-[1200px] mx-auto">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Quotations</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Create, track and finalize client quotations.</p>
-        </div>
+      <PageHeader title="Quotations" subtitle="Create, track and finalize client quotations.">
         <Button onClick={() => navigate("/quotation/new")}>
           <Plus className="w-4 h-4" /> Create Quotation
         </Button>
-      </div>
+      </PageHeader>
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">

@@ -1,4 +1,5 @@
 import { useParams } from "react-router-dom";
+import PageHeader from "@/components/common/PageHeader";
 import ProfileSection from "@/components/settings/ProfileSection";
 import AppearanceSection from "@/components/settings/AppearanceSection";
 import NotificationsSection from "@/components/settings/NotificationsSection";
@@ -22,9 +23,8 @@ export default function Settings() {
   const activeLabel = sections.find((s) => s.id === active)?.label || "Settings";
 
   return (
-    <div className="p-4 sm:p-6 max-w-[900px] mx-auto">
-      <h1 className="text-2xl font-bold mb-1">Settings</h1>
-      <p className="text-sm text-muted-foreground mb-5">{activeLabel}</p>
+    <div className="p-4 sm:p-6 max-w-[900px] mx-auto space-y-5">
+      <PageHeader title="Settings" subtitle={activeLabel} />
       <ActiveComponent />
     </div>
   );
