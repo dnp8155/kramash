@@ -24,17 +24,21 @@ export default function StorageUsageCard({ compact = false }) {
 
   useEffect(() => {
     let active = true;
-    if (!workspaceId) {
-      setUsage(null);
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    getStorageUsage(workspaceId)
-      .then((data) => { if (active) setUsage(data); })
-      .catch(() => { if (active) setUsage(null); })
-      .finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
+    const safeFetch = () => {
+      if (!workspaceId) { setUsage(null); setLoading(false); return; }
+      setLoading(true);
+      getStorageUsage(workspaceId)
+        .then((data) => { if (active) setUsage(data); })
+        .catch(() => { if (active) setUsage(null); })
+        .finally(() => { if (active) setLoading(false); });
+    };
+    safeFetch();
+    const onStorageUpdate = () => safeFetch();
+    window.addEventListener("storage-updated", onStorageUpdate);
+    return () => {
+      active = false;
+      window.removeEventListener("storage-updated", onStorageUpdate);
+    };
   }, [workspaceId]);
 
   if (loading) {

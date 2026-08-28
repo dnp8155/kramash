@@ -29,6 +29,9 @@ export async function recordFileRemoval(workspaceId, fileSizeBytes) {
     action: "remove",
     file_size_bytes: fileSizeBytes
   });
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("storage-updated"));
+  }
   return res.data;
 }
 
@@ -58,7 +61,16 @@ export async function uploadFileWithLimit(workspaceId, file) {
   }
 
   const { file_url } = await base44.integrations.Core.UploadFile({ file });
-  await recordFileUpload(workspaceId, sizeBytes);
+
+  // Record usage — if this fails (network blip etc.) the file is already uploaded,
+  // so we still return the URL. The counter may drift slightly but the user keeps
+  // their file and doesn't see a false "upload failed" error.
+  try {
+    await recordFileUpload(workspaceId, sizeBytes);
+    window.dispatchEvent(new CustomEvent("storage-updated"));
+  } catch (e) {
+    // best-effort tracking; file upload itself succeeded
+  }
 
   return { file_url };
 }

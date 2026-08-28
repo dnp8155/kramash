@@ -64,15 +64,11 @@ export default async function(req) {
     }
 
     if (action === 'add') {
+      // Always record — the "check" action is the gate. By the time we get here
+      // the file is already uploaded, so rejecting would leave an orphan file
+      // with no usage tracked. We accept the tiny race-window (two uploads
+      // crossing the limit simultaneously) as preferable to a mismatch.
       const projected = (record.total_bytes || 0) + size;
-      if (limitBytes > 0 && projected > limitBytes) {
-        return Response.json({
-          allowed: false,
-          error: 'Storage limit exceeded for your plan',
-          current_bytes: record.total_bytes || 0,
-          limit_bytes: limitBytes
-        }, { status: 402 });
-      }
       const updated = await base44.asServiceRole.entities.StorageUsage.update(record.id, {
         total_bytes: projected,
         file_count: (record.file_count || 0) + 1
