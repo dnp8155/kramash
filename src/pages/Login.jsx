@@ -139,7 +139,7 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-background">
+    <div className="min-h-screen flex flex-col lg:flex-row bg-background overflow-x-hidden">
       {/* Left: Content column */}
       <div className="flex-1 flex flex-col px-6 py-6 sm:px-10 lg:px-12 xl:px-16 lg:py-8">
         {/* Logo */}
@@ -362,7 +362,7 @@ export default function Login() {
       </div>
 
       {/* Right: Product visual — desktop only */}
-      <div className="hidden lg:flex lg:w-[55%] xl:w-[58%] relative bg-muted/25 border-l border-border/50">
+      <div className="hidden lg:flex lg:w-[55%] xl:w-[58%] relative bg-muted/25 border-l border-border/50 overflow-hidden">
         <LoginProductVisual />
       </div>
     </div>
