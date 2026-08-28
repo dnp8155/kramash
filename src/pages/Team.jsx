@@ -228,6 +228,7 @@ export default function Team() {
                   assignments={assignments}
                   transactions={transactions}
                   currentUser={user}
+                  currency={currency}
                   onEdit={openEdit}
                   onArchive={toggleArchive}
                   onDelete={(mem) => setConfirmDelete(mem)}

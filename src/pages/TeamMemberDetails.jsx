@@ -13,7 +13,7 @@ import TeamMemberForm from "@/components/team/TeamMemberForm";
 import RecordPaymentDialog from "@/components/financial/RecordPaymentDialog";
 import { TEAM_MEMBER_STATUS } from "@/constants/teamConfig";
 import { formatEventDate, isUpcomingDate, isPastDate } from "@/lib/dates";
-import { formatINR, formatMoney } from "@/utils/format";
+import { formatMoney } from "@/utils/format";
 import { assignmentPaid, memberPaidTotal, teamPaymentStatus } from "@/lib/financeService";
 import { ArrowLeft, Pencil, Phone, Mail, StickyNote, Calendar, ArrowRight, Wallet } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -131,7 +131,7 @@ export default function TeamMemberDetails() {
           <InfoRow label="Profession / Role" value={member.profession || "—"} />
           {member.phone && <InfoRow icon={Phone} label="Phone" value={member.phone} />}
           {member.email && <InfoRow icon={Mail} label="Email" value={member.email} />}
-          <InfoRow label="Default Rate" value={`${formatINR(member.default_rate)} · ${member.rate_type || "—"}`} />
+          <InfoRow label="Default Rate" value={`${formatMoney(member.default_rate, currency)} · ${member.rate_type || "—"}`} />
         </div>
         {member.notes && (
           <div className="mt-4">

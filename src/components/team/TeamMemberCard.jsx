@@ -1,6 +1,6 @@
 import { Pencil, Trash2, ExternalLink, Archive, RotateCcw } from "lucide-react";
 import { TEAM_MEMBER_STATUS, AVAILABILITY_STATUS } from "@/constants/teamConfig";
-import { formatINR } from "@/utils/format";
+import { formatMoney } from "@/utils/format";
 import { memberBookingCount } from "@/lib/teamService";
 import { cn } from "@/lib/utils";
 
@@ -12,7 +12,7 @@ function displayStatus(member, assignments) {
   return count > 0 ? AVAILABILITY_STATUS.booked : AVAILABILITY_STATUS.available;
 }
 
-export default function TeamMemberCard({ member, assignments = [], transactions = [], currentUser, onEdit, onArchive, onDelete, onOpen }) {
+export default function TeamMemberCard({ member, assignments = [], transactions = [], currentUser, currency = "INR", onEdit, onArchive, onDelete, onOpen }) {
   const status = displayStatus(member, assignments);
   const bookings = memberBookingCount(member.id, assignments);
   const active = member.status === "active";
@@ -78,7 +78,7 @@ export default function TeamMemberCard({ member, assignments = [], transactions 
       <div className="mt-3 grid grid-cols-3 gap-2 pt-3 border-t border-border">
         <div>
           <div className="text-xs text-muted-foreground font-medium">Rate</div>
-          <div className="text-sm font-bold text-foreground tabular-nums mt-0.5">{formatINR(totalRate)}</div>
+          <div className="text-sm font-bold text-foreground tabular-nums mt-0.5">{formatMoney(totalRate, currency)}</div>
         </div>
         <div>
           <div className="text-xs text-muted-foreground font-medium">Paid</div>
@@ -86,7 +86,7 @@ export default function TeamMemberCard({ member, assignments = [], transactions 
             "text-sm font-bold tabular-nums mt-0.5",
             totalPaid >= totalRate && totalRate > 0 ? "text-success" : "text-foreground"
           )}>
-            {formatINR(totalPaid)}
+            {formatMoney(totalPaid, currency)}
           </div>
         </div>
         <div>
@@ -95,7 +95,7 @@ export default function TeamMemberCard({ member, assignments = [], transactions 
             "text-sm font-bold tabular-nums mt-0.5",
             remaining > 0 ? "text-warning" : "text-success"
           )}>
-            {formatINR(remaining)}
+            {formatMoney(remaining, currency)}
           </div>
         </div>
       </div>
