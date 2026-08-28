@@ -2,7 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import AuthProductPanel from "@/components/AuthProductPanel";
 
-export default function AuthLayout({ icon: Icon, title, subtitle, footer, children }) {
+export default function AuthLayout({ icon: Icon, title, subtitle, footer, children, productPanel }) {
   return (
     <div className="min-h-screen flex bg-background">
       {/* Left: Form panel */}
@@ -40,7 +40,7 @@ export default function AuthLayout({ icon: Icon, title, subtitle, footer, childr
       </div>
 
       {/* Right: Product panel — desktop only */}
-      <AuthProductPanel />
+      {productPanel || <AuthProductPanel />}
     </div>
   );
 }

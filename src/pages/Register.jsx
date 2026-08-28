@@ -4,43 +4,107 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { UserPlus, Mail, Lock, Loader2, Eye, EyeOff, Smartphone } from "lucide-react";
+import { Mail, Lock, Loader2, Eye, EyeOff, Smartphone } from "lucide-react";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import AuthLayout from "@/components/AuthLayout";
+import RegisterProductPanel from "@/components/RegisterProductPanel";
 import GoogleIcon from "@/components/GoogleIcon";
 import { toast } from "@/components/ui/use-toast";
 import { safeReturnTo } from "@/lib/authReturnTo";
+
+function PasswordStrength({ password }) {
+  if (!password || password.length < 3) return null;
+  let score = 0;
+  if (password.length >= 6) score++;
+  if (password.length >= 10) score++;
+  if (/[A-Z]/.test(password) && /[a-z]/.test(password)) score++;
+  if (/[0-9]/.test(password)) score++;
+  if (/[^A-Za-z0-9]/.test(password)) score++;
+
+  const level = score <= 2 ? "Weak" : score === 3 ? "Good" : "Strong";
+  const color = score <= 2 ? "text-destructive" : score === 3 ? "text-warning" : "text-success";
+  const barColor = score <= 2 ? "bg-destructive" : score === 3 ? "bg-warning" : "bg-success";
+  const bars = score <= 2 ? 1 : score === 3 ? 2 : 3;
+
+  return (
+    <div className="flex items-center gap-2 mt-1.5">
+      <div className="flex gap-1">
+        {[1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className={`h-1 w-8 rounded-full transition-colors ${i <= bars ? barColor : "bg-muted"}`}
+          />
+        ))}
+      </div>
+      <span className={`text-xs font-medium ${color}`}>{level}</span>
+    </div>
+  );
+}
 
 export default function Register() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showOtp, setShowOtp] = useState(false);
   const [otpCode, setOtpCode] = useState("");
+  const [checkingAuth, setCheckingAuth] = useState(true);
   const [searchParams] = useSearchParams();
   const phoneFromOtp = searchParams.get("phone");
 
   useEffect(() => {
-    document.title = "Create account — Kramashah";
+    document.title = "Create Account — Kramashah";
+    const meta = document.createElement("meta");
+    meta.name = "robots";
+    meta.content = "noindex, follow";
+    document.head.appendChild(meta);
+    return () => document.head.removeChild(meta);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    base44.auth
+      .isAuthenticated()
+      .then((authed) => {
+        if (active && authed) {
+          const dest = safeReturnTo() !== "/" ? safeReturnTo() : "/events";
+          window.location.href = dest;
+        }
+      })
+      .catch(() => {})
+      .finally(() => active && setCheckingAuth(false));
+    return () => {
+      active = false;
+    };
   }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (loading) return;
     setError("");
+
+    if (!fullName.trim()) {
+      setError("Please enter your name.");
+      return;
+    }
     if (password !== confirmPassword) {
-      setError("Passwords do not match");
+      setError("Passwords do not match.");
       return;
     }
     if (password.length < 6) {
-      setError("Password must be at least 6 characters");
+      setError("Use at least 6 characters for your password.");
       return;
     }
+    if (!agreed) {
+      setError("Please accept the Terms of Service and Privacy Policy to continue.");
+      return;
+    }
+
     setLoading(true);
     try {
       await base44.auth.register({ email, password });
@@ -75,7 +139,7 @@ export default function Register() {
       }
       window.location.href = safeReturnTo();
     } catch {
-      setError("Invalid verification code. Please try again.");
+      setError("That verification code is incorrect or has expired.");
     } finally {
       setLoading(false);
     }
@@ -87,7 +151,7 @@ export default function Register() {
       await base44.auth.resendOtp(email);
       toast({
         title: "Code sent",
-        description: "Check your email for the new code.",
+        description: "A new code has been sent to your email.",
       });
     } catch {
       setError("Unable to resend the code right now. Please try again.");
@@ -98,12 +162,33 @@ export default function Register() {
     base44.auth.loginWithProvider("google", safeReturnTo());
   };
 
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   if (showOtp) {
     return (
       <AuthLayout
         icon={Mail}
         title="Verify your email"
-        subtitle={`We sent a code to ${email}`}
+        subtitle={`We sent a verification code to ${email}`}
+        productPanel={<RegisterProductPanel />}
+        footer={
+          <button
+            onClick={() => {
+              setShowOtp(false);
+              setOtpCode("");
+              setError("");
+            }}
+            className="text-primary font-medium hover:underline"
+          >
+            Change email
+          </button>
+        }
       >
         {error && (
           <div className="mb-4 p-3 rounded-lg bg-destructive/8 text-destructive text-sm border border-destructive/15">
@@ -139,13 +224,13 @@ export default function Register() {
               Verifying...
             </>
           ) : (
-            "Verify & continue"
+            "Verify email"
           )}
         </Button>
         <p className="text-center text-sm text-muted-foreground mt-4">
           Didn't receive the code?{" "}
           <button onClick={handleResend} className="text-primary font-medium hover:underline">
-            Resend
+            Resend code
           </button>
         </p>
       </AuthLayout>
@@ -154,11 +239,12 @@ export default function Register() {
 
   return (
     <AuthLayout
-      title="Create your Kramashah workspace."
-      subtitle="Start organizing your clients, projects, team and finances in one place."
+      title="Create your Kramashah account."
+      subtitle="Set up your account now. You'll configure your business, team and workflow in the next step."
+      productPanel={<RegisterProductPanel />}
       footer={
         <>
-          Already have an account?{" "}
+          Already have a Kramashah account?{" "}
           <Link
             to={"/login" + (safeReturnTo() !== "/" ? "?returnTo=" + encodeURIComponent(safeReturnTo()) : "")}
             className="text-primary font-medium hover:underline"
@@ -171,7 +257,9 @@ export default function Register() {
       {phoneFromOtp && (
         <div className="mb-4 p-3 rounded-lg bg-primary/8 text-primary text-sm flex items-center gap-2 border border-primary/15">
           <Smartphone className="w-4 h-4 shrink-0" />
-          <span>Phone verified: <strong>{phoneFromOtp}</strong> — complete your account details below.</span>
+          <span>
+            Phone verified: <strong>{phoneFromOtp}</strong> — complete your account details below.
+          </span>
         </div>
       )}
 
@@ -183,21 +271,28 @@ export default function Register() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="name" className="text-sm font-medium">Full Name</Label>
+          <Label htmlFor="name" className="text-sm font-medium">
+            Full name
+          </Label>
           <Input
             id="name"
             type="text"
             autoComplete="name"
-            placeholder="Krishna Shah"
+            placeholder="Enter your full name"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             className="h-12"
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="email" className="text-sm font-medium">Email address</Label>
+          <Label htmlFor="email" className="text-sm font-medium">
+            Email address
+          </Label>
           <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
+            <Mail
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground"
+              aria-hidden="true"
+            />
             <Input
               id="email"
               type="email"
@@ -212,9 +307,14 @@ export default function Register() {
           </div>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="password" className="text-sm font-medium">Password</Label>
+          <Label htmlFor="password" className="text-sm font-medium">
+            Password
+          </Label>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
+            <Lock
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground"
+              aria-hidden="true"
+            />
             <Input
               id="password"
               type={showPassword ? "text" : "password"}
@@ -234,11 +334,18 @@ export default function Register() {
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           </div>
+          <PasswordStrength password={password} />
+          <p className="text-xs text-muted-foreground">Use at least 6 characters.</p>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="confirm" className="text-sm font-medium">Confirm Password</Label>
+          <Label htmlFor="confirm" className="text-sm font-medium">
+            Confirm password
+          </Label>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
+            <Lock
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground"
+              aria-hidden="true"
+            />
             <Input
               id="confirm"
               type={showConfirm ? "text" : "password"}
@@ -258,7 +365,21 @@ export default function Register() {
               {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           </div>
+          {confirmPassword && password !== confirmPassword && (
+            <p className="text-xs text-destructive">Passwords do not match.</p>
+          )}
         </div>
+
+        <label className="flex items-start gap-2.5 text-sm text-muted-foreground cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={agreed}
+            onChange={(e) => setAgreed(e.target.checked)}
+            className="mt-0.5 w-4 h-4 rounded border-border accent-primary shrink-0"
+          />
+          <span>I agree to the Terms of Service and Privacy Policy.</span>
+        </label>
+
         <Button type="submit" className="w-full h-12 font-semibold" disabled={loading}>
           {loading ? (
             <>
@@ -269,6 +390,7 @@ export default function Register() {
             "Create account"
           )}
         </Button>
+        <p className="text-center text-xs text-muted-foreground">No credit card required</p>
       </form>
 
       <div className="relative my-6">
