@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import { useWorkspace } from "@/lib/WorkspaceContext";
@@ -98,6 +98,8 @@ export default function Help() {
   const [loadingTickets, setLoadingTickets] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [openFaq, setOpenFaq] = useState(null);
+  const formRef = useRef(null);
+  const subjectRef = useRef(null);
 
   const [form, setForm] = useState({
     subject: "",
@@ -111,6 +113,14 @@ export default function Help() {
       loadTickets();
     }
   }, [activeTab]);
+
+  const focusForm = () => {
+    setActiveTab("contact");
+    setTimeout(() => {
+      formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      subjectRef.current?.focus();
+    }, 50);
+  };
 
   const loadTickets = async () => {
     if (!workspace?.id) return;
@@ -180,7 +190,7 @@ export default function Help() {
           <div>
             <h3 className="text-sm font-semibold text-foreground">Submit a Ticket</h3>
             <p className="text-xs text-muted-foreground mt-1">Describe your issue and we'll respond via email.</p>
-            <Button size="sm" variant="outline" className="mt-3" onClick={() => setActiveTab("contact")}>
+            <Button size="sm" variant="outline" className="mt-3" onClick={focusForm}>
               <Plus className="w-3.5 h-3.5" /> New Ticket
             </Button>
           </div>
@@ -235,7 +245,7 @@ export default function Help() {
 
       {/* Contact Form */}
       {activeTab === "contact" && (
-        <Card className="p-6 max-w-2xl">
+        <Card ref={formRef} className="p-6 max-w-2xl scroll-mt-4">
           <h3 className="text-base font-semibold text-foreground mb-1">Submit a Support Ticket</h3>
           <p className="text-sm text-muted-foreground mb-5">Fill in the details below and our team will get back to you.</p>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -269,6 +279,7 @@ export default function Help() {
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-foreground">Subject</label>
               <Input
+                ref={subjectRef}
                 type="text"
                 value={form.subject}
                 onChange={(e) => setForm({ ...form, subject: e.target.value })}
