@@ -12,6 +12,7 @@ import ClientForm from "@/components/clients/ClientForm";
 import { Plus, Pencil, Eye, Download, Users, CalendarCheck, UserCheck } from "lucide-react";
 import { exportClientsCsv } from "@/lib/exportUtils";
 import StatCard from "@/components/common/StatCard";
+import PageHeader from "@/components/common/PageHeader";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
 import { useT } from "@/hooks/useT";
 
@@ -58,22 +59,16 @@ export default function Clients() {
 
   return (
     <div className="p-4 sm:p-6 space-y-5 max-w-[1400px] mx-auto">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">Clients</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Manage your client directory and their {term.workItemSingular.toLowerCase()} history.</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => exportClientsCsv(filtered, eventCounts)} disabled={filtered.length === 0}>
-            <Download className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">{t("Export")}</span>
-          </Button>
-          <Button onClick={openNew}>
-            <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">{t("Add Client")}</span>
-          </Button>
-        </div>
-      </div>
+      <PageHeader title="Clients" subtitle={`Manage your client directory and their ${term.workItemSingular.toLowerCase()} history.`}>
+        <Button variant="outline" size="sm" onClick={() => exportClientsCsv(filtered, eventCounts)} disabled={filtered.length === 0}>
+          <Download className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">{t("Export")}</span>
+        </Button>
+        <Button onClick={openNew}>
+          <Plus className="w-4 h-4" />
+          <span className="hidden sm:inline">{t("Add Client")}</span>
+        </Button>
+      </PageHeader>
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">

@@ -6,11 +6,11 @@ import LanguageSwitcher from "@/components/layout/LanguageSwitcher";
 
 export default function TopHeader({ onMenuClick }) {
   return (
-    <header className="flex items-center gap-2 sm:gap-3 px-3 sm:px-6 h-14 border-b border-border bg-card/80 backdrop-blur-md sticky top-0 z-20">
+    <header className="flex items-center gap-2 sm:gap-3 px-3 sm:px-6 h-14 border-b border-border bg-card/80 backdrop-blur-md sticky top-0 z-20 shadow-sm">
       {/* Mobile menu */}
       <button
         onClick={onMenuClick}
-        className="lg:hidden text-foreground p-1 -ml-1 rounded-md hover:bg-muted transition-colors shrink-0"
+        className="lg:hidden text-foreground p-1.5 -ml-1 rounded-lg hover:bg-muted transition-colors shrink-0"
         aria-label="Open menu"
       >
         <Menu className="w-5 h-5" />

@@ -6,8 +6,8 @@ import { useT } from "@/hooks/useT";
 export default function OutstandingDuesWidget({ dues = [], currency = "INR", onClientClick, onSeeAll }) {
   const t = useT();
   return (
-    <div className="bg-card border border-border rounded-lg">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+    <div className="bg-card border border-border rounded-xl shadow-card">
+      <div className="flex items-center justify-between px-4 py-3.5 border-b border-border">
         <div className="flex items-center gap-2">
           <AlertCircle className="w-4 h-4 text-warning" />
           <h3 className="text-sm font-semibold text-foreground">{t("Outstanding Receivables")}</h3>

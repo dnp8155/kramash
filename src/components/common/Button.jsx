@@ -2,10 +2,10 @@ import { cn } from "@/lib/utils";
 import { Button as ShadButton } from "@/components/ui/button";
 
 const variants = {
-  primary: "bg-primary text-primary-foreground hover:bg-primary-hover shadow-sm",
+  primary: "bg-primary text-primary-foreground hover:bg-primary-hover shadow-sm hover:shadow-md",
   outline: "border border-border bg-card text-foreground hover:bg-muted shadow-xs",
   ghost: "text-foreground hover:bg-muted",
-  dark: "bg-sidebar-primary text-sidebar-primary-foreground hover:opacity-90",
+  dark: "bg-sidebar-primary text-sidebar-primary-foreground hover:opacity-90 shadow-sm",
   success: "bg-success text-success-foreground hover:opacity-90 shadow-sm",
   destructive: "border border-destructive/60 text-destructive hover:bg-destructive/5",
   subtle: "bg-muted text-foreground hover:bg-secondary"
@@ -27,7 +27,7 @@ export default function Button({
 }) {
   return (
     <ShadButton
-      className={cn(variants[variant], sizes[size], "rounded-md font-medium gap-1.5", className)}
+      className={cn(variants[variant], sizes[size], "rounded-lg font-medium gap-1.5 transition-all", className)}
       {...props}
     >
       {children}

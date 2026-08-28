@@ -23,10 +23,10 @@ export default function Sidebar({ mobile = false, onClose, collapsed = false, on
 
   const itemClass = ({ isActive }) =>
     cn(
-      "relative flex items-center rounded-lg text-sm transition-colors",
+      "relative flex items-center rounded-lg text-sm transition-all",
       collapsed ? "justify-center px-0 py-2 mx-auto w-10" : "gap-3 px-3 py-2",
       isActive
-        ? "bg-success/10 text-foreground font-semibold"
+        ? "bg-primary/10 text-primary font-semibold shadow-sm"
         : "text-muted-foreground font-medium hover:bg-muted hover:text-foreground"
     );
 
@@ -37,7 +37,7 @@ export default function Sidebar({ mobile = false, onClose, collapsed = false, on
         {({ isActive }) => (
           <>
             {isActive && !collapsed && (
-              <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-1 rounded-r-full bg-success" />
+              <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-1 rounded-r-full bg-primary" />
             )}
             <Icon className="w-4 h-4 shrink-0" />
             {!collapsed && <span>{navLabel(item)}</span>}

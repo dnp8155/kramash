@@ -35,6 +35,7 @@ import { formatMoney } from "@/utils/format";
 import { Download, Plus, Wallet, Receipt, AlertTriangle, TrendingUp as TrendingUpIcon, TrendingDown as TrendingDownIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { exportFinancialCsv } from "@/lib/exportUtils";
+import PageHeader from "@/components/common/PageHeader";
 import { useT } from "@/hooks/useT";
 
 const TAB_KEYS = ["Payment Activity", "Financial Years"];
@@ -155,10 +156,7 @@ export default function Financial() {
 
   if (isLoading) return (
     <div className="p-4 sm:p-6 space-y-4 max-w-[1100px] mx-auto">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground tracking-tight">{t("Financial")}</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">{t("Track payments, expenses, and profit across financial years.")}</p>
-      </div>
+      <PageHeader title={t("Financial")} subtitle={t("Track payments, expenses, and profit across financial years.")} />
       <div className="h-10" />
       <StatGridSkeleton count={3} />
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -171,10 +169,7 @@ export default function Financial() {
 
   return (
     <div className="p-4 sm:p-6 space-y-4 max-w-[1100px] mx-auto">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground tracking-tight">{t("Financial")}</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">{t("Track payments, expenses, and profit across financial years.")}</p>
-      </div>
+      <PageHeader title={t("Financial")} subtitle={t("Track payments, expenses, and profit across financial years.")} />
 
       <div className="flex flex-col gap-3">
         <div className="flex items-center gap-1 border-b border-border w-full sm:w-auto">

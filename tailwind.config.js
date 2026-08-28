@@ -16,8 +16,10 @@ module.exports = {
         'sm': 'var(--shadow-sm)',
         'md': 'var(--shadow-md)',
         'lg': 'var(--shadow-lg)',
+        'xl': 'var(--shadow-xl)',
         'card': 'var(--shadow-card)',
         'card-hover': 'var(--shadow-card-hover)',
+        'glow': 'var(--shadow-glow)',
         'premium': '0 1px 2px rgb(28 34 48 / 0.06), 0 4px 14px rgb(28 34 48 / 0.08)'
       },
       backgroundImage: {

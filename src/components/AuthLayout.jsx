@@ -1,4 +1,5 @@
 import React from "react";
+import { Check } from "lucide-react";
 
 export default function AuthLayout({ icon: Icon, title, subtitle, footer, children }) {
   return (
@@ -6,6 +7,7 @@ export default function AuthLayout({ icon: Icon, title, subtitle, footer, childr
       {/* Left brand panel — desktop only */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-sidebar">
         <div className="absolute inset-0 bg-gradient-to-br from-sidebar via-sidebar to-sidebar-hover" />
+        <div className="absolute inset-0 bg-grid opacity-[0.03]" />
         <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-primary/20 blur-3xl" />
         <div className="absolute -bottom-32 -left-20 w-80 h-80 rounded-full bg-accent/10 blur-3xl" />
 
@@ -39,7 +41,7 @@ export default function AuthLayout({ icon: Icon, title, subtitle, footer, childr
               ].map((feat) => (
                 <div key={feat} className="flex items-center gap-3">
                   <div className="w-6 h-6 rounded-full bg-sidebar-primary/20 flex items-center justify-center shrink-0">
-                    <div className="w-2 h-2 rounded-full bg-sidebar-primary" />
+                    <Check className="w-3 h-3 text-sidebar-primary" strokeWidth={3} />
                   </div>
                   <span className="text-sm text-sidebar-foreground/90">{feat}</span>
                 </div>
@@ -55,7 +57,7 @@ export default function AuthLayout({ icon: Icon, title, subtitle, footer, childr
       </div>
 
       {/* Right form panel */}
-      <div className="flex-1 flex flex-col items-center justify-center px-4 py-10 sm:px-6">
+      <div className="flex-1 flex flex-col items-center justify-center px-4 py-10 sm:px-6 bg-mesh">
         <div className="w-full max-w-md">
           {/* Mobile brand */}
           <div className="lg:hidden flex items-center justify-center gap-3 mb-8">
@@ -76,7 +78,7 @@ export default function AuthLayout({ icon: Icon, title, subtitle, footer, childr
             {subtitle && <p className="text-muted-foreground mt-2 text-sm">{subtitle}</p>}
           </div>
 
-          <div className="bg-card rounded-xl shadow-sm border border-border p-6 sm:p-8">
+          <div className="bg-card rounded-xl shadow-md border border-border p-6 sm:p-8">
             {children}
           </div>
 

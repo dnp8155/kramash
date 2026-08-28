@@ -1,5 +1,6 @@
 import React from "react";
 import { Image } from "@/components/ui/image";
+import { Check } from "lucide-react";
 
 const blocks = [
   {
@@ -36,16 +37,17 @@ export default function Showcase() {
               i % 2 === 1 ? "lg:[&>*:first-child]:order-2" : ""
             }`}
           >
-            <div className="relative rounded-2xl overflow-hidden shadow-lg border border-border">
+            <div className="relative rounded-2xl overflow-hidden shadow-xl border border-border group">
               <Image
                 src={b.image}
                 alt={b.title}
-                className="w-full h-64 sm:h-80"
+                className="w-full h-64 sm:h-80 transition-transform duration-500 group-hover:scale-105"
                 fittingType="fill"
               />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
             </div>
             <div>
-              <span className="inline-block text-xs font-semibold uppercase tracking-wider text-primary mb-3">
+              <span className="inline-block text-xs font-semibold uppercase tracking-wider text-primary mb-3 px-3 py-1 rounded-full bg-primary/10">
                 {b.eyebrow}
               </span>
               <h3 className="font-heading text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
@@ -56,7 +58,7 @@ export default function Showcase() {
                 {b.points.map((p) => (
                   <li key={p} className="flex items-center gap-3 text-sm text-foreground">
                     <div className="w-5 h-5 rounded-full bg-success/15 flex items-center justify-center shrink-0">
-                      <div className="w-1.5 h-1.5 rounded-full bg-success" />
+                      <Check className="w-3 h-3 text-success" strokeWidth={3} />
                     </div>
                     {p}
                   </li>

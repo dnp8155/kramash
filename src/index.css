@@ -49,13 +49,15 @@
     /* Toggle */
     --toggle-on: 152 56% 38%;
 
-    /* Shadows — neutral, subtle */
-    --shadow-xs: 0 1px 2px 0 rgb(15 23 42 / 0.05);
-    --shadow-sm: 0 1px 3px 0 rgb(15 23 42 / 0.07), 0 1px 2px -1px rgb(15 23 42 / 0.04);
-    --shadow-md: 0 4px 12px -2px rgb(15 23 42 / 0.08), 0 2px 6px -2px rgb(15 23 42 / 0.05);
-    --shadow-lg: 0 12px 28px -6px rgb(15 23 42 / 0.12), 0 4px 10px -4px rgb(15 23 42 / 0.06);
-    --shadow-card: 0 1px 3px 0 rgb(15 23 42 / 0.04), 0 1px 2px -1px rgb(15 23 42 / 0.03);
-    --shadow-card-hover: 0 8px 24px -4px rgb(15 23 42 / 0.10), 0 2px 8px -2px rgb(15 23 42 / 0.05);
+    /* Shadows — layered, premium */
+    --shadow-xs: 0 1px 2px 0 rgb(15 23 42 / 0.04);
+    --shadow-sm: 0 1px 3px 0 rgb(15 23 42 / 0.06), 0 1px 2px -1px rgb(15 23 42 / 0.03);
+    --shadow-md: 0 6px 16px -3px rgb(15 23 42 / 0.08), 0 2px 6px -2px rgb(15 23 42 / 0.04);
+    --shadow-lg: 0 16px 40px -8px rgb(15 23 42 / 0.14), 0 4px 12px -4px rgb(15 23 42 / 0.06);
+    --shadow-xl: 0 24px 56px -12px rgb(15 23 42 / 0.18), 0 8px 20px -6px rgb(15 23 42 / 0.08);
+    --shadow-card: 0 1px 3px 0 rgb(15 23 42 / 0.03), 0 1px 2px -1px rgb(15 23 42 / 0.02);
+    --shadow-card-hover: 0 12px 32px -6px rgb(15 23 42 / 0.12), 0 4px 10px -4px rgb(15 23 42 / 0.05);
+    --shadow-glow: 0 0 0 1px rgb(34 84 222 / 0.06), 0 8px 24px -4px rgb(34 84 222 / 0.12);
 
     /* Accent gradients */
     --gradient-primary: linear-gradient(135deg, hsl(222 47% 35%), hsl(228 45% 30%));
@@ -130,5 +132,50 @@
   }
   .scrollbar-thin::-webkit-scrollbar-track {
     background: transparent;
+  }
+
+  /* Premium mesh gradient background */
+  .bg-mesh {
+    background-image:
+      radial-gradient(at 20% 20%, hsl(var(--primary) / 0.06) 0px, transparent 50%),
+      radial-gradient(at 80% 0%, hsl(var(--accent) / 0.05) 0px, transparent 50%),
+      radial-gradient(at 60% 80%, hsl(var(--primary) / 0.04) 0px, transparent 50%);
+  }
+
+  /* Subtle grid pattern */
+  .bg-grid {
+    background-image:
+      linear-gradient(to right, hsl(var(--border) / 0.4) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(var(--border) / 0.4) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+
+  /* Glassmorphism */
+  .glass {
+    background: hsl(var(--card) / 0.7);
+    backdrop-filter: blur(12px) saturate(180%);
+    -webkit-backdrop-filter: blur(12px) saturate(180%);
+  }
+
+  /* Smooth hover lift */
+  .hover-lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .hover-lift:hover {
+    transform: translateY(-2px);
+  }
+
+  /* Premium gradient text */
+  .text-gradient {
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* Refined focus ring */
+  .focus-ring {
+    outline: none;
+    box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--ring) / 0.4);
   }
 }

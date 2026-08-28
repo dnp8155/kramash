@@ -11,7 +11,8 @@ const Input = forwardRef(function Input({ className, size = "md", ...props }, re
     <input
       ref={ref}
       className={cn(
-        "w-full bg-card border border-border rounded-md text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/40",
+        "w-full bg-card border border-border rounded-lg text-foreground placeholder:text-muted-foreground transition-all",
+        "focus:outline-none focus:ring-2 focus:ring-ring/40 focus:border-primary/40 hover:border-border/80",
         sizes[size],
         className
       )}

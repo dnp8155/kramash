@@ -10,8 +10,8 @@ export default function UpcomingEventsWidget({ events = [], clientsById = {}, cu
   const list = events.slice(0, 5);
 
   return (
-    <div className="bg-card border border-border rounded-lg">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+    <div className="bg-card border border-border rounded-xl shadow-card h-full">
+      <div className="flex items-center justify-between px-4 py-3.5 border-b border-border">
         <div className="flex items-center gap-2">
           <CalendarDays className="w-4 h-4 text-primary" />
           <h3 className="text-sm font-semibold text-foreground">{t(`Upcoming ${workItemLabel}`)}</h3>
@@ -48,7 +48,7 @@ export default function UpcomingEventsWidget({ events = [], clientsById = {}, cu
                   onClick={() => onEventClick(ev)}
                   className="w-full text-left flex items-center gap-3 p-2.5 rounded-md hover:bg-muted transition-colors"
                 >
-                  <div className="flex flex-col items-center justify-center w-12 shrink-0 bg-primary/5 rounded-md py-1.5">
+                  <div className="flex flex-col items-center justify-center w-12 shrink-0 bg-primary/5 rounded-lg py-1.5">
                     <span className="text-[10px] font-medium text-muted-foreground uppercase">
                       {new Date(ev.start_date + "T12:00:00").toLocaleDateString("en-IN", { month: "short" })}
                     </span>

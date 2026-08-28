@@ -12,7 +12,7 @@ export default function EventsTable({ events, clients, teamMap = {}, serviceMap 
   const t = term || {};
   if (loading) {
     return (
-      <div className="bg-card border border-border rounded-lg">
+      <div className="bg-card border border-border rounded-xl shadow-card">
         <LoadingState label={`Loading ${t.workItemPlural?.toLowerCase() || "events"}…`} />
       </div>
     );
@@ -20,7 +20,7 @@ export default function EventsTable({ events, clients, teamMap = {}, serviceMap 
 
   if (events.length === 0) {
     return (
-      <div className="bg-card border border-border rounded-lg">
+      <div className="bg-card border border-border rounded-xl shadow-card">
         <EmptyState
           title={t.emptyTitle || "No events yet"}
           description={t.emptyDescription || "Create your first event to get started."}
@@ -36,7 +36,7 @@ export default function EventsTable({ events, clients, teamMap = {}, serviceMap 
   const laterEvents = events.filter((e) => !isThisWeek(e.start_date));
 
   return (
-    <div className="bg-card border border-border rounded-lg overflow-hidden">
+    <div className="bg-card border border-border rounded-xl shadow-card overflow-hidden">
       <div className="hidden sm:grid grid-cols-[110px_1.4fr_1fr_1.2fr_120px_auto] gap-4 items-center px-4 py-2.5 border-b border-border text-xs font-medium text-muted-foreground uppercase tracking-wide">
         <span>ID</span>
         <span>Name</span>

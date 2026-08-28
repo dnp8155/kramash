@@ -8,7 +8,7 @@ export default function SearchInput({ className, placeholder = "Search", ...prop
       <input
         type="text"
         placeholder={placeholder}
-        className="w-full h-9 pl-9 pr-3 text-sm bg-card border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring/40"
+        className="w-full h-9 pl-9 pr-3 text-sm bg-card border border-border rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-ring/40 focus:border-primary/40 hover:border-border/80"
         {...props}
       />
     </div>

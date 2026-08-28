@@ -23,6 +23,7 @@ import BlockDateDialog from "@/components/team/BlockDateDialog";
 import { useToast } from "@/components/ui/use-toast";
 import { exportTeamCsv } from "@/lib/exportUtils";
 import StatCard from "@/components/common/StatCard";
+import PageHeader from "@/components/common/PageHeader";
 import { usePlan } from "@/hooks/usePlan";
 
 export default function Team() {
@@ -137,21 +138,15 @@ export default function Team() {
 
   return (
     <div className="p-4 sm:p-6 space-y-5 max-w-[1400px] mx-auto">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">Team</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Manage your roster, roles, and availability.</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => exportTeamCsv(filtered, rolesById)} disabled={filtered.length === 0}>
-            <Download className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Export</span>
-          </Button>
-          <Button variant="dark" onClick={openNew}>
-            <Plus className="w-4 h-4" /> Add Team Member
-          </Button>
-        </div>
-      </div>
+      <PageHeader title="Team" subtitle="Manage your roster, roles, and availability.">
+        <Button variant="outline" size="sm" onClick={() => exportTeamCsv(filtered, rolesById)} disabled={filtered.length === 0}>
+          <Download className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">Export</span>
+        </Button>
+        <Button variant="dark" onClick={openNew}>
+          <Plus className="w-4 h-4" /> Add Team Member
+        </Button>
+      </PageHeader>
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">

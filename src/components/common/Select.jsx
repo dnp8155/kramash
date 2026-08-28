@@ -9,7 +9,8 @@ export default function Select({ className, size = "md", children, ...props }) {
   return (
     <select
       className={cn(
-        "bg-card border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-ring/40 cursor-pointer",
+        "bg-card border border-border rounded-lg text-foreground transition-all",
+        "focus:outline-none focus:ring-2 focus:ring-ring/40 focus:border-primary/40 hover:border-border/80 cursor-pointer",
         sizes[size],
         className
       )}
