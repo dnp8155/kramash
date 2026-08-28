@@ -44,7 +44,7 @@ export default function Financial() {
   const { toast } = useToast();
   const currency = workspace?.currency || "INR";
   const t = useT();
-  const tabs = TAB_KEYS.map((k) => t(k));
+  const tabs = TAB_KEYS;
 
   const [tab, setTab] = useState("Payment Activity");
   const [method, setMethod] = useState("All");
@@ -178,18 +178,18 @@ export default function Financial() {
 
       <div className="flex flex-col gap-3">
         <div className="flex items-center gap-1 border-b border-border w-full sm:w-auto">
-          {tabs.map((t) => (
+          {tabs.map((tabKey) => (
             <button
-              key={t}
-              onClick={() => setTab(t)}
+              key={tabKey}
+              onClick={() => setTab(tabKey)}
               className={cn(
                 "px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap",
-                tab === t
+                tab === tabKey
                   ? "border-primary text-foreground"
                   : "border-transparent text-muted-foreground hover:text-foreground"
               )}
             >
-              {t}
+              {t(tabKey)}
             </button>
           ))}
         </div>
@@ -306,16 +306,16 @@ export default function Financial() {
             <div className="flex items-center gap-2">
               <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide w-16">{t("Type")}</span>
               <div className="flex gap-1 bg-muted p-0.5 rounded-md">
-                {PAYMENT_TYPES.map((t) => (
+                {PAYMENT_TYPES.map((pt) => (
                   <button
-                    key={t}
-                    onClick={() => setType(t)}
+                    key={pt}
+                    onClick={() => setType(pt)}
                     className={cn(
                       "px-3 py-1 text-xs font-medium rounded transition-colors",
-                      type === t ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+                      type === pt ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
                     )}
                   >
-                    {t}
+                    {pt}
                   </button>
                 ))}
               </div>

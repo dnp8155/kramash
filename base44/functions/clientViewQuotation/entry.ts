@@ -26,6 +26,13 @@ export default async function(req) {
       500
     );
 
+    // Resolve workspace currency for correct symbol on the public view.
+    let currency = "INR";
+    try {
+      const ws = await base44.asServiceRole.entities.Workspace.get(q.workspace_id);
+      if (ws?.currency) currency = ws.currency;
+    } catch (e) { /* default to INR */ }
+
     return Response.json({
       quotation: {
         id: q.id,
@@ -49,7 +56,8 @@ export default async function(req) {
         event_snapshot: q.event_snapshot || "",
         client_signature: q.client_signature || "",
         signed_by_name: q.signed_by_name || "",
-        signed_at: q.signed_at || ""
+        signed_at: q.signed_at || "",
+        currency
       },
       items: (items || []).map((it) => ({
         name: it.name || "",

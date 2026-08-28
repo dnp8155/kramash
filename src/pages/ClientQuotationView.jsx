@@ -8,9 +8,11 @@ import SignaturePad from "@/components/common/SignaturePad";
 import Button from "@/components/common/Button";
 import Input from "@/components/common/Input";
 import { useToast } from "@/components/ui/use-toast";
+import { CURRENCY_SYMBOLS } from "@/constants/financeConfig";
 
-function money(n) {
-  return `₹${Number(n || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
+function money(n, currency) {
+  const sym = CURRENCY_SYMBOLS[currency] || currency || "₹";
+  return `${sym}${Number(n || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
 }
 
 function parseSnapshot(json) {
@@ -106,6 +108,7 @@ export default function ClientQuotationView() {
   const client = parseSnapshot(q.client_snapshot);
   const business = parseSnapshot(q.business_snapshot);
   const event = parseSnapshot(q.event_snapshot);
+  const currency = q.currency || "INR";
   const expired = q.valid_until && new Date(q.valid_until + "T00:00:00") < new Date();
 
   return (
@@ -192,8 +195,8 @@ export default function ClientQuotationView() {
                     <td className="px-3 py-3 text-right text-muted-foreground whitespace-nowrap">
                       {it.quantity}{it.rate_type === "Per Day" && it.days ? ` × ${it.days}d` : ""}
                     </td>
-                    <td className="px-3 py-3 text-right text-muted-foreground whitespace-nowrap">{money(it.unit_rate)}</td>
-                    <td className="px-4 py-3 text-right font-medium text-foreground whitespace-nowrap">{money(it.line_total)}</td>
+                    <td className="px-3 py-3 text-right text-muted-foreground whitespace-nowrap">{money(it.unit_rate, currency)}</td>
+                    <td className="px-4 py-3 text-right font-medium text-foreground whitespace-nowrap">{money(it.line_total, currency)}</td>
                   </tr>
                 ))}
                 {items.length === 0 && (
@@ -206,7 +209,7 @@ export default function ClientQuotationView() {
 
         {/* Totals */}
         <div className="bg-card border border-border rounded-xl p-5">
-          <Totals q={q} />
+          <Totals q={q} currency={currency} />
         </div>
 
         {/* Terms & notes */}
@@ -300,26 +303,26 @@ function StatusBadge({ status, expired }) {
   return <span className={`px-2.5 py-1 rounded-md text-xs font-medium ${s.cls}`}>{s.label}</span>;
 }
 
-function Totals({ q }) {
+function Totals({ q, currency }) {
   return (
     <div className="space-y-1.5 max-w-xs ml-auto text-sm">
-      <Row label="Subtotal" value={money(q.subtotal)} />
-      {q.discount_amount > 0 && <Row label="Discount" value={`– ${money(q.discount_amount)}`} muted />}
+      <Row label="Subtotal" value={money(q.subtotal, currency)} />
+      {q.discount_amount > 0 && <Row label="Discount" value={`– ${money(q.discount_amount, currency)}`} muted />}
       {q.gst_applicable && q.gst_total > 0 && (
         <>
           {q.gst_mode === "igst" ? (
-            <Row label="IGST" value={money(q.igst_amount)} muted />
+            <Row label="IGST" value={money(q.igst_amount, currency)} muted />
           ) : (
             <>
-              <Row label="CGST" value={money(q.cgst_amount)} muted />
-              <Row label="SGST" value={money(q.sgst_amount)} muted />
+              <Row label="CGST" value={money(q.cgst_amount, currency)} muted />
+              <Row label="SGST" value={money(q.sgst_amount, currency)} muted />
             </>
           )}
         </>
       )}
       <div className="flex justify-between pt-2 mt-1 border-t border-border">
         <span className="font-semibold text-foreground">Grand Total</span>
-        <span className="font-bold text-foreground">{money(q.grand_total)}</span>
+        <span className="font-bold text-foreground">{money(q.grand_total, currency)}</span>
       </div>
     </div>
   );
