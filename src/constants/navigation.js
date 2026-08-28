@@ -27,7 +27,8 @@ export const mainNav = [
   { label: "Events", path: "/events", icon: CalendarDays },
   { label: "Clients", path: "/clients", icon: Users },
   { label: "Team", path: "/team", icon: UserCheck },
-  { label: "Financial", path: "/financial", icon: Wallet }
+  { label: "Financial", path: "/financial", icon: Wallet },
+  { label: "Help & Support", path: "/help", icon: LifeBuoy }
 ];
 
 export const moreNav = [
@@ -45,8 +46,7 @@ export const settingsNav = [
   { label: "Appearance", path: "/settings/appearance", icon: Palette },
   { label: "Notifications", path: "/settings/notifications", icon: Bell },
   { label: "Billing & Plan", path: "/settings/billing", icon: CreditCard },
-  { label: "Session", path: "/settings/session", icon: KeyRound },
-  { label: "Help & Support", path: "/help", icon: LifeBuoy }
+  { label: "Session", path: "/settings/session", icon: KeyRound }
 ];
 
 export const moreGroup = { label: "More", icon: Grid, caret: ChevronDown };
