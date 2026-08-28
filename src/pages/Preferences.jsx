@@ -12,7 +12,7 @@ import ServiceForm from "@/components/services/ServiceForm";
 import { useToast } from "@/components/ui/use-toast";
 import { loadRoles } from "@/lib/teamService";
 import { loadAllServices } from "@/lib/quotationService";
-import { Pencil, Trash2, ArrowUp, ArrowDown, Plus, Download, Loader2 } from "lucide-react";
+import { Pencil, Trash2, Plus, Download, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { exportFinancialCsv } from "@/lib/exportUtils";
 import { loadAllTransactions } from "@/lib/financeService";
@@ -378,21 +378,6 @@ function ToggleRow({ label, checked, onChange }) {
     <div className="flex items-center justify-between">
       <span className="text-sm text-foreground">{label}</span>
       <Toggle checked={checked} onChange={onChange} label={label} />
-    </div>
-  );
-}
-
-function ReorderRow({ title, value }) {
-  return (
-    <div className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-muted/40">
-      <div className="flex flex-col text-muted-foreground">
-        <ArrowUp className="w-3 h-3" />
-        <ArrowDown className="w-3 h-3" />
-      </div>
-      <span className="text-sm text-foreground flex-1">{title}</span>
-      <span className="text-sm text-muted-foreground">{value}</span>
-      <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
-      <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
     </div>
   );
 }
