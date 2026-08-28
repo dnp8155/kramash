@@ -1326,7 +1326,138 @@ async function migrateEntity(entityName, records) {
 
 ---
 
-**Document Version:** 2.0  
+## Appendix C: Firebase Help & Support
+
+> Firebase migration ke baad, agar koi issue aaye (Firestore rules galat, Cloud Function crash, Auth setup error, offline sync na ho, FCM notification na aaye), toh support kahan se milegi — yeh section uska roadmap hai.
+
+### C.1 Firebase Support Plans (Official)
+
+| Plan | Cost | Response Time | Best For |
+|------|------|-------------|----------|
+| **Free (Community)** | ₹0 | Best-effort (community) | Basic setup, docs questions |
+| **Standard** | Included with Blaze plan | 4 business hours (P1), 8 hours (P2) | Production issues, billing questions |
+| **Enhanced** | $100/month extra | 1 hour (P1), 4 hours (P2) | Business-critical apps |
+| **Premium** | Custom quote | 15 min (P1), 1 hour (P2) | Large-scale, enterprise |
+
+**KRAMAS ke liye:** Standard plan kaafi hai (Blaze plan already active hai toh Standard support included hai). Premium sirf tabh chahiye jab 10,000+ users ho.
+
+### C.2 Support Access Kaise Karein
+
+1. **Firebase Console** → Help icon (❓) bottom-right → "Contact Support"
+2. **Support cases** raise karo: Firebase Console → Help → Support → Create Case
+3. **Email:** firebase-support@google.com (direct email, but console case better)
+4. **Phone:** Enhanced/Premium plan me available
+
+### C.3 Free Help Resources (No Cost)
+
+| Resource | URL | Use Case |
+|----------|-----|----------|
+| **Firebase Documentation** | firebase.google.com/docs | Official setup guides, API reference |
+| **Firebase YouTube Channel** | youtube.com/firebase | Video tutorials, feature walkthroughs |
+| **Firebase Community** | firebase.community | Community forum — Google engineers bhi answer karte hain |
+| **Stack Overflow** | stackoverflow.com (tag: firebase) | Code-level errors, debugging help |
+| **GitHub Issues** | github.com/firebase | SDK bugs, feature requests |
+| **Reddit** | reddit.com/r/Firebase | Community discussions, tips |
+| **Google Cloud Status** | status.cloud.google.com | Check if Firebase/GCP is down |
+
+### C.4 Common Issues & Where to Get Help
+
+| Issue | Best Resource | Why |
+|------|--------------|-----|
+| Firestore security rules syntax error | Stack Overflow + Firebase Docs | Rules DSL specific hai, examples milte hain |
+| Cloud Function deployment failed | Firebase Console Logs + Support Case | Deployment logs me error detail hota hai |
+| Auth provider setup (Google/Phone) | Firebase Docs + YouTube | Step-by-step setup videos available |
+| Offline sync not working | Stack Overflow | `persistentLocalCache` config issues common hain |
+| FCM notifications not received | Firebase Console → Cloud Messaging → Delivery Dashboard | Token invalid, permission blocked, ya quota exceeded |
+| Firestore quota exceeded | Firebase Console → Usage → Upgrade | Free tier limits (50K reads/day) |
+| Payment gateway webhook error | Razorpay/Stripe dashboard + Firebase Function logs | Webhook signature verification fail |
+| Data migration script error | Stack Overflow + GitHub Issues | Admin SDK batch write issues |
+
+### C.5 Firebase Status & Incident Monitoring
+
+- **Firebase Status Dashboard:** status.firebase.google.com
+  - Real-time status of all Firebase services (Auth, Firestore, Functions, Storage, FCM)
+  - Past incidents ka history
+  - Subscribe to email/SMS alerts for outages
+
+- **Google Cloud Status:** status.cloud.google.com
+  - Broader GCP status (Firebase ke neeche GCP hi hai)
+
+### C.6 In-App Help & Support (For KRAMAS Users)
+
+> Yeh KRAMAS ke end-users (photographers, event teams) ke liye hai — woh Firebase support nahi le sakte, KRAMAS ke andar help chahiye.
+
+**Files to Create:**
+
+| File | Purpose |
+|------|---------|
+| `src/pages/Help.jsx` (NEW) | Help & Support page — FAQs, contact, tutorials |
+| `src/components/layout/HelpButton.jsx` (NEW) | Floating help button (bottom-right) |
+| `src/lib/helpContent.js` (NEW) | FAQ content, tutorial links, contact info |
+
+**Help Page Sections:**
+
+```
+1. Getting Started (Onboarding guide, first event setup)
+2. FAQ (Common questions — payment recording, quotation, team assignment)
+3. Video Tutorials (Embed YouTube playlist)
+4. Contact Support (Email form → backend function → email to admin)
+5. Report a Bug (Form → saves to `bug_reports` collection OR Firebase Crashlytics)
+6. Feature Requests (Form → saves to `feature_requests` collection)
+7. System Status (Link to status.firebase.google.com)
+8. Documentation (Link to user docs)
+```
+
+**Support Email Flow:**
+```
+User fills form in Help page
+  → base44.functions.invoke('submitSupportTicket', {
+      user_id, workspace_id, subject, message, priority
+    })
+  → Cloud Function creates ticket in `support_tickets` collection
+  → Email sent to admin (KRAMAS owner)
+  → Admin responds via email or in-app
+```
+
+**New Collection: `support_tickets`**
+
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `id` | string | ✅ | |
+| `workspace_id` | string | ✅ | |
+| `user_id` | string | ✅ | Who raised the ticket |
+| `subject` | string | ✅ | |
+| `message` | string | ✅ | |
+| `priority` | string (enum) | ❌ | `low` \| `medium` \| `high` \| `urgent` |
+| `status` | string (enum) | ❌ | `open` \| `in_progress` \| `resolved` \| `closed` |
+| `category` | string | ❌ | `bug` \| `feature_request` \| `billing` \| `general` |
+| `admin_response` | string | ❌ | |
+| `resolved_at` | timestamp | ❌ | |
+| `created_date` | timestamp | ✅ | |
+| `updated_date` | timestamp | ✅ | |
+
+**Security:** User can read/update own tickets. Admin can read/update all.
+
+### C.7 Support Checklist for Codex
+
+```
+□ 1. Bookmark Firebase Status Dashboard (status.firebase.google.com)
+□ 2. Save Firebase Support email: firebase-support@google.com
+□ 3. Join Firebase Community (firebase.community)
+□ 4. Subscribe to Firebase YouTube channel for updates
+□ 5. Create Help page (src/pages/Help.jsx)
+□ 6. Create floating Help button component
+□ 7. Create support_tickets collection + security rules
+□ 8. Create submitSupportTicket Cloud Function
+□ 9. Add Help route in App.jsx (/help)
+□ 10. Add Help link in Sidebar navigation
+□ 11. Set up Firebase Crashlytics for automatic bug reporting
+□ 12. Add system status link in Help page
+```
+
+---
+
+**Document Version:** 2.1  
 **Last Updated:** 2026-08-28  
 **App:** KRAMAS (kramashah.base44.app)  
-**Target:** Firebase full migration with offline sync
+**Target:** Firebase full migration with offline sync + support
