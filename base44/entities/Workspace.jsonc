@@ -119,6 +119,14 @@
       "type": "number",
       "title": "Default GST Rate (%)",
       "default": 18
+    },
+    "team_member_types": {
+      "type": "string",
+      "title": "Team Member Types (JSON)"
+    },
+    "display_preferences": {
+      "type": "string",
+      "title": "Display Preferences (JSON)"
     }
   },
   "required": [

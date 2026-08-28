@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { useWorkspace } from "@/lib/WorkspaceContext";
-import { teamMemberTypes, businessTypes } from "@/constants/preferencesConfig";
+import { businessTypes } from "@/constants/preferencesConfig";
 import { formatINR } from "@/utils/format";
 import Button from "@/components/common/Button";
 import Select from "@/components/common/Select";
@@ -18,6 +18,7 @@ import { exportFinancialCsv } from "@/lib/exportUtils";
 import { loadAllTransactions } from "@/lib/financeService";
 import { financialYearLabels, currentFinancialYearLabel } from "@/constants/financeConfig";
 import { getIndustryPresets } from "@/constants/industryPresets";
+import TeamMemberTypeManager from "@/components/preferences/TeamMemberTypeManager";
 
 const BUSINESS_TYPE_TO_CATEGORY = {
   "Photography": "PHOTOGRAPHY",
@@ -31,11 +32,13 @@ export default function Preferences() {
   const { toast } = useToast();
   const [exportFy, setExportFy] = useState(currentFinancialYearLabel());
   const [exporting, setExporting] = useState(false);
-  const [toggles, setToggles] = useState({
-    showTeam: true,
-    showServices: false,
-    showAddress: false,
-    showLogo: false
+  const [toggles, setToggles] = useState(() => {
+    try {
+      const prefs = workspace?.display_preferences ? JSON.parse(workspace.display_preferences) : null;
+      return prefs || { showTeam: true, showServices: false, showAddress: false, showLogo: false };
+    } catch {
+      return { showTeam: true, showServices: false, showAddress: false, showLogo: false };
+    }
   });
   const [businessType, setBusinessType] = useState(workspace?.business_type || "Photography");
   const [loadingPresets, setLoadingPresets] = useState(false);
@@ -180,7 +183,15 @@ export default function Preferences() {
     }
   };
 
-  const setT = (key) => (v) => setToggles((prev) => ({ ...prev, [key]: v }));
+  const setT = (key) => async (v) => {
+    const next = { ...toggles, [key]: v };
+    setToggles(next);
+    try {
+      await base44.entities.Workspace.update(workspace.id, { display_preferences: JSON.stringify(next) });
+    } catch (e) {
+      toast({ title: "Failed to save preference", description: e?.message, variant: "destructive" });
+    }
+  };
 
   return (
     <div className="p-4 sm:p-6 space-y-4 max-w-[1200px] mx-auto">
@@ -268,16 +279,7 @@ export default function Preferences() {
       {/* Member types & display */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card title="Team Member Types">
-          <div className="flex flex-wrap gap-2">
-            {teamMemberTypes.map((m) => (
-              <span key={m.id} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-sm" style={{ backgroundColor: m.color + "20", color: m.color }}>
-                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: m.color }} />
-                {m.title}
-                <Pencil className="w-3 h-3" />
-                <Trash2 className="w-3 h-3" />
-              </span>
-            ))}
-          </div>
+          <TeamMemberTypeManager workspace={workspace} />
         </Card>
         <Card title="Card & Table Display">
           <div className="space-y-3">
