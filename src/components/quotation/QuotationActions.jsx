@@ -1,10 +1,11 @@
-import { Save, CheckCircle2, FileDown, Copy, Trash2, Users } from "lucide-react";
+import { Save, CheckCircle2, FileDown, Copy, Trash2, Users, Eye } from "lucide-react";
 import Button from "@/components/common/Button";
 
 export default function QuotationActions({
   isNew, readOnly, isFinalized, status,
   saving, finalizing, accepting, generating,
   saveDraft, finalize, accept, downloadPdf, downloadJobSheet,
+  previewPdf, previewJobSheet,
   onDuplicate, onDelete, existingQuotation, hasEvent
 }) {
   return (
@@ -25,10 +26,18 @@ export default function QuotationActions({
         </Button>
       )}
       {isFinalized && (
-        <Button variant="outline" onClick={downloadPdf} disabled={generating}>
-          <FileDown className="w-4 h-4" /> {generating ? "Generating…" : "Download PDF"}
-        </Button>
+        <>
+          <Button variant="outline" onClick={previewPdf} disabled={generating}>
+            <Eye className="w-4 h-4" /> {generating ? "Generating…" : "Preview"}
+          </Button>
+          <Button variant="outline" onClick={downloadPdf} disabled={generating}>
+            <FileDown className="w-4 h-4" /> Download PDF
+          </Button>
+        </>
       )}
+      <Button variant="outline" onClick={previewJobSheet} disabled={generating || !hasEvent}>
+        <Eye className="w-4 h-4" /> Preview Job Sheet
+      </Button>
       <Button variant="outline" onClick={downloadJobSheet} disabled={generating || !hasEvent}>
         <Users className="w-4 h-4" /> Job Sheet
       </Button>

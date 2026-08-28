@@ -20,6 +20,7 @@ import { generateQuotationPdf, generateJobSheetPdf } from "@/lib/quotationPdf";
 import { DEFAULT_QUOTATION_TERMS, QUOTATION_STATUS_META } from "@/constants/quotationConfig";
 import { loadRoles } from "@/lib/teamService";
 import { ArrowLeft, AlertTriangle, FileText } from "lucide-react";
+import PdfPreviewModal from "@/components/common/PdfPreviewModal";
 import { cn } from "@/lib/utils";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
 import QuotationItemsEditor from "@/components/quotation/QuotationItemsEditor";
@@ -46,6 +47,7 @@ export default function QuotationEditor() {
   const [finalizing, setFinalizing] = useState(false);
   const [accepting, setAccepting] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [preview, setPreview] = useState({ url: "", filename: "", open: false, loading: false });
   const [error, setError] = useState("");
 
   const [quotationNumber, setQuotationNumber] = useState("");
@@ -396,6 +398,44 @@ export default function QuotationEditor() {
     }
   };
 
+  const previewPdf = async () => {
+    if (!existingQuotation) return;
+    setGenerating(true);
+    setPreview({ url: "", filename: "", open: true, loading: true });
+    try {
+      const result = await generateQuotationPdf({
+        quotation: existingQuotation, items, workspace, client, event, currency, returnBlob: true
+      });
+      setPreview({ url: result.url, filename: result.filename, open: true, loading: false });
+    } catch (e) {
+      toast({ title: "Preview failed", description: e?.message, variant: "destructive" });
+      setPreview({ url: "", filename: "", open: false, loading: false });
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const previewJobSheet = async () => {
+    if (!event) { toast({ title: `Select a ${term.workItemSingular.toLowerCase()} to generate a job sheet` }); return; }
+    setGenerating(true);
+    setPreview({ url: "", filename: "", open: true, loading: true });
+    try {
+      const [asgns, members] = await Promise.all([
+        base44.entities.EventTeamAssignment.filter({ workspace_id: workspaceId, event_id: event.id }, "created_date", 200),
+        base44.entities.TeamMember.filter({ workspace_id: workspaceId }, "name", 200)
+      ]);
+      const result = await generateJobSheetPdf({
+        event, assignments: asgns || [], members: members || [], roles, workspace, currency, returnBlob: true
+      });
+      setPreview({ url: result.url, filename: result.filename, open: true, loading: false });
+    } catch (e) {
+      toast({ title: "Job sheet preview failed", description: e?.message, variant: "destructive" });
+      setPreview({ url: "", filename: "", open: false, loading: false });
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   if (loading) return <LoadingState label="Loading quotation…" />;
   if (notFound) {
     return (
@@ -527,10 +567,20 @@ export default function QuotationEditor() {
         accept={accept}
         downloadPdf={downloadPdf}
         downloadJobSheet={downloadJobSheet}
+        previewPdf={previewPdf}
+        previewJobSheet={previewJobSheet}
         onDuplicate={onDuplicate}
         onDelete={onDelete}
         existingQuotation={existingQuotation}
         hasEvent={!!event}
+      />
+
+      <PdfPreviewModal
+        url={preview.url}
+        filename={preview.filename}
+        open={preview.open}
+        loading={preview.loading}
+        onClose={() => setPreview((p) => ({ ...p, open: false }))}
       />
     </div>
   );

@@ -74,7 +74,8 @@ export async function generateQuotationPdf({
   workspace,
   client,
   event,
-  currency = "INR"
+  currency = "INR",
+  returnBlob = false
 }) {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();
@@ -371,6 +372,9 @@ export async function generateQuotationPdf({
   }
 
   const fname = `KRAMAS_${quotation.quotation_number}_${sanitizeFilename(cli.name || "Client")}.pdf`;
+  if (returnBlob) {
+    return { url: doc.output("bloburl"), filename: fname };
+  }
   doc.save(fname);
   return true;
 }
@@ -383,7 +387,8 @@ export async function generateJobSheetPdf({
   members,
   roles,
   workspace,
-  currency = "INR"
+  currency = "INR",
+  returnBlob = false
 }) {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();
@@ -512,6 +517,10 @@ export async function generateJobSheetPdf({
     doc.text(`Page ${p} of ${pageCount}`, pageW - M, pageH - 6, { align: "right" });
   }
 
-  doc.save(`KRAMAS_JobSheet_${sanitizeFilename(event?.title || term.workItemSingular || "Event")}.pdf`);
+  const jsFname = `KRAMAS_JobSheet_${sanitizeFilename(event?.title || term.workItemSingular || "Event")}.pdf`;
+  if (returnBlob) {
+    return { url: doc.output("bloburl"), filename: jsFname };
+  }
+  doc.save(jsFname);
   return true;
 }

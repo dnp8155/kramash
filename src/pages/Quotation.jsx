@@ -15,7 +15,8 @@ import { loadQuotations, deleteQuotation, loadQuotationItems } from "@/lib/quota
 import { QUOTATION_STATUSES, QUOTATION_STATUS_META } from "@/constants/quotationConfig";
 import { generateQuotationPdf } from "@/lib/quotationPdf";
 import { base44 } from "@/api/base44Client";
-import { Plus, Search, Trash2, FileDown, FileText } from "lucide-react";
+import { Plus, Search, Trash2, FileDown, FileText, Eye } from "lucide-react";
+import PdfPreviewModal from "@/components/common/PdfPreviewModal";
 import { cn } from "@/lib/utils";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
 
@@ -36,6 +37,7 @@ export default function Quotation() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [generatingId, setGeneratingId] = useState("");
+  const [preview, setPreview] = useState({ url: "", filename: "", open: false, loading: false });
   const queryClient = useQueryClient();
 
   const { data, isLoading, error } = useQuery({
@@ -110,6 +112,23 @@ export default function Quotation() {
       await generateQuotationPdf({ quotation: qt, items, workspace, client, event, currency });
     } catch (e) {
       toast({ title: "PDF generation failed", description: e?.message, variant: "destructive" });
+    } finally {
+      setGeneratingId("");
+    }
+  };
+
+  const previewPdf = async (qt) => {
+    setGeneratingId(qt.id);
+    setPreview({ url: "", filename: "", open: true, loading: true });
+    try {
+      const items = await loadQuotationItems(workspaceId, qt.id);
+      const client = clientsById[qt.client_id];
+      const event = eventsById[qt.event_id];
+      const result = await generateQuotationPdf({ quotation: qt, items, workspace, client, event, currency, returnBlob: true });
+      setPreview({ url: result.url, filename: result.filename, open: true, loading: false });
+    } catch (e) {
+      toast({ title: "Preview failed", description: e?.message, variant: "destructive" });
+      setPreview({ url: "", filename: "", open: false, loading: false });
     } finally {
       setGeneratingId("");
     }
@@ -227,14 +246,24 @@ export default function Quotation() {
                       <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center gap-1 justify-end">
                           {(qt.status === "finalized" || qt.status === "accepted") && (
-                            <button
-                              onClick={() => downloadPdf(qt)}
-                              disabled={generatingId === qt.id}
-                              className="text-muted-foreground hover:text-primary p-1"
-                              title="Download PDF"
-                            >
-                              <FileDown className="w-4 h-4" />
-                            </button>
+                            <>
+                              <button
+                                onClick={() => previewPdf(qt)}
+                                disabled={generatingId === qt.id}
+                                className="text-muted-foreground hover:text-primary p-1"
+                                title="Preview PDF"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => downloadPdf(qt)}
+                                disabled={generatingId === qt.id}
+                                className="text-muted-foreground hover:text-primary p-1"
+                                title="Download PDF"
+                              >
+                                <FileDown className="w-4 h-4" />
+                              </button>
+                            </>
                           )}
                           <button
                             onClick={() => onDelete(qt)}
@@ -253,6 +282,14 @@ export default function Quotation() {
           </div>
         </div>
       )}
+
+      <PdfPreviewModal
+        url={preview.url}
+        filename={preview.filename}
+        open={preview.open}
+        loading={preview.loading}
+        onClose={() => setPreview((p) => ({ ...p, open: false }))}
+      />
     </div>
   );
 }
