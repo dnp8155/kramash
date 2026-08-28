@@ -1,10 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { UserPlus, Mail, Lock, Loader2, Smartphone } from "lucide-react";
+import { UserPlus, Mail, Lock, Loader2, Eye, EyeOff, Smartphone } from "lucide-react";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
@@ -18,16 +18,27 @@ export default function Register() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [showOtp, setShowOtp] = useState(false);
   const [otpCode, setOtpCode] = useState("");
   const [searchParams] = useSearchParams();
   const phoneFromOtp = searchParams.get("phone");
 
+  useEffect(() => {
+    document.title = "Create account — Kramashah";
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (loading) return;
     setError("");
     if (password !== confirmPassword) {
       setError("Passwords do not match");
+      return;
+    }
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters");
       return;
     }
     setLoading(true);
@@ -35,7 +46,12 @@ export default function Register() {
       await base44.auth.register({ email, password });
       setShowOtp(true);
     } catch (err) {
-      setError(err.message || "Registration failed");
+      const msg = (err.message || "").toLowerCase();
+      if (msg.includes("already") || msg.includes("exists")) {
+        setError("An account with this email already exists. Try signing in.");
+      } else {
+        setError("Unable to create your account right now. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -53,11 +69,13 @@ export default function Register() {
       if (fullName.trim()) updates.full_name = fullName.trim();
       if (phoneFromOtp) updates.phone = phoneFromOtp;
       if (Object.keys(updates).length > 0) {
-        try { await base44.auth.updateMe(updates); } catch {}
+        try {
+          await base44.auth.updateMe(updates);
+        } catch {}
       }
       window.location.href = safeReturnTo();
-    } catch (err) {
-      setError(err.message || "Invalid verification code");
+    } catch {
+      setError("Invalid verification code. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -71,8 +89,8 @@ export default function Register() {
         title: "Code sent",
         description: "Check your email for the new code.",
       });
-    } catch (err) {
-      setError(err.message || "Failed to resend code");
+    } catch {
+      setError("Unable to resend the code right now. Please try again.");
     }
   };
 
@@ -88,7 +106,7 @@ export default function Register() {
         subtitle={`We sent a code to ${email}`}
       >
         {error && (
-          <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+          <div className="mb-4 p-3 rounded-lg bg-destructive/8 text-destructive text-sm border border-destructive/15">
             {error}
           </div>
         )}
@@ -111,7 +129,7 @@ export default function Register() {
           </InputOTP>
         </div>
         <Button
-          className="w-full h-12 font-medium"
+          className="w-full h-12 font-semibold"
           onClick={handleVerify}
           disabled={loading || otpCode.length < 6}
         >
@@ -121,7 +139,7 @@ export default function Register() {
               Verifying...
             </>
           ) : (
-            "Verify"
+            "Verify & continue"
           )}
         </Button>
         <p className="text-center text-sm text-muted-foreground mt-4">
@@ -136,9 +154,8 @@ export default function Register() {
 
   return (
     <AuthLayout
-      icon={UserPlus}
-      title="Create your account"
-      subtitle="Sign up to get started"
+      title="Create your Kramashah workspace."
+      subtitle="Start organizing your clients, projects, team and finances in one place."
       footer={
         <>
           Already have an account?{" "}
@@ -146,45 +163,27 @@ export default function Register() {
             to={"/login" + (safeReturnTo() !== "/" ? "?returnTo=" + encodeURIComponent(safeReturnTo()) : "")}
             className="text-primary font-medium hover:underline"
           >
-            Log in
+            Sign in
           </Link>
         </>
       }
     >
-      <Button
-        variant="outline"
-        className="w-full h-12 text-sm font-medium mb-6"
-        onClick={handleGoogle}
-      >
-        <GoogleIcon className="w-5 h-5 mr-2" />
-        Continue with Google
-      </Button>
-
-      <div className="relative mb-6">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-border" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-card px-3 text-muted-foreground">or</span>
-        </div>
-      </div>
-
-      {error && (
-        <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
-          {error}
-        </div>
-      )}
-
       {phoneFromOtp && (
-        <div className="mb-4 p-3 rounded-lg bg-primary/10 text-primary text-sm flex items-center gap-2">
+        <div className="mb-4 p-3 rounded-lg bg-primary/8 text-primary text-sm flex items-center gap-2 border border-primary/15">
           <Smartphone className="w-4 h-4 shrink-0" />
           <span>Phone verified: <strong>{phoneFromOtp}</strong> — complete your account details below.</span>
         </div>
       )}
 
+      {error && (
+        <div className="mb-4 p-3 rounded-lg bg-destructive/8 text-destructive text-sm border border-destructive/15">
+          {error}
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="name">Full Name</Label>
+          <Label htmlFor="name" className="text-sm font-medium">Full Name</Label>
           <Input
             id="name"
             type="text"
@@ -196,7 +195,7 @@ export default function Register() {
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email" className="text-sm font-medium">Email address</Label>
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
             <Input
@@ -213,38 +212,54 @@ export default function Register() {
           </div>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
+          <Label htmlFor="password" className="text-sm font-medium">Password</Label>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
             <Input
               id="password"
-              type="password"
+              type={showPassword ? "text" : "password"}
               autoComplete="new-password"
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="pl-10 h-12"
+              className="pl-10 pr-10 h-12"
               required
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
           </div>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="confirm">Confirm Password</Label>
+          <Label htmlFor="confirm" className="text-sm font-medium">Confirm Password</Label>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
             <Input
               id="confirm"
-              type="password"
+              type={showConfirm ? "text" : "password"}
               autoComplete="new-password"
               placeholder="••••••••"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="pl-10 h-12"
+              className="pl-10 pr-10 h-12"
               required
             />
+            <button
+              type="button"
+              onClick={() => setShowConfirm((v) => !v)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              aria-label={showConfirm ? "Hide password" : "Show password"}
+            >
+              {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
           </div>
         </div>
-        <Button type="submit" className="w-full h-12 font-medium" disabled={loading}>
+        <Button type="submit" className="w-full h-12 font-semibold" disabled={loading}>
           {loading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -256,15 +271,19 @@ export default function Register() {
         </Button>
       </form>
 
-      <div className="mt-6 text-center">
-        <Link
-          to={"/phone-login" + (safeReturnTo() !== "/" ? "?returnTo=" + encodeURIComponent(safeReturnTo()) : "")}
-          className="inline-flex items-center gap-1.5 text-sm text-primary font-medium hover:underline"
-        >
-          <Smartphone className="w-3.5 h-3.5" />
-          Continue with Phone (OTP)
-        </Link>
+      <div className="relative my-6">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-border" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-background px-3 text-muted-foreground">or continue with</span>
+        </div>
       </div>
+
+      <Button variant="outline" className="w-full h-12 text-sm font-medium" onClick={handleGoogle}>
+        <GoogleIcon className="w-5 h-5 mr-2" />
+        Continue with Google
+      </Button>
     </AuthLayout>
   );
 }
