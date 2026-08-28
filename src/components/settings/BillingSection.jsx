@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { usePlan } from "@/hooks/usePlan";
 import Button from "@/components/common/Button";
+import StorageUsageCard from "@/components/common/StorageUsageCard";
 import { Crown, ArrowRight } from "lucide-react";
 
 export default function BillingSection() {
@@ -24,6 +25,7 @@ export default function BillingSection() {
       <Button variant="outline" onClick={() => navigate("/plan")}>
         Manage Plan <ArrowRight className="w-3.5 h-3.5" />
       </Button>
+      <StorageUsageCard />
     </div>
   );
 }

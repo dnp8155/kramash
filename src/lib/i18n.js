@@ -131,6 +131,11 @@ const DICT = {
     // Common
     "Nothing here yet": "यहाँ कुछ नहीं है",
     "Loading…": "लोड हो रहा है…",
+    "Storage Usage": "स्टोरेज उपयोग",
+    "files": "फ़ाइलें",
+    "used": "उपयोग",
+    "Storage full — upgrade your plan to upload more files.": "स्टोरेज भर गया — और फ़ाइलें अपलोड करने के लिए अपना प्लान अपग्रेड करें।",
+    "Almost out of storage — consider upgrading your plan.": "स्टोरेज लगभग भर गया — प्लान अपग्रेड करने पर विचार करें।",
   },
   gu: {
     "Dashboard": "ડેશબોર્ડ",
@@ -240,6 +245,11 @@ const DICT = {
     "Failed to load financial activity": "નાણાકીય પ્રવૃત્તિ લોડ કરવામાં નિષ્ફળ",
     "Nothing here yet": "અહીં કંઈ નથી",
     "Loading…": "લોડ થઈ રહ્યું છે…",
+    "Storage Usage": "સ્ટોરેજ વપરાશ",
+    "files": "ફાઇલ્સ",
+    "used": "વપરાશ",
+    "Storage full — upgrade your plan to upload more files.": "સ્ટોરેજ ભરાઈ ગયું — વધુ ફાઇલ્સ અપલોડ કરવા માટે તમારું પ્લાન અપગ્રેડ કરો.",
+    "Almost out of storage — consider upgrading your plan.": "સ્ટોરેજ લગભગ ભરાઈ ગયું — પ્લાન અપગ્રેડ કરવાનું વિચારો.",
   },
 };
 

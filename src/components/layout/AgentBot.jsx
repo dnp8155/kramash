@@ -3,6 +3,8 @@ import { createPortal } from "react-dom";
 import { Bot, X, Send, Sparkles, Paperclip, Wallet, CalendarClock, Users, FileText, Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
+import { useWorkspace } from "@/lib/WorkspaceContext";
+import { uploadFileWithLimit } from "@/lib/storageService";
 import { getAppLanguage } from "@/components/layout/LanguageSwitcher";
 import { cn } from "@/lib/utils";
 
@@ -21,6 +23,7 @@ const QUICK_ACTIONS = [
 
 export default function AgentBot() {
   const { user } = useAuth();
+  const { workspaceId } = useWorkspace();
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
@@ -77,8 +80,12 @@ export default function AgentBot() {
           setMessages((m) => [...m, { role: "assistant", content: `File "${file.name}" is too large (max 10MB).` }]);
           continue;
         }
-        const { file_url } = await base44.integrations.Core.UploadFile({ file });
-        uploaded.push({ name: file.name, url: file_url });
+        const result = await uploadFileWithLimit(workspaceId, file);
+        if (result.error) {
+          setMessages((m) => [...m, { role: "assistant", content: `Storage limit reached — upgrade your plan to upload more files. ("${file.name}" not uploaded)` }]);
+          continue;
+        }
+        uploaded.push({ name: file.name, url: result.file_url });
       }
       setFiles((f) => [...f, ...uploaded]);
     } catch (err) {
