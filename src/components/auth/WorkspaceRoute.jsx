@@ -1,6 +1,7 @@
 import { Outlet } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { WorkspaceProvider, useWorkspace } from "@/lib/WorkspaceContext";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import UserNotRegisteredError from "@/components/UserNotRegisteredError";
 
 const Spinner = () => (
@@ -11,6 +12,7 @@ const Spinner = () => (
 
 function WorkspaceGate({ noWorkspaceElement }) {
   const { workspace, loading } = useWorkspace();
+  useRealtimeSync();
   if (loading) {
     return (
       <div className="fixed inset-0 flex items-center justify-center">
