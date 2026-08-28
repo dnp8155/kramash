@@ -28,6 +28,31 @@
       "format": "date",
       "title": "End Date"
     },
+    "event_dates": {
+      "type": "array",
+      "title": "Event Dates (non-consecutive)",
+      "items": {
+        "type": "string",
+        "format": "date"
+      },
+      "default": []
+    },
+    "team_member_ids": {
+      "type": "array",
+      "title": "Assigned Team Member IDs",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "service_ids": {
+      "type": "array",
+      "title": "Selected Service IDs",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
     "venue": {
       "type": "string",
       "title": "Venue"
