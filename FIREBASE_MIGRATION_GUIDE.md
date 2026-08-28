@@ -9,7 +9,7 @@
 1. [Current Architecture (Base44)](#1-current-architecture-base44)
 2. [Firebase Project Setup — Pending Items](#2-firebase-project-setup--pending-items)
 3. [Environment Variables & Secrets](#3-environment-variables--secrets)
-4. [Firebase Services to Enable](#4-firebase-services-to-enable)
+4. [Firebase Services to Enable (Core + Additional)](#4-firebase-services-to-enable)
 5. [Database Collections (Firestore) — Complete Schema](#5-database-collections-firestore--complete-schema)
 6. [Cloud Functions — Complete List](#6-cloud-functions--complete-list)
 7. [Frontend Changes — FCM & Push](#7-frontend-changes--fcm--push)
@@ -149,6 +149,8 @@ These go in `src/lib/firebaseConfig.js` and are public by Firebase design:
 
 ## 4. Firebase Services to Enable
 
+### 4.1 Core Services (Already Planned)
+
 | Service | Purpose | Status |
 |---------|---------|--------|
 | **Authentication** | Email/password, Google, Phone OTP | ⏳ Phone pending; email/Google via Base44 |
@@ -158,6 +160,78 @@ These go in `src/lib/firebaseConfig.js` and are public by Firebase design:
 | **Cloud Functions** | Backend logic (replaces Base44 functions) | ⏳ Pending (requires Blaze plan) |
 | **Cloud Scheduler** | Scheduled notification generation | ⏳ Pending |
 | **Vertex AI / Gemini** | AI agent chat | ⏳ Pending |
+
+### 4.2 Additional Firebase Services — Recommended for KRAMAS
+
+> These services are **not yet in the plan** but are genuinely useful and needed for a production-ready SaaS. Codex should evaluate and set up the ones marked **MUST HAVE**; the rest are optional enhancements.
+
+#### 🔴 MUST HAVE (needed for migration)
+
+| # | Service | Why KRAMAS Needs It | Setup Effort |
+|---|---------|-------------------|-------------|
+| 1 | **Firebase Hosting** | After migrating from Base44, the web app needs to be hosted somewhere. Firebase Hosting provides global CDN, SSL, custom domain, and preview channels. Replaces Base44's hosting. | Low — `firebase deploy --only hosting` |
+| 2 | **Cloud Tasks** | Queue-based async work — e.g., after a quotation is signed, queue a push notification + email + PDF generation. Prevents Cloud Function timeouts. Replaces Base44's post-response work pattern. | Medium — create task queues in Cloud Functions |
+
+#### 🟠 HIGH VALUE (strongly recommended)
+
+| # | Service | Why KRAMAS Needs It | Setup Effort |
+|---|---------|-------------------|-------------|
+| 3 | **Google Analytics for Firebase** | Track user behavior — which features are used most (events created, quotations sent, payments recorded), user retention, conversion funnels (signup → onboarding → first event). Replaces manual analytics tracking. | Low — add SDK, enable in console |
+| 4 | **Firebase Performance Monitoring** | Monitor slow Firestore queries, page load times, Cloud Function execution times, network latency. Critical for a SaaS with financial data — catch performance issues before users complain. | Low — add SDK, automatic tracing |
+| 5 | **Firebase Remote Config** | Change plan limits, pricing, feature flags, maintenance banners, AI agent prompts **without redeploying**. E.g., flip `pdf_export_enabled` for free plan, change max_events limit, show a Diwali discount banner — all from Firebase Console. Replaces hardcoded `PlanLimit` entity reads. | Medium — define config keys + SDK integration |
+| 6 | **Firebase App Check** | Protect Firestore, Storage, and Cloud Functions from unauthorized clients and abuse. Uses reCAPTCHA Enterprise (web) or Device Check/Play Integrity (mobile). Essential since KRAMAS handles financial data and has public quotation links (`/q/:id`). | Medium — enable per service, add SDK |
+| 7 | **Firebase Crashlytics** | Real-time crash and error reporting. KRAMAS has complex flows (quotation signing, payment verification, PDF generation) — catch JS errors, Cloud Function crashes, and non-fatal exceptions with stack traces and user context. | Low — add SDK (web version available) |
+
+#### 🟡 NICE TO HAVE (optional enhancements)
+
+| # | Service | Why KRAMAS Could Use It | Setup Effort |
+|---|---------|----------------------|-------------|
+| 8 | **Firebase In-App Messaging** | Show contextual banners/modals to users — onboarding tips for new photographers, "Upgrade to Pro" prompts when they hit free plan limits, feature announcements. More targeted than the current `UpdateBanner` component. | Medium — create campaigns in console |
+| 9 | **Firebase A/B Testing** | Test different onboarding flows, pricing page layouts, quotation template designs, notification wording. E.g., "Upgrade Now" vs "Go Pro" button text — measure which converts better. | Medium — set up experiments |
+| 10 | **Firebase Extensions** | Pre-built packages: **Resize Images** (auto-resize workspace logos, quotation attachments), **Trigger Email** (send emails on Firestore writes — e.g., when quotation status changes), **Export to BigQuery** (analytics on financial data), **Delete User Data** (GDPR compliance — auto-delete user's data when they delete their account). | Low — install from extensions marketplace |
+| 11 | **Firebase Dynamic Links** *(deprecated — use Firebase Hosting deep links)* | Smart links for WhatsApp sharing of quotations (`/q/:id`). When a client taps the link on mobile, it opens the app (if installed) or the web app. Currently using plain URLs — Dynamic Links would improve the mobile sharing experience. | Medium — configure + SDK |
+
+#### 🟢 FUTURE CONSIDERATION (when scaling)
+
+| # | Service | Why KRAMAS Could Use It Later | Setup Effort |
+|---|---------|------------------------------|-------------|
+| 12 | **Firebase Predictions** | AI-based user segmentation — predict which users are likely to churn (haven't created an event in 30 days), which are likely to upgrade (hitting free plan limits). Use for targeted push notifications and email campaigns. | High — requires Analytics + ML setup |
+| 13 | **Cloud Firestore Bundles** | Pre-package static data (plans, plan_pricings, plan_limits) into a bundle served from CDN. Reduces Firestore reads for data that rarely changes. Saves costs at scale. | Medium — build bundle in Cloud Function |
+| 14 | **Eventarc for Firebase** | Event-driven architecture — trigger Cloud Functions on Eventarc events (e.g., audit log events, custom events). Useful for compliance logging and cross-service orchestration. | High — requires Eventarc setup |
+| 15 | **Firebase ML** | On-device ML for smart features — e.g., auto-categorize expenses from receipt photos, smart event title suggestions. Alternative to server-side Gemini calls for simple tasks. | High — ML model integration |
+
+### 4.3 Service Priority Summary for Codex
+
+```
+PHASE 1 (Migration — must do):
+  ✅ Authentication
+  ✅ Cloud Firestore
+  ✅ Firebase Storage
+  ✅ Cloud Functions
+  ✅ Cloud Messaging (FCM)
+  ✅ Cloud Scheduler
+  ✅ Firebase Hosting
+  ✅ Cloud Tasks
+  ✅ Vertex AI / Gemini (for agentChat)
+
+PHASE 2 (Production hardening — strongly recommended):
+  🔶 Google Analytics for Firebase
+  🔶 Firebase Performance Monitoring
+  🔶 Firebase Remote Config
+  🔶 Firebase App Check
+  🔶 Firebase Crashlytics
+
+PHASE 3 (Growth & optimization — when ready):
+  🔷 Firebase In-App Messaging
+  🔷 Firebase A/B Testing
+  🔷 Firebase Extensions (Resize Images, Trigger Email, Export to BigQuery)
+
+PHASE 4 (Scale — later):
+  🔵 Firebase Predictions
+  🔵 Firestore Bundles
+  🔵 Eventarc
+  🔵 Firebase ML
+```
 
 ---
 
