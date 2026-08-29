@@ -6,10 +6,16 @@ import MobileNavigation from "@/components/layout/MobileNavigation";
 import ErrorBoundary from "@/components/common/ErrorBoundary";
 import OfflineBanner from "@/components/common/OfflineBanner";
 import UpdateBanner from "@/components/common/UpdateBanner";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 
 export default function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  // Keep all pages in sync: when any entity changes server-side (create/update/delete),
+  // invalidate every query cache that depends on it so dashboards, lists, and detail
+  // pages refresh automatically — including changes made from other devices/sessions.
+  useRealtimeSync();
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">

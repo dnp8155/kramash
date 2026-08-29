@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useWorkspace } from "@/lib/WorkspaceContext";
+import { invalidateEntities } from "@/lib/queryInvalidation";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
 import { useT } from "@/hooks/useT";
 import Button from "@/components/common/Button";
@@ -202,9 +203,11 @@ export default function EventEditor() {
       if (eventId) {
         try { await syncTeamAssignments(eventId, payload.team_member_ids); } catch { /* non-fatal */ }
       }
-      // Invalidate all relevant caches so lists/dashboard refresh everywhere
-      queryClient.invalidateQueries({ queryKey: ["events"] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      // Invalidate all relevant caches so every page that shows this data refreshes:
+      // events list, dashboard (stats, upcoming, availability), event details,
+      // financial (contract value affects totals), team (assignments), and the
+      // team-member detail pages that list this event's bookings.
+      invalidateEntities(queryClient, ["Event", "EventTeamAssignment", "EventDayAssignment"]);
       queryClient.invalidateQueries({ queryKey: ["event", eventId] });
       navigate(eventId ? `/events/${eventId}` : "/events");
     } catch (err) {

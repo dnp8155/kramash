@@ -25,6 +25,7 @@ import { exportTeamCsv } from "@/lib/exportUtils";
 import StatCard from "@/components/common/StatCard";
 import PageHeader from "@/components/common/PageHeader";
 import { usePlan } from "@/hooks/usePlan";
+import { invalidateEntities } from "@/lib/queryInvalidation";
 
 export default function Team() {
   const { workspaceId, workspace } = useWorkspace();
@@ -76,7 +77,10 @@ export default function Team() {
   const transactions = data?.transactions || [];
   const blockDates = data?.blockDates || [];
   const eventsById = data?.eventsById || {};
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ["team", workspaceId] });
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ["team", workspaceId] });
+    invalidateEntities(queryClient, ["TeamMember", "TeamBlockDate", "EventTeamAssignment"]);
+  };
 
   const rolesById = useMemo(() => {
     const m = {}; roles.forEach((r) => { m[r.id] = r; }); return m;

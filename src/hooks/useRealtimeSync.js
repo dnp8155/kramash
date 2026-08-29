@@ -2,26 +2,15 @@ import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useWorkspace } from "@/lib/WorkspaceContext";
-
-// Maps each subscribed entity to the React Query key prefixes that should be
-// invalidated when a realtime create/update/delete event arrives for it.
-const ENTITY_KEY_MAP = {
-  Event: [["events"], ["event"], ["financial"]],
-  Client: [["clients"], ["client"]],
-  TeamMember: [["team"], ["team-member"], ["financial"]],
-  Quotation: [["quotations"], ["quotation"]],
-  QuotationItem: [["quotation"]],
-  FinancialTransaction: [["financial"], ["event"]],
-  EventTeamAssignment: [["event"], ["team"]],
-  TeamRole: [["team"], ["rate-estimator"]],
-  Service: [["rate-estimator"]],
-  ExpenseCategory: [["financial"]]
-};
+import { ENTITY_INVALIDATION_KEYS } from "@/lib/queryInvalidation";
 
 /**
  * Subscribes to realtime updates for the workspace's main entities and
  * invalidates the relevant React Query caches so pages refresh automatically
  * when data changes server-side (including from other devices/sessions).
+ *
+ * The entity→key-prefix mapping lives in @/lib/queryInvalidation so that
+ * realtime pushes and manual mutations invalidate the exact same set of caches.
  */
 export function useRealtimeSync() {
   const queryClient = useQueryClient();
@@ -31,7 +20,7 @@ export function useRealtimeSync() {
     if (!workspaceId) return;
 
     const unsubs = [];
-    Object.entries(ENTITY_KEY_MAP).forEach(([entityName, keyPrefixes]) => {
+    Object.entries(ENTITY_INVALIDATION_KEYS).forEach(([entityName, keyPrefixes]) => {
       const entity = base44.entities[entityName];
       if (!entity || typeof entity.subscribe !== "function") return;
 

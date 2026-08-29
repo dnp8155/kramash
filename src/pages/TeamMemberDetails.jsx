@@ -17,6 +17,7 @@ import { formatMoney } from "@/utils/format";
 import { assignmentPaid, memberPaidTotal, teamPaymentStatus } from "@/lib/financeService";
 import { ArrowLeft, Pencil, Phone, Mail, StickyNote, Calendar, ArrowRight, Wallet } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { invalidateEntities } from "@/lib/queryInvalidation";
 
 export default function TeamMemberDetails() {
   const { id } = useParams();
@@ -63,7 +64,10 @@ export default function TeamMemberDetails() {
   const events = data?.events || [];
   const notFound = !!data?.notFound;
   const hasError = !!error && !data;
-  const load = () => queryClient.invalidateQueries({ queryKey: ["team-member", id, workspaceId] });
+  const load = () => {
+    queryClient.invalidateQueries({ queryKey: ["team-member", id, workspaceId] });
+    invalidateEntities(queryClient, ["TeamMember", "EventTeamAssignment", "FinancialTransaction"]);
+  };
 
   if (isLoading) return <DetailSkeleton />;
 

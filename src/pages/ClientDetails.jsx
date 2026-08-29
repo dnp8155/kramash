@@ -15,6 +15,7 @@ import { formatEventDate } from "@/lib/dates";
 import { formatMoney } from "@/utils/format";
 import { ArrowLeft, Pencil, Phone, Mail, MapPin, Calendar, ArrowRight, StickyNote } from "lucide-react";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
+import { invalidateEntities } from "@/lib/queryInvalidation";
 
 export default function ClientDetails() {
   const { id } = useParams();
@@ -48,7 +49,10 @@ export default function ClientDetails() {
   const transactions = data?.transactions || [];
   const notFound = !!data?.notFound;
   const hasError = !!error && !data;
-  const load = () => queryClient.invalidateQueries({ queryKey: ["client", id, workspaceId] });
+  const load = () => {
+    queryClient.invalidateQueries({ queryKey: ["client", id, workspaceId] });
+    invalidateEntities(queryClient, ["Client", "Event", "FinancialTransaction"]);
+  };
 
   if (isLoading) return <DetailSkeleton />;
 

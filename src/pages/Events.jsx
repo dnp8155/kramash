@@ -18,6 +18,7 @@ import { isToday, isThisWeek, isUpcomingDate, isPastDate, isWithinFY, fyOptions,
 import { exportEventsCsv } from "@/lib/exportUtils";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
 import { useT } from "@/hooks/useT";
+import { invalidateEntities } from "@/lib/queryInvalidation";
 
 export default function Events() {
   const { workspaceId, workspace } = useWorkspace();
@@ -55,7 +56,10 @@ export default function Events() {
   const clients = data?.clients || {};
   const teamMap = data?.teamMap || {};
   const serviceMap = data?.serviceMap || {};
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ["events", workspaceId] });
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ["events", workspaceId] });
+    invalidateEntities(queryClient, ["Event", "EventTeamAssignment"]);
+  };
 
   const clientName = (id) => clients[id]?.name || "";
 

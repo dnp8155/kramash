@@ -15,6 +15,7 @@ import StatCard from "@/components/common/StatCard";
 import PageHeader from "@/components/common/PageHeader";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
 import { useT } from "@/hooks/useT";
+import { invalidateEntities } from "@/lib/queryInvalidation";
 
 export default function Clients() {
   const { workspaceId } = useWorkspace();
@@ -42,7 +43,10 @@ export default function Clients() {
   });
   const clients = data?.clients || [];
   const eventCounts = data?.eventCounts || {};
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ["clients", workspaceId] });
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ["clients", workspaceId] });
+    invalidateEntities(queryClient, ["Client"]);
+  };
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();

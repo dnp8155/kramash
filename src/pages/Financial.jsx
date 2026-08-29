@@ -37,6 +37,7 @@ import { cn } from "@/lib/utils";
 import { exportFinancialCsv } from "@/lib/exportUtils";
 import PageHeader from "@/components/common/PageHeader";
 import { useT } from "@/hooks/useT";
+import { invalidateEntities } from "@/lib/queryInvalidation";
 
 const TAB_KEYS = ["Payment Activity", "Financial Years"];
 
@@ -81,7 +82,10 @@ export default function Financial() {
   const members = data?.members || [];
   const assignments = data?.assignments || [];
   const categories = data?.categories || [];
-  const load = () => queryClient.invalidateQueries({ queryKey: ["financial", workspaceId] });
+  const load = () => {
+    queryClient.invalidateQueries({ queryKey: ["financial", workspaceId] });
+    invalidateEntities(queryClient, ["FinancialTransaction"]);
+  };
 
   useEffect(() => {
     if (error) toast({ title: t("Failed to load financial activity"), description: error?.message, variant: "destructive" });

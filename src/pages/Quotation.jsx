@@ -20,6 +20,7 @@ import PdfPreviewModal from "@/components/common/PdfPreviewModal";
 import PageHeader from "@/components/common/PageHeader";
 import { cn } from "@/lib/utils";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
+import { invalidateEntities } from "@/lib/queryInvalidation";
 
 const fmtDate = (iso) => {
   if (!iso) return "—";
@@ -56,7 +57,12 @@ export default function Quotation() {
   const quotations = data?.quotations || [];
   const clients = data?.clients || [];
   const events = data?.events || [];
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ["quotations", workspaceId] });
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ["quotations", workspaceId] });
+    // Accepting/deleting a quotation can change an event's contract value, which
+    // affects the dashboard, events list, event details, and financial totals.
+    invalidateEntities(queryClient, ["Quotation", "QuotationItem", "Event", "FinancialTransaction"]);
+  };
 
   useEffect(() => {
     if (error) toast({ title: "Failed to load quotations", description: error?.message, variant: "destructive" });

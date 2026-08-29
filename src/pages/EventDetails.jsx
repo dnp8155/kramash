@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
+import { invalidateEntities } from "@/lib/queryInvalidation";
 
 export default function EventDetails() {
   const { id } = useParams();
@@ -103,7 +104,12 @@ export default function EventDetails() {
   const eventsById = data?.eventsById || {};
   const notFound = !!data?.notFound;
   const hasError = !!error && !data;
-  const load = () => queryClient.invalidateQueries({ queryKey: ["event", id, workspaceId] });
+  const load = () => {
+    queryClient.invalidateQueries({ queryKey: ["event", id, workspaceId] });
+    // Also refresh every other page that depends on this event's data:
+    // dashboard stats/calendar, events list, financial totals, team-member bookings.
+    invalidateEntities(queryClient, ["Event", "EventTeamAssignment", "EventDayAssignment", "FinancialTransaction"]);
+  };
 
   const eventAssignments = useMemo(
     () => assignments.filter((a) => a.event_id === id && a.assignment_status !== "removed"),
