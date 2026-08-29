@@ -125,10 +125,10 @@ export default function Clients() {
               <span className="text-sm text-foreground hidden sm:block">{eventCounts[c.id] || 0}</span>
               <span className="hidden sm:block" />
               <div className="flex items-center gap-1 justify-self-end">
-                <Button variant="ghost" size="icon" aria-label="View" onClick={() => navigate(`/clients/${c.id}`)}>
+                <Button variant="primary" size="icon" aria-label="View" onClick={() => navigate(`/clients/${c.id}`)}>
                   <Eye className="w-4 h-4" />
                 </Button>
-                <Button variant="ghost" size="icon" aria-label="Edit" onClick={() => openEdit(c)}>
+                <Button variant="primary" size="icon" aria-label="Edit" onClick={() => openEdit(c)}>
                   <Pencil className="w-4 h-4" />
                 </Button>
               </div>
