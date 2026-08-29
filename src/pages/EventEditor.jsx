@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useWorkspace } from "@/lib/WorkspaceContext";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
@@ -53,6 +54,7 @@ function SectionHeader({ icon: Icon, title }) {
 export default function EventEditor() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { workspaceId, workspace } = useWorkspace();
   const term = useBusinessTerminology();
   const t = useT();
@@ -200,6 +202,10 @@ export default function EventEditor() {
       if (eventId) {
         try { await syncTeamAssignments(eventId, payload.team_member_ids); } catch { /* non-fatal */ }
       }
+      // Invalidate all relevant caches so lists/dashboard refresh everywhere
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["event", eventId] });
       navigate(eventId ? `/events/${eventId}` : "/events");
     } catch (err) {
       const data = err?.response?.data || err;
