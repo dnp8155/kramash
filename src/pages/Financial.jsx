@@ -155,7 +155,7 @@ export default function Financial() {
   };
 
   if (isLoading) return (
-    <div className="p-4 sm:p-6 space-y-4 max-w-[1100px] mx-auto">
+    <div className="p-4 sm:p-6 space-y-4">
       <PageHeader title={t("Financial")} subtitle={t("Track payments, expenses, and profit across financial years.")} />
       <div className="h-10" />
       <StatGridSkeleton count={3} />
@@ -168,7 +168,7 @@ export default function Financial() {
   );
 
   return (
-    <div className="p-4 sm:p-6 space-y-4 max-w-[1100px] mx-auto">
+    <div className="p-4 sm:p-6 space-y-4">
       <PageHeader title={t("Financial")} subtitle={t("Track payments, expenses, and profit across financial years.")} />
 
       <div className="flex flex-col gap-3">
