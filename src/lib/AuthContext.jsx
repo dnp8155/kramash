@@ -70,23 +70,25 @@ export const AuthProvider = ({ children }) => {
             });
           }
         } else {
-          setAuthError({
-            type: 'unknown',
-            message: appError.message || 'Failed to load app'
-          });
+            setAuthError({
+              type: 'unknown',
+              message: appError.message || 'Failed to load app'
+            });
         }
+        setAuthChecked(true);
         setIsLoadingPublicSettings(false);
         setIsLoadingAuth(false);
-      }
-    } catch (error) {
-      console.error('Unexpected error:', error);
-      setAuthError({
+        }
+        } catch (error) {
+        console.error('Unexpected error:', error);
+        setAuthError({
         type: 'unknown',
         message: error.message || 'An unexpected error occurred'
-      });
-      setIsLoadingPublicSettings(false);
-      setIsLoadingAuth(false);
-    }
+        });
+        setAuthChecked(true);
+        setIsLoadingPublicSettings(false);
+        setIsLoadingAuth(false);
+        }
   };
 
   const checkUserAuth = async () => {
