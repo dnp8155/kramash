@@ -199,148 +199,167 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
   return (
     <>
       <Dialog open={open && !showClientForm} onOpenChange={(o) => !o && onClose?.()}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{event ? t.editWorkItemLabel || "Edit Event" : t.addWorkItemLabel || "Add Event"}</DialogTitle>
-            <DialogDescription>
-              {event ? `Update ${t.workItemSingular?.toLowerCase() || "event"} details.` : `Create a new ${t.workItemSingular?.toLowerCase() || "event"} for a client.`}
-            </DialogDescription>
-          </DialogHeader>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-0 gap-0">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-muted/30">
+            <div>
+              <DialogTitle className="text-lg font-bold tracking-tight">{event ? t.editWorkItemLabel || "Edit Event" : t.addWorkItemLabel || "Add Event"}</DialogTitle>
+              <DialogDescription className="text-xs mt-0.5">
+                {event ? `Update ${t.workItemSingular?.toLowerCase() || "event"} details.` : `Create a new ${t.workItemSingular?.toLowerCase() || "event"} for a client.`}
+              </DialogDescription>
+            </div>
+          </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3">
+          <form onSubmit={handleSubmit}>
+            <div className="px-6 py-5 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
               {/* Left column — core details */}
-              <div className="space-y-3">
-                <div className="space-y-1.5">
-                  <Label>{t.workItemTitleLabel || "Event Title"} <span className="text-destructive">*</span></Label>
-                  <Input value={form.title} onChange={(e) => set("title", e.target.value)} placeholder={t.category === "ARCHITECTURE" || t.category === "OTHER" ? "e.g. Riverside Villa Project" : "e.g. Meera & Dev"} autoFocus />
-                </div>
-
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <Label>Client <span className="text-destructive">*</span></Label>
-                    <button type="button" onClick={() => setShowClientForm(true)} className="text-xs text-primary font-medium hover:underline flex items-center gap-1">
-                      <Plus className="w-3 h-3" /> New Client
-                    </button>
-                  </div>
-                  {clients.length === 0 && !loadingClients ? (
-                    <div className="rounded-md border border-dashed border-border p-3 text-center">
-                      <p className="text-xs text-muted-foreground mb-2">No clients yet. Add a client to create an event.</p>
-                      <Button type="button" variant="outline" size="sm" onClick={() => setShowClientForm(true)}>
-                        <Plus className="w-3.5 h-3.5" /> Add Client
-                      </Button>
-                    </div>
-                  ) : (
-                    <Select value={form.client_id} onChange={(e) => set("client_id", e.target.value)} className="w-full">
-                      <option value="">{loadingClients ? "Loading clients…" : "Select a client"}</option>
-                      {clients.map((c) => (
-                        <option key={c.id} value={c.id}>{c.name}</option>
-                      ))}
-                    </Select>
-                  )}
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label>{t.workItemTypeLabel || "Event Type"}</Label>
-                  <ChipPicker
-                    options={workTypeOptions}
-                    value={form.event_type}
-                    onChange={(v) => set("event_type", v)}
-                    size="sm"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label>Status</Label>
-                  <ChipPicker
-                    options={statusOptions}
-                    value={form.status}
-                    onChange={(v) => set("status", v)}
-                    size="sm"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-4">
+                <div className="space-y-2.5">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">Project Details</p>
                   <div className="space-y-1.5">
-                    <Label>Contract Value ({CURRENCY_SYMBOLS[currency] || currency})</Label>
-                    <Input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={form.contract_value ?? ""}
-                      onChange={(e) => set("contract_value", e.target.value)}
-                      placeholder="0"
+                    <Label className="text-xs">{t.workItemTitleLabel || "Event Title"} <span className="text-destructive">*</span></Label>
+                    <Input value={form.title} onChange={(e) => set("title", e.target.value)} placeholder={t.category === "ARCHITECTURE" || t.category === "OTHER" ? "e.g. Riverside Villa Project" : "e.g. Meera & Dev"} autoFocus />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs">Client <span className="text-destructive">*</span></Label>
+                      <button type="button" onClick={() => setShowClientForm(true)} className="text-xs text-primary font-medium hover:underline flex items-center gap-1">
+                        <Plus className="w-3 h-3" /> New Client
+                      </button>
+                    </div>
+                    {clients.length === 0 && !loadingClients ? (
+                      <div className="rounded-md border border-dashed border-border p-3 text-center">
+                        <p className="text-xs text-muted-foreground mb-2">No clients yet. Add a client to create an event.</p>
+                        <Button type="button" variant="outline" size="sm" onClick={() => setShowClientForm(true)}>
+                          <Plus className="w-3.5 h-3.5" /> Add Client
+                        </Button>
+                      </div>
+                    ) : (
+                      <Select value={form.client_id} onChange={(e) => set("client_id", e.target.value)} className="w-full">
+                        <option value="">{loadingClients ? "Loading clients…" : "Select a client"}</option>
+                        {clients.map((c) => (
+                          <option key={c.id} value={c.id}>{c.name}</option>
+                        ))}
+                      </Select>
+                    )}
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">{t.workItemTypeLabel || "Event Type"}</Label>
+                    <ChipPicker
+                      options={workTypeOptions}
+                      value={form.event_type}
+                      onChange={(v) => set("event_type", v)}
+                      size="sm"
                     />
                   </div>
+
                   <div className="space-y-1.5">
-                    <Label>{t.locationLabel || "Venue"}</Label>
-                    <Input value={form.venue} onChange={(e) => set("venue", e.target.value)} placeholder={t.locationLabel || "Venue"} />
+                    <Label className="text-xs">Status</Label>
+                    <ChipPicker
+                      options={statusOptions}
+                      value={form.status}
+                      onChange={(v) => set("status", v)}
+                      size="sm"
+                    />
                   </div>
                 </div>
 
-                <div className="space-y-1.5">
-                  <Label>{t.locationAddressLabel || "Venue Address"}</Label>
-                  <Textarea value={form.venue_address} onChange={(e) => set("venue_address", e.target.value)} placeholder={`Full ${(t.locationLabel || "venue").toLowerCase()} address`} rows={2} />
+                <div className="space-y-2.5 pt-1">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">Financials & Location</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Contract Value ({CURRENCY_SYMBOLS[currency] || currency})</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={form.contract_value ?? ""}
+                        onChange={(e) => set("contract_value", e.target.value)}
+                        placeholder="0"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">{t.locationLabel || "Venue"}</Label>
+                      <Input value={form.venue} onChange={(e) => set("venue", e.target.value)} placeholder={t.locationLabel || "Venue"} />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">{t.locationAddressLabel || "Venue Address"}</Label>
+                    <Textarea value={form.venue_address} onChange={(e) => set("venue_address", e.target.value)} placeholder={`Full ${(t.locationLabel || "venue").toLowerCase()} address`} rows={2} />
+                  </div>
                 </div>
               </div>
 
               {/* Right column — schedule & team */}
-              <div className="space-y-3">
-                <div className="space-y-1.5">
-                  <Label>Dates <span className="text-destructive">*</span></Label>
-                  <DateRangeChips
-                    startDate={form.start_date}
-                    endDate={form.end_date}
-                    value={form.event_dates || []}
-                    onChange={setEventDates}
-                    onStartChange={(v) => set("start_date", v)}
-                    onEndChange={(v) => set("end_date", v)}
-                  />
+              <div className="space-y-4">
+                <div className="space-y-2.5">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">Schedule</p>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Dates <span className="text-destructive">*</span></Label>
+                    <DateRangeChips
+                      startDate={form.start_date}
+                      endDate={form.end_date}
+                      value={form.event_dates || []}
+                      onChange={setEventDates}
+                      onStartChange={(v) => set("start_date", v)}
+                      onEndChange={(v) => set("end_date", v)}
+                    />
+                  </div>
                 </div>
 
-                <div className="space-y-1.5">
-                  <Label className="flex items-center gap-1.5"><Briefcase className="w-3.5 h-3.5" /> Services</Label>
-                  <ChipPicker
-                    options={serviceOptions}
-                    value={form.service_ids || []}
-                    onChange={(v) => set("service_ids", v)}
-                    multiple
-                    size="sm"
-                    emptyText="No services found. Add services from the Services page."
-                  />
+                <div className="space-y-2.5 pt-1">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">Assignments</p>
+                  <div className="space-y-1.5">
+                    <Label className="flex items-center gap-1.5 text-xs"><Briefcase className="w-3.5 h-3.5" /> Services</Label>
+                    <ChipPicker
+                      options={serviceOptions}
+                      value={form.service_ids || []}
+                      onChange={(v) => set("service_ids", v)}
+                      multiple
+                      size="sm"
+                      emptyText="No services found. Add services from the Services page."
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="flex items-center gap-1.5 text-xs"><Users className="w-3.5 h-3.5" /> Team Members</Label>
+                    <ChipPicker
+                      options={teamOptions}
+                      value={form.team_member_ids || []}
+                      onChange={(v) => set("team_member_ids", v)}
+                      multiple
+                      size="sm"
+                      emptyText="No team members found. Add team from the Team page."
+                    />
+                  </div>
                 </div>
 
-                <div className="space-y-1.5">
-                  <Label className="flex items-center gap-1.5"><Users className="w-3.5 h-3.5" /> Team Members</Label>
-                  <ChipPicker
-                    options={teamOptions}
-                    value={form.team_member_ids || []}
-                    onChange={(v) => set("team_member_ids", v)}
-                    multiple
-                    size="sm"
-                    emptyText="No team members found. Add team from the Team page."
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label>Description</Label>
-                  <Textarea value={form.description} onChange={(e) => set("description", e.target.value)} placeholder={`${t.workItemSingular || "Event"} description`} rows={2} />
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label>Notes</Label>
-                  <Textarea value={form.notes} onChange={(e) => set("notes", e.target.value)} placeholder="Internal notes" rows={2} />
+                <div className="space-y-2.5 pt-1">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">Additional Info</p>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Description</Label>
+                    <Textarea value={form.description} onChange={(e) => set("description", e.target.value)} placeholder={`${t.workItemSingular || "Event"} description`} rows={2} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Notes</Label>
+                    <Textarea value={form.notes} onChange={(e) => set("notes", e.target.value)} placeholder="Internal notes" rows={2} />
+                  </div>
                 </div>
               </div>
             </div>
 
-            {error && <p className="text-sm text-destructive">{error}</p>}
+            {error && (
+              <div className="mx-6 mb-3 p-2.5 rounded-md bg-destructive/8 text-destructive text-sm border border-destructive/15">
+                {error}
+              </div>
+            )}
 
-            <DialogFooter className="pt-2 border-t border-border">
-              <Button type="button" variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
+            <DialogFooter className="px-6 py-4 border-t border-border bg-muted/30 flex-row-reverse gap-2">
               <Button type="submit" disabled={saving}>
                 {saving ? "Saving…" : event ? "Save Changes" : t.addWorkItemLabel || "Add Event"}
               </Button>
+              <Button type="button" variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
             </DialogFooter>
           </form>
         </DialogContent>
