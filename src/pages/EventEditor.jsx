@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import ChipPicker from "@/components/common/ChipPicker";
 import DateRangeChips from "@/components/common/DateRangeChips";
 import ClientForm from "@/components/clients/ClientForm";
+import QuickClientForm from "@/components/clients/QuickClientForm";
 import { EVENT_STATUS, EVENT_STATUS_ORDER } from "@/constants/statusConfig";
 import { CURRENCY_SYMBOLS } from "@/constants/financeConfig";
 import { cn } from "@/lib/utils";
@@ -73,6 +74,7 @@ export default function EventEditor() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [showClientForm, setShowClientForm] = useState(false);
+  const [showQuickClient, setShowQuickClient] = useState(false);
 
   useEffect(() => {
     if (workspaceId) {
@@ -290,14 +292,24 @@ export default function EventEditor() {
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between">
                         <Label className="text-xs">Client <span className="text-destructive">*</span></Label>
-                        <button type="button" onClick={() => setShowClientForm(true)} className="text-xs text-primary font-medium hover:underline flex items-center gap-1">
+                        <button type="button" onClick={() => setShowQuickClient(true)} className="text-xs text-primary font-medium hover:underline flex items-center gap-1">
                           <Plus className="w-3 h-3" /> New Client
                         </button>
                       </div>
-                      {clients.length === 0 && !loadingClients ? (
+                      {showQuickClient ? (
+                        <QuickClientForm
+                          workspaceId={workspaceId}
+                          onSaved={async (savedClient) => {
+                            await loadClients();
+                            set("client_id", savedClient.id);
+                            setShowQuickClient(false);
+                          }}
+                          onCancel={() => setShowQuickClient(false)}
+                        />
+                      ) : clients.length === 0 && !loadingClients ? (
                         <div className="rounded-md border border-dashed border-border p-4 text-center">
                           <p className="text-xs text-muted-foreground mb-2">No clients yet. Add a client to create a project.</p>
-                          <Button type="button" variant="outline" size="sm" onClick={() => setShowClientForm(true)}>
+                          <Button type="button" variant="outline" size="sm" onClick={() => setShowQuickClient(true)}>
                             <Plus className="w-3.5 h-3.5" /> Add Client
                           </Button>
                         </div>
