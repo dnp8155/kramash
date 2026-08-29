@@ -19,7 +19,7 @@ import {
 import { generateQuotationPdf, generateJobSheetPdf } from "@/lib/quotationPdf";
 import { DEFAULT_QUOTATION_TERMS, QUOTATION_STATUS_META } from "@/constants/quotationConfig";
 import { loadRoles } from "@/lib/teamService";
-import { ArrowLeft, AlertTriangle, FileText } from "lucide-react";
+import { ArrowLeft, AlertTriangle, FileText, Plus } from "lucide-react";
 import PdfPreviewModal from "@/components/common/PdfPreviewModal";
 import { cn } from "@/lib/utils";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
@@ -32,6 +32,7 @@ import { CURRENCY_SYMBOLS } from "@/constants/financeConfig";
 import QuotationTemplatePreview from "@/components/quotation/QuotationTemplatePreview";
 import QuotationTemplateSettings from "@/components/quotation/QuotationTemplateSettings";
 import { Textarea } from "@/components/ui/textarea";
+import ClientForm from "@/components/clients/ClientForm";
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -83,6 +84,7 @@ export default function QuotationEditor() {
   const [projectSummary, setProjectSummary] = useState("");
   const [showTemplatePreview, setShowTemplatePreview] = useState(false);
   const [templatePreviewHtml, setTemplatePreviewHtml] = useState("");
+  const [showClientForm, setShowClientForm] = useState(false);
 
   const isFinalized = status === "finalized" || status === "accepted";
   const readOnly = isFinalized;
@@ -512,10 +514,17 @@ export default function QuotationEditor() {
             <Input type="date" value={quotationDate} onChange={(e) => setQuotationDate(e.target.value)} disabled={readOnly} />
           </Field>
           <Field label="Client">
-            <Select value={clientId} onChange={(e) => onClientChange(e.target.value)} disabled={readOnly} className="w-full">
-              <option value="">— Select client —</option>
-              {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </Select>
+            <div className="flex items-center gap-2">
+              <Select value={clientId} onChange={(e) => onClientChange(e.target.value)} disabled={readOnly} className="flex-1">
+                <option value="">— Select client —</option>
+                {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </Select>
+              {!readOnly && (
+                <Button type="button" variant="outline" size="sm" onClick={() => setShowClientForm(true)} className="shrink-0">
+                  <Plus className="w-3.5 h-3.5" /> New
+                </Button>
+              )}
+            </div>
           </Field>
           <Field label={term.workItemSingular}>
             <Select value={eventId} onChange={(e) => onEventChange(e.target.value)} disabled={readOnly} className="w-full">
@@ -643,6 +652,18 @@ export default function QuotationEditor() {
         templateHtml={templatePreviewHtml}
         quotationNumber={quotationNumber}
         clientName={client?.name}
+      />
+
+      <ClientForm
+        open={showClientForm}
+        onClose={() => setShowClientForm(false)}
+        workspaceId={workspaceId}
+        onSaved={async (savedClient) => {
+          // Reload clients list and auto-select the newly created client.
+          const list = await base44.entities.Client.filter({ workspace_id: workspaceId }, "name", 500);
+          setClients(list || []);
+          setClientId(savedClient.id);
+        }}
       />
     </div>
   );
