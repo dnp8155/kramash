@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import Logo from "@/components/common/Logo";
 import AuthProductPanel from "@/components/AuthProductPanel";
 
 export default function AuthLayout({ icon: Icon, title, subtitle, footer, children, productPanel }) {
@@ -10,9 +11,7 @@ export default function AuthLayout({ icon: Icon, title, subtitle, footer, childr
         <div className="w-full max-w-[420px]">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2.5 mb-8 lg:hidden">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground font-bold text-lg shadow-md">
-              K
-            </div>
+            <Logo size={36} className="shadow-md" />
             <span className="font-heading text-lg font-bold tracking-tight text-foreground">Kramashah</span>
           </Link>
 

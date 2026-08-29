@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Menu, X } from "lucide-react";
+import Logo from "@/components/common/Logo";
 
 export default function LandingNav() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -30,9 +31,7 @@ export default function LandingNav() {
     >
       <div className="mx-auto max-w-6xl px-4 sm:px-6 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground font-bold text-lg shadow-md">
-            K
-          </div>
+          <Logo size={36} className="shadow-md" />
           <span className="font-heading text-lg font-bold tracking-tight text-foreground">Kramashah</span>
         </Link>
 

@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Mail, Lock, Loader2, Eye, EyeOff, ShieldCheck, ArrowRight } from "lucide-react";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import GoogleIcon from "@/components/GoogleIcon";
+import Logo from "@/components/common/Logo";
 import LoginProductVisual from "@/components/LoginProductVisual";
 import { safeReturnTo } from "@/lib/authReturnTo";
 import { useAuth } from "@/lib/AuthContext";
@@ -139,9 +140,7 @@ export default function Login() {
       <div className="flex-1 flex flex-col px-6 py-6 sm:px-10 lg:px-12 xl:px-16 lg:py-8">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2.5 self-start">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground font-bold text-lg shadow-md">
-            K
-          </div>
+          <Logo size={36} className="shadow-md" />
           <span className="font-heading text-lg font-bold tracking-tight text-foreground">Kramashah</span>
         </Link>
 

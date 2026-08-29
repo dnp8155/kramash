@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import Logo from "@/components/common/Logo";
 
 export default function LandingFooter() {
   return (
@@ -8,9 +9,7 @@ export default function LandingFooter() {
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-10">
           <div>
             <div className="flex items-center gap-2.5 mb-3">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground font-bold text-sm shadow-sm">
-                K
-              </div>
+              <Logo size={32} className="shadow-sm" />
               <span className="font-heading text-sm font-bold text-foreground">Kramashah</span>
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed max-w-xs">
