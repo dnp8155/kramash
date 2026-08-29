@@ -22,7 +22,8 @@ export default function ForgotPassword() {
     setLoading(true);
     try {
       await base44.auth.resetPasswordRequest(email);
-    } catch {
+    } catch (err) {
+      console.error("Reset password request error:", err);
       // Always show success regardless — privacy-safe
     } finally {
       setLoading(false);

@@ -26,8 +26,11 @@ function sanitizeLoginError(err) {
   if (!err) return "Unable to sign in right now. Please try again.";
   const msg = (err.message || err.data?.message || "").toLowerCase();
   if (msg.includes("network") || msg.includes("fetch") || msg.includes("connection") || msg.includes("timeout")) {
-    return "Unable to sign in right now. Please try again.";
+    return "Unable to sign in right now. Please check your connection and try again.";
   }
+  // Show the actual server error message so the real issue is visible
+  const serverMsg = err.data?.message || err.message || "";
+  if (serverMsg) return serverMsg;
   return "Incorrect email or password.";
 }
 
@@ -69,6 +72,7 @@ export default function Login() {
       await base44.auth.loginViaEmailPassword(email, password);
       window.location.href = returnTo;
     } catch (err) {
+      console.error("Login error:", err);
       if (isUnverifiedError(err)) {
         setVerifyMode(true);
         setError("");
