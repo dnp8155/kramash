@@ -12,7 +12,7 @@ import { EVENT_STATUS, EVENT_STATUS_ORDER } from "@/constants/statusConfig";
 import { CURRENCY_SYMBOLS } from "@/constants/financeConfig";
 import ClientForm from "@/components/clients/ClientForm";
 import ChipPicker from "@/components/common/ChipPicker";
-import DateChipsInput from "@/components/common/DateChipsInput";
+import DateRangeChips from "@/components/common/DateRangeChips";
 import { Plus, Users, Briefcase } from "lucide-react";
 
 const PHOTO_EVENT_TYPES = ["Wedding", "Pre-Wedding", "Reception", "Engagement", "Haldi", "Mehndi", "Birthday", "Corporate", "Portfolio", "Other"];
@@ -121,24 +121,18 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
     }
   };
 
-  // When event_dates change, keep start_date / end_date in sync (earliest / latest).
+  // event_dates = selected shoot days within the start/end range.
   const setEventDates = (dates) => {
-    setForm((f) => {
-      const sorted = [...dates].sort();
-      const next = { ...f, event_dates: sorted };
-      if (sorted.length > 0) {
-        next.start_date = sorted[0];
-        next.end_date = sorted[sorted.length - 1];
-      }
-      return next;
-    });
+    setForm((f) => ({ ...f, event_dates: dates }));
   };
 
   const validate = () => {
     const workLabel = t.workItemSingular || "Event";
     if (!form.title.trim()) return `${workLabel} title is required.`;
     if (!form.client_id) return "Please select a client.";
-    if (!form.start_date && (form.event_dates || []).length === 0) return "Add at least one date.";
+    if (!form.start_date) return "Pick a start date.";
+    if (!form.end_date) return "Pick an end date.";
+    if ((form.event_dates || []).length === 0) return "Select at least one shoot day from the range.";
     return "";
   };
 
@@ -150,8 +144,8 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
     setError("");
     try {
       const dates = (form.event_dates || []).slice().sort();
-      const startDate = dates[0] || form.start_date;
-      const endDate = dates[dates.length - 1] || form.end_date || startDate;
+      const startDate = form.start_date;
+      const endDate = form.end_date || startDate;
       const payload = {
         workspace_id: workspaceId,
         client_id: form.client_id,
@@ -265,7 +259,14 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
 
             <div className="space-y-1.5">
               <Label>Dates <span className="text-destructive">*</span></Label>
-              <DateChipsInput value={form.event_dates || []} onChange={setEventDates} />
+              <DateRangeChips
+                startDate={form.start_date}
+                endDate={form.end_date}
+                value={form.event_dates || []}
+                onChange={setEventDates}
+                onStartChange={(v) => set("start_date", v)}
+                onEndChange={(v) => set("end_date", v)}
+              />
             </div>
 
             <div className="space-y-1.5">
