@@ -39,15 +39,14 @@ const empty = {
   status: "upcoming", contract_value: 0, description: "", notes: ""
 };
 
-function SectionCard({ icon: Icon, title, children }) {
+function SectionHeader({ icon: Icon, title }) {
   return (
-    <section className="rounded-xl border border-border bg-card shadow-card overflow-hidden">
-      <div className="flex items-center gap-2 px-5 py-3.5 border-b border-border bg-muted/20">
-        <Icon className="w-4 h-4 text-primary" />
-        <h2 className="font-semibold text-sm text-foreground">{title}</h2>
+    <div className="flex items-center gap-2 mb-4">
+      <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+        <Icon className="w-3.5 h-3.5 text-primary" />
       </div>
-      <div className="p-5 space-y-4">{children}</div>
-    </section>
+      <h2 className="font-semibold text-sm text-foreground">{title}</h2>
+    </div>
   );
 }
 
@@ -266,163 +265,187 @@ export default function EventEditor() {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            {/* Left column */}
-            <div className="space-y-5">
-              {/* Project Details */}
-              <SectionCard icon={FolderOpen} title="Project Details">
-                <div className="space-y-1.5">
-                  <Label className="text-xs">{tTerm.workItemTitleLabel || "Project Title"} <span className="text-destructive">*</span></Label>
-                  <Input value={form.title} onChange={(e) => set("title", e.target.value)} placeholder="e.g. Riverside Villa Project" autoFocus />
-                </div>
-
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-xs">Client <span className="text-destructive">*</span></Label>
-                    <button type="button" onClick={() => setShowClientForm(true)} className="text-xs text-primary font-medium hover:underline flex items-center gap-1">
-                      <Plus className="w-3 h-3" /> New Client
-                    </button>
-                  </div>
-                  {clients.length === 0 && !loadingClients ? (
-                    <div className="rounded-md border border-dashed border-border p-4 text-center">
-                      <p className="text-xs text-muted-foreground mb-2">No clients yet. Add a client to create a project.</p>
-                      <Button type="button" variant="outline" size="sm" onClick={() => setShowClientForm(true)}>
-                        <Plus className="w-3.5 h-3.5" /> Add Client
-                      </Button>
+          <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden">
+            <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-border">
+              {/* Left column */}
+              <div className="p-6 space-y-7">
+                {/* Project Details */}
+                <div>
+                  <SectionHeader icon={FolderOpen} title="Project Details" />
+                  <div className="space-y-4">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">{tTerm.workItemTitleLabel || "Project Title"} <span className="text-destructive">*</span></Label>
+                      <Input value={form.title} onChange={(e) => set("title", e.target.value)} placeholder="e.g. Riverside Villa Project" autoFocus />
                     </div>
-                  ) : (
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                      <Select value={form.client_id} onChange={(e) => set("client_id", e.target.value)} className="w-full pl-9">
-                        <option value="">{loadingClients ? "Loading clients…" : "Select a client"}</option>
-                        {clients.map((c) => (
-                          <option key={c.id} value={c.id}>{c.name}</option>
-                        ))}
-                      </Select>
-                    </div>
-                  )}
-                </div>
 
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Project Type</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {workTypes.map((wt) => {
-                      const active = form.event_type === wt;
-                      return (
-                        <button key={wt} type="button" onClick={() => set("event_type", wt)}
-                          className={cn("px-3 py-1.5 rounded-lg text-xs font-medium border transition-all",
-                            active ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                              : "bg-card text-muted-foreground border-border hover:border-primary/40 hover:text-foreground")}>
-                          {wt}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs">Client <span className="text-destructive">*</span></Label>
+                        <button type="button" onClick={() => setShowClientForm(true)} className="text-xs text-primary font-medium hover:underline flex items-center gap-1">
+                          <Plus className="w-3 h-3" /> New Client
                         </button>
-                      );
-                    })}
-                  </div>
-                </div>
+                      </div>
+                      {clients.length === 0 && !loadingClients ? (
+                        <div className="rounded-md border border-dashed border-border p-4 text-center">
+                          <p className="text-xs text-muted-foreground mb-2">No clients yet. Add a client to create a project.</p>
+                          <Button type="button" variant="outline" size="sm" onClick={() => setShowClientForm(true)}>
+                            <Plus className="w-3.5 h-3.5" /> Add Client
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="relative">
+                          <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                          <Select value={form.client_id} onChange={(e) => set("client_id", e.target.value)} className="w-full pl-9">
+                            <option value="">{loadingClients ? "Loading clients…" : "Select a client"}</option>
+                            {clients.map((c) => (
+                              <option key={c.id} value={c.id}>{c.name}</option>
+                            ))}
+                          </Select>
+                        </div>
+                      )}
+                    </div>
 
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Status</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {EVENT_STATUS_ORDER.map((s) => {
-                      const Icon = STATUS_ICONS[s];
-                      const active = form.status === s;
-                      return (
-                        <button key={s} type="button" onClick={() => set("status", s)}
-                          className={cn("inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all",
-                            active ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                              : "bg-card text-muted-foreground border-border hover:border-primary/40 hover:text-foreground")}>
-                          {Icon && <Icon className="w-3.5 h-3.5" />}
-                          {EVENT_STATUS[s].label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </SectionCard>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Project Type</Label>
+                      <div className="flex flex-wrap gap-2">
+                        {workTypes.map((wt) => {
+                          const active = form.event_type === wt;
+                          return (
+                            <button key={wt} type="button" onClick={() => set("event_type", wt)}
+                              className={cn("px-3 py-1.5 rounded-lg text-xs font-medium border transition-all",
+                                active ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                                  : "bg-card text-muted-foreground border-border hover:border-primary/40 hover:text-foreground")}>
+                              {wt}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
 
-              {/* Financials & Location */}
-              <SectionCard icon={Wallet} title="Financials & Location">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Contract Value ({CURRENCY_SYMBOLS[currency] || currency})</Label>
-                    <Input type="number" min="0" step="0.01" value={form.contract_value ?? ""} onChange={(e) => set("contract_value", e.target.value)} placeholder="0" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Location</Label>
-                    <div className="relative">
-                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                      <Input value={form.venue} onChange={(e) => set("venue", e.target.value)} placeholder="Location" className="pl-9" />
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Status</Label>
+                      <div className="flex flex-wrap gap-2">
+                        {EVENT_STATUS_ORDER.map((s) => {
+                          const Icon = STATUS_ICONS[s];
+                          const active = form.status === s;
+                          return (
+                            <button key={s} type="button" onClick={() => set("status", s)}
+                              className={cn("inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all",
+                                active ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                                  : "bg-card text-muted-foreground border-border hover:border-primary/40 hover:text-foreground")}>
+                              {Icon && <Icon className="w-3.5 h-3.5" />}
+                              {EVENT_STATUS[s].label}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Location Address</Label>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-3 w-4 h-4 text-muted-foreground pointer-events-none" />
-                    <Textarea value={form.venue_address} onChange={(e) => set("venue_address", e.target.value)} placeholder="Full location address" rows={2} className="pl-9" />
+
+                {/* Divider */}
+                <div className="border-t border-border" />
+
+                {/* Financials & Location */}
+                <div>
+                  <SectionHeader icon={Wallet} title="Financials & Location" />
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Contract Value ({CURRENCY_SYMBOLS[currency] || currency})</Label>
+                        <Input type="number" min="0" step="0.01" value={form.contract_value ?? ""} onChange={(e) => set("contract_value", e.target.value)} placeholder="0" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Location</Label>
+                        <div className="relative">
+                          <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                          <Input value={form.venue} onChange={(e) => set("venue", e.target.value)} placeholder="Location" className="pl-9" />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Location Address</Label>
+                      <div className="relative">
+                        <MapPin className="absolute left-3 top-3 w-4 h-4 text-muted-foreground pointer-events-none" />
+                        <Textarea value={form.venue_address} onChange={(e) => set("venue_address", e.target.value)} placeholder="Full location address" rows={2} className="pl-9" />
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </SectionCard>
+              </div>
+
+              {/* Right column */}
+              <div className="p-6 space-y-7">
+                {/* Schedule */}
+                <div>
+                  <SectionHeader icon={CalendarDays} title="Schedule" />
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Dates <span className="text-destructive">*</span></Label>
+                    <DateRangeChips
+                      startDate={form.start_date}
+                      endDate={form.end_date}
+                      value={form.event_dates || []}
+                      onChange={setEventDates}
+                      onStartChange={(v) => set("start_date", v)}
+                      onEndChange={(v) => set("end_date", v)}
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">Pick a start and end date to generate the day list.</p>
+                  </div>
+                </div>
+
+                {/* Divider */}
+                <div className="border-t border-border" />
+
+                {/* Assignments */}
+                <div>
+                  <SectionHeader icon={Briefcase} title="Assignments" />
+                  <div className="space-y-4">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Services</Label>
+                      <ChipPicker options={serviceOptions} value={form.service_ids || []} onChange={(v) => set("service_ids", v)} multiple size="sm" emptyText="No services found. Add services from the Services page." />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="flex items-center gap-1.5 text-xs"><Users className="w-3.5 h-3.5" /> Team Members</Label>
+                      <ChipPicker options={teamOptions} value={form.team_member_ids || []} onChange={(v) => set("team_member_ids", v)} multiple size="sm" emptyText="No team members found. Add team from the Team page." />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Divider */}
+                <div className="border-t border-border" />
+
+                {/* Additional Information */}
+                <div>
+                  <SectionHeader icon={FileText} title="Additional Information" />
+                  <div className="space-y-4">
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs">Description</Label>
+                        <span className="text-[11px] text-muted-foreground">{(form.description || "").length}/500</span>
+                      </div>
+                      <Textarea value={form.description} onChange={(e) => set("description", e.target.value)} placeholder="Project description" rows={2} maxLength={500} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs">Notes</Label>
+                        <span className="text-[11px] text-muted-foreground">{(form.notes || "").length}/500</span>
+                      </div>
+                      <Textarea value={form.notes} onChange={(e) => set("notes", e.target.value)} placeholder="Internal notes" rows={2} maxLength={500} />
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            {/* Right column */}
-            <div className="space-y-5">
-              {/* Schedule */}
-              <SectionCard icon={CalendarDays} title="Schedule">
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Dates <span className="text-destructive">*</span></Label>
-                  <DateRangeChips
-                    startDate={form.start_date}
-                    endDate={form.end_date}
-                    value={form.event_dates || []}
-                    onChange={setEventDates}
-                    onStartChange={(v) => set("start_date", v)}
-                    onEndChange={(v) => set("end_date", v)}
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">Pick a start and end date to generate the day list.</p>
-                </div>
-              </SectionCard>
-
-              {/* Assignments */}
-              <SectionCard icon={Briefcase} title="Assignments">
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Services</Label>
-                  <ChipPicker options={serviceOptions} value={form.service_ids || []} onChange={(v) => set("service_ids", v)} multiple size="sm" emptyText="No services found. Add services from the Services page." />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="flex items-center gap-1.5 text-xs"><Users className="w-3.5 h-3.5" /> Team Members</Label>
-                  <ChipPicker options={teamOptions} value={form.team_member_ids || []} onChange={(v) => set("team_member_ids", v)} multiple size="sm" emptyText="No team members found. Add team from the Team page." />
-                </div>
-              </SectionCard>
-
-              {/* Additional Information */}
-              <SectionCard icon={FileText} title="Additional Information">
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-xs">Description</Label>
-                    <span className="text-[11px] text-muted-foreground">{(form.description || "").length}/500</span>
-                  </div>
-                  <Textarea value={form.description} onChange={(e) => set("description", e.target.value)} placeholder="Project description" rows={2} maxLength={500} />
-                </div>
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-xs">Notes</Label>
-                    <span className="text-[11px] text-muted-foreground">{(form.notes || "").length}/500</span>
-                  </div>
-                  <Textarea value={form.notes} onChange={(e) => set("notes", e.target.value)} placeholder="Internal notes" rows={2} maxLength={500} />
-                </div>
-              </SectionCard>
+            {/* Footer inside the card */}
+            <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-border bg-muted/20">
+              <Button type="button" variant="outline" onClick={() => navigate(-1)} disabled={saving}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={saving}>
+                {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</> : <><Save className="w-4 h-4" /> {isEdit ? "Save Changes" : "Create Project"}</>}
+              </Button>
             </div>
-          </div>
-
-          {/* Sticky footer */}
-          <div className="sticky bottom-0 mt-5 -mx-4 sm:-mx-6 px-4 sm:px-6 py-3.5 border-t border-border bg-card/95 backdrop-blur flex items-center justify-end gap-2 rounded-t-xl">
-            <Button type="button" variant="outline" onClick={() => navigate(-1)} disabled={saving}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={saving}>
-              {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</> : <><Save className="w-4 h-4" /> {isEdit ? "Save Changes" : "Create Project"}</>}
-            </Button>
           </div>
         </form>
       </div>
