@@ -9,6 +9,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 import GoogleIcon from "@/components/GoogleIcon";
 import LoginProductVisual from "@/components/LoginProductVisual";
 import { safeReturnTo } from "@/lib/authReturnTo";
+import { useAuth } from "@/lib/AuthContext";
 import { toast } from "@/components/ui/use-toast";
 
 function isUnverifiedError(err) {
@@ -39,7 +40,7 @@ export default function Login() {
   const [verifyMode, setVerifyMode] = useState(false);
   const [otpCode, setOtpCode] = useState("");
   const [sendingOtp, setSendingOtp] = useState(false);
-  const [checkingAuth, setCheckingAuth] = useState(true);
+  const { isAuthenticated, authChecked, authError } = useAuth();
 
   const returnTo = safeReturnTo();
 
@@ -53,21 +54,11 @@ export default function Login() {
   }, []);
 
   useEffect(() => {
-    let active = true;
-    base44.auth
-      .isAuthenticated()
-      .then((authed) => {
-        if (active && authed) {
-          const dest = returnTo !== "/" ? returnTo : "/events";
-          window.location.href = dest;
-        }
-      })
-      .catch(() => {})
-      .finally(() => active && setCheckingAuth(false));
-    return () => {
-      active = false;
-    };
-  }, [returnTo]);
+    if (authChecked && isAuthenticated && !authError) {
+      const dest = returnTo !== "/" ? returnTo : "/events";
+      window.location.href = dest;
+    }
+  }, [authChecked, isAuthenticated, authError, returnTo]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -130,7 +121,7 @@ export default function Login() {
     base44.auth.loginWithProvider("google", returnTo);
   };
 
-  if (checkingAuth) {
+  if (!authChecked) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin" />

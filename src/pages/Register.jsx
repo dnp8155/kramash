@@ -10,6 +10,7 @@ import GoogleIcon from "@/components/GoogleIcon";
 import RegisterProductVisual from "@/components/RegisterProductVisual";
 import { toast } from "@/components/ui/use-toast";
 import { safeReturnTo } from "@/lib/authReturnTo";
+import { useAuth } from "@/lib/AuthContext";
 
 function PasswordStrength({ password }) {
   if (!password || password.length < 3) return null;
@@ -52,7 +53,7 @@ export default function Register() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [showOtp, setShowOtp] = useState(false);
   const [otpCode, setOtpCode] = useState("");
-  const [checkingAuth, setCheckingAuth] = useState(true);
+  const { isAuthenticated, authChecked, authError } = useAuth();
   const [searchParams] = useSearchParams();
   const phoneFromOtp = searchParams.get("phone");
 
@@ -65,22 +66,14 @@ export default function Register() {
     return () => document.head.removeChild(meta);
   }, []);
 
+  const returnTo = safeReturnTo();
+
   useEffect(() => {
-    let active = true;
-    base44.auth
-      .isAuthenticated()
-      .then((authed) => {
-        if (active && authed) {
-          const dest = safeReturnTo() !== "/" ? safeReturnTo() : "/events";
-          window.location.href = dest;
-        }
-      })
-      .catch(() => {})
-      .finally(() => active && setCheckingAuth(false));
-    return () => {
-      active = false;
-    };
-  }, []);
+    if (authChecked && isAuthenticated && !authError) {
+      const dest = returnTo !== "/" ? returnTo : "/events";
+      window.location.href = dest;
+    }
+  }, [authChecked, isAuthenticated, authError, returnTo]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -161,7 +154,7 @@ export default function Register() {
     base44.auth.loginWithProvider("google", safeReturnTo());
   };
 
-  if (checkingAuth) {
+  if (!authChecked) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin" />
