@@ -172,16 +172,16 @@ export default function Financial() {
       <PageHeader title={t("Financial")} subtitle={t("Track payments, expenses, and profit across financial years.")} />
 
       <div className="flex flex-col gap-3">
-        <div className="flex items-center gap-1 border-b border-border w-full sm:w-auto">
+        <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-lg w-full sm:w-auto">
           {tabs.map((tabKey) => (
             <button
               key={tabKey}
               onClick={() => setTab(tabKey)}
               className={cn(
-                "px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap",
+                "px-4 py-1.5 text-sm font-medium rounded-md transition-all whitespace-nowrap flex-1 sm:flex-initial",
                 tab === tabKey
-                  ? "border-primary text-foreground"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
+                  ? "bg-card text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
               )}
             >
               {t(tabKey)}

@@ -357,7 +357,7 @@ export default function EventDetails() {
             className={cn(
               "px-4 py-1.5 text-sm font-medium rounded-md transition-all whitespace-nowrap flex-1 sm:flex-initial",
               tab === t
-                ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
+                ? "bg-card text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
