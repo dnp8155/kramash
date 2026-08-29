@@ -12,6 +12,7 @@ import DetailErrorState from "@/components/common/DetailErrorState";
 import EventForm from "@/components/events/EventForm";
 import EventFinancialCards from "@/components/events/EventFinancialCards";
 import EventAssignmentCard from "@/components/events/EventAssignmentCard";
+import DayScheduleCard from "@/components/events/DayScheduleCard";
 import AssignTeamDialog from "@/components/team/AssignTeamDialog";
 import RecordPaymentDialog from "@/components/financial/RecordPaymentDialog";
 import RecordExpenseDialog from "@/components/financial/RecordExpenseDialog";
@@ -42,7 +43,7 @@ export default function EventDetails() {
   const [showClientPayment, setShowClientPayment] = useState(false);
   const [showExpense, setShowExpense] = useState(false);
   const [teamPayAssignment, setTeamPayAssignment] = useState(null);
-  const [tab, setTab] = useState("Team");
+  const [tab, setTab] = useState("Schedule");
   const queryClient = useQueryClient();
 
   const { data, isLoading, error } = useQuery({
@@ -50,7 +51,7 @@ export default function EventDetails() {
     queryFn: async () => {
       const ev = await base44.entities.Event.get(id);
       if (!ev || ev.workspace_id !== workspaceId) return { notFound: true };
-      const [clList, membs, rles, asgns, tx, cats, blocks, svcs] = await Promise.all([
+      const [clList, membs, rles, asgns, tx, cats, blocks, svcs, dayAsgns] = await Promise.all([
         ev.client_id ? base44.entities.Client.get(ev.client_id).catch(() => null) : Promise.resolve(null),
         base44.entities.TeamMember.filter({ workspace_id: workspaceId }, "name", 500),
         base44.entities.TeamRole.filter({ workspace_id: workspaceId }, "name", 200),
@@ -58,7 +59,8 @@ export default function EventDetails() {
         base44.entities.FinancialTransaction.filter({ workspace_id: workspaceId, event_id: ev.id }, "-transaction_date", 500),
         loadExpenseCategories(workspaceId),
         base44.entities.TeamBlockDate.filter({ workspace_id: workspaceId }, "-start_date", 500),
-        base44.entities.Service.filter({ workspace_id: workspaceId }, "name", 500)
+        base44.entities.Service.filter({ workspace_id: workspaceId }, "name", 500),
+        base44.entities.EventDayAssignment.filter({ workspace_id: workspaceId }, "date", 1000)
       ]);
       const evIds = [...new Set((asgns || []).map((a) => a.event_id))];
       const evMap = {};
@@ -82,6 +84,7 @@ export default function EventDetails() {
         categories: cats || [],
         blockDates: blocks || [],
         services: svcs || [],
+        dayAssignments: dayAsgns || [],
         eventsById: evMap
       };
     },
@@ -96,6 +99,7 @@ export default function EventDetails() {
   const categories = data?.categories || [];
   const blockDates = data?.blockDates || [];
   const services = data?.services || [];
+  const dayAssignments = data?.dayAssignments || [];
   const eventsById = data?.eventsById || {};
   const notFound = !!data?.notFound;
   const hasError = !!error && !data;
@@ -218,7 +222,7 @@ export default function EventDetails() {
     );
   }
 
-  const tabs = ["Team", "Payments", "Notes"];
+  const tabs = ["Schedule", "Team", "Payments", "Notes"];
   const eventTransactions = transactions.filter((t) => t.status === "ACTIVE");
 
   return (
@@ -363,6 +367,45 @@ export default function EventDetails() {
       </div>
 
       {/* Tab content */}
+      {tab === "Schedule" && (
+        <div className="space-y-3">
+          {(() => {
+            const dates = event.event_dates?.length ? event.event_dates : (event.start_date ? [event.start_date] : []);
+            if (dates.length === 0) {
+              return (
+                <Card className="p-6">
+                  <EmptyState
+                    title="No shoot days"
+                    description={`Edit the ${term.workItemSingular.toLowerCase()} to set a date range and select shoot days.`}
+                    action={<Button size="sm" onClick={() => setShowForm(true)}><Pencil className="w-3.5 h-3.5" /> Edit</Button>}
+                  />
+                </Card>
+              );
+            }
+            const thisEventDayAsgns = dayAssignments.filter((a) => a.event_id === event.id);
+            const otherDayAsgns = dayAssignments.filter((a) => a.event_id !== event.id);
+            return (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                {dates.slice().sort().map((d) => (
+                  <DayScheduleCard
+                    key={d}
+                    event={event}
+                    date={d}
+                    workspaceId={workspaceId}
+                    members={members}
+                    services={services}
+                    dayAssignments={thisEventDayAsgns}
+                    otherDayAssignments={otherDayAsgns}
+                    blockDates={blockDates}
+                    onChanged={load}
+                  />
+                ))}
+              </div>
+            );
+          })()}
+        </div>
+      )}
+
       {tab === "Team" && (
         <div className="space-y-4">
           {/* Team summary cards */}

@@ -1,0 +1,73 @@
+{
+  "name": "EventDayAssignment",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "title": "Workspace ID"
+    },
+    "event_id": {
+      "type": "string",
+      "title": "Event ID"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "title": "Date"
+    },
+    "team_member_ids": {
+      "type": "array",
+      "title": "Team Member IDs",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "service_ids": {
+      "type": "array",
+      "title": "Service IDs",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "venue_override": {
+      "type": "string",
+      "title": "Venue Override (per-day)"
+    },
+    "notes": {
+      "type": "string",
+      "title": "Day Notes"
+    },
+    "status": {
+      "type": "string",
+      "title": "Day Status",
+      "default": "planned",
+      "enum": [
+        "planned",
+        "confirmed",
+        "done",
+        "cancelled"
+      ]
+    }
+  },
+  "required": [
+    "workspace_id",
+    "event_id",
+    "date"
+  ],
+  "rls": {
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}
