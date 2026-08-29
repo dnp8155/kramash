@@ -264,7 +264,7 @@ export default function EventEditor() {
         )}
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
+        <form onSubmit={handleSubmit} className="w-full px-4 sm:px-6 lg:px-8 py-6">
           <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden">
             <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-border">
               {/* Left column */}
