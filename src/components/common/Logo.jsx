@@ -5,12 +5,12 @@ export default function Logo({ size = 36, className = "" }) {
   return (
     <div
       style={{ width: size, height: size }}
-      className={`rounded-lg bg-black overflow-hidden shrink-0 flex items-center justify-center ${className}`}
+      className={`shrink-0 flex items-center justify-center ${className}`}
     >
       <img
         src={LOGO_URL}
         alt="Kramashah"
-        className="w-full h-full object-contain"
+        className="max-w-full max-h-full object-contain"
         draggable={false}
       />
     </div>
