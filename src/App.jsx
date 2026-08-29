@@ -19,6 +19,7 @@ import Landing from '@/pages/Landing';
 import Dashboard from '@/pages/Dashboard';
 import Events from '@/pages/Events';
 import EventDetails from '@/pages/EventDetails';
+import EventEditor from '@/pages/EventEditor';
 import Clients from '@/pages/Clients';
 import ClientDetails from '@/pages/ClientDetails';
 import Team from '@/pages/Team';
@@ -93,7 +94,9 @@ const AuthenticatedApp = () => {
         <Route element={<AppLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/events" element={<Events />} />
+          <Route path="/events/new" element={<EventEditor />} />
           <Route path="/events/:id" element={<EventDetails />} />
+          <Route path="/events/:id/edit" element={<EventEditor />} />
           <Route path="/clients" element={<Clients />} />
           <Route path="/clients/:id" element={<ClientDetails />} />
           <Route path="/team" element={<Team />} />

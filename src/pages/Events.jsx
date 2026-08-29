@@ -82,8 +82,8 @@ export default function Events() {
   }, [events, query, statusFilter, fyFilter, clients]);
 
   const openEvent = (e) => navigate(`/events/${e.id}`);
-  const openNew = () => { setEditingEvent(null); setShowForm(true); };
-  const openEdit = (e) => { setEditingEvent(e); setShowForm(true); };
+  const openNew = () => navigate("/events/new");
+  const openEdit = (e) => navigate(`/events/${e.id}/edit`);
 
   const upcomingCount = events.filter((e) => isUpcomingDate(e.start_date) && e.status !== "completed" && e.status !== "cancelled").length;
   const completedCount = events.filter((e) => e.status === "completed").length;
@@ -175,15 +175,6 @@ export default function Events() {
         <EventsRightPanel events={events} onEventClick={openEvent} term={term} />
       </div>
 
-      <EventForm
-        open={showForm}
-        onClose={() => setShowForm(false)}
-        onSaved={invalidate}
-        event={editingEvent}
-        workspaceId={workspaceId}
-        term={term}
-        currency={workspace?.currency || "INR"}
-      />
     </div>
   );
 }
