@@ -34,7 +34,7 @@ export default function WorkspaceSwitcher({ mobile = false, collapsed = false, o
     <div className="px-3 py-3">
       <div className="flex items-center gap-2.5">
         {/* Avatar */}
-        <Logo size={44} />
+        <Logo size={48} />
 
         {/* Text */}
         <div className="flex-1 min-w-0">
