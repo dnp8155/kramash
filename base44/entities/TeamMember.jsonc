@@ -61,11 +61,7 @@
     "name"
   ],
   "rls": {
-    "create": {
-      "user_condition": {
-        "role": "admin"
-      }
-    },
+    "create": {},
     "read": {
       "created_by_id": "{{user.id}}"
     },
