@@ -5,12 +5,10 @@ import { base44 } from "@/api/base44Client";
 import { useWorkspace } from "@/lib/WorkspaceContext";
 import Card from "@/components/common/Card";
 import Button from "@/components/common/Button";
-import StatusBadge from "@/components/common/StatusBadge";
 import DetailSkeleton from "@/components/common/DetailSkeleton";
 import EmptyState from "@/components/common/EmptyState";
 import DetailErrorState from "@/components/common/DetailErrorState";
 import EventForm from "@/components/events/EventForm";
-import EventFinancialCards from "@/components/events/EventFinancialCards";
 import EventAssignmentCard from "@/components/events/EventAssignmentCard";
 import EventServicesTab from "@/components/events/EventServicesTab";
 import EventProgressTab from "@/components/events/EventProgressTab";
@@ -18,7 +16,7 @@ import AssignTeamDialog from "@/components/team/AssignTeamDialog";
 import RecordPaymentDialog from "@/components/financial/RecordPaymentDialog";
 import RecordExpenseDialog from "@/components/financial/RecordExpenseDialog";
 import { useToast } from "@/components/ui/use-toast";
-import { formatEventDate, formatEventDates, currentFY, fyRange } from "@/lib/dates";
+import { currentFY, fyRange } from "@/lib/dates";
 import { formatMoney } from "@/utils/format";
 import {
   eventFinancialSummary,
@@ -27,7 +25,7 @@ import {
 } from "@/lib/financeService";
 import {
   ArrowLeft, Pencil, Wallet, FileText, MapPin, Calendar, Phone, Plus,
-  CalendarPlus, Share2, Receipt, StickyNote, Briefcase, Trash2, Camera, User, ChevronRight
+  CalendarPlus, Share2, Receipt, StickyNote, Trash2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
@@ -246,143 +244,143 @@ export default function EventDetails() {
     }
   };
 
+  const fyLabel = (() => {
+    const r = fyRange(currentFY());
+    if (!r) return "—";
+    const s = r.start.split("-"), e = r.end.split("-");
+    const m = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    return `${m[Number(s[1])-1]} ${s[0]} – ${m[Number(e[1])-1]} ${e[0]}`;
+  })();
+
+  const statusDot = event.status === "completed" ? "bg-success" : event.status === "cancelled" ? "bg-destructive" : "bg-warning";
+  const allDates = (event.event_dates?.length ? event.event_dates : [event.start_date]).filter(Boolean);
+
   return (
-    <div className="p-4 sm:p-6 space-y-4 max-w-[1100px] mx-auto">
+    <div className="p-4 sm:p-6 space-y-5 max-w-[1100px] mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">{event.title}</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {event.start_date ? new Date(event.start_date + "T00:00:00").toLocaleDateString("en-IN", { day: "2-digit", month: "2-digit", year: "numeric" }).replace(/\//g, "-") : ""}
-            {event.event_type ? ` | ${event.event_type}` : ""}
-            {event.start_date ? ` · ${new Date(event.start_date + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short" })}` : ""}
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2.5 mb-1">
+            <button onClick={() => navigate("/events")} className="text-muted-foreground hover:text-foreground transition-colors shrink-0">
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+            <h1 className="text-2xl font-bold text-foreground tracking-tight truncate">{event.title}</h1>
+          </div>
+          <p className="text-sm text-muted-foreground ml-6">
+            <span className="inline-flex items-center gap-1.5">
+              <span className={cn("w-1.5 h-1.5 rounded-full", statusDot)} />
+              <span className="capitalize">{event.status}</span>
+            </span>
+            {event.event_type && <> · {event.event_type}</>}
+            {event.start_date && <> · {new Date(event.start_date + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</>}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <StatusBadge status={event.status} />
-          <Button onClick={() => navigate("/events/new")}>
-            <Plus className="w-4 h-4" /> New Entry
+        <div className="flex items-center gap-2 shrink-0">
+          <Button variant="outline" size="sm" onClick={() => setShowForm(true)}>
+            <Pencil className="w-3.5 h-3.5" /> Edit
+          </Button>
+          <Button size="sm" onClick={() => navigate("/events/new")}>
+            <Plus className="w-3.5 h-3.5" /> New Entry
           </Button>
         </div>
       </div>
 
-      {/* Entry details card */}
-      <Card className="p-5">
-        <h2 className="text-base font-semibold text-foreground mb-4">Entry Details</h2>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <InputField label="Client / Event Name" value={event.title} />
-          <InputField label="Event Type" value={event.event_type || "—"} />
-          <InputField label="Event Start Date" value={event.start_date || "—"} icon={Calendar} />
-          <InputField label="Event End Date" value={event.end_date || "—"} icon={Calendar} />
-        </div>
-
-        {/* Date chips */}
-        <div className="mt-4">
-          <div className="text-xs font-medium text-muted-foreground mb-2">Event Date(s)</div>
-          <div className="flex flex-wrap gap-2">
-            {(event.event_dates?.length ? event.event_dates : [event.start_date]).filter(Boolean).map((d) => (
-              <DateChip key={d} date={d} />
-            ))}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-          <InputField label="Contact Number" value={client?.phone || "—"} icon={Phone} />
-          <InputField label="Address" value={[client?.address, client?.city].filter(Boolean).join(", ") || "City / area"} icon={MapPin} />
-        </div>
-        <div className="grid grid-cols-1 gap-4 mt-4">
-          <InputField label="Event Venue" value={event.venue || "Where the event takes place"} icon={MapPin} />
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-          <InputField label="Contract Value (₹)" value={formatMoney(event.contract_value || 0, currency)} />
-          <div>
-            <div className="text-xs font-medium text-muted-foreground mb-1.5">Financial Year</div>
-            <div className="h-10 px-3 flex items-center text-sm font-medium text-foreground bg-muted/50 rounded-lg border border-border">
-              {(() => {
-                const r = fyRange(currentFY());
-                if (!r) return "—";
-                const s = r.start.split("-");
-                const e = r.end.split("-");
-                const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-                return `${months[Number(s[1]) - 1]} ${s[0]} - ${months[Number(e[1]) - 1]} ${e[0]} (Current)`;
-              })()}
-            </div>
-          </div>
-        </div>
-
-        {/* Footer actions */}
-        <div className="flex items-center justify-between mt-5 pt-4 border-t border-border">
-          <Button variant="dark" size="sm" onClick={() => navigate("/events")}>
-            <ArrowLeft className="w-4 h-4" /> Back
-          </Button>
-          <div className="flex items-center gap-2">
+      {/* Entry details + Financial summary side by side on large screens */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {/* Entry details — spans 2 columns */}
+        <Card className="lg:col-span-2 p-6">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-sm font-semibold text-foreground uppercase tracking-wide">Entry Details</h2>
             <button
               onClick={() => { if (confirm(`Delete this ${term.workItemSingular.toLowerCase()}?`)) { base44.entities.Event.delete(event.id).then(() => navigate("/events")); } }}
-              className="text-destructive hover:bg-destructive/5 p-2 rounded-lg transition-colors"
+              className="text-destructive/60 hover:text-destructive hover:bg-destructive/5 p-1.5 rounded-md transition-colors"
+              title="Delete"
             >
               <Trash2 className="w-4 h-4" />
             </button>
-            <Button variant="outline" size="sm" onClick={() => setShowForm(true)}>
-              <Pencil className="w-3.5 h-3.5" /> Edit
-            </Button>
           </div>
-        </div>
-      </Card>
 
-      {/* Financial summary cards */}
-      <EventFinancialCards
-        received={fin.received}
-        paid={fin.teamPaid}
-        leftBalance={Math.max(0, fin.pending)}
-        profit={fin.profit}
-        currency={currency}
-      />
+          {/* Primary info */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4">
+            <DetailField label="Client / Event" value={event.title} />
+            <DetailField label="Event Type" value={event.event_type || "—"} />
+            <DetailField label="Contract Value" value={formatMoney(event.contract_value || 0, currency)} />
+            <DetailField label="Start Date" value={event.start_date ? new Date(event.start_date + "T00:00:00").toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—"} />
+            <DetailField label="End Date" value={event.end_date ? new Date(event.end_date + "T00:00:00").toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—"} />
+            <DetailField label="Financial Year" value={fyLabel} />
+          </div>
 
-      {/* Action bar */}
-      <div className="flex items-center gap-2 flex-wrap bg-card border border-border rounded-lg p-2">
-        <div className="flex items-center gap-1.5 px-2">
-          <span className={cn("w-2 h-2 rounded-full", event.status === "completed" ? "bg-success" : event.status === "cancelled" ? "bg-destructive" : "bg-warning")} />
-          <span className="text-sm font-medium text-foreground capitalize">{event.status}</span>
+          {/* Divider */}
+          <div className="my-5 border-t border-border/60" />
+
+          {/* Contact + venue */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+            <DetailField label="Contact" value={client?.phone || "—"} icon={Phone} />
+            <DetailField label="Venue" value={event.venue || "—"} icon={MapPin} />
+          </div>
+          <div className="mt-4">
+            <DetailField label="Address" value={[client?.address, client?.city].filter(Boolean).join(", ") || "—"} />
+          </div>
+
+          {/* Date chips */}
+          {allDates.length > 0 && (
+            <>
+              <div className="my-5 border-t border-border/60" />
+              <div>
+                <div className="text-xs font-medium text-muted-foreground mb-2.5">Event Date(s)</div>
+                <div className="flex flex-wrap gap-2">
+                  {allDates.map((d) => <DateChip key={d} date={d} />)}
+                </div>
+              </div>
+            </>
+          )}
+        </Card>
+
+        {/* Financial summary — right column */}
+        <div className="space-y-3">
+          <FinancialMiniCard label="Received" value={formatMoney(fin.received, currency)} tone="success" />
+          <FinancialMiniCard label="Paid" value={formatMoney(fin.teamPaid, currency)} tone="warning" />
+          <FinancialMiniCard label="Left Balance" value={formatMoney(Math.max(0, fin.pending), currency)} tone="accent" />
+          <FinancialMiniCard label="Profit" value={formatMoney(fin.profit, currency)} tone="success" />
         </div>
-        <div className="w-px h-5 bg-border" />
-        <button className="p-1.5 rounded-md hover:bg-muted transition-colors" title="Media">
-          <Camera className="w-4 h-4 text-muted-foreground" />
-        </button>
-        <button className="p-1.5 rounded-md hover:bg-muted transition-colors" title="Team">
-          <User className="w-4 h-4 text-muted-foreground" />
-        </button>
-        <button onClick={shareEventLink} className="p-1.5 rounded-md hover:bg-muted transition-colors" title="Share">
-          <Share2 className="w-4 h-4 text-muted-foreground" />
-        </button>
-        <ChevronRight className="w-4 h-4 text-muted-foreground" />
-        <Button size="sm" variant="outline" onClick={addToCalendar}>
+      </div>
+
+      {/* Contextual actions */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <Button size="sm" variant="ghost" onClick={addToCalendar}>
           <CalendarPlus className="w-3.5 h-3.5" /> Add to Calendar
         </Button>
+        <Button size="sm" variant="ghost" onClick={shareEventLink}>
+          <Share2 className="w-3.5 h-3.5" /> Share Link
+        </Button>
         {fin.pending > 0 && (
-          <Button size="sm" variant="outline" onClick={remindClient}>
-            <Share2 className="w-3.5 h-3.5" /> Remind client about {formatMoney(fin.pending, currency)} due
+          <Button size="sm" variant="ghost" onClick={remindClient}>
+            <Share2 className="w-3.5 h-3.5" /> Remind {formatMoney(fin.pending, currency)} due
           </Button>
         )}
+        <Button size="sm" variant="ghost" onClick={() => navigate(`/quotation/new?event_id=${event.id}`)}>
+          <FileText className="w-3.5 h-3.5" /> Create Quotation
+        </Button>
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-lg w-full sm:w-auto">
-        {tabs.map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={cn(
-              "px-4 py-1.5 text-sm font-medium rounded-md transition-all whitespace-nowrap flex-1 sm:flex-initial",
-              tab === t
-                ? "bg-card text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            {t}
-          </button>
-        ))}
+      <div className="border-b border-border">
+        <div className="flex items-center gap-6 overflow-x-auto">
+          {tabs.map((t) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={cn(
+                "pb-2.5 pt-1 text-sm font-medium whitespace-nowrap transition-all border-b-2 -mb-px",
+                tab === t
+                  ? "border-primary text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Tab content */}
@@ -526,13 +524,6 @@ export default function EventDetails() {
         </Card>
       )}
 
-      {/* Quick actions */}
-      <div className="flex flex-wrap gap-2">
-        <Button variant="outline" onClick={() => navigate(`/quotation/new?event_id=${event.id}`)}>
-          <FileText className="w-4 h-4" /> Create Quotation
-        </Button>
-      </div>
-
       {/* Dialogs */}
       <EventForm
         open={showForm}
@@ -634,26 +625,41 @@ export default function EventDetails() {
   );
 }
 
-function InputField({ label, value, icon: Icon }) {
+function DetailField({ label, value, icon: Icon }) {
   return (
-    <div>
-      <div className="text-xs font-medium text-muted-foreground mb-1.5">{label}</div>
-      <div className="h-10 px-3 flex items-center gap-2 text-sm font-medium text-foreground bg-muted/30 rounded-lg border border-border">
+    <div className="min-w-0">
+      <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide mb-1">{label}</div>
+      <div className="flex items-center gap-1.5 text-sm font-medium text-foreground">
         {Icon && <Icon className="w-3.5 h-3.5 text-muted-foreground shrink-0" />}
-        <span className="truncate">{value}</span>
+        <span className="truncate">{value || "—"}</span>
       </div>
+    </div>
+  );
+}
+
+function FinancialMiniCard({ label, value, tone = "default" }) {
+  const toneClasses = {
+    success: "text-success",
+    warning: "text-warning",
+    accent: "text-foreground",
+    default: "text-foreground"
+  };
+  return (
+    <div className="bg-card border border-border rounded-xl px-4 py-3.5 hover-lift">
+      <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">{label}</div>
+      <div className={cn("text-xl font-bold tabular-nums mt-1", toneClasses[tone])}>{value}</div>
     </div>
   );
 }
 
 function DateChip({ date }) {
   if (!date) return null;
-  const d = new Date(date);
+  const d = new Date(date + "T00:00:00");
   const day = d.getDate();
   const month = d.toLocaleString("en-IN", { month: "short" });
   return (
-    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-semibold">
-      <Calendar className="w-3.5 h-3.5" />
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-primary/8 text-primary text-xs font-semibold border border-primary/15">
+      <Calendar className="w-3 h-3" />
       {day} {month}
     </span>
   );
@@ -661,10 +667,10 @@ function DateChip({ date }) {
 
 function TeamStatCard({ label, value, tone = "default" }) {
   return (
-    <div className="bg-card border border-border rounded-lg p-3">
-      <div className="text-xs font-medium text-muted-foreground">{label}</div>
+    <div className="bg-card border border-border rounded-xl px-4 py-3">
+      <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">{label}</div>
       <div className={cn(
-        "text-base font-bold mt-1 tabular-nums",
+        "text-lg font-bold mt-1 tabular-nums",
         tone === "warning" ? "text-warning" : "text-foreground"
       )}>{value}</div>
     </div>
