@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useWorkspace } from "@/lib/WorkspaceContext";
@@ -7,17 +7,21 @@ import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
 import { useT } from "@/hooks/useT";
 import { getAppLanguage, DATE_LOCALES } from "@/lib/i18n";
 import { base44 } from "@/api/base44Client";
-import { loadTransactions, activeTransactions } from "@/lib/financeService";
+import { loadTransactions, activeTransactions, memberPaidTotal } from "@/lib/financeService";
 import { loadTeamMembers, loadAssignments, loadBlockDates, splitAvailability } from "@/lib/teamService";
 import { todayISO, isUpcomingDate, formatEventDate } from "@/lib/dates";
 import { formatMoney } from "@/utils/format";
+import { currentFinancialYearLabel, dateInFY, financialYearRange } from "@/constants/financeConfig";
 import PageHeader from "@/components/common/PageHeader";
 import StatCard from "@/components/common/StatCard";
 import DashboardStatsSkeleton from "@/components/dashboard/DashboardStatsSkeleton";
 import UpcomingEventsWidget from "@/components/dashboard/UpcomingEventsWidget";
 import OutstandingDuesWidget from "@/components/dashboard/OutstandingDuesWidget";
 import TeamAvailabilityWidget from "@/components/dashboard/TeamAvailabilityWidget";
-import { CalendarDays, Wallet, AlertCircle, UserCheck } from "lucide-react";
+import FiscalYearSelector from "@/components/dashboard/FiscalYearSelector";
+import RevenueTrendChart from "@/components/dashboard/RevenueTrendChart";
+import TeamWagesDueWidget from "@/components/dashboard/TeamWagesDueWidget";
+import { CalendarDays, Wallet, AlertCircle, UserCheck, TrendingUp } from "lucide-react";
 
 export default function Dashboard() {
   const { workspaceId, workspace } = useWorkspace();
@@ -27,6 +31,7 @@ export default function Dashboard() {
   const lang = getAppLanguage(user);
   const navigate = useNavigate();
   const currency = workspace?.currency || "INR";
+  const [fyLabel, setFyLabel] = useState(currentFinancialYearLabel());
 
   const { data: events = [], isLoading: loadingEvents } = useQuery({
     queryKey: ["dashboard-events", workspaceId],
@@ -80,10 +85,9 @@ export default function Dashboard() {
       .sort((a, b) => a.start_date.localeCompare(b.start_date));
 
     const activeTx = activeTransactions(transactions);
-    const now = new Date();
-    const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-    const monthRevenue = activeTx
-      .filter((t) => t.transaction_type === "CLIENT_RECEIPT" && (t.transaction_date || "").startsWith(monthKey))
+    // FY-scoped revenue (selected financial year)
+    const fyRevenue = activeTx
+      .filter((t) => t.transaction_type === "CLIENT_RECEIPT" && dateInFY(t.transaction_date, fyLabel))
       .reduce((s, t) => s + (Number(t.amount) || 0), 0);
 
     // Outstanding: sum over non-cancelled events of max(0, contract_value - received)
@@ -111,8 +115,57 @@ export default function Dashboard() {
 
     const activeMembers = members.filter((m) => m.status === "active").length;
 
-    return { upcoming, monthRevenue, outstanding, topDues, activeMembers };
-  }, [events, transactions, members, clientsById]);
+    return { upcoming, fyRevenue, outstanding, topDues, activeMembers };
+  }, [events, transactions, members, clientsById, fyLabel]);
+
+  // 6-month revenue trend ending at min(today, FY end)
+  const trendData = useMemo(() => {
+    const activeTx = activeTransactions(transactions);
+    const fyRange = financialYearRange(fyLabel);
+    const now = new Date();
+    const todayStr = todayISO();
+    const endRef = fyRange && fyRange.end < todayStr ? fyRange.end : todayStr;
+    const end = new Date(endRef + "T00:00:00");
+    const buckets = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(end.getFullYear(), end.getMonth() - i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      const label = d.toLocaleDateString("en-IN", { month: "short", year: "2-digit" });
+      buckets.push({ key, month: label, revenue: 0 });
+    }
+    const byKey = Object.fromEntries(buckets.map((b) => [b.key, b]));
+    for (const t of activeTx) {
+      if (t.transaction_type !== "CLIENT_RECEIPT") continue;
+      const k = (t.transaction_date || "").slice(0, 7);
+      if (byKey[k]) byKey[k].revenue += Number(t.amount) || 0;
+    }
+    return buckets;
+  }, [transactions, fyLabel]);
+
+  // Team wages due: agreed (assignments) minus paid (TEAM_PAYMENT) per member
+  const wagesDue = useMemo(() => {
+    const activeTx = activeTransactions(transactions);
+    const activeAssignments = (assignments || []).filter((a) => a.assignment_status !== "removed");
+    const agreedByMember = {};
+    for (const a of activeAssignments) {
+      agreedByMember[a.team_member_id] = (agreedByMember[a.team_member_id] || 0) + (Number(a.agreed_rate) || 0);
+    }
+    const dues = [];
+    let totalDue = 0;
+    for (const m of members) {
+      if (m.status === "inactive") continue;
+      const agreed = agreedByMember[m.id] || 0;
+      if (agreed <= 0) continue;
+      const paid = memberPaidTotal(activeTx, m.id);
+      const due = Math.max(0, agreed - paid);
+      if (due > 0) {
+        dues.push({ member: m, due });
+        totalDue += due;
+      }
+    }
+    dues.sort((a, b) => b.due - a.due);
+    return { dues, totalDue };
+  }, [assignments, members]);
 
   const todayAvail = useMemo(() => {
     const today = todayISO();
@@ -133,7 +186,9 @@ export default function Dashboard() {
       <PageHeader
         title={`${greeting}, ${user?.full_name?.split(" ")[0] || t("there")}`}
         subtitle={`${workspace?.name || "Your workspace"} · ${new Date().toLocaleDateString(dateLocale, { weekday: "long", day: "numeric", month: "long", year: "numeric" })}`}
-      />
+      >
+        <FiscalYearSelector value={fyLabel} onChange={setFyLabel} />
+      </PageHeader>
 
       {/* Stat cards */}
       {isLoading ? (
@@ -148,11 +203,11 @@ export default function Dashboard() {
             sub={stats.upcoming[0] ? `${t("Next:")} ${formatEventDate(stats.upcoming[0].start_date, stats.upcoming[0].end_date)}` : t("Nothing scheduled")}
           />
           <StatCard
-            label={t("Received this month")}
-            value={formatMoney(stats.monthRevenue, currency)}
-            icon={Wallet}
+            label={t("Revenue")}
+            value={formatMoney(stats.fyRevenue, currency)}
+            icon={TrendingUp}
             tone="success"
-            sub={t("Client receipts")}
+            sub={fyLabel}
           />
           <StatCard
             label={t("Outstanding dues")}
@@ -171,7 +226,27 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Two-column widgets */}
+      {/* Revenue trend + Team wages due */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="md:col-span-2">
+          <RevenueTrendChart
+            data={trendData}
+            currency={currency}
+            isLoading={loadingTx}
+          />
+        </div>
+        <div>
+          <TeamWagesDueWidget
+            dues={wagesDue.dues}
+            totalDue={wagesDue.totalDue}
+            currency={currency}
+            isLoading={loadingTx}
+            onSeeAll={() => navigate("/team")}
+          />
+        </div>
+      </div>
+
+      {/* Upcoming events + Team availability */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="md:col-span-2">
           <UpcomingEventsWidget
