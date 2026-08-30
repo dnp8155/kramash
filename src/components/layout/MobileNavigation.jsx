@@ -19,47 +19,43 @@ export default function MobileNavigation() {
   const isActive = (path) => location.pathname === path;
   const labelFor = (key) => (key === "events" ? term.workItemPlural : t(key.charAt(0).toUpperCase() + key.slice(1)));
 
+  const allItems = [
+    ...NAV_ITEMS,
+    { path: "/more", icon: MoreHorizontal, label: t("More") }
+  ];
+
   return (
-    <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-background/95 backdrop-blur-md border-t border-border px-3 py-2">
-      <div className="flex items-center gap-2 max-w-lg mx-auto">
-        {/* Pill nav */}
-        <div className="flex-1 flex items-center gap-1 bg-card border border-border rounded-full p-1 shadow-sm overflow-x-auto scrollbar-thin">
-          {NAV_ITEMS.map((item) => {
+    <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 px-3 pb-3 pt-1">
+      <div className="flex items-end gap-2 max-w-lg mx-auto">
+        {/* Pill nav — vertical icon-over-text */}
+        <div className="flex-1 flex items-stretch gap-0.5 bg-card border border-border rounded-full p-1 shadow-md">
+          {allItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.path);
+            const label = item.label || labelFor(item.labelKey);
             return (
               <NavLink
                 key={item.path}
                 to={item.path}
                 className={cn(
-                  "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors",
+                  "flex-1 flex flex-col items-center justify-center gap-0.5 px-1 py-1.5 rounded-full transition-colors min-w-0",
                   active ? "bg-muted text-foreground" : "text-muted-foreground"
                 )}
               >
-                <Icon className="w-4 h-4 shrink-0" />
-                {labelFor(item.labelKey)}
+                <Icon className="w-[18px] h-[18px] shrink-0" />
+                <span className="text-[10px] font-semibold leading-none truncate w-full text-center">{label}</span>
               </NavLink>
             );
           })}
-          <NavLink
-            to="/more"
-            className={cn(
-              "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors",
-              isActive("/more") ? "bg-muted text-foreground" : "text-muted-foreground"
-            )}
-          >
-            <MoreHorizontal className="w-4 h-4 shrink-0" />
-            {t("More")}
-          </NavLink>
         </div>
 
-        {/* Add button */}
+        {/* Circular add button */}
         <button
           onClick={() => navigate("/events/new")}
-          className="shrink-0 w-11 h-11 rounded-full bg-card border border-border shadow-sm flex items-center justify-center active:scale-95 transition-transform"
+          className="shrink-0 w-12 h-12 rounded-full bg-card border border-border shadow-md flex items-center justify-center active:scale-95 transition-transform"
           aria-label={term.addWorkItemLabel}
         >
-          <Plus className="w-5 h-5 text-foreground" />
+          <Plus className="w-6 h-6 text-foreground" />
         </button>
       </div>
     </nav>
