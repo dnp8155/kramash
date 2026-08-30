@@ -6,33 +6,33 @@
 
 @layer base {
   :root {
-    /* Surfaces — clean, neutral, professional */
-    --background: 210 20% 98%;
-    --foreground: 222 26% 14%;
+    /* Surfaces — warm beige canvas */
+    --background: 40 43% 97%;
+    --foreground: 220 26% 14%;
     --card: 0 0% 100%;
-    --card-foreground: 222 26% 14%;
+    --card-foreground: 220 26% 14%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222 26% 14%;
+    --popover-foreground: 220 26% 14%;
 
-    /* Brand / actions — refined indigo */
-    --primary: 222 47% 35%;
+    /* Brand / actions — deep teal */
+    --primary: 180 39% 18%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 222 47% 29%;
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 222 26% 14%;
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 9% 46%;
-    --accent: 222 47% 35%;
+    --primary-hover: 180 39% 14%;
+    --secondary: 43 35% 94%;
+    --secondary-foreground: 220 26% 14%;
+    --muted: 43 30% 95%;
+    --muted-foreground: 218 17% 35%;
+    --accent: 180 39% 18%;
     --accent-foreground: 0 0% 100%;
 
-    /* Sidebar — deep slate */
-    --sidebar-background: 222 28% 12%;
-    --sidebar-foreground: 210 16% 93%;
-    --sidebar-muted: 220 10% 58%;
-    --sidebar-primary: 217 91% 60%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-border: 222 18% 20%;
-    --sidebar-hover: 222 22% 18%;
+    /* Sidebar — dark teal */
+    --sidebar-background: 180 39% 13%;
+    --sidebar-foreground: 43 35% 94%;
+    --sidebar-muted: 180 15% 55%;
+    --sidebar-primary: 43 35% 94%;
+    --sidebar-primary-foreground: 180 39% 13%;
+    --sidebar-border: 180 20% 20%;
+    --sidebar-hover: 180 30% 18%;
 
     /* Status — refined, not loud */
     --success: 152 56% 38%;
@@ -42,9 +42,9 @@
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 222 47% 35%;
+    --border: 40 25% 90%;
+    --input: 40 25% 90%;
+    --ring: 180 39% 18%;
 
     /* Toggle */
     --toggle-on: 152 56% 38%;
@@ -60,15 +60,15 @@
     --shadow-glow: 0 0 0 1px rgb(34 84 222 / 0.06), 0 8px 24px -4px rgb(34 84 222 / 0.12);
 
     /* Accent gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(222 47% 35%), hsl(228 45% 30%));
+    --gradient-primary: linear-gradient(135deg, hsl(180 39% 18%), hsl(176 42% 14%));
     --gradient-success: linear-gradient(135deg, hsl(152 56% 38%), hsl(154 60% 32%));
     --gradient-warning: linear-gradient(135deg, hsl(32 95% 44%), hsl(28 90% 40%));
     --gradient-danger: linear-gradient(135deg, hsl(0 72% 51%), hsl(355 70% 45%));
     --gradient-info: linear-gradient(135deg, hsl(217 91% 60%), hsl(222 47% 35%));
 
     /* Chart / badges */
-    --badge-upcoming-bg: 217 91% 95%;
-    --badge-upcoming-fg: 222 47% 35%;
+    --badge-upcoming-bg: 180 30% 94%;
+    --badge-upcoming-fg: 180 39% 20%;
     --badge-progress-bg: 32 95% 94%;
     --badge-progress-fg: 28 90% 40%;
     --badge-completed-bg: 152 56% 94%;
