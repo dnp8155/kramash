@@ -3,6 +3,7 @@ import { Outlet } from "react-router-dom";
 import Sidebar from "@/components/layout/Sidebar";
 import TopHeader from "@/components/layout/TopHeader";
 import MobileNavigation from "@/components/layout/MobileNavigation";
+import InstallPrompt from "@/components/common/InstallPrompt";
 import ErrorBoundary from "@/components/common/ErrorBoundary";
 import OfflineBanner from "@/components/common/OfflineBanner";
 import UpdateBanner from "@/components/common/UpdateBanner";
@@ -51,6 +52,7 @@ export default function AppLayout() {
       </div>
 
       <MobileNavigation />
+      <InstallPrompt />
     </div>
   );
 }
