@@ -12,7 +12,8 @@ import DetailErrorState from "@/components/common/DetailErrorState";
 import EventForm from "@/components/events/EventForm";
 import EventFinancialCards from "@/components/events/EventFinancialCards";
 import EventAssignmentCard from "@/components/events/EventAssignmentCard";
-import DayScheduleCard from "@/components/events/DayScheduleCard";
+import EventServicesTab from "@/components/events/EventServicesTab";
+import EventProgressTab from "@/components/events/EventProgressTab";
 import AssignTeamDialog from "@/components/team/AssignTeamDialog";
 import RecordPaymentDialog from "@/components/financial/RecordPaymentDialog";
 import RecordExpenseDialog from "@/components/financial/RecordExpenseDialog";
@@ -26,7 +27,7 @@ import {
 } from "@/lib/financeService";
 import {
   ArrowLeft, Pencil, Wallet, FileText, MapPin, Calendar, Phone, Plus,
-  CalendarPlus, Share2, Receipt, StickyNote, Briefcase
+  CalendarPlus, Share2, Receipt, StickyNote, Briefcase, Trash2, Camera, User, ChevronRight
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
@@ -44,7 +45,8 @@ export default function EventDetails() {
   const [showClientPayment, setShowClientPayment] = useState(false);
   const [showExpense, setShowExpense] = useState(false);
   const [teamPayAssignment, setTeamPayAssignment] = useState(null);
-  const [tab, setTab] = useState("Schedule");
+  const [showServicePicker, setShowServicePicker] = useState(false);
+  const [tab, setTab] = useState("Team");
   const queryClient = useQueryClient();
 
   const { data, isLoading, error } = useQuery({
@@ -228,55 +230,56 @@ export default function EventDetails() {
     );
   }
 
-  const tabs = ["Schedule", "Team", "Payments", "Notes"];
+  const tabs = ["Team", "Services", "Payments", "Notes", "Progress"];
   const eventTransactions = transactions.filter((t) => t.status === "ACTIVE");
+
+  const toggleService = async (serviceId) => {
+    const current = event.service_ids || [];
+    const has = current.includes(serviceId);
+    const updated = has ? current.filter((x) => x !== serviceId) : [...current, serviceId];
+    try {
+      await base44.entities.Event.update(event.id, { service_ids: updated });
+      toast({ title: has ? "Service removed" : "Service added" });
+      load();
+    } catch (e) {
+      toast({ title: "Failed to update services", description: e?.message, variant: "destructive" });
+    }
+  };
 
   return (
     <div className="p-4 sm:p-6 space-y-4 max-w-[1100px] mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-3">
-          <Button variant="dark" size="sm" onClick={() => navigate("/events")}>
-            <ArrowLeft className="w-4 h-4" /> Back
-          </Button>
-          <div>
-            <h1 className="text-xl font-bold text-foreground">{event.title}</h1>
-            <div className="flex items-center gap-2 mt-0.5">
-              <StatusBadge status={event.status} />
-            </div>
-          </div>
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">{event.title}</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            {event.start_date ? new Date(event.start_date + "T00:00:00").toLocaleDateString("en-IN", { day: "2-digit", month: "2-digit", year: "numeric" }).replace(/\//g, "-") : ""}
+            {event.event_type ? ` | ${event.event_type}` : ""}
+            {event.start_date ? ` · ${new Date(event.start_date + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short" })}` : ""}
+          </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={shareEventLink}>
-            <Share2 className="w-4 h-4" /> Share with Client
-          </Button>
-          <Button onClick={() => setShowForm(true)}>
-            <Pencil className="w-4 h-4" /> Edit Event
+          <StatusBadge status={event.status} />
+          <Button onClick={() => navigate("/events/new")}>
+            <Plus className="w-4 h-4" /> New Entry
           </Button>
         </div>
       </div>
 
-      {/* Entry details form */}
+      {/* Entry details card */}
       <Card className="p-5">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <div className="text-xs text-muted-foreground">
-              {event.start_date ? new Date(event.start_date + "T00:00:00").toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : ""}
-            </div>
-            <h2 className="text-base font-semibold">{event.event_type} · {formatEventDates(event)}</h2>
-          </div>
-        </div>
+        <h2 className="text-base font-semibold text-foreground mb-4">Entry Details</h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Event Title" value={event.title} />
-          <Field label={term.workItemTypeLabel} value={event.event_type || "—"} />
-          <Field label={term.startDateLabel} value={event.start_date || "—"} icon={Calendar} />
-          <Field label={term.endDateLabel} value={event.end_date || "—"} icon={Calendar} />
+          <InputField label="Client / Event Name" value={event.title} />
+          <InputField label="Event Type" value={event.event_type || "—"} />
+          <InputField label="Event Start Date" value={event.start_date || "—"} icon={Calendar} />
+          <InputField label="Event End Date" value={event.end_date || "—"} icon={Calendar} />
         </div>
 
         {/* Date chips */}
         <div className="mt-4">
-          <div className="text-xs font-medium text-muted-foreground mb-2">Schedule Dates</div>
+          <div className="text-xs font-medium text-muted-foreground mb-2">Event Date(s)</div>
           <div className="flex flex-wrap gap-2">
             {(event.event_dates?.length ? event.event_dates : [event.start_date]).filter(Boolean).map((d) => (
               <DateChip key={d} date={d} />
@@ -284,42 +287,19 @@ export default function EventDetails() {
           </div>
         </div>
 
-        {/* Services */}
-        {event.service_ids?.length > 0 && (
-          <div className="mt-4">
-            <div className="text-xs font-medium text-muted-foreground mb-2">Services</div>
-            <div className="flex flex-wrap gap-2">
-              {event.service_ids.map((sid) => {
-                const s = services.find((x) => x.id === sid);
-                if (!s) return null;
-                return (
-                  <span key={sid} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted text-foreground border border-border text-sm font-medium">
-                    <Briefcase className="w-3.5 h-3.5" /> {s.name}
-                  </span>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Additional fields */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-          <Field label="Contact Number (optional)" value={client?.phone || "—"} icon={Phone} />
-          <Field label={`${term.locationLabel} (optional)`} value={event.venue || "—"} icon={MapPin} />
-          <div className="sm:col-span-2">
-            <Field label="Address (optional)" value={[client?.address, client?.city].filter(Boolean).join(", ") || "—"} icon={MapPin} />
-          </div>
+          <InputField label="Contact Number" value={client?.phone || "—"} icon={Phone} />
+          <InputField label="Address" value={[client?.address, client?.city].filter(Boolean).join(", ") || "City / area"} icon={MapPin} />
+        </div>
+        <div className="grid grid-cols-1 gap-4 mt-4">
+          <InputField label="Event Venue" value={event.venue || "Where the event takes place"} icon={MapPin} />
         </div>
 
-        {/* Contract value + FY */}
-        <div className="flex items-end gap-4 mt-4 pt-4 border-t border-border flex-wrap">
-          <div className="flex-1 min-w-[200px]">
-            <div className="text-xs font-medium text-muted-foreground mb-1">Contract Value</div>
-            <div className="text-2xl font-bold text-foreground">{formatMoney(event.contract_value || 0, currency)}</div>
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+          <InputField label="Contract Value (₹)" value={formatMoney(event.contract_value || 0, currency)} />
           <div>
-            <div className="text-xs font-medium text-muted-foreground mb-1">Financial Year</div>
-            <div className="text-sm font-semibold text-foreground px-3 py-1.5 bg-muted/50 rounded-md border border-border">
+            <div className="text-xs font-medium text-muted-foreground mb-1.5">Financial Year</div>
+            <div className="h-10 px-3 flex items-center text-sm font-medium text-foreground bg-muted/50 rounded-lg border border-border">
               {(() => {
                 const r = fyRange(currentFY());
                 if (!r) return "—";
@@ -329,6 +309,24 @@ export default function EventDetails() {
                 return `${months[Number(s[1]) - 1]} ${s[0]} - ${months[Number(e[1]) - 1]} ${e[0]} (Current)`;
               })()}
             </div>
+          </div>
+        </div>
+
+        {/* Footer actions */}
+        <div className="flex items-center justify-between mt-5 pt-4 border-t border-border">
+          <Button variant="dark" size="sm" onClick={() => navigate("/events")}>
+            <ArrowLeft className="w-4 h-4" /> Back
+          </Button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => { if (confirm(`Delete this ${term.workItemSingular.toLowerCase()}?`)) { base44.entities.Event.delete(event.id).then(() => navigate("/events")); } }}
+              className="text-destructive hover:bg-destructive/5 p-2 rounded-lg transition-colors"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+            <Button variant="outline" size="sm" onClick={() => setShowForm(true)}>
+              <Pencil className="w-3.5 h-3.5" /> Edit
+            </Button>
           </div>
         </div>
       </Card>
@@ -342,8 +340,23 @@ export default function EventDetails() {
         currency={currency}
       />
 
-      {/* Actions row */}
-      <div className="flex items-center gap-2 flex-wrap">
+      {/* Action bar */}
+      <div className="flex items-center gap-2 flex-wrap bg-card border border-border rounded-lg p-2">
+        <div className="flex items-center gap-1.5 px-2">
+          <span className={cn("w-2 h-2 rounded-full", event.status === "completed" ? "bg-success" : event.status === "cancelled" ? "bg-destructive" : "bg-warning")} />
+          <span className="text-sm font-medium text-foreground capitalize">{event.status}</span>
+        </div>
+        <div className="w-px h-5 bg-border" />
+        <button className="p-1.5 rounded-md hover:bg-muted transition-colors" title="Media">
+          <Camera className="w-4 h-4 text-muted-foreground" />
+        </button>
+        <button className="p-1.5 rounded-md hover:bg-muted transition-colors" title="Team">
+          <User className="w-4 h-4 text-muted-foreground" />
+        </button>
+        <button onClick={shareEventLink} className="p-1.5 rounded-md hover:bg-muted transition-colors" title="Share">
+          <Share2 className="w-4 h-4 text-muted-foreground" />
+        </button>
+        <ChevronRight className="w-4 h-4 text-muted-foreground" />
         <Button size="sm" variant="outline" onClick={addToCalendar}>
           <CalendarPlus className="w-3.5 h-3.5" /> Add to Calendar
         </Button>
@@ -373,43 +386,27 @@ export default function EventDetails() {
       </div>
 
       {/* Tab content */}
-      {tab === "Schedule" && (
-        <div className="space-y-3">
-          {(() => {
-            const dates = event.event_dates?.length ? event.event_dates : (event.start_date ? [event.start_date] : []);
-            if (dates.length === 0) {
-              return (
-                <Card className="p-6">
-                  <EmptyState
-                    title="No shoot days"
-                    description={`Edit the ${term.workItemSingular.toLowerCase()} to set a date range and select shoot days.`}
-                    action={<Button size="sm" onClick={() => setShowForm(true)}><Pencil className="w-3.5 h-3.5" /> Edit</Button>}
-                  />
-                </Card>
-              );
-            }
-            const thisEventDayAsgns = dayAssignments.filter((a) => a.event_id === event.id);
-            const otherDayAsgns = dayAssignments.filter((a) => a.event_id !== event.id);
-            return (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                {dates.slice().sort().map((d) => (
-                  <DayScheduleCard
-                    key={d}
-                    event={event}
-                    date={d}
-                    workspaceId={workspaceId}
-                    members={members}
-                    services={services}
-                    dayAssignments={thisEventDayAsgns}
-                    otherDayAssignments={otherDayAsgns}
-                    blockDates={blockDates}
-                    onChanged={load}
-                  />
-                ))}
-              </div>
-            );
-          })()}
-        </div>
+      {tab === "Services" && (
+        <EventServicesTab
+          event={event}
+          services={services}
+          currency={currency}
+          onAddService={() => setShowServicePicker(true)}
+          onRemoveService={(sid) => toggleService(sid)}
+        />
+      )}
+
+      {tab === "Progress" && (
+        <EventProgressTab
+          event={event}
+          workspaceId={workspaceId}
+          members={members}
+          services={services}
+          dayAssignments={dayAssignments}
+          otherDayAssignments={dayAssignments.filter((a) => a.event_id !== event.id)}
+          blockDates={blockDates}
+          onChanged={load}
+        />
       )}
 
       {tab === "Team" && (
@@ -597,17 +594,53 @@ export default function EventDetails() {
         categories={categories}
         preselectedEventId={event.id}
       />
+
+      {/* Service picker dialog */}
+      {showServicePicker && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowServicePicker(false)}>
+          <div className="bg-card rounded-xl shadow-lg w-full max-w-md mx-4 p-5" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-base font-semibold">Add Services</h3>
+              <button onClick={() => setShowServicePicker(false)} className="text-muted-foreground hover:text-foreground text-xl leading-none">×</button>
+            </div>
+            <div className="max-h-80 overflow-y-auto space-y-2">
+              {services.filter((s) => s.status === "active").map((s) => {
+                const selected = (event.service_ids || []).includes(s.id);
+                return (
+                  <button
+                    key={s.id}
+                    onClick={() => toggleService(s.id)}
+                    className={cn(
+                      "w-full flex items-center justify-between p-3 rounded-lg border transition-all text-left",
+                      selected ? "bg-primary/5 border-primary" : "border-border hover:bg-muted"
+                    )}
+                  >
+                    <div>
+                      <div className="text-sm font-medium text-foreground">{s.name}</div>
+                      <div className="text-xs text-muted-foreground">{s.rate_type} · {formatMoney(s.default_rate || 0, currency)}</div>
+                    </div>
+                    {selected && <div className="w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs">✓</div>}
+                  </button>
+                );
+              })}
+              {services.filter((s) => s.status === "active").length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-4">No services available. Create services first.</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-function Field({ label, value, icon: Icon }) {
+function InputField({ label, value, icon: Icon }) {
   return (
     <div>
-      <div className="text-xs font-medium text-muted-foreground mb-1">{label}</div>
-      <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-        {Icon && <Icon className="w-3.5 h-3.5 text-muted-foreground" />}
-        {value}
+      <div className="text-xs font-medium text-muted-foreground mb-1.5">{label}</div>
+      <div className="h-10 px-3 flex items-center gap-2 text-sm font-medium text-foreground bg-muted/30 rounded-lg border border-border">
+        {Icon && <Icon className="w-3.5 h-3.5 text-muted-foreground shrink-0" />}
+        <span className="truncate">{value}</span>
       </div>
     </div>
   );
