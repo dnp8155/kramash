@@ -20,8 +20,8 @@ export default function MobileNavigation() {
   const labelFor = (key) => (key === "events" ? term.workItemPlural : t(key.charAt(0).toUpperCase() + key.slice(1)));
 
   return (
-    <div className="lg:hidden sticky top-14 z-20 bg-background/95 backdrop-blur-md px-3 py-2 border-b border-border">
-      <div className="flex items-center gap-2">
+    <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-background/95 backdrop-blur-md border-t border-border px-3 py-2">
+      <div className="flex items-center gap-2 max-w-lg mx-auto">
         {/* Pill nav */}
         <div className="flex-1 flex items-center gap-1 bg-card border border-border rounded-full p-1 shadow-sm overflow-x-auto scrollbar-thin">
           {NAV_ITEMS.map((item) => {
@@ -56,12 +56,12 @@ export default function MobileNavigation() {
         {/* Add button */}
         <button
           onClick={() => navigate("/events/new")}
-          className="shrink-0 w-10 h-10 rounded-full bg-card border border-border shadow-sm flex items-center justify-center active:scale-95 transition-transform"
+          className="shrink-0 w-11 h-11 rounded-full bg-card border border-border shadow-sm flex items-center justify-center active:scale-95 transition-transform"
           aria-label={term.addWorkItemLabel}
         >
           <Plus className="w-5 h-5 text-foreground" />
         </button>
       </div>
-    </div>
+    </nav>
   );
 }
