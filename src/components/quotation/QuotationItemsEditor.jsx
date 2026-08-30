@@ -44,7 +44,50 @@ export default function QuotationItemsEditor({
       {items.length === 0 ? (
         <EmptyState title="No items yet" description="Add services, roles, or a custom item." />
       ) : (
-        <div className="overflow-x-auto -mx-2 px-2">
+        <>
+        {/* Mobile cards */}
+        <div className="sm:hidden space-y-3">
+          {items.map((it, idx) => (
+            <div key={idx} className="bg-card border border-border rounded-lg p-3 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <Input value={it.name} onChange={(e) => updateItem(idx, "name", e.target.value)} disabled={readOnly} className="h-8 flex-1" placeholder="Item name" />
+                {!readOnly && (
+                  <button onClick={() => removeItem(idx)} className="text-muted-foreground hover:text-destructive p-1 shrink-0" aria-label="Remove item">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+              <input value={it.description || ""} onChange={(e) => updateItem(idx, "description", e.target.value)} disabled={readOnly} placeholder="Description" className="w-full text-xs text-muted-foreground bg-transparent border-0 focus:outline-none placeholder:text-muted-foreground/60" />
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <span className="text-[10px] text-muted-foreground uppercase">Qty</span>
+                  <Input type="number" min="0" value={it.quantity} onChange={(e) => updateItem(idx, "quantity", Number(e.target.value))} disabled={readOnly} className="h-8 text-right" />
+                </div>
+                <div>
+                  <span className="text-[10px] text-muted-foreground uppercase">Days</span>
+                  <Input type="number" min="0" value={it.rate_type === "Per Day" ? it.days : 1} onChange={(e) => updateItem(idx, "days", Number(e.target.value))} disabled={readOnly || it.rate_type !== "Per Day"} className="h-8 text-right" />
+                </div>
+                <div>
+                  <span className="text-[10px] text-muted-foreground uppercase">Rate</span>
+                  <Input type="number" min="0" value={it.unit_rate} onChange={(e) => updateItem(idx, "unit_rate", Number(e.target.value))} disabled={readOnly} className="h-8 text-right" />
+                </div>
+                {gstApplicable && (
+                  <div>
+                    <span className="text-[10px] text-muted-foreground uppercase">GST%</span>
+                    <Input type="number" min="0" step="0.5" value={it.gst_rate} onChange={(e) => updateItem(idx, "gst_rate", Number(e.target.value))} disabled={readOnly} className="h-8 text-right" />
+                  </div>
+                )}
+              </div>
+              <div className="flex justify-between text-sm pt-1 border-t border-border">
+                <span className="text-muted-foreground">Amount</span>
+                <span className="font-medium">{formatMoney(lineTotal(it), currency)}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop table */}
+        <div className="hidden sm:block overflow-x-auto -mx-2 px-2">
           <table className="w-full text-sm min-w-[640px]">
             <thead>
               <tr className="text-xs text-muted-foreground border-b border-border">
@@ -109,6 +152,7 @@ export default function QuotationItemsEditor({
             </tbody>
           </table>
         </div>
+        </>
       )}
     </Section>
   );

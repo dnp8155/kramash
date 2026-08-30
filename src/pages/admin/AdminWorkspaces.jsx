@@ -55,7 +55,30 @@ export default function AdminWorkspaces() {
       ) : rows.length === 0 ? (
         <EmptyState title="No workspaces found" />
       ) : (
-        <div className="overflow-x-auto border border-border rounded-lg">
+        <>
+        {/* Mobile cards */}
+        <div className="sm:hidden space-y-3">
+          {rows.map((r) => (
+            <div key={r.id} className="bg-card border border-border rounded-lg p-4 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-medium text-foreground">{r.name}</span>
+                <span className={`px-2 py-0.5 rounded text-xs font-medium ${planBadge(r.plan_type, r.plan_status)}`}>
+                  {r.plan_type === "pro" ? "Pro" : "Free"}
+                </span>
+              </div>
+              <div className="text-xs text-muted-foreground">{r.owner_name} · {r.owner_email}</div>
+              <div className="text-xs text-muted-foreground">Created {r.created_date ? new Date(r.created_date).toLocaleDateString() : "—"} · Expires {r.expires_at ? new Date(r.expires_at).toLocaleDateString() : "—"}</div>
+              <div className="text-xs text-muted-foreground">Status: <span className="capitalize">{r.plan_status}</span> · Storage {r.storage_gb || 0} GB</div>
+              <div className="text-xs text-muted-foreground">Usage: {r.usage.events}E · {r.usage.team_members}T · {r.usage.services}S</div>
+              <Link to={`/admin/workspaces/${r.id}`} className="text-primary hover:underline inline-flex items-center text-sm">
+                Manage <ChevronRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop table */}
+        <div className="hidden sm:block overflow-x-auto border border-border rounded-lg">
           <table className="w-full text-sm min-w-[800px]">
             <thead className="bg-muted/50 text-muted-foreground text-left">
               <tr>
@@ -106,6 +129,7 @@ export default function AdminWorkspaces() {
             </tbody>
           </table>
         </div>
+        </>
       )}
     </div>
   );

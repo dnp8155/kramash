@@ -208,7 +208,41 @@ export default function Quotation() {
           action={quotations.length === 0 ? <Button onClick={() => navigate("/quotation/new")}><Plus className="w-4 h-4" /> Create Quotation</Button> : null}
         />
       ) : (
-        <div className="bg-card border border-border rounded-lg overflow-hidden">
+        <>
+        {/* Mobile cards */}
+        <div className="sm:hidden space-y-3">
+          {filtered.map((qt) => {
+            const cl = clientsById[qt.client_id];
+            const ev = eventsById[qt.event_id];
+            return (
+              <div key={qt.id} className="bg-card border border-border rounded-lg p-4 cursor-pointer hover:bg-muted/30" onClick={() => navigate(`/quotation/${qt.id}`)}>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-medium text-foreground">{qt.quotation_number}</span>
+                  <span className={cn("text-xs px-2 py-1 rounded font-medium uppercase tracking-wide", QUOTATION_STATUS_META[qt.status]?.className)}>
+                    {QUOTATION_STATUS_META[qt.status]?.label || qt.status}
+                  </span>
+                </div>
+                <div className="mt-2 text-sm text-foreground">{cl?.name || "—"}</div>
+                <div className="text-xs text-muted-foreground">{ev?.title || "—"} · {fmtDate(qt.quotation_date)}</div>
+                <div className="mt-3 flex items-center justify-between">
+                  <span className="text-sm font-semibold text-foreground">{formatMoney(qt.grand_total, currency)}</span>
+                  <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                    {(qt.status === "finalized" || qt.status === "accepted") && (
+                      <>
+                        <button onClick={() => previewPdf(qt)} disabled={generatingId === qt.id} className="text-muted-foreground hover:text-primary p-1" title="Preview PDF"><Eye className="w-4 h-4" /></button>
+                        <button onClick={() => downloadPdf(qt)} disabled={generatingId === qt.id} className="text-muted-foreground hover:text-primary p-1" title="Download PDF"><FileDown className="w-4 h-4" /></button>
+                      </>
+                    )}
+                    <button onClick={() => onDelete(qt)} className="text-muted-foreground hover:text-destructive p-1" title="Delete"><Trash2 className="w-4 h-4" /></button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Desktop table */}
+        <div className="hidden sm:block bg-card border border-border rounded-lg overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[720px]">
               <thead className="bg-muted/50 text-xs text-muted-foreground uppercase tracking-wide">
@@ -280,6 +314,7 @@ export default function Quotation() {
             </table>
           </div>
         </div>
+        </>
       )}
 
       <PdfPreviewModal
