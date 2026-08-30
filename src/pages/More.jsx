@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
 import { useT } from "@/hooks/useT";
@@ -9,6 +10,11 @@ export default function More() {
   const term = useBusinessTerminology();
   const t = useT();
   const { workspace } = useWorkspace();
+
+  // Desktop has the full sidebar — redirect /more to dashboard on large screens.
+  useEffect(() => {
+    if (window.innerWidth >= 1024) navigate("/dashboard", { replace: true });
+  }, [navigate]);
 
   const planLabel = workspace?.plan_type === "pro" ? "PRO" : "FREE";
 
