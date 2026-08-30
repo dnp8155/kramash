@@ -350,15 +350,15 @@ export default function EventDetails() {
         <Button size="sm" variant="ghost" onClick={addToCalendar}>
           <CalendarPlus className="w-3.5 h-3.5" /> Add to Calendar
         </Button>
-        <Button size="sm" variant="ghost" onClick={shareEventLink}>
+        <Button size="sm" variant="primary" onClick={shareEventLink}>
           <Share2 className="w-3.5 h-3.5" /> Share Link
         </Button>
         {fin.pending > 0 && (
-          <Button size="sm" variant="ghost" onClick={remindClient}>
+          <Button size="sm" variant="primary" onClick={remindClient}>
             <Share2 className="w-3.5 h-3.5" /> Remind {formatMoney(fin.pending, currency)} due
           </Button>
         )}
-        <Button size="sm" variant="ghost" onClick={() => navigate(`/quotation/new?event_id=${event.id}`)}>
+        <Button size="sm" variant="primary" onClick={() => navigate(`/quotation/new?event_id=${event.id}`)}>
           <FileText className="w-3.5 h-3.5" /> Create Quotation
         </Button>
       </div>
