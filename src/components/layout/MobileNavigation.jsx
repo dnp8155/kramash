@@ -52,7 +52,7 @@ export default function MobileNavigation() {
         {/* Circular add button */}
         <button
           onClick={() => navigate("/events/new")}
-          className="shrink-0 w-12 h-12 rounded-full bg-card border border-border shadow-md flex items-center justify-center active:scale-95 transition-transform"
+          className="shrink-0 w-12 h-12 rounded-full bg-card border border-border shadow-md flex items-center justify-center"
           aria-label={term.addWorkItemLabel}
         >
           <Plus className="w-6 h-6 text-foreground" />

@@ -6,6 +6,8 @@ import { useWorkspace } from "@/lib/WorkspaceContext";
 import { invalidateEntities } from "@/lib/queryInvalidation";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
 import { useT } from "@/hooks/useT";
+import { useBackGuard } from "@/hooks/useBackGuard";
+import BackConfirmDialog from "@/components/common/BackConfirmDialog";
 import Button from "@/components/common/Button";
 import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
@@ -75,6 +77,8 @@ export default function EventEditor() {
   const [error, setError] = useState("");
   const [showClientForm, setShowClientForm] = useState(false);
   const [showQuickClient, setShowQuickClient] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+  const { showConfirm, confirmBack, stayHere, requestBack, markLeaving } = useBackGuard(isDirty);
 
   useEffect(() => {
     if (workspaceId) {
@@ -98,6 +102,7 @@ export default function EventEditor() {
         if (base.start_date) base.event_dates = [base.start_date];
       }
       setForm(base);
+      setIsDirty(false);
     } catch (e) {
       setError("Failed to load event.");
     } finally {
@@ -127,8 +132,8 @@ export default function EventEditor() {
     } catch { setTeamMembers([]); setServices([]); }
   };
 
-  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
-  const setEventDates = (dates) => setForm((f) => ({ ...f, event_dates: dates }));
+  const set = (k, v) => { setForm((f) => ({ ...f, [k]: v })); setIsDirty(true); };
+  const setEventDates = (dates) => { setForm((f) => ({ ...f, event_dates: dates })); setIsDirty(true); };
 
   const syncTeamAssignments = async (eventId, teamMemberIds) => {
     const existing = await base44.entities.EventTeamAssignment.filter({
@@ -211,6 +216,8 @@ export default function EventEditor() {
       // team-member detail pages that list this event's bookings.
       invalidateEntities(queryClient, ["Event", "EventTeamAssignment", "EventDayAssignment"]);
       queryClient.invalidateQueries({ queryKey: ["event", eventId] });
+      markLeaving();
+      setIsDirty(false);
       navigate(eventId ? `/events/${eventId}` : "/events");
     } catch (err) {
       const data = err?.response?.data || err;
@@ -460,7 +467,7 @@ export default function EventEditor() {
 
             {/* Footer inside the card */}
             <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-border bg-muted/20">
-              <Button type="button" variant="outline" onClick={() => navigate(-1)} disabled={saving}>
+              <Button type="button" variant="outline" onClick={requestBack} disabled={saving}>
                 Cancel
               </Button>
               <Button type="submit" disabled={saving}>
@@ -479,6 +486,12 @@ export default function EventEditor() {
           await loadClients();
           set("client_id", savedClient.id);
         }}
+      />
+
+      <BackConfirmDialog
+        open={showConfirm}
+        onStay={stayHere}
+        onLeave={confirmBack}
       />
     </>
   );
