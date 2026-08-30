@@ -37,7 +37,7 @@ export default async function (req) {
         { status: 403 }
       );
     }
-    const created = await base44.asServiceRole.entities.Service.create({ ...payload, workspace_id });
+    const created = await base44.entities.Service.create({ ...payload, workspace_id });
     return Response.json(created);
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
