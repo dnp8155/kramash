@@ -43,14 +43,13 @@ export default function AppLayout() {
         <UpdateBanner />
         <OfflineBanner />
         <TopHeader onMenuClick={() => setMobileOpen(true)} />
-        <main className="flex-1 overflow-y-auto scrollbar-thin pb-16 lg:pb-0">
+        <MobileNavigation />
+        <main className="flex-1 overflow-y-auto scrollbar-thin">
           <ErrorBoundary>
             <Outlet />
           </ErrorBoundary>
         </main>
       </div>
-
-      <MobileNavigation />
     </div>
   );
 }
