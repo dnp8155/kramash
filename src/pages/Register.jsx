@@ -130,7 +130,9 @@ export default function Register() {
           await base44.auth.updateMe(updates);
         } catch {}
       }
-      window.location.href = safeReturnTo();
+      // New users always need onboarding — send to /dashboard which
+      // WorkspaceRoute redirects to /onboarding when no workspace exists.
+      window.location.href = "/dashboard";
     } catch {
       setError("That verification code is incorrect or has expired.");
     } finally {

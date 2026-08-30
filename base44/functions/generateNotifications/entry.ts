@@ -70,6 +70,15 @@ export default async function (req) {
       status: "upcoming"
     }, "start_date", 200);
 
+    // Resolve user emails for email notifications.
+    const memberUsers = await Promise.all(
+      members.map((m) => base44.asServiceRole.entities.User.get(m.user_id).catch(() => null))
+    );
+    const memberEmails = {};
+    memberUsers.forEach((u, i) => {
+      if (u?.email) memberEmails[members[i].user_id] = u.email;
+    });
+
     for (const ev of events || []) {
       if (!ev.start_date) continue;
       if (ev.start_date >= todayISO && ev.start_date <= in48h) {
@@ -89,6 +98,20 @@ export default async function (req) {
           });
           existingKeys.add(key);
           created++;
+
+          // Send email notification if the member has an email.
+          const email = memberEmails[m.user_id];
+          if (email) {
+            try {
+              await base44.asServiceRole.integrations.Core.SendEmail({
+                to: email,
+                subject: `${is24 ? reminderTomorrow : reminderComing}: ${ev.title}`,
+                body: `Hi ${m.user_name || ""},\n\nThis is a reminder that "${ev.title}" ${reminderVerb} ${ev.start_date}${ev.venue ? ` at ${ev.venue}` : ""}.\n\n— ${workspace?.name || "Kramashah"}`
+              });
+            } catch (e) {
+              // Email send is best-effort; don't fail the whole function.
+            }
+          }
         }
       }
     }
