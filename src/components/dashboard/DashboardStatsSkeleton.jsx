@@ -1,16 +1,15 @@
 export default function DashboardStatsSkeleton() {
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
       {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="bg-card border border-border rounded-lg p-4">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex-1 space-y-2">
-              <div className="h-3 w-20 rounded bg-muted/60 animate-pulse" />
-              <div className="h-7 w-24 rounded bg-muted/60 animate-pulse" />
-              <div className="h-3 w-16 rounded bg-muted/40 animate-pulse" />
-            </div>
-            <div className="w-9 h-9 rounded-lg bg-muted/60 animate-pulse shrink-0" />
+        <div key={i} className="bg-card border border-border rounded-xl p-4 sm:p-5 shadow-card">
+          <div className="flex items-center gap-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-muted/60 shrink-0" />
+            <div className="h-3 w-20 rounded bg-muted/60" />
+            <div className="w-3.5 h-3.5 rounded bg-muted/40 ml-auto" />
           </div>
+          <div className="mt-3 h-7 w-24 rounded bg-muted/60" />
+          <div className="mt-2 h-3 w-16 rounded bg-muted/40" />
         </div>
       ))}
     </div>

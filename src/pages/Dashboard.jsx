@@ -184,6 +184,7 @@ export default function Dashboard() {
   return (
     <div className="p-4 sm:p-6 space-y-6 max-w-[1400px] mx-auto">
       <PageHeader
+        eyebrow="Overview"
         title={`${greeting}, ${user?.full_name?.split(" ")[0] || t("there")}`}
         subtitle={`${workspace?.name || "Your workspace"} · ${new Date().toLocaleDateString(dateLocale, { weekday: "long", day: "numeric", month: "long", year: "numeric" })}`}
       >

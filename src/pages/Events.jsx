@@ -95,7 +95,7 @@ export default function Events() {
 
   return (
     <div className="p-4 sm:p-6 space-y-4 max-w-[1400px] mx-auto">
-      <PageHeader title={term.workItemPlural} subtitle={`Manage your bookings, schedule, and ${term.workItemSingular.toLowerCase()} details.`}>
+      <PageHeader eyebrow="Schedule" title={term.workItemPlural} subtitle={`Manage your bookings, schedule, and ${term.workItemSingular.toLowerCase()} details.`}>
         <Button variant="outline" size="sm" onClick={() => navigate("/team")}>
           <Users className="w-4 h-4" />
           <span className="hidden sm:inline">{term.teamLabel}</span>

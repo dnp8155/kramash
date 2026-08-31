@@ -15,9 +15,10 @@ import { loadQuotations, deleteQuotation, loadQuotationItems } from "@/lib/quota
 import { QUOTATION_STATUSES, QUOTATION_STATUS_META } from "@/constants/quotationConfig";
 import { generateQuotationPdf } from "@/lib/quotationPdf";
 import { base44 } from "@/api/base44Client";
-import { Plus, Search, Trash2, FileDown, FileText, Eye } from "lucide-react";
+import { Plus, Search, Trash2, FileDown, Eye, FileText, IndianRupee, CheckCircle2, Pencil } from "lucide-react";
 import PdfPreviewModal from "@/components/common/PdfPreviewModal";
 import PageHeader from "@/components/common/PageHeader";
+import StatCard from "@/components/common/StatCard";
 import { cn } from "@/lib/utils";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
 import { invalidateEntities } from "@/lib/queryInvalidation";
@@ -143,7 +144,7 @@ export default function Quotation() {
 
   if (isLoading) return (
     <div className="p-4 sm:p-6 space-y-5 max-w-[1200px] mx-auto">
-      <PageHeader title="Quotations" subtitle="Create, track and finalize client quotations.">
+      <PageHeader eyebrow="Sales" title="Quotations" subtitle="Create, track and finalize client quotations.">
         <Button onClick={() => navigate("/quotation/new")}>
           <Plus className="w-4 h-4" /> Create Quotation
         </Button>
@@ -159,7 +160,7 @@ export default function Quotation() {
 
   return (
     <div className="p-4 sm:p-6 space-y-5 max-w-[1200px] mx-auto">
-      <PageHeader title="Quotations" subtitle="Create, track and finalize client quotations.">
+      <PageHeader eyebrow="Sales" title="Quotations" subtitle="Create, track and finalize client quotations.">
         <Button onClick={() => navigate("/quotation/new")}>
           <Plus className="w-4 h-4" /> Create Quotation
         </Button>
@@ -167,22 +168,10 @@ export default function Quotation() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-card border border-border rounded-lg p-4">
-          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Total Quotations</div>
-          <div className="mt-1 text-2xl font-bold text-foreground">{quotations.length}</div>
-        </div>
-        <div className="bg-card border border-border rounded-lg p-4">
-          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Total Value</div>
-          <div className="mt-1 text-xl font-bold text-foreground">{formatMoney(stats.totalValue, currency)}</div>
-        </div>
-        <div className="bg-card border border-border rounded-lg p-4">
-          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Accepted</div>
-          <div className="mt-1 text-2xl font-bold text-success">{stats.acceptedCount}</div>
-        </div>
-        <div className="bg-card border border-border rounded-lg p-4">
-          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Drafts</div>
-          <div className="mt-1 text-2xl font-bold text-muted-foreground">{stats.draftCount}</div>
-        </div>
+        <StatCard label="Total Quotations" value={quotations.length} icon={FileText} tone="primary" />
+        <StatCard label="Total Value" value={formatMoney(stats.totalValue, currency)} icon={IndianRupee} tone="success" />
+        <StatCard label="Accepted" value={stats.acceptedCount} icon={CheckCircle2} tone="success" />
+        <StatCard label="Drafts" value={stats.draftCount} icon={Pencil} tone="muted" />
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">
@@ -215,9 +204,9 @@ export default function Quotation() {
             const cl = clientsById[qt.client_id];
             const ev = eventsById[qt.event_id];
             return (
-              <div key={qt.id} className="bg-card border border-border rounded-lg p-4 cursor-pointer hover:bg-muted/30" onClick={() => navigate(`/quotation/${qt.id}`)}>
+              <div key={qt.id} className="bg-card border border-border rounded-xl p-4 shadow-card cursor-pointer hover:shadow-card-hover hover:border-border/80 transition-shadow" onClick={() => navigate(`/quotation/${qt.id}`)}>
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-sm font-medium text-foreground">{qt.quotation_number}</span>
+                  <span className="text-sm font-mono font-medium text-foreground">{qt.quotation_number}</span>
                   <span className={cn("text-xs px-2 py-1 rounded font-medium uppercase tracking-wide", QUOTATION_STATUS_META[qt.status]?.className)}>
                     {QUOTATION_STATUS_META[qt.status]?.label || qt.status}
                   </span>
@@ -242,18 +231,18 @@ export default function Quotation() {
         </div>
 
         {/* Desktop table */}
-        <div className="hidden sm:block bg-card border border-border rounded-lg overflow-hidden">
+        <div className="hidden sm:block bg-card border border-border rounded-xl overflow-hidden shadow-card">
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[720px]">
-              <thead className="bg-muted/50 text-xs text-muted-foreground uppercase tracking-wide">
+              <thead className="bg-muted/40 text-[11px] text-muted-foreground uppercase tracking-[0.08em] border-b border-border">
                 <tr>
-                  <th className="text-left px-4 py-3 font-medium">Quotation No</th>
-                  <th className="text-left px-4 py-3 font-medium">Client</th>
-                  <th className="text-left px-4 py-3 font-medium">{term.workItemSingular}</th>
-                  <th className="text-left px-4 py-3 font-medium">Date</th>
-                  <th className="text-right px-4 py-3 font-medium">Total</th>
-                  <th className="text-left px-4 py-3 font-medium">Status</th>
-                  <th className="px-4 py-3 font-medium w-20"></th>
+                  <th className="text-left px-4 py-3 font-semibold">Quotation No</th>
+                  <th className="text-left px-4 py-3 font-semibold">Client</th>
+                  <th className="text-left px-4 py-3 font-semibold">{term.workItemSingular}</th>
+                  <th className="text-left px-4 py-3 font-semibold">Date</th>
+                  <th className="text-right px-4 py-3 font-semibold">Total</th>
+                  <th className="text-left px-4 py-3 font-semibold">Status</th>
+                  <th className="px-4 py-3 font-semibold w-20"></th>
                 </tr>
               </thead>
               <tbody>
@@ -263,27 +252,27 @@ export default function Quotation() {
                   return (
                     <tr
                       key={qt.id}
-                      className="border-t border-border hover:bg-muted/30 cursor-pointer"
+                      className="border-b border-border last:border-0 hover:bg-muted/30 cursor-pointer transition-colors"
                       onClick={() => navigate(`/quotation/${qt.id}`)}
                     >
-                      <td className="px-4 py-3 font-medium">{qt.quotation_number}</td>
-                      <td className="px-4 py-3">{cl?.name || "—"}</td>
-                      <td className="px-4 py-3">{ev?.title || "—"}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{fmtDate(qt.quotation_date)}</td>
-                      <td className="px-4 py-3 text-right font-medium">{formatMoney(qt.grand_total, currency)}</td>
-                      <td className="px-4 py-3">
-                        <span className={cn("text-xs px-2 py-1 rounded font-medium uppercase tracking-wide", QUOTATION_STATUS_META[qt.status]?.className)}>
+                      <td className="px-4 py-3.5 font-mono font-medium text-foreground">{qt.quotation_number}</td>
+                      <td className="px-4 py-3.5 text-foreground">{cl?.name || "—"}</td>
+                      <td className="px-4 py-3.5 text-muted-foreground">{ev?.title || "—"}</td>
+                      <td className="px-4 py-3.5 text-muted-foreground">{fmtDate(qt.quotation_date)}</td>
+                      <td className="px-4 py-3.5 text-right font-mono font-medium tabular-nums text-foreground">{formatMoney(qt.grand_total, currency)}</td>
+                      <td className="px-4 py-3.5">
+                        <span className={cn("text-[11px] px-2 py-1 rounded-md font-semibold uppercase tracking-wide", QUOTATION_STATUS_META[qt.status]?.className)}>
                           {QUOTATION_STATUS_META[qt.status]?.label || qt.status}
                         </span>
                       </td>
-                      <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                      <td className="px-4 py-3.5" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center gap-1 justify-end">
                           {(qt.status === "finalized" || qt.status === "accepted") && (
                             <>
                               <button
                                 onClick={() => previewPdf(qt)}
                                 disabled={generatingId === qt.id}
-                                className="text-muted-foreground hover:text-primary p-1"
+                                className="text-muted-foreground hover:text-primary p-1.5 rounded-md hover:bg-muted transition-colors"
                                 title="Preview PDF"
                               >
                                 <Eye className="w-4 h-4" />
@@ -291,7 +280,7 @@ export default function Quotation() {
                               <button
                                 onClick={() => downloadPdf(qt)}
                                 disabled={generatingId === qt.id}
-                                className="text-muted-foreground hover:text-primary p-1"
+                                className="text-muted-foreground hover:text-primary p-1.5 rounded-md hover:bg-muted transition-colors"
                                 title="Download PDF"
                               >
                                 <FileDown className="w-4 h-4" />
@@ -300,7 +289,7 @@ export default function Quotation() {
                           )}
                           <button
                             onClick={() => onDelete(qt)}
-                            className="text-muted-foreground hover:text-destructive p-1"
+                            className="text-muted-foreground hover:text-destructive p-1.5 rounded-md hover:bg-muted transition-colors"
                             title="Delete"
                           >
                             <Trash2 className="w-4 h-4" />

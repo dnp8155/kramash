@@ -7,7 +7,7 @@ const Card = forwardRef(function Card({ className, hover = false, children, ...p
       ref={ref}
       className={cn(
         "bg-card border border-border rounded-xl shadow-card",
-        hover && "hover-lift hover:shadow-card-hover hover:border-border/80 cursor-pointer",
+        hover && "hover:shadow-card-hover hover:border-border/80 cursor-pointer transition-shadow duration-200",
         className
       )}
       {...props}
