@@ -156,6 +156,10 @@
       "type": "string",
       "format": "date-time",
       "title": "Signed At"
+    },
+    "client_access_password": {
+      "type": "string",
+      "title": "Client Access Password (optional gate for online quotation link)"
     }
   },
   "required": [

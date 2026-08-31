@@ -20,6 +20,26 @@ export default async function(req) {
       return Response.json({ error: "This quotation is not available for viewing." }, { status: 403 });
     }
 
+    // If quotation has an access password, validate client credentials.
+    if (q.client_access_password) {
+      const { email, password } = body;
+      if (!password) {
+        return Response.json({ requires_auth: true });
+      }
+      if (password !== q.client_access_password) {
+        return Response.json({ error: "Incorrect email or password" }, { status: 401 });
+      }
+      // Validate email against client snapshot if one exists.
+      let clientEmail = "";
+      try {
+        const snap = JSON.parse(q.client_snapshot || "{}");
+        clientEmail = (snap.email || "").trim().toLowerCase();
+      } catch (e) { /* ignore */ }
+      if (clientEmail && (!email || email.trim().toLowerCase() !== clientEmail)) {
+        return Response.json({ error: "Incorrect email or password" }, { status: 401 });
+      }
+    }
+
     const items = await base44.asServiceRole.entities.QuotationItem.filter(
       { quotation_id: quotationId },
       "sort_order",

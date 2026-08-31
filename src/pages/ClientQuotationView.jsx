@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import {
-  CheckCircle2, ShieldCheck, FileText, Calendar, MapPin, PenLine, Loader2
+  CheckCircle2, ShieldCheck, FileText, Calendar, MapPin, PenLine, Loader2, Lock
 } from "lucide-react";
 import SignaturePad from "@/components/common/SignaturePad";
 import Button from "@/components/common/Button";
@@ -36,23 +36,47 @@ export default function ClientQuotationView() {
   const [signerName, setSignerName] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [signed, setSigned] = useState(false);
+  const [authRequired, setAuthRequired] = useState(false);
+  const [authEmail, setAuthEmail] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
+  const [authError, setAuthError] = useState("");
+  const [authenticating, setAuthenticating] = useState(false);
 
-  const load = async () => {
-    setLoading(true);
+  const load = async (creds) => {
+    const isAuthAttempt = !!creds;
+    if (!isAuthAttempt) setLoading(true);
+    else setAuthenticating(true);
     setError("");
+    setAuthError("");
     try {
-      const res = await base44.functions.invoke("clientViewQuotation", { quotation_id: id });
-      setData(res.data);
-      if (res.data.quotation.status === "accepted" && res.data.quotation.client_signature) {
-        setSigned(true);
-        setSignerName(res.data.quotation.signed_by_name || "");
+      const payload = { quotation_id: id };
+      if (creds?.email) payload.email = creds.email;
+      if (creds?.password) payload.password = creds.password;
+      const res = await base44.functions.invoke("clientViewQuotation", payload);
+      if (res.data.requires_auth) {
+        setAuthRequired(true);
+        setData(null);
+      } else {
+        setAuthRequired(false);
+        setData(res.data);
+        if (res.data.quotation.status === "accepted" && res.data.quotation.client_signature) {
+          setSigned(true);
+          setSignerName(res.data.quotation.signed_by_name || "");
+        }
       }
     } catch (e) {
-      setError(e?.message || "Failed to load quotation");
+      if (isAuthAttempt) {
+        setAuthError(e?.message || "Incorrect email or password");
+      } else {
+        setError(e?.message || "Failed to load quotation");
+      }
     } finally {
-      setLoading(false);
+      if (!isAuthAttempt) setLoading(false);
+      else setAuthenticating(false);
     }
   };
+
+  const handleLogin = () => load({ email: authEmail, password: authPassword });
 
   useEffect(() => { load(); }, [id]);
 
@@ -67,11 +91,14 @@ export default function ClientQuotationView() {
     }
     setSubmitting(true);
     try {
-      const res = await base44.functions.invoke("signQuotation", {
+      const signPayload = {
         quotation_id: id,
         signature,
         signed_by_name: signerName.trim()
-      });
+      };
+      if (authEmail) signPayload.email = authEmail;
+      if (authPassword) signPayload.password = authPassword;
+      const res = await base44.functions.invoke("signQuotation", signPayload);
       setSigned(true);
       setData((d) => ({ ...d, quotation: { ...d.quotation, ...res.data.quotation } }));
       toast({ title: "Quotation accepted", description: "Your signature has been recorded." });
@@ -82,11 +109,41 @@ export default function ClientQuotationView() {
     }
   };
 
-  if (loading) {
+  if (loading && !authRequired) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-muted/30">
         <div className="flex items-center gap-2 text-muted-foreground">
           <Loader2 className="w-5 h-5 animate-spin" /> Loading quotation…
+        </div>
+      </div>
+    );
+  }
+
+  if (authRequired && !data) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
+        <div className="max-w-md w-full bg-card border border-border rounded-xl p-8">
+          <div className="flex items-center gap-2 mb-1">
+            <Lock className="w-5 h-5 text-primary" />
+            <h1 className="text-lg font-semibold text-foreground">Login to view quotation</h1>
+          </div>
+          <p className="text-sm text-muted-foreground mb-5">Enter your email and password to access this quotation.</p>
+          {authError && (
+            <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-2.5 text-sm text-destructive mb-3">{authError}</div>
+          )}
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-foreground">Email</label>
+              <Input value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} placeholder="your@email.com" disabled={authenticating} />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-foreground">Password</label>
+              <Input type="password" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} placeholder="••••••••" disabled={authenticating} onKeyDown={(e) => { if (e.key === "Enter") handleLogin(); }} />
+            </div>
+            <Button onClick={handleLogin} disabled={authenticating} className="w-full">
+              {authenticating ? (<><Loader2 className="w-4 h-4 animate-spin" /> Checking…</>) : "Login"}
+            </Button>
+          </div>
         </div>
       </div>
     );

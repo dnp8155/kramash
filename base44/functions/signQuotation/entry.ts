@@ -25,6 +25,22 @@ export default async function(req) {
       return Response.json({ error: "This quotation cannot be signed yet." }, { status: 403 });
     }
 
+    // If quotation has an access password, validate client credentials.
+    if (q.client_access_password) {
+      const { email, password } = body;
+      if (!password || password !== q.client_access_password) {
+        return Response.json({ error: "Authentication required to sign this quotation" }, { status: 401 });
+      }
+      let clientEmail = "";
+      try {
+        const snap = JSON.parse(q.client_snapshot || "{}");
+        clientEmail = (snap.email || "").trim().toLowerCase();
+      } catch (e) { /* ignore */ }
+      if (clientEmail && (!email || email.trim().toLowerCase() !== clientEmail)) {
+        return Response.json({ error: "Authentication required to sign this quotation" }, { status: 401 });
+      }
+    }
+
     const updated = await base44.asServiceRole.entities.Quotation.update(quotation_id, {
       status: "accepted",
       client_signature: signature,

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -7,6 +7,7 @@ import { invalidateEntities } from "@/lib/queryInvalidation";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
 import { useT } from "@/hooks/useT";
 import { useBackGuard } from "@/hooks/useBackGuard";
+import { useToast } from "@/components/ui/use-toast";
 import BackConfirmDialog from "@/components/common/BackConfirmDialog";
 import Button from "@/components/common/Button";
 import Input from "@/components/common/Input";
@@ -79,6 +80,14 @@ export default function EventEditor() {
   const [showQuickClient, setShowQuickClient] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const { showConfirm, confirmBack, stayHere, requestBack, markLeaving } = useBackGuard(isDirty);
+  const { toast } = useToast();
+  const topRef = useRef(null);
+
+  useEffect(() => {
+    if (error && topRef.current) {
+      topRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [error]);
 
   useEffect(() => {
     if (workspaceId) {
@@ -177,7 +186,7 @@ export default function EventEditor() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const v = validate();
-    if (v) { setError(v); return; }
+    if (v) { setError(v); toast({ title: v, variant: "destructive" }); return; }
     setSaving(true);
     setError("");
     try {
@@ -218,17 +227,21 @@ export default function EventEditor() {
       queryClient.invalidateQueries({ queryKey: ["event", eventId] });
       markLeaving();
       setIsDirty(false);
+      toast({ title: isEdit ? "Project updated" : "Project created" });
       navigate(eventId ? `/events/${eventId}` : "/events");
     } catch (err) {
       const data = err?.response?.data || err;
+      let msg;
       if (data?.error === "PLAN_LIMIT_REACHED") {
         const wl = (tTerm.workItemSingular || "event").toLowerCase();
-        setError(`You've reached the Free Plan ${wl} limit (${data.current}/${data.limit}). Upgrade to Pro to create more ${wl}s.`);
+        msg = `You've reached the Free Plan ${wl} limit (${data.current}/${data.limit}). Upgrade to Pro to create more ${wl}s.`;
       } else if (data?.error === "This workspace is suspended. Please contact support.") {
-        setError(data.error);
+        msg = data.error;
       } else {
-        setError(err?.message || `Failed to save ${tTerm.workItemSingular?.toLowerCase() || "event"}. Please try again.`);
+        msg = err?.message || `Failed to save ${tTerm.workItemSingular?.toLowerCase() || "event"}. Please try again.`;
       }
+      setError(msg);
+      toast({ title: msg, variant: "destructive" });
     } finally {
       setSaving(false);
     }
@@ -251,7 +264,7 @@ export default function EventEditor() {
       <div className="min-h-full bg-muted/30">
         {/* Header */}
         <div className="border-b border-border bg-card">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 py-5 flex items-start justify-between gap-4">
+          <div ref={topRef} className="max-w-5xl mx-auto px-4 sm:px-6 py-5 flex items-start justify-between gap-4">
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                 <FolderPlus className="w-5 h-5 text-primary" />

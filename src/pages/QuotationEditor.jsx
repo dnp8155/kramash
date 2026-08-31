@@ -72,6 +72,7 @@ export default function QuotationEditor() {
   const [gstMode, setGstMode] = useState("cgst_sgst");
   const [terms, setTerms] = useState(DEFAULT_QUOTATION_TERMS);
   const [notes, setNotes] = useState("");
+  const [accessPassword, setAccessPassword] = useState("");
 
   const [clients, setClients] = useState([]);
   const [events, setEvents] = useState([]);
@@ -148,6 +149,7 @@ export default function QuotationEditor() {
         try { setTemplateConfig(JSON.parse(q.template_config || "{}")); } catch { setTemplateConfig({}); }
         setProjectTitle(q.project_title || "");
         setProjectSummary(q.project_summary || "");
+        setAccessPassword(q.client_access_password || "");
       }
     } catch (e) {
       setError(e?.message || "Failed to load quotation.");
@@ -264,7 +266,8 @@ export default function QuotationEditor() {
     template_id: templateId,
     template_config: JSON.stringify(templateConfig),
     project_title: projectTitle,
-    project_summary: projectSummary
+    project_summary: projectSummary,
+    client_access_password: accessPassword || ""
   });
 
   const validate = () => {
@@ -615,6 +618,15 @@ export default function QuotationEditor() {
             rows={2}
             className="w-full bg-card border border-border rounded-md p-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
           />
+        </Field>
+        <Field label="Client Access Password (optional)">
+          <Input
+            value={accessPassword}
+            onChange={(e) => setAccessPassword(e.target.value)}
+            disabled={readOnly}
+            placeholder="Leave blank for public link"
+          />
+          <p className="text-xs text-muted-foreground mt-1">If set, the client must enter their email + this password to view and sign the quotation online.</p>
         </Field>
       </Section>
 
