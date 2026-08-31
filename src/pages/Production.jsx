@@ -242,6 +242,7 @@ export default function Production() {
         workspaceId={workspaceId}
         eventId={editingTask?.event_id || ""}
         teamMembers={teamMembers}
+        events={events}
       />
 
       <AlertDialog open={!!deleteTarget} onOpenChange={(v) => !v && setDeleteTarget(null)}>

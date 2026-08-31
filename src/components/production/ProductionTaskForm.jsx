@@ -8,15 +8,16 @@ import { useToast } from "@/components/ui/use-toast";
 import { TASK_TYPES, createTask, updateTask } from "@/lib/productionService";
 
 const EMPTY = {
-  title: "",
-  description: "",
-  task_type: "editing",
-  priority: "medium",
-  due_date: "",
-  assigned_to: ""
+title: "",
+description: "",
+task_type: "editing",
+priority: "medium",
+due_date: "",
+assigned_to: "",
+event_id: ""
 };
 
-export default function ProductionTaskForm({ open, onClose, onSaved, task, workspaceId, eventId, teamMembers = [] }) {
+export default function ProductionTaskForm({ open, onClose, onSaved, task, workspaceId, eventId, teamMembers = [], events = [] }) {
   const { toast } = useToast();
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
@@ -39,7 +40,7 @@ export default function ProductionTaskForm({ open, onClose, onSaved, task, works
     try {
       const payload = {
         workspace_id: workspaceId,
-        event_id: eventId,
+        event_id: form.event_id || eventId || "",
         title: form.title.trim(),
         description: form.description || "",
         task_type: form.task_type || "editing",
@@ -73,6 +74,19 @@ export default function ProductionTaskForm({ open, onClose, onSaved, task, works
           <div className="space-y-1.5">
             <Label>Task Title *</Label>
             <Input value={form.title} onChange={(e) => set("title", e.target.value)} placeholder="e.g. Edit wedding highlights" />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Project / Event</Label>
+            <select
+              className="w-full h-9 rounded-lg border border-input bg-card px-3 text-sm"
+              value={form.event_id || eventId || ""}
+              onChange={(e) => set("event_id", e.target.value)}
+            >
+              <option value="">Unassigned</option>
+              {events.map((ev) => (
+                <option key={ev.id} value={ev.id}>{ev.title}</option>
+              ))}
+            </select>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">

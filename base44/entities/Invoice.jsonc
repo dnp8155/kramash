@@ -1,0 +1,128 @@
+{
+  "name": "Invoice",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "title": "Workspace ID"
+    },
+    "invoice_number": {
+      "type": "string",
+      "title": "Invoice Number"
+    },
+    "client_id": {
+      "type": "string",
+      "title": "Client ID"
+    },
+    "event_id": {
+      "type": "string",
+      "title": "Event / Project ID"
+    },
+    "quotation_id": {
+      "type": "string",
+      "title": "Source Quotation ID"
+    },
+    "invoice_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Invoice Date"
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Due Date"
+    },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "default": "draft",
+      "enum": [
+        "draft",
+        "sent",
+        "partially_paid",
+        "paid",
+        "overdue",
+        "cancelled"
+      ]
+    },
+    "items_json": {
+      "type": "string",
+      "title": "Line Items (JSON)"
+    },
+    "subtotal": {
+      "type": "number",
+      "title": "Subtotal",
+      "default": 0
+    },
+    "discount_amount": {
+      "type": "number",
+      "title": "Discount Amount",
+      "default": 0
+    },
+    "gst_applicable": {
+      "type": "boolean",
+      "title": "GST Applicable",
+      "default": false
+    },
+    "gst_amount": {
+      "type": "number",
+      "title": "GST Amount",
+      "default": 0
+    },
+    "grand_total": {
+      "type": "number",
+      "title": "Grand Total",
+      "default": 0
+    },
+    "amount_paid": {
+      "type": "number",
+      "title": "Amount Paid",
+      "default": 0
+    },
+    "balance_due": {
+      "type": "number",
+      "title": "Balance Due",
+      "default": 0
+    },
+    "payment_schedule_json": {
+      "type": "string",
+      "title": "Payment Schedule (JSON array of milestones)"
+    },
+    "client_snapshot": {
+      "type": "string",
+      "title": "Client Snapshot (JSON)"
+    },
+    "notes": {
+      "type": "string",
+      "title": "Notes"
+    },
+    "terms_and_conditions": {
+      "type": "string",
+      "title": "Terms & Conditions"
+    },
+    "sent_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Sent At"
+    }
+  },
+  "required": [
+    "workspace_id",
+    "invoice_number",
+    "invoice_date"
+  ],
+  "rls": {
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

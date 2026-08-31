@@ -19,6 +19,8 @@ import Landing from '@/pages/Landing';
 import Dashboard from '@/pages/Dashboard';
 import Leads from '@/pages/Leads';
 import LeadDetails from '@/pages/LeadDetails';
+import Production from '@/pages/Production';
+import Packages from '@/pages/Packages';
 import Events from '@/pages/Events';
 import EventDetails from '@/pages/EventDetails';
 import EventEditor from '@/pages/EventEditor';
@@ -106,6 +108,8 @@ const AuthenticatedApp = () => {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/leads" element={<Leads />} />
           <Route path="/leads/:id" element={<LeadDetails />} />
+          <Route path="/production" element={<Production />} />
+          <Route path="/packages" element={<Packages />} />
           <Route path="/events" element={<Events />} />
           <Route path="/events/new" element={<EventEditor />} />
           <Route path="/events/:id" element={<EventDetails />} />

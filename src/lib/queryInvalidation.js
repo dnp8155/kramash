@@ -80,6 +80,15 @@ export const ENTITY_INVALIDATION_KEYS = {
   LeadActivity: [
     ["lead"],
     ["lead-activities"]
+  ],
+  ProductionTask: [
+    ["production-tasks"]
+  ],
+  Package: [
+    ["packages"]
+  ],
+  ProjectFile: [
+    ["project-files"]
   ]
 };
 

@@ -20,7 +20,9 @@ import {
   CreditCard,
   KeyRound,
   LifeBuoy,
-  Target
+  Target,
+  Clapperboard,
+  Package
 } from "lucide-react";
 
 export const mainNav = [
@@ -31,6 +33,8 @@ export const mainNav = [
   { label: "Team", path: "/team", icon: UserCheck },
   { label: "Financial", path: "/financial", icon: Wallet },
   { label: "Quotation & Agreement", path: "/quotation", icon: FileText },
+  { label: "Packages", path: "/packages", icon: Package },
+  { label: "Post-Production", path: "/production", icon: Clapperboard },
   { label: "Help & Support", path: "/help", icon: LifeBuoy }
 ];
 

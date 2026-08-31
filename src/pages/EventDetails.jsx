@@ -12,6 +12,7 @@ import EventForm from "@/components/events/EventForm";
 import EventAssignmentCard from "@/components/events/EventAssignmentCard";
 import EventServicesTab from "@/components/events/EventServicesTab";
 import EventProgressTab from "@/components/events/EventProgressTab";
+import ProjectFilesPanel from "@/components/projects/ProjectFilesPanel";
 import AssignTeamDialog from "@/components/team/AssignTeamDialog";
 import RecordPaymentDialog from "@/components/financial/RecordPaymentDialog";
 import RecordExpenseDialog from "@/components/financial/RecordExpenseDialog";
@@ -235,7 +236,7 @@ export default function EventDetails() {
     );
   }
 
-  const tabs = ["Team", "Services", "Payments", "Notes", "Progress"];
+  const tabs = ["Team", "Services", "Payments", "Files", "Notes", "Progress"];
   const eventTransactions = transactions.filter((t) => t.status === "ACTIVE");
 
   const toggleService = async (serviceId) => {
@@ -501,6 +502,12 @@ export default function EventDetails() {
               ))}
             </div>
           )}
+        </Card>
+      )}
+
+      {tab === "Files" && (
+        <Card className="p-5">
+          <ProjectFilesPanel eventId={event.id} workspaceId={workspaceId} />
         </Card>
       )}
 
