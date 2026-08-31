@@ -21,6 +21,7 @@ import Leads from '@/pages/Leads';
 import LeadDetails from '@/pages/LeadDetails';
 import Production from '@/pages/Production';
 import Packages from '@/pages/Packages';
+import Invoices from '@/pages/Invoices';
 import Events from '@/pages/Events';
 import EventDetails from '@/pages/EventDetails';
 import EventEditor from '@/pages/EventEditor';
@@ -110,6 +111,7 @@ const AuthenticatedApp = () => {
           <Route path="/leads/:id" element={<LeadDetails />} />
           <Route path="/production" element={<Production />} />
           <Route path="/packages" element={<Packages />} />
+          <Route path="/invoices" element={<Invoices />} />
           <Route path="/events" element={<Events />} />
           <Route path="/events/new" element={<EventEditor />} />
           <Route path="/events/:id" element={<EventDetails />} />
