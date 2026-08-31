@@ -19,6 +19,7 @@ export default function LandingNav() {
     { href: "#how-it-works", label: "How It Works" },
     { href: "#pricing", label: "Pricing" },
     { href: "#faq", label: "FAQ" },
+    { href: "/about", label: "About" },
   ];
 
   return (
@@ -36,11 +37,17 @@ export default function LandingNav() {
         </Link>
 
         <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-muted-foreground">
-          {links.map((l) => (
-            <a key={l.href} href={l.href} className="hover:text-foreground transition-colors">
-              {l.label}
-            </a>
-          ))}
+          {links.map((l) =>
+            l.href.startsWith("/") ? (
+              <Link key={l.href} to={l.href} className="hover:text-foreground transition-colors">
+                {l.label}
+              </Link>
+            ) : (
+              <a key={l.href} href={l.href} className="hover:text-foreground transition-colors">
+                {l.label}
+              </a>
+            )
+          )}
         </nav>
 
         <div className="hidden md:flex items-center gap-2">
@@ -70,16 +77,27 @@ export default function LandingNav() {
       {mobileOpen && (
         <div className="md:hidden border-t border-border bg-background">
           <div className="px-4 py-4 space-y-1">
-            {links.map((l) => (
-              <a
-                key={l.href}
-                href={l.href}
-                onClick={() => setMobileOpen(false)}
-                className="block px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-              >
-                {l.label}
-              </a>
-            ))}
+            {links.map((l) =>
+              l.href.startsWith("/") ? (
+                <Link
+                  key={l.href}
+                  to={l.href}
+                  onClick={() => setMobileOpen(false)}
+                  className="block px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                >
+                  {l.label}
+                </Link>
+              ) : (
+                <a
+                  key={l.href}
+                  href={l.href}
+                  onClick={() => setMobileOpen(false)}
+                  className="block px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                >
+                  {l.label}
+                </a>
+              )
+            )}
             <div className="pt-3 mt-2 border-t border-border flex gap-2">
               <Link
                 to="/login"
