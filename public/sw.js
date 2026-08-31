@@ -1,6 +1,6 @@
 // KRAMAS Service Worker
 // Safe caching: app shell + static assets only. Never caches API/auth responses.
-const SW_VERSION = "kramas-v1";
+const SW_VERSION = "kramas-v2";
 const SHELL_CACHE = `${SW_VERSION}-shell`;
 const ASSET_CACHE = `${SW_VERSION}-assets`;
 
@@ -66,20 +66,18 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Static assets (JS, CSS, fonts, images): stale-while-revalidate.
+  // Static assets (JS, CSS, fonts, images): network-first to ensure latest version,
+  // fall back to cache only when offline.
   event.respondWith(
-    caches.match(req).then((cached) => {
-      const fetchPromise = fetch(req)
-        .then((res) => {
-          if (res && res.status === 200 && res.type === "basic") {
-            const copy = res.clone();
-            caches.open(ASSET_CACHE).then((c) => c.put(req, copy));
-          }
-          return res;
-        })
-        .catch(() => cached);
-      return cached || fetchPromise;
-    })
+    fetch(req)
+      .then((res) => {
+        if (res && res.status === 200 && res.type === "basic") {
+          const copy = res.clone();
+          caches.open(ASSET_CACHE).then((c) => c.put(req, copy));
+        }
+        return res;
+      })
+      .catch(() => caches.match(req).then((r) => r))
   );
 });
 
