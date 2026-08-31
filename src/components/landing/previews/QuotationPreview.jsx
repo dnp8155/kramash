@@ -1,4 +1,5 @@
 import React from "react";
+import Logo from "@/components/common/Logo";
 
 export default function QuotationPreview() {
   const items = [
@@ -12,8 +13,8 @@ export default function QuotationPreview() {
       {/* Quotation header */}
       <div className="bg-sidebar px-5 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground font-bold text-sm">
-            K
+          <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center overflow-hidden shrink-0">
+            <Logo size={26} />
           </div>
           <div>
             <div className="text-sm font-bold text-sidebar-foreground">Kramashah Studio</div>

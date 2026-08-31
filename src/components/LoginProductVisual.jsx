@@ -1,5 +1,6 @@
 import React from "react";
 import { LayoutGrid, CalendarDays, Users, UserCircle, Wallet, FileText, Search } from "lucide-react";
+import Logo from "@/components/common/Logo";
 
 const projects = [
   { name: "Residence Renovation", client: "Sharma Studios", date: "Aug 12", status: "In Progress", tone: "progress" },
@@ -35,8 +36,8 @@ export default function LoginProductVisual() {
         <div className="flex h-[460px] xl:h-[500px]">
           {/* Sidebar */}
           <div className="w-12 bg-sidebar flex flex-col items-center py-4 gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-sidebar-primary to-accent flex items-center justify-center text-sidebar-primary-foreground text-xs font-bold shadow-md">
-              K
+            <div className="w-7 h-7 rounded-lg bg-white flex items-center justify-center shadow-md overflow-hidden">
+              <Logo size={18} />
             </div>
             <div className="w-7 h-px bg-sidebar-border my-0.5" />
             {navItems.map((item, i) => (

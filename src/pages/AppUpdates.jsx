@@ -1,7 +1,8 @@
 // App & Updates — connected to real PWA state, version, and update detection.
 import { useState, useEffect } from "react";
-import { Smartphone, Download, CheckCircle2, RefreshCw, Loader2, Shield, Bell, Info, Share } from "lucide-react";
+import { Download, CheckCircle2, RefreshCw, Loader2, Shield, Bell, Info, Share } from "lucide-react";
 import Button from "@/components/common/Button";
+import Logo from "@/components/common/Logo";
 import { APP_CONFIG, getVersionString } from "@/lib/appConfig";
 import { useInstallPrompt, useServiceWorkerUpdate, usePwaDisplayMode } from "@/hooks/usePWA";
 
@@ -49,8 +50,8 @@ export default function AppUpdates() {
     <div className="p-4 sm:p-6 max-w-[800px] mx-auto space-y-4">
       {/* App info */}
       <div className="bg-card border border-border rounded-lg p-6 text-center">
-        <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
-          <Smartphone className="w-7 h-7 text-primary" />
+        <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3 overflow-hidden">
+          <Logo size={44} />
         </div>
         <h2 className="text-lg font-semibold">{APP_CONFIG.name}</h2>
         <p className="text-sm text-muted-foreground mt-1">{getVersionString()}</p>

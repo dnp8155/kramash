@@ -1,6 +1,7 @@
 import { Link, NavLink, Outlet } from "react-router-dom";
 import { LayoutDashboard, Building2, SlidersHorizontal, ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Logo from "@/components/common/Logo";
 
 const adminNav = [
   { label: "Dashboard", path: "/admin", icon: LayoutDashboard, end: true },
@@ -23,8 +24,8 @@ export default function AdminLayout() {
       <aside className="md:w-60 shrink-0 border-b md:border-b-0 md:border-r border-border bg-card flex md:flex-col md:h-screen">
         <div className="flex items-center gap-2 px-4 py-4 border-b border-border md:block">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm">
-              K
+            <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0">
+              <Logo size={32} />
             </div>
             <div>
               <div className="font-semibold text-sm leading-tight">KRAMAS</div>

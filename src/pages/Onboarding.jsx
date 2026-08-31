@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
+import Logo from "@/components/common/Logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -118,6 +119,11 @@ export default function Onboarding() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 py-8">
       <div className="w-full max-w-lg">
+        {/* Logo */}
+        <div className="flex justify-center mb-6">
+          <Logo size={48} className="rounded-xl bg-white shadow-sm" />
+        </div>
+
         {/* Stepper */}
         <div className="flex items-center justify-between mb-8">
           {[1, 2, 3, 4].map((s) => (

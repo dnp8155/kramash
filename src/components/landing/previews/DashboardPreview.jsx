@@ -1,5 +1,6 @@
 import React from "react";
 import { LayoutDashboard, CalendarCheck, Users, Wallet, FileText, Settings } from "lucide-react";
+import Logo from "@/components/common/Logo";
 
 export default function DashboardPreview({ terminology: term }) {
   const navItems = [
@@ -44,8 +45,8 @@ export default function DashboardPreview({ terminology: term }) {
           {/* Sidebar */}
           <div className="w-12 sm:w-44 bg-sidebar shrink-0 p-2 sm:p-3 hidden sm:flex flex-col gap-0.5">
             <div className="flex items-center gap-2 px-1.5 py-2 mb-2">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground font-bold text-xs shrink-0">
-                K
+              <div className="w-7 h-7 rounded-lg bg-white flex items-center justify-center shrink-0 overflow-hidden">
+                <Logo size={18} />
               </div>
               <span className="text-sidebar-foreground text-xs font-bold hidden sm:block">Kramashah</span>
             </div>

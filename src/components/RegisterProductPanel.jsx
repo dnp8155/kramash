@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Check, Camera, PartyPopper, Compass, Wrench } from "lucide-react";
+import Logo from "@/components/common/Logo";
 
 const categories = [
   { icon: Camera, title: "Photography", sub: "Events · Crew · Services" },
@@ -29,8 +30,8 @@ export default function RegisterProductPanel() {
       <div className="relative z-10 flex flex-col justify-between p-10 xl:p-14 text-sidebar-foreground w-full">
         {/* Brand */}
         <Link to="/" className="flex items-center gap-2.5 self-start">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-sidebar-primary to-accent flex items-center justify-center text-sidebar-primary-foreground font-bold text-lg shadow-lg">
-            K
+          <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-lg overflow-hidden shrink-0">
+            <Logo size={32} />
           </div>
           <span className="font-heading text-lg font-bold tracking-tight">Kramashah</span>
         </Link>
