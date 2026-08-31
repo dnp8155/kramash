@@ -1,8 +1,10 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useWorkspace } from "@/lib/WorkspaceContext";
 import { useToast } from "@/components/ui/use-toast";
+import { invalidateEntities } from "@/lib/queryInvalidation";
 import Button from "@/components/common/Button";
 import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
@@ -43,6 +45,7 @@ export default function QuotationEditor() {
   const location = useLocation();
   const { workspaceId, workspace } = useWorkspace();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const currency = workspace?.currency || "INR";
   const gstWorkspaceEnabled = !!workspace?.gst_enabled;
   const term = useBusinessTerminology();
@@ -286,10 +289,12 @@ export default function QuotationEditor() {
       const data = { ...buildData(), status: "draft" };
       if (isNew) {
         const q = await createQuotation(workspaceId, data, items);
+        invalidateEntities(queryClient, ["Quotation", "QuotationItem"]);
         toast({ title: "Quotation saved as draft" });
         navigate(`/quotation/${q.id}`, { replace: true });
       } else {
         await updateQuotation(workspaceId, id, data, items);
+        invalidateEntities(queryClient, ["Quotation", "QuotationItem"]);
         toast({ title: "Quotation updated" });
         load();
       }
@@ -320,10 +325,12 @@ export default function QuotationEditor() {
       };
       if (isNew) {
         const q = await createQuotation(workspaceId, data, items, snapshots);
+        invalidateEntities(queryClient, ["Quotation", "QuotationItem"]);
         toast({ title: "Quotation finalized" });
         navigate(`/quotation/${q.id}`, { replace: true });
       } else {
         await updateQuotation(workspaceId, id, data, items, snapshots);
+        invalidateEntities(queryClient, ["Quotation", "QuotationItem"]);
         toast({ title: "Quotation finalized" });
         load();
       }
@@ -348,6 +355,8 @@ export default function QuotationEditor() {
       );
       if (!proceed) { setAccepting(false); return; }
       const { eventUpdated } = await acceptQuotation(workspaceId, id, { updateContractValue: !!ev });
+      // Accepting can update the event's contract value → refresh events, dashboard, financial too.
+      invalidateEntities(queryClient, ["Quotation", "QuotationItem", "Event", "FinancialTransaction"]);
       toast({ title: eventUpdated ? "Quotation accepted — contract value updated" : "Quotation accepted" });
       load();
     } catch (e) {
@@ -361,6 +370,7 @@ export default function QuotationEditor() {
     if (!existingQuotation) return;
     try {
       const q = await duplicateQuotation(workspaceId, existingQuotation, items);
+      invalidateEntities(queryClient, ["Quotation", "QuotationItem"]);
       toast({ title: "Quotation duplicated", description: q.quotation_number });
       navigate(`/quotation/${q.id}`);
     } catch (e) {
@@ -373,6 +383,7 @@ export default function QuotationEditor() {
     if (!window.confirm("Delete this quotation? This cannot be undone.")) return;
     try {
       await deleteQuotation(workspaceId, id);
+      invalidateEntities(queryClient, ["Quotation", "QuotationItem"]);
       toast({ title: "Quotation deleted" });
       navigate("/quotation");
     } catch (e) {
