@@ -134,6 +134,13 @@ export default function EventDetails() {
   const removeAssignment = async (a) => {
     try {
       await base44.entities.EventTeamAssignment.update(a.id, { assignment_status: "removed" });
+      // Keep event.team_member_ids in sync so the Events table reflects removals.
+      const currentIds = Array.isArray(event?.team_member_ids) ? event.team_member_ids : [];
+      if (currentIds.includes(a.team_member_id)) {
+        await base44.entities.Event.update(event.id, {
+          team_member_ids: currentIds.filter((x) => x !== a.team_member_id)
+        });
+      }
       toast({ title: `Team member removed from ${term.workItemSingular.toLowerCase()}` });
       load();
     } catch (e) {

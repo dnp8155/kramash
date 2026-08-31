@@ -112,6 +112,12 @@ export default function AssignTeamDialog({
         notes: notes.trim()
       };
       const saved = await base44.entities.EventTeamAssignment.create(payload);
+      // Keep event.team_member_ids in sync so the Events table (which reads
+      // from the event record) reflects assignments made here.
+      const currentIds = Array.isArray(event?.team_member_ids) ? event.team_member_ids : [];
+      if (!currentIds.includes(memberId)) {
+        await base44.entities.Event.update(event.id, { team_member_ids: [...currentIds, memberId] });
+      }
       onSaved?.(saved);
       onClose?.();
     } catch (err) {
