@@ -1,5 +1,14 @@
 import React, { useState } from "react";
-import { Camera, PartyPopper, Compass, Wrench } from "lucide-react";
+import {
+  Camera,
+  PartyPopper,
+  Compass,
+  Wrench,
+  Heart,
+  Sparkles,
+  Sofa,
+  Clapperboard,
+} from "lucide-react";
 
 const industries = [
   {
@@ -24,12 +33,40 @@ const industries = [
     chips: ["Projects", "Project Sites", "Project Team", "Services", "Billing"],
   },
   {
+    key: "WEDDING_DECOR",
+    icon: Heart,
+    title: "Wedding & Decor",
+    copy: "Plan weddings and decor projects end-to-end — track vendors, decorators, site visits, client budgets and payments in one place.",
+    chips: ["Weddings", "Decorators", "Vendors", "Budgets", "Payments"],
+  },
+  {
+    key: "MAKEUP_BEAUTY",
+    icon: Sparkles,
+    title: "Makeup & Beauty",
+    copy: "Book bridal and party appointments, manage artists, trial sessions, packages and collect advance payments with automated reminders.",
+    chips: ["Appointments", "Artists", "Bridal Packages", "Trials", "Advances"],
+  },
+  {
+    key: "INTERIOR_DESIGN",
+    icon: Sofa,
+    title: "Interior Design",
+    copy: "Run design projects with clients, site visits, contractors, vendors, BOQs and milestone billing — all tracked stage by stage.",
+    chips: ["Projects", "Site Visits", "Contractors", "BOQ", "Milestone Billing"],
+  },
+  {
+    key: "PRODUCTION_HOUSE",
+    icon: Clapperboard,
+    title: "Production House",
+    copy: "Coordinate shoots, ad films and productions — manage crew, equipment, shoot days, client approvals and vendor payouts.",
+    chips: ["Shoots", "Crew", "Equipment", "Approvals", "Vendor Payouts"],
+  },
+  {
     key: "OTHER",
     icon: Wrench,
     title: "Other Service Businesses",
     copy: "Configure your own services, team roles and projects while keeping the same powerful Kramashah workflow.",
     chips: ["Custom Roles", "Custom Services", "Projects", "Quotations", "Finance"],
-    note: "Interior Design, Agencies, Consulting, Production and more.",
+    note: "Consulting, Agencies, Catering, Fitness Trainers and more — if you run a service business, Kramashah fits.",
   },
 ];
 
