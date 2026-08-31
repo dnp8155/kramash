@@ -22,8 +22,7 @@ import {
   LifeBuoy,
   Target,
   Clapperboard,
-  Package,
-  ReceiptText
+  Package
 } from "lucide-react";
 
 export const mainNav = [
@@ -34,7 +33,6 @@ export const mainNav = [
   { label: "Team", path: "/team", icon: UserCheck },
   { label: "Financial", path: "/financial", icon: Wallet },
   { label: "Quotation & Agreement", path: "/quotation", icon: FileText },
-  { label: "Invoices", path: "/invoices", icon: ReceiptText },
   { label: "Packages", path: "/packages", icon: Package },
   { label: "Post-Production", path: "/production", icon: Clapperboard },
   { label: "Help & Support", path: "/help", icon: LifeBuoy }

@@ -89,9 +89,6 @@ export const ENTITY_INVALIDATION_KEYS = {
   ],
   ProjectFile: [
     ["project-files"]
-  ],
-  Invoice: [
-    ["invoices"]
   ]
 };
 
