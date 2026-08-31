@@ -23,25 +23,25 @@ export default function LandingFooter() {
               <li><a href="#features" className="text-muted-foreground hover:text-foreground transition-colors">Features</a></li>
               <li><a href="#how-it-works" className="text-muted-foreground hover:text-foreground transition-colors">How It Works</a></li>
               <li><a href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors">Pricing</a></li>
-              <li><a href="#faq" className="text-muted-foreground hover:text-foreground transition-colors">FAQ</a></li>
+              <li><a href="#industries" className="text-muted-foreground hover:text-foreground transition-colors">Industries</a></li>
             </ul>
           </div>
 
           <div>
-            <h4 className="font-heading text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Industries</h4>
+            <h4 className="font-heading text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Company</h4>
             <ul className="space-y-2 text-sm">
-              <li className="text-muted-foreground">Photography</li>
-              <li className="text-muted-foreground">Event Management</li>
-              <li className="text-muted-foreground">Architecture</li>
-              <li className="text-muted-foreground">Other Service Businesses</li>
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="font-heading text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Account</h4>
-            <ul className="space-y-2 text-sm">
+              <li><Link to="/about" className="text-muted-foreground hover:text-foreground transition-colors">About</Link></li>
+              <li><Link to="/faq" className="text-muted-foreground hover:text-foreground transition-colors">FAQ</Link></li>
               <li><Link to="/login" className="text-muted-foreground hover:text-foreground transition-colors">Log in</Link></li>
               <li><Link to="/register" className="text-muted-foreground hover:text-foreground transition-colors">Sign up</Link></li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="font-heading text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Legal</h4>
+            <ul className="space-y-2 text-sm">
+              <li><Link to="/terms" className="text-muted-foreground hover:text-foreground transition-colors">Terms of Service</Link></li>
+              <li><Link to="/privacy" className="text-muted-foreground hover:text-foreground transition-colors">Privacy Policy</Link></li>
             </ul>
           </div>
         </div>
@@ -49,10 +49,6 @@ export default function LandingFooter() {
         <div className="pt-6 border-t border-border/60 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} Kramashah. All rights reserved.</p>
           <div className="flex items-center gap-4">
-            <Link to="/terms" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Terms of Service</Link>
-            <Link to="/privacy" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Privacy Policy</Link>
-            <Link to="/faq" className="text-xs text-muted-foreground hover:text-foreground transition-colors">FAQ</Link>
-            <Link to="/about" className="text-xs text-muted-foreground hover:text-foreground transition-colors">About</Link>
             <p className="text-xs text-muted-foreground">Built for service businesses in India</p>
           </div>
         </div>
