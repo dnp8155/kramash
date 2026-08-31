@@ -51,6 +51,7 @@ export default function LandingFooter() {
           <div className="flex items-center gap-4">
             <Link to="/terms" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Terms of Service</Link>
             <Link to="/faq" className="text-xs text-muted-foreground hover:text-foreground transition-colors">FAQ</Link>
+            <Link to="/about" className="text-xs text-muted-foreground hover:text-foreground transition-colors">About</Link>
             <p className="text-xs text-muted-foreground">Built for service businesses in India</p>
           </div>
         </div>

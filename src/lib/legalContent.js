@@ -1,3 +1,58 @@
+export const aboutContent = `# About Kramasha
+
+## Kramasha — क्रमशः. In order. One step at a time.
+
+Kramasha means "in sequence" — and that's exactly how we think a business should run. Not scattered across five WhatsApp chats, three Excel sheets, and a notebook that's always in someone else's bag. One workspace. Every event, every payment, every team member, in order.
+
+---
+
+## Why we built this
+
+If you run an event, a photography studio, an architecture practice, or any business built around jobs and a team — you already know the real work isn't the event itself. It's everything around it: who's confirmed for which day, who still owes what, whether the quotation went out, whether the advance came in, whether two team members got double-booked on the same wedding.
+
+Most small and growing businesses in this space run on Excel sheets and memory. It works — until it doesn't. A missed follow-up, a forgotten payment, a team member booked twice by accident. Kramasha exists to take that mental load off your plate.
+
+---
+
+## Who Kramasha is for
+
+- Event managers juggling vendors, coordinators, and a dozen moving parts per event
+- Photographers & videographers running crews across shoots, edits, and deliverables
+- Architects & interior teams managing projects, consultants, and contractors
+- Freelancers and small studios — makeup artists, decorators, editors, drone operators — who need to track jobs and payments without hiring an accountant
+
+If your business runs on events, a team, and money moving between clients and crew, Kramasha is built for you.
+
+---
+
+## What you get
+
+- One place for every event — dates, venue, team, payments, and status, without digging through old chats
+- Team & payments tracking — who's assigned, what they're owed, what's paid
+- Quotations & job sheets — generate a client-ready quotation and a team job sheet from the same form
+- A rate estimator — build a quick cost estimate before you commit to a quotation
+- Financial-year reporting — know what you've earned, spent, and profited, with Excel export
+- Built for your business type — event management, photography, or architecture presets that set up the right roles and services from day one
+
+---
+
+## How we think about your data
+
+Your business runs on trust — your clients trust you with their event, and you're trusting us with the numbers behind it. Every workspace is private and isolated; nobody else can see your events, your clients, or your payments. You can read more in our Privacy Policy.
+
+---
+
+## Where we are right now
+
+Kramasha is currently in active development and beta. That means the product is real and usable today, but still growing — and it also means the full app is free to use during this period (see our FAQ for the exact dates). We're building this with real studios and event businesses in the loop, so if something feels off or missing, we want to hear about it.
+
+---
+
+## Get in touch
+
+Questions, feedback, or just want to say hello? Visit our Contact page — we read everything.
+`;
+
 export const faqContent = [
   {
     q: "What is Kramasha?",
