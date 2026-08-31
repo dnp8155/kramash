@@ -17,6 +17,8 @@ import PhoneLogin from '@/pages/PhoneLogin';
 import Onboarding from '@/pages/Onboarding';
 import Landing from '@/pages/Landing';
 import Dashboard from '@/pages/Dashboard';
+import Leads from '@/pages/Leads';
+import LeadDetails from '@/pages/LeadDetails';
 import Events from '@/pages/Events';
 import EventDetails from '@/pages/EventDetails';
 import EventEditor from '@/pages/EventEditor';
@@ -102,6 +104,8 @@ const AuthenticatedApp = () => {
       <Route element={<WorkspaceRoute unauthenticatedElement={<Navigate to="/login" replace />} noWorkspaceElement={<Navigate to="/onboarding" replace />} />}>
         <Route element={<AppLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/leads" element={<Leads />} />
+          <Route path="/leads/:id" element={<LeadDetails />} />
           <Route path="/events" element={<Events />} />
           <Route path="/events/new" element={<EventEditor />} />
           <Route path="/events/:id" element={<EventDetails />} />

@@ -72,6 +72,14 @@ export const ENTITY_INVALIDATION_KEYS = {
   ],
   EventReminder: [
     ["event"]
+  ],
+  Lead: [
+    ["leads"],
+    ["lead"]
+  ],
+  LeadActivity: [
+    ["lead"],
+    ["lead-activities"]
   ]
 };
 

@@ -19,11 +19,13 @@ import {
   Bell,
   CreditCard,
   KeyRound,
-  LifeBuoy
+  LifeBuoy,
+  Target
 } from "lucide-react";
 
 export const mainNav = [
   { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
+  { label: "Leads", path: "/leads", icon: Target },
   { label: "Events", path: "/events", icon: CalendarDays },
   { label: "Clients", path: "/clients", icon: Users },
   { label: "Team", path: "/team", icon: UserCheck },
