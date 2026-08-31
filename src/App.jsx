@@ -36,6 +36,7 @@ import YourPlan from '@/pages/YourPlan';
 import Help from '@/pages/Help';
 import More from '@/pages/More';
 import TermsOfService from '@/pages/TermsOfService';
+import FAQ from '@/pages/FAQ';
 import AdminRoute from '@/components/admin/AdminRoute';
 import AdminLayout from '@/components/admin/AdminLayout';
 import AdminDashboard from '@/pages/admin/AdminDashboard';
@@ -88,6 +89,7 @@ const AuthenticatedApp = () => {
 
       {/* Public legal pages */}
       <Route path="/terms" element={<TermsOfService />} />
+      <Route path="/faq" element={<FAQ />} />
 
       {/* Authenticated but no workspace yet → onboarding */}
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>

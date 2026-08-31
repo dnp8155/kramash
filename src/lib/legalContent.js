@@ -1,3 +1,86 @@
+export const faqContent = [
+  {
+    q: "What is Kramasha?",
+    a: "Kramasha is a workspace app for event managers, photographers, videographers, architects, and similar service businesses. It brings your events, team, payments, and quotations into one place instead of spreadsheets and scattered chats.",
+  },
+  {
+    q: "Who is Kramasha built for?",
+    a: "Anyone running jobs with a team — event planners, photography and videography studios, production houses, architects, and freelancers like decorators, makeup artists, editors, and drone operators. If you coordinate people, dates, and payments around events or projects, it's built for you.",
+  },
+  {
+    q: "Is Kramasha free right now?",
+    a: "Yes. During our beta period — until [DD Month YYYY] — the full app, including everything currently marked as a \"Pro\" feature, is free to use for everyone. We're doing this because we're still actively building and want real feedback before we finalize pricing. After [DD Month YYYY], the Free and Pro plans described in Your Plan apply.",
+  },
+  {
+    q: "Will I lose my data when the beta free-access period ends?",
+    a: "No. Any data you've entered stays fully intact. If you're on the Free plan after the beta period and have more data than the Free limits allow (e.g., more events or team members than Free permits), that data remains visible — you just won't be able to add new records beyond the limit until you upgrade. We never delete your data for being over a plan limit.",
+  },
+  {
+    q: "What's the difference between Free and Pro?",
+    a: "Pro raises your limits (events, team members, services, financial years, devices) and unlocks features like push reminders, App Lock (Face ID/fingerprint), extra themes, showing services/address on event cards, exporting all financial years, and removing the \"Made via Kramasha\" line from your PDFs. The exact current limits are always visible in Your Plan inside the app.",
+  },
+  {
+    q: "How much does Pro cost after the beta period?",
+    a: "Pro will be available on Monthly, 6-Month, and Yearly billing — pricing is shown in the app under Your Plan. [Insert final pricing once confirmed for public display.]",
+  },
+  {
+    q: "Is my data safe?",
+    a: "Yes. Every business gets its own private, isolated workspace — nobody else can see your events, clients, team, or payments. Data is encrypted in transit and at rest. See our Privacy Policy for full detail.",
+  },
+  {
+    q: "Is my data encrypted?",
+    a: "Yes, in two ways: In transit — every connection between your device and our servers is encrypted (HTTPS/TLS), the same standard used by banking and payment websites. At rest — your data is encrypted while stored on our servers, using industry-standard encryption provided by our database infrastructure.",
+  },
+  {
+    q: "Can Kramasha (your company) see my financial data?",
+    a: "We do not sell your data, use it for marketing, or show it to any other user or business. Other workspaces can never see your events, clients, or payments — that isolation is enforced at the database level, not just hidden in the app. Your data is not \"zero-knowledge\" or end-to-end encrypted; like most business software, Kramasha needs to read your data on the server to calculate totals, generate PDFs, run search, send reminders, and provide support. Access is restricted to a small number of authorized team members and only when necessary — to resolve a support ticket, investigate a technical/security issue, or where required by law. We do not browse or use your data for any other purpose.",
+  },
+  {
+    q: "Can I use Kramasha for my type of business specifically?",
+    a: "Yes. When you set up your workspace, you choose a business type — Photography, Event Management, or Architecture — and Kramasha pre-fills matching team roles, services, and event types for you. You can still add your own custom roles and services anytime.",
+  },
+  {
+    q: "Can I change my business type later?",
+    a: "Business type can be set once (either during first-time setup or once afterward in Preferences), since it shapes your default roles, services, and event types. Choose carefully — switching later replaces your existing preset data with the new business type's set.",
+  },
+  {
+    q: "Does Kramasha support GST?",
+    a: "GST support is optional and off by default. If your business is GST-registered, you can enable it in Preferences to capture your GSTIN and show GST on your quotations. If you're not GST-registered, you'll never see any tax fields.",
+  },
+  {
+    q: "Can I generate quotations and job sheets?",
+    a: "Yes. The Quotation & Agreement tool builds a client-ready quotation and a separate team job sheet from the same form — client details, event dates, deliverables, and pricing, exported as a branded PDF using your business name, logo, and contact details from Preferences.",
+  },
+  {
+    q: "Does Kramasha work offline?",
+    a: "Kramasha is a Progressive Web App (PWA) and can be installed on your phone or desktop like a native app. Core functionality is designed to keep working with a poor or temporarily lost connection; changes sync once you're back online.",
+  },
+  {
+    q: "How many devices can I use Kramasha on?",
+    a: "This depends on your plan — Free allows one active device at a time; Pro allows more. Exact numbers are shown under Your Plan in the app.",
+  },
+  {
+    q: "Can I export my data?",
+    a: "Yes, from Preferences or the Financial tab you can export your events and transactions to Excel. Free exports the current financial year; Pro exports all years.",
+  },
+  {
+    q: "What happens if I forget my password / need to change account details?",
+    a: "You can reset your password from the login screen using the \"Forgot password\" link, which sends a reset link to your registered email. For other account changes, contact support.",
+  },
+  {
+    q: "I'm not tech-savvy — is this hard to set up?",
+    a: "No. First-time setup walks you through your business profile, currency, and business type in a few steps, and pre-fills sensible defaults so you're not starting from a blank screen.",
+  },
+  {
+    q: "How do I give feedback or report a problem?",
+    a: "We'd love that — see our Contact page. During beta especially, your feedback directly shapes what we build next.",
+  },
+  {
+    q: "Who do I contact for support?",
+    a: "[support@kramash.app] — see the full Contact page for more ways to reach us.",
+  },
+];
+
 export const termsOfServiceContent = `# Terms of Service
 
 Kramasha — Event & Production Management Platform
