@@ -2,11 +2,10 @@ import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
 import { useT } from "@/hooks/useT";
 import { cn } from "@/lib/utils";
-import { Plus, MoreHorizontal, CalendarDays, UserCheck, Wallet, Target } from "lucide-react";
+import { Plus, MoreHorizontal, CalendarDays, UserCheck, Wallet } from "lucide-react";
 
 const NAV_ITEMS = [
   { path: "/events", icon: CalendarDays, labelKey: "events" },
-  { path: "/leads", icon: Target, labelKey: "leads" },
   { path: "/team", icon: UserCheck, labelKey: "team" },
   { path: "/financial", icon: Wallet, labelKey: "financial" }
 ];
