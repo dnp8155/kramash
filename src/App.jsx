@@ -35,6 +35,7 @@ import AppUpdates from '@/pages/AppUpdates';
 import YourPlan from '@/pages/YourPlan';
 import Help from '@/pages/Help';
 import More from '@/pages/More';
+import TermsOfService from '@/pages/TermsOfService';
 import AdminRoute from '@/components/admin/AdminRoute';
 import AdminLayout from '@/components/admin/AdminLayout';
 import AdminDashboard from '@/pages/admin/AdminDashboard';
@@ -84,6 +85,9 @@ const AuthenticatedApp = () => {
 
       {/* Public client-facing event tracking page */}
       <Route path="/track/:id" element={<EventTracking />} />
+
+      {/* Public legal pages */}
+      <Route path="/terms" element={<TermsOfService />} />
 
       {/* Authenticated but no workspace yet → onboarding */}
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>

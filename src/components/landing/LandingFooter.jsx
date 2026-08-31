@@ -48,7 +48,10 @@ export default function LandingFooter() {
 
         <div className="pt-6 border-t border-border/60 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} Kramashah. All rights reserved.</p>
-          <p className="text-xs text-muted-foreground">Built for service businesses in India</p>
+          <div className="flex items-center gap-4">
+            <Link to="/terms" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Terms of Service</Link>
+            <p className="text-xs text-muted-foreground">Built for service businesses in India</p>
+          </div>
         </div>
       </div>
     </footer>
