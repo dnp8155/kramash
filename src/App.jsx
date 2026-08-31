@@ -36,6 +36,7 @@ import YourPlan from '@/pages/YourPlan';
 import Help from '@/pages/Help';
 import More from '@/pages/More';
 import TermsOfService from '@/pages/TermsOfService';
+import PrivacyPolicy from '@/pages/PrivacyPolicy';
 import FAQ from '@/pages/FAQ';
 import About from '@/pages/About';
 import AdminRoute from '@/components/admin/AdminRoute';
@@ -90,6 +91,7 @@ const AuthenticatedApp = () => {
 
       {/* Public legal pages */}
       <Route path="/terms" element={<TermsOfService />} />
+      <Route path="/privacy" element={<PrivacyPolicy />} />
       <Route path="/faq" element={<FAQ />} />
       <Route path="/about" element={<About />} />
 
