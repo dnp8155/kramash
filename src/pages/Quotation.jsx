@@ -12,10 +12,11 @@ import { StatGridSkeleton, TableSkeleton } from "@/components/common/Skeletons";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatMoney } from "@/utils/format";
 import { loadQuotations, deleteQuotation, loadQuotationItems } from "@/lib/quotationService";
+import { createFromQuotation } from "@/lib/invoiceService";
 import { QUOTATION_STATUSES, QUOTATION_STATUS_META } from "@/constants/quotationConfig";
 import { generateQuotationPdf } from "@/lib/quotationPdf";
 import { base44 } from "@/api/base44Client";
-import { Plus, Search, Trash2, FileDown, Eye, FileText, IndianRupee, CheckCircle2, Pencil } from "lucide-react";
+import { Plus, Search, Trash2, FileDown, Eye, FileText, IndianRupee, CheckCircle2, Pencil, Receipt } from "lucide-react";
 import PdfPreviewModal from "@/components/common/PdfPreviewModal";
 import PageHeader from "@/components/common/PageHeader";
 import StatCard from "@/components/common/StatCard";
@@ -108,6 +109,18 @@ export default function Quotation() {
       invalidate();
     } catch (e) {
       toast({ title: "Delete failed", description: e?.message, variant: "destructive" });
+    }
+  };
+
+  const createInvoice = async (qt) => {
+    try {
+      const items = await loadQuotationItems(workspaceId, qt.id);
+      const inv = await createFromQuotation(workspaceId, qt, items);
+      invalidateEntities(queryClient, ["Invoice", "InvoiceItem"]);
+      toast({ title: "Invoice created", description: inv.invoice_number });
+      navigate(`/invoices/${inv.id}`);
+    } catch (e) {
+      toast({ title: "Failed to create invoice", description: e?.message, variant: "destructive" });
     }
   };
 
@@ -216,6 +229,9 @@ export default function Quotation() {
                 <div className="mt-3 flex items-center justify-between">
                   <span className="text-sm font-semibold text-foreground">{formatMoney(qt.grand_total, currency)}</span>
                   <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                    {qt.status === "accepted" && (
+                      <button onClick={() => createInvoice(qt)} className="text-primary hover:bg-primary/10 p-1 rounded-md" title="Create Invoice"><Receipt className="w-4 h-4" /></button>
+                    )}
                     {(qt.status === "finalized" || qt.status === "accepted") && (
                       <>
                         <button onClick={() => previewPdf(qt)} disabled={generatingId === qt.id} className="text-muted-foreground hover:text-primary p-1" title="Preview PDF"><Eye className="w-4 h-4" /></button>
@@ -267,6 +283,15 @@ export default function Quotation() {
                       </td>
                       <td className="px-4 py-3.5" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center gap-1 justify-end">
+                          {qt.status === "accepted" && (
+                            <button
+                              onClick={() => createInvoice(qt)}
+                              className="text-primary hover:bg-primary/10 p-1.5 rounded-md transition-colors"
+                              title="Create Invoice"
+                            >
+                              <Receipt className="w-4 h-4" />
+                            </button>
+                          )}
                           {(qt.status === "finalized" || qt.status === "accepted") && (
                             <>
                               <button

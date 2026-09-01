@@ -18,10 +18,11 @@ import {
   duplicateQuotation, deleteQuotation, acceptQuotation,
   verifyQuotationRefs, buildClientSnapshot, buildBusinessSnapshot, buildEventSnapshot
 } from "@/lib/quotationService";
+import { createFromQuotation } from "@/lib/invoiceService";
 import { generateQuotationPdf, generateJobSheetPdf } from "@/lib/quotationPdf";
 import { DEFAULT_QUOTATION_TERMS, QUOTATION_STATUS_META } from "@/constants/quotationConfig";
 import { loadRoles } from "@/lib/teamService";
-import { ArrowLeft, AlertTriangle, FileText, Plus } from "lucide-react";
+import { ArrowLeft, AlertTriangle, FileText, Plus, Receipt } from "lucide-react";
 import PdfPreviewModal from "@/components/common/PdfPreviewModal";
 import { cn } from "@/lib/utils";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";

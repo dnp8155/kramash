@@ -6,6 +6,7 @@ import {
   Wallet,
   Calculator,
   FileText,
+  ReceiptText,
   PenLine,
   SlidersHorizontal,
   Smartphone,
@@ -29,6 +30,7 @@ export const mainNav = [
   { label: "Team", path: "/team", icon: UserCheck },
   { label: "Financial", path: "/financial", icon: Wallet },
   { label: "Quotation & Agreement", path: "/quotation", icon: FileText },
+  { label: "Invoices", path: "/invoices", icon: ReceiptText },
   { label: "Help & Support", path: "/help", icon: LifeBuoy }
 ];
 

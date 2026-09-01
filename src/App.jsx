@@ -28,6 +28,8 @@ import Financial from '@/pages/Financial';
 import RateEstimator from '@/pages/RateEstimator';
 import Quotation from '@/pages/Quotation';
 import QuotationEditor from '@/pages/QuotationEditor';
+import Invoices from '@/pages/Invoices';
+import InvoiceEditor from '@/pages/InvoiceEditor';
 import SignPdf from '@/pages/SignPdf';
 import Preferences from '@/pages/Preferences';
 import Settings from '@/pages/Settings';
@@ -117,6 +119,9 @@ const AuthenticatedApp = () => {
           <Route path="/quotation" element={<Quotation />} />
           <Route path="/quotation/new" element={<QuotationEditor />} />
           <Route path="/quotation/:id" element={<QuotationEditor />} />
+          <Route path="/invoices" element={<Invoices />} />
+          <Route path="/invoices/new" element={<InvoiceEditor />} />
+          <Route path="/invoices/:id" element={<InvoiceEditor />} />
           <Route path="/sign-pdf" element={<SignPdf />} />
           <Route path="/preferences" element={<Preferences />} />
           <Route path="/settings/:section?" element={<Settings />} />
