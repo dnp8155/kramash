@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Printer, X, Pencil } from "lucide-react";
+import { Download, X, Pencil } from "lucide-react";
 import Button from "@/components/common/Button";
 import { formatMoney } from "@/utils/format";
 import { parseISODate } from "@/lib/dates";
@@ -76,17 +76,17 @@ export default function InvoicePrintView({ open, onClose, invoice, items, worksp
       {/* Toolbar */}
       <div className="no-print sticky top-0 z-10 w-full max-w-[720px] bg-white border-b px-5 py-3 flex items-center justify-between rounded-t-lg mb-4 shadow-md" style={{ borderColor: BORDER }}>
         <div className="flex items-center gap-2">
-          <span className="text-sm font-bold" style={{ color: TEXT_PRIMARY }}>Invoice {invoice.invoice_number}</span>
-          <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium capitalize" style={{ backgroundColor: statusInfo.bg, color: statusInfo.fg }}>
+          <span className="text-xl font-bold" style={{ color: TEXT_PRIMARY, fontFamily: SERIF }}>Invoice {invoice.invoice_number}</span>
+          <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-medium" style={{ backgroundColor: "#E5E5E5", color: "#4B5563" }}>
             {statusInfo.label}
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <Button onClick={handlePrint} variant="outline" style={{ borderColor: BORDER }}>
-            <Printer className="w-4 h-4" /> PDF
+          <Button onClick={handlePrint} variant="outline" style={{ borderColor: "#CCCCCC", backgroundColor: "#FFFFFF", color: "#000000" }}>
+            <Download className="w-4 h-4" /> PDF
           </Button>
           {onEdit && (
-            <Button variant="outline" onClick={onEdit} style={{ borderColor: BORDER }}>
+            <Button variant="outline" onClick={onEdit} style={{ borderColor: "#CCCCCC", backgroundColor: "#FFFFFF", color: "#000000" }}>
               <Pencil className="w-4 h-4" /> Edit
             </Button>
           )}
