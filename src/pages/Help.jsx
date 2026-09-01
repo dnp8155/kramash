@@ -11,6 +11,7 @@ import Select from "@/components/common/Select";
 import EmptyState from "@/components/common/EmptyState";
 import LoadingState from "@/components/common/LoadingState";
 import PageHeader from "@/components/common/PageHeader";
+import FeatureGuide from "@/components/help/FeatureGuide";
 import {
   HelpCircle,
   LifeBuoy,
@@ -93,7 +94,7 @@ export default function Help() {
   const { user } = useAuth();
   const { workspace } = useWorkspace();
 
-  const [activeTab, setActiveTab] = useState("contact");
+  const [activeTab, setActiveTab] = useState("guide");
   const [tickets, setTickets] = useState([]);
   const [loadingTickets, setLoadingTickets] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -224,6 +225,7 @@ export default function Help() {
       {/* Tabs */}
       <div className="flex gap-1 border-b border-border">
         {[
+          { id: "guide", label: "Help Desk", icon: BookOpen },
           { id: "contact", label: "Contact Us", icon: Send },
           { id: "tickets", label: "My Tickets", icon: MessageSquare },
           { id: "faq", label: "FAQs", icon: HelpCircle }
@@ -242,6 +244,11 @@ export default function Help() {
           </button>
         ))}
       </div>
+
+      {/* Help Desk — Feature Guide */}
+      {activeTab === "guide" && (
+        <FeatureGuide />
+      )}
 
       {/* Contact Form */}
       {activeTab === "contact" && (
