@@ -32,29 +32,29 @@ export default function FinancialYearCard({
   return (
     <div
       className={cn(
-        "bg-[#F8F8F8] rounded-lg p-4 transition-all",
+        "bg-card rounded-lg p-4 transition-all",
         isActive ? "border-2 border-success" : "border border-border hover:border-border/80"
       )}
     >
       {/* Key-value grid */}
       <div className="grid grid-cols-[auto_1fr] gap-y-2 gap-x-4 text-sm">
-        <div className="text-muted-foreground font-medium">ID</div>
+        <div className="text-muted-foreground">ID</div>
         <div className="text-foreground text-right font-medium">{fy.fy_id}</div>
 
-        <div className="text-muted-foreground font-medium">Label</div>
+        <div className="text-muted-foreground">Label</div>
         <div className="text-foreground text-right">{fy.label}</div>
 
-        <div className="text-muted-foreground font-medium">Start</div>
+        <div className="text-muted-foreground">Start</div>
         <div className="text-foreground text-right">
           {format(parseISO(fy.start_date), "dd MMM yyyy")}
         </div>
 
-        <div className="text-muted-foreground font-medium">End</div>
+        <div className="text-muted-foreground">End</div>
         <div className="text-foreground text-right">
           {format(parseISO(fy.end_date), "dd MMM yyyy")}
         </div>
 
-        <div className="text-muted-foreground font-medium">Status</div>
+        <div className="text-muted-foreground">Status</div>
         <div className={cn("text-right", statusStyles[status])}>{status}</div>
       </div>
 
@@ -90,7 +90,7 @@ export default function FinancialYearCard({
         {!isActive && onSetActive && (
           <button
             onClick={() => onSetActive(fy)}
-            className="px-3 py-1.5 text-xs font-medium bg-success text-white rounded-md hover:opacity-90 transition-opacity"
+            className="px-3 py-1.5 text-xs font-medium bg-success text-white rounded-full hover:opacity-90 transition-opacity"
           >
             Set Active
           </button>
@@ -98,7 +98,7 @@ export default function FinancialYearCard({
         {onEdit && (
           <button
             onClick={() => onEdit(fy)}
-            className="px-3 py-1.5 text-xs font-medium bg-white border border-border text-foreground rounded-md hover:bg-muted flex items-center gap-1.5 transition-colors"
+            className="px-3 py-1.5 text-xs font-medium bg-white border border-border text-foreground rounded-full hover:bg-muted flex items-center gap-1.5 transition-colors"
           >
             <Pencil className="w-3 h-3" /> Edit
           </button>
@@ -106,7 +106,7 @@ export default function FinancialYearCard({
         {onDelete && (
           <button
             onClick={() => onDelete(fy)}
-            className="ml-auto p-1.5 text-destructive rounded-md hover:bg-destructive/10 transition-colors"
+            className="ml-auto w-7 h-7 flex items-center justify-center text-white bg-destructive rounded-full hover:opacity-90 transition-opacity"
             aria-label="Delete financial year"
           >
             <Trash2 className="w-3.5 h-3.5" />
