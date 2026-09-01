@@ -44,7 +44,7 @@ export default function Quotation() {
   const [preview, setPreview] = useState({ url: "", filename: "", open: false, loading: false });
   const queryClient = useQueryClient();
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["quotations", workspaceId],
     queryFn: async () => {
       const [qs, cl, ev] = await Promise.all([
@@ -56,8 +56,14 @@ export default function Quotation() {
     },
     enabled: !!workspaceId,
     staleTime: 0,
-    refetchOnMount: "always"
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true
   });
+
+  // Belt-and-suspenders: force refetch whenever workspaceId changes or page is navigated to.
+  useEffect(() => {
+    if (workspaceId) refetch();
+  }, [workspaceId, refetch]);
   const quotations = data?.quotations || [];
   const clients = data?.clients || [];
   const events = data?.events || [];
