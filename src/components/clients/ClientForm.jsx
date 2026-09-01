@@ -28,8 +28,8 @@ export default function ClientForm({ open, onClose, onSaved, client = null, work
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
   const validate = () => {
-    if (!form.name.trim()) return "Client name is required.";
-    if (!form.phone.trim() && !form.email.trim()) return "Phone or email is required.";
+    if (!form.name?.trim()) return "Client name is required.";
+    if (!form.phone?.trim() && !form.email?.trim()) return "Phone or email is required.";
     if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) return "Enter a valid email address.";
     return "";
   };
@@ -43,15 +43,15 @@ export default function ClientForm({ open, onClose, onSaved, client = null, work
     try {
       const payload = {
         workspace_id: workspaceId,
-        name: form.name.trim(),
-        phone: form.phone.trim(),
-        alternate_phone: form.alternate_phone.trim(),
-        email: form.email.trim(),
-        address: form.address.trim(),
-        city: form.city.trim(),
-        state: form.state.trim(),
-        country: form.country.trim(),
-        notes: form.notes.trim()
+        name: form.name?.trim() || "",
+        phone: form.phone?.trim() || "",
+        alternate_phone: form.alternate_phone?.trim() || "",
+        email: form.email?.trim() || "",
+        address: form.address?.trim() || "",
+        city: form.city?.trim() || "",
+        state: form.state?.trim() || "",
+        country: form.country?.trim() || "",
+        notes: form.notes?.trim() || ""
       };
       let saved;
       if (client?.id) {

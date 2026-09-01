@@ -297,26 +297,24 @@ export default function RateEstimator() {
         </div>
       </div>
 
-      {/* Estimate + Reset */}
-      <div className="flex flex-col sm:flex-row gap-4 items-stretch">
-        <div className="flex sm:flex-col gap-2 sm:justify-end">
-          <Button variant="destructive" onClick={reset} className="sm:mb-1">
+      {/* Estimate */}
+      <div className="bg-card border border-border rounded-xl p-5">
+        <h3 className="text-sm font-semibold text-foreground mb-3">Estimate</h3>
+        <div className="grid grid-cols-2 gap-x-8 gap-y-2.5 text-sm">
+          <span className="text-muted-foreground">Team Cost</span>
+          <span className="text-right font-medium text-foreground">{formatMoney(teamCost, currency)}</span>
+          <span className="text-muted-foreground">Services Cost</span>
+          <span className="text-right font-medium text-foreground">{formatMoney(servicesCost, currency)}</span>
+          <span className="text-muted-foreground">Profit ({markup}%)</span>
+          <span className="text-right font-medium text-success">{formatMoney(markupAmount, currency)}</span>
+          <span className="text-base font-semibold text-foreground pt-2 border-t border-border">Total</span>
+          <span className="text-right text-base font-bold text-foreground pt-2 border-t border-border">{formatMoney(total, currency)}</span>
+        </div>
+        <div className="flex justify-end mt-4 pt-3 border-t border-border">
+          <Button variant="outline" onClick={reset}>
             <RotateCcw className="w-4 h-4" />
             Reset
           </Button>
-        </div>
-        <div className="bg-card border border-border rounded-xl p-5 flex-1">
-          <h3 className="text-sm font-semibold text-foreground mb-3">Estimate</h3>
-          <div className="grid grid-cols-2 gap-x-8 gap-y-2.5 text-sm">
-            <span className="text-muted-foreground">Team Cost</span>
-            <span className="text-right font-medium text-foreground">{formatMoney(teamCost, currency)}</span>
-            <span className="text-muted-foreground">Services Cost</span>
-            <span className="text-right font-medium text-foreground">{formatMoney(servicesCost, currency)}</span>
-            <span className="text-muted-foreground">Profit ({markup}%)</span>
-            <span className="text-right font-medium text-success">{formatMoney(markupAmount, currency)}</span>
-            <span className="text-base font-semibold text-foreground pt-2 border-t border-border">Total</span>
-            <span className="text-right text-base font-bold text-foreground pt-2 border-t border-border">{formatMoney(total, currency)}</span>
-          </div>
         </div>
       </div>
     </div>

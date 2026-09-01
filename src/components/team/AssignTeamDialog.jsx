@@ -8,9 +8,18 @@ import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
 import { Label } from "@/components/ui/label";
 import { RATE_TYPES } from "@/constants/teamConfig";
-import { findConflicts, isBlockedOnDate } from "@/lib/teamService";
+import { findConflicts } from "@/lib/teamService";
 import { formatEventDate, parseISODate, toISODate } from "@/lib/dates";
 import { AlertTriangle, Ban } from "lucide-react";
+
+// Count days between two ISO date strings (inclusive)
+function daysBetween(startStr, endStr) {
+  if (!startStr) return 1;
+  const s = parseISODate(startStr);
+  const e = parseISODate(endStr || startStr);
+  if (!s || !e) return 1;
+  return Math.max(1, Math.round((e - s) / 86400000) + 1);
+}
 
 export default function AssignTeamDialog({
   open, onClose, onSaved,
@@ -25,6 +34,8 @@ export default function AssignTeamDialog({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [overrideConflict, setOverrideConflict] = useState(false);
+  const [bookingStart, setBookingStart] = useState("");
+  const [bookingEnd, setBookingEnd] = useState("");
 
   useEffect(() => {
     if (open) {
@@ -35,8 +46,11 @@ export default function AssignTeamDialog({
       setRateType("Per Event");
       setNotes("");
       setOverrideConflict(false);
+      // Default booking dates to event dates
+      setBookingStart(event?.start_date || "");
+      setBookingEnd(event?.end_date || event?.start_date || "");
     }
-  }, [open]);
+  }, [open, event]);
 
   const selectedMember = members.find((m) => m.id === memberId);
   const conflicts = memberId && event
@@ -63,15 +77,42 @@ export default function AssignTeamDialog({
     return hits;
   }, [memberId, event, blockDates]);
 
+  // Auto-recalculate rate when dates change and rate type is Per Day
+  const recalcRate = (start, end, currentRate, currentRateType, defaultRate) => {
+    if (currentRateType === "Per Day" && defaultRate) {
+      const days = daysBetween(start, end);
+      setAgreedRate(String(Number(defaultRate) * days));
+    }
+  };
+
   const onMemberChange = (id) => {
     setMemberId(id);
     setOverrideConflict(false);
     const m = members.find((x) => x.id === id);
     if (m) {
-      setAgreedRate(m.default_rate != null ? String(m.default_rate) : "");
-      setRateType(m.rate_type || "Per Event");
+      const rt = m.rate_type || "Per Event";
+      const dr = m.default_rate != null ? m.default_rate : 0;
+      setRateType(rt);
       setRoleId(m.role_id || "");
+      if (rt === "Per Day") {
+        const days = daysBetween(bookingStart, bookingEnd);
+        setAgreedRate(String(Number(dr) * days));
+      } else {
+        setAgreedRate(String(dr));
+      }
     }
+  };
+
+  const onBookingStartChange = (val) => {
+    setBookingStart(val);
+    const m = members.find((x) => x.id === memberId);
+    recalcRate(val, bookingEnd, agreedRate, rateType, m?.default_rate);
+  };
+
+  const onBookingEndChange = (val) => {
+    setBookingEnd(val);
+    const m = members.find((x) => x.id === memberId);
+    recalcRate(bookingStart, val, agreedRate, rateType, m?.default_rate);
   };
 
   const onRoleChange = (id) => {
@@ -109,7 +150,9 @@ export default function AssignTeamDialog({
         agreed_rate: Number(agreedRate) || 0,
         rate_type: rateType,
         assignment_status: "assigned",
-        notes: notes.trim()
+        notes: notes.trim(),
+        booking_start_date: bookingStart || event?.start_date || "",
+        booking_end_date: bookingEnd || event?.end_date || event?.start_date || ""
       };
       const saved = await base44.entities.EventTeamAssignment.create(payload);
       // Keep event.team_member_ids in sync so the Events table (which reads
@@ -162,6 +205,26 @@ export default function AssignTeamDialog({
               ))}
             </Select>
           </div>
+
+          {/* Per-member booking dates */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label>Booking Start Date</Label>
+              <Input type="date" value={bookingStart} onChange={(e) => onBookingStartChange(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Booking End Date</Label>
+              <Input type="date" value={bookingEnd} onChange={(e) => onBookingEndChange(e.target.value)} />
+            </div>
+          </div>
+          {bookingStart && bookingEnd && (
+            <p className="text-xs text-muted-foreground -mt-1">
+              {daysBetween(bookingStart, bookingEnd)} day(s) · {formatEventDate(bookingStart, bookingEnd)}
+              {rateType === "Per Day" && members.find(m => m.id === memberId)?.default_rate
+                ? ` · Auto-calculated: ₹${Number(members.find(m => m.id === memberId)?.default_rate) * daysBetween(bookingStart, bookingEnd)}`
+                : ""}
+            </p>
+          )}
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">

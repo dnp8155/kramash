@@ -354,7 +354,7 @@ export default function EventDetails() {
 
       {/* Contextual actions */}
       <div className="flex items-center gap-2 flex-wrap">
-        <Button size="sm" variant="ghost" onClick={addToCalendar}>
+        <Button size="sm" variant="outline" onClick={addToCalendar}>
           <CalendarPlus className="w-3.5 h-3.5" /> Add to Calendar
         </Button>
         <Button size="sm" variant="primary" onClick={shareEventLink}>
@@ -450,6 +450,7 @@ export default function EventDetails() {
                     onAddPayment={(asg) => setTeamPayAssignment(asg)}
                     onRemove={removeAssignment}
                     onShare={shareAssignment}
+                    onRefresh={load}
                   />
                 ))}
               </div>

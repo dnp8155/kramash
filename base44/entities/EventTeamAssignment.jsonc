@@ -37,6 +37,16 @@
         "Fixed"
       ]
     },
+    "booking_start_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Booking Start Date (per-member)"
+    },
+    "booking_end_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Booking End Date (per-member)"
+    },
     "assignment_status": {
       "type": "string",
       "title": "Assignment Status",
