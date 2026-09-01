@@ -322,11 +322,11 @@ const CATEGORIES = [
       {
         icon: Smartphone,
         title: "Install as an App",
-        desc: "Use KRAMAS like a native app on your phone.",
+        desc: "Use Kramasha like a native app on your phone.",
         steps: [
           "Open the app in your phone's browser (Chrome / Safari).",
           "Tap the browser menu and select 'Add to Home Screen' or 'Install App'.",
-          "Launch KRAMAS from your home screen — it runs full-screen like a native app.",
+          "Launch Kramasha from your home screen — it runs full-screen like a native app.",
           "Works on both Android and iOS."
         ]
       },
@@ -335,7 +335,7 @@ const CATEGORIES = [
         title: "Offline Mode",
         desc: "Keep working even without internet.",
         steps: [
-          "KRAMAS caches your data locally when you're online.",
+          "Kramasha caches your data locally when you're online.",
           "If you lose connection, you'll see an 'Offline' banner but can still view cached data.",
           "Any changes you make offline are queued and sync automatically when you reconnect.",
           "If you try to load a page that isn't cached, you'll see a friendly offline page with a retry button."

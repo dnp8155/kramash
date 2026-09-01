@@ -1,4 +1,4 @@
-// CSV/Excel export utility for KRAMAS.
+// CSV/Excel export utility for Kramasha.
 // Generates CSV files with BOM for Excel compatibility. Only exports the
 // authenticated workspace's data — callers are responsible for passing
 // pre-filtered, workspace-scoped rows.
@@ -67,7 +67,7 @@ export function exportEventsCsv(events, clientsMap, fyLabel, term) {
   const csv = rowsToCsv(rows, columns);
   const fy = fyLabel ? sanitizeFilename(fyLabel) : "All";
   const prefix = sanitizeFilename(t.exportPrefix || workPlural);
-  downloadCsv(csv, `KRAMAS_${prefix}_${fy}.csv`);
+  downloadCsv(csv, `Kramasha_${prefix}_${fy}.csv`);
 }
 
 // Export clients to CSV.
@@ -89,7 +89,7 @@ export function exportClientsCsv(clients, eventCounts) {
     event_count: eventCounts[c.id] || 0,
   }));
   const csv = rowsToCsv(rows, columns);
-  downloadCsv(csv, `KRAMAS_Clients.csv`);
+  downloadCsv(csv, `Kramasha_Clients.csv`);
 }
 
 // Export team members to CSV.
@@ -113,7 +113,7 @@ export function exportTeamCsv(members, rolesMap) {
     status: m.status || "",
   }));
   const csv = rowsToCsv(rows, columns);
-  downloadCsv(csv, `KRAMAS_Team.csv`);
+  downloadCsv(csv, `Kramasha_Team.csv`);
 }
 
 // Export financial transactions to CSV.
@@ -159,5 +159,5 @@ export function exportFinancialCsv(transactions, display, currency, fyLabel) {
   });
   const csv = rowsToCsv(rows, columns);
   const fy = fyLabel ? sanitizeFilename(fyLabel) : "All";
-  downloadCsv(csv, `KRAMAS_Financial_Activity_${fy}.csv`);
+  downloadCsv(csv, `Kramasha_Financial_Activity_${fy}.csv`);
 }

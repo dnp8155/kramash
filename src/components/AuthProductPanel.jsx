@@ -21,7 +21,7 @@ export default function AuthProductPanel() {
           <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-lg overflow-hidden shrink-0">
             <Logo size={32} />
           </div>
-          <span className="font-heading text-lg font-bold tracking-tight">KRAMAS</span>
+          <span className="font-heading text-lg font-bold tracking-tight">Kramasha</span>
         </Link>
 
         {/* Main content */}
@@ -30,7 +30,7 @@ export default function AuthProductPanel() {
             Your business, organized in one place.
           </h2>
           <p className="mt-4 text-sidebar-muted text-base leading-relaxed">
-            From client details to projects, team assignments, quotations and payments — KRAMAS keeps your workflow connected.
+            From client details to projects, team assignments, quotations and payments — Kramasha keeps your workflow connected.
           </p>
 
           {/* Industry chips */}
@@ -96,7 +96,7 @@ export default function AuthProductPanel() {
               </span>
             ))}
           </div>
-          <p className="text-xs text-sidebar-muted/60 pt-2">© {new Date().getFullYear()} KRAMAS. All rights reserved.</p>
+          <p className="text-xs text-sidebar-muted/60 pt-2">© {new Date().getFullYear()} Kramasha. All rights reserved.</p>
         </div>
       </div>
     </div>

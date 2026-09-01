@@ -49,7 +49,7 @@ export default function Login() {
   const returnTo = safeReturnTo();
 
   useEffect(() => {
-    document.title = "Sign in — KRAMAS";
+    document.title = "Sign in — Kramasha";
     const meta = document.createElement("meta");
     meta.name = "robots";
     meta.content = "noindex, follow";
@@ -141,7 +141,7 @@ export default function Login() {
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2.5 self-start">
           <Logo size={36} className="shadow-md" />
-          <span className="font-heading text-lg font-bold tracking-tight text-foreground">KRAMAS</span>
+          <span className="font-heading text-lg font-bold tracking-tight text-foreground">Kramasha</span>
         </Link>
 
         {/* Form area — vertically centered, slightly above center */}
@@ -325,7 +325,7 @@ export default function Login() {
 
               <div className="mt-5 flex flex-col gap-2.5">
                 <p className="text-sm text-muted-foreground text-center">
-                  New to KRAMAS?{" "}
+                  New to Kramasha?{" "}
                   <Link
                     to={
                       "/register" +
@@ -352,7 +352,7 @@ export default function Login() {
         </div>
 
         {/* Footer */}
-        <p className="text-xs text-muted-foreground/40">© 2026 KRAMAS</p>
+        <p className="text-xs text-muted-foreground/40">© 2026 Kramasha</p>
       </div>
 
       {/* Right: Product visual — desktop only */}

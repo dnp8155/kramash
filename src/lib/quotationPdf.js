@@ -371,7 +371,7 @@ export async function generateQuotationPdf({
     doc.text(`Page ${p} of ${pageCount}`, pageW - M, pageH - 6, { align: "right" });
   }
 
-  const fname = `KRAMAS_${quotation.quotation_number}_${sanitizeFilename(cli.name || "Client")}.pdf`;
+  const fname = `Kramasha_${quotation.quotation_number}_${sanitizeFilename(cli.name || "Client")}.pdf`;
   if (returnBlob) {
     return { url: doc.output("bloburl"), filename: fname };
   }
@@ -517,7 +517,7 @@ export async function generateJobSheetPdf({
     doc.text(`Page ${p} of ${pageCount}`, pageW - M, pageH - 6, { align: "right" });
   }
 
-  const jsFname = `KRAMAS_JobSheet_${sanitizeFilename(event?.title || term.workItemSingular || "Event")}.pdf`;
+  const jsFname = `Kramasha_JobSheet_${sanitizeFilename(event?.title || term.workItemSingular || "Event")}.pdf`;
   if (returnBlob) {
     return { url: doc.output("bloburl"), filename: jsFname };
   }

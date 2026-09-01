@@ -1,8 +1,8 @@
-export const aboutContent = `# About KRAMAS
+export const aboutContent = `# About Kramasha
 
-## KRAMAS — क्रमशः. In order. One step at a time.
+## Kramasha — क्रमशः. In order. One step at a time.
 
-KRAMAS means "in sequence" — and that's exactly how we think a business should run. Not scattered across five WhatsApp chats, three Excel sheets, and a notebook that's always in someone else's bag. One workspace. Every event, every payment, every team member, in order.
+Kramasha means "in sequence" — and that's exactly how we think a business should run. Not scattered across five WhatsApp chats, three Excel sheets, and a notebook that's always in someone else's bag. One workspace. Every event, every payment, every team member, in order.
 
 ---
 
@@ -10,18 +10,18 @@ KRAMAS means "in sequence" — and that's exactly how we think a business should
 
 If you run an event, a photography studio, an architecture practice, or any business built around jobs and a team — you already know the real work isn't the event itself. It's everything around it: who's confirmed for which day, who still owes what, whether the quotation went out, whether the advance came in, whether two team members got double-booked on the same wedding.
 
-Most small and growing businesses in this space run on Excel sheets and memory. It works — until it doesn't. A missed follow-up, a forgotten payment, a team member booked twice by accident. KRAMAS exists to take that mental load off your plate.
+Most small and growing businesses in this space run on Excel sheets and memory. It works — until it doesn't. A missed follow-up, a forgotten payment, a team member booked twice by accident. Kramasha exists to take that mental load off your plate.
 
 ---
 
-## Who KRAMAS is for
+## Who Kramasha is for
 
 - Event managers juggling vendors, coordinators, and a dozen moving parts per event
 - Photographers & videographers running crews across shoots, edits, and deliverables
 - Architects & interior teams managing projects, consultants, and contractors
 - Freelancers and small studios — makeup artists, decorators, editors, drone operators — who need to track jobs and payments without hiring an accountant
 
-If your business runs on events, a team, and money moving between clients and crew, KRAMAS is built for you.
+If your business runs on events, a team, and money moving between clients and crew, Kramasha is built for you.
 
 ---
 
@@ -44,7 +44,7 @@ Your business runs on trust — your clients trust you with their event, and you
 
 ## Where we are right now
 
-KRAMAS is currently in active development and beta. That means the product is real and usable today, but still growing — and it also means the full app is free to use during this period (see our FAQ for the exact dates). We're building this with real studios and event businesses in the loop, so if something feels off or missing, we want to hear about it.
+Kramasha is currently in active development and beta. That means the product is real and usable today, but still growing — and it also means the full app is free to use during this period (see our FAQ for the exact dates). We're building this with real studios and event businesses in the loop, so if something feels off or missing, we want to hear about it.
 
 ---
 
@@ -55,15 +55,15 @@ Questions, feedback, or just want to say hello? Visit our Contact page — we re
 
 export const faqContent = [
   {
-    q: "What is KRAMAS?",
-    a: "KRAMAS is a workspace app for event managers, photographers, videographers, architects, and similar service businesses. It brings your events, team, payments, and quotations into one place instead of spreadsheets and scattered chats.",
+    q: "What is Kramasha?",
+    a: "Kramasha is a workspace app for event managers, photographers, videographers, architects, and similar service businesses. It brings your events, team, payments, and quotations into one place instead of spreadsheets and scattered chats.",
   },
   {
-    q: "Who is KRAMAS built for?",
+    q: "Who is Kramasha built for?",
     a: "Anyone running jobs with a team — event planners, photography and videography studios, production houses, architects, and freelancers like decorators, makeup artists, editors, and drone operators. If you coordinate people, dates, and payments around events or projects, it's built for you.",
   },
   {
-    q: "Is KRAMAS free right now?",
+    q: "Is Kramasha free right now?",
     a: "Yes. During our beta period — until [DD Month YYYY] — the full app, including everything currently marked as a \"Pro\" feature, is free to use for everyone. We're doing this because we're still actively building and want real feedback before we finalize pricing. After [DD Month YYYY], the Free and Pro plans described in Your Plan apply.",
   },
   {
@@ -72,7 +72,7 @@ export const faqContent = [
   },
   {
     q: "What's the difference between Free and Pro?",
-    a: "Pro raises your limits (events, team members, services, financial years, devices) and unlocks features like push reminders, App Lock (Face ID/fingerprint), extra themes, showing services/address on event cards, exporting all financial years, and removing the \"Made via KRAMAS\" line from your PDFs. The exact current limits are always visible in Your Plan inside the app.",
+    a: "Pro raises your limits (events, team members, services, financial years, devices) and unlocks features like push reminders, App Lock (Face ID/fingerprint), extra themes, showing services/address on event cards, exporting all financial years, and removing the \"Made via Kramasha\" line from your PDFs. The exact current limits are always visible in Your Plan inside the app.",
   },
   {
     q: "How much does Pro cost after the beta period?",
@@ -87,19 +87,19 @@ export const faqContent = [
     a: "Yes, in two ways: In transit — every connection between your device and our servers is encrypted (HTTPS/TLS), the same standard used by banking and payment websites. At rest — your data is encrypted while stored on our servers, using industry-standard encryption provided by our database infrastructure.",
   },
   {
-    q: "Can KRAMAS (your company) see my financial data?",
-    a: "We do not sell your data, use it for marketing, or show it to any other user or business. Other workspaces can never see your events, clients, or payments — that isolation is enforced at the database level, not just hidden in the app. Your data is not \"zero-knowledge\" or end-to-end encrypted; like most business software, KRAMAS needs to read your data on the server to calculate totals, generate PDFs, run search, send reminders, and provide support. Access is restricted to a small number of authorized team members and only when necessary — to resolve a support ticket, investigate a technical/security issue, or where required by law. We do not browse or use your data for any other purpose.",
+    q: "Can Kramasha (your company) see my financial data?",
+    a: "We do not sell your data, use it for marketing, or show it to any other user or business. Other workspaces can never see your events, clients, or payments — that isolation is enforced at the database level, not just hidden in the app. Your data is not \"zero-knowledge\" or end-to-end encrypted; like most business software, Kramasha needs to read your data on the server to calculate totals, generate PDFs, run search, send reminders, and provide support. Access is restricted to a small number of authorized team members and only when necessary — to resolve a support ticket, investigate a technical/security issue, or where required by law. We do not browse or use your data for any other purpose.",
   },
   {
-    q: "Can I use KRAMAS for my type of business specifically?",
-    a: "Yes. When you set up your workspace, you choose a business type — Photography, Event Management, or Architecture — and KRAMAS pre-fills matching team roles, services, and event types for you. You can still add your own custom roles and services anytime.",
+    q: "Can I use Kramasha for my type of business specifically?",
+    a: "Yes. When you set up your workspace, you choose a business type — Photography, Event Management, or Architecture — and Kramasha pre-fills matching team roles, services, and event types for you. You can still add your own custom roles and services anytime.",
   },
   {
     q: "Can I change my business type later?",
     a: "Business type can be set once (either during first-time setup or once afterward in Preferences), since it shapes your default roles, services, and event types. Choose carefully — switching later replaces your existing preset data with the new business type's set.",
   },
   {
-    q: "Does KRAMAS support GST?",
+    q: "Does Kramasha support GST?",
     a: "GST support is optional and off by default. If your business is GST-registered, you can enable it in Preferences to capture your GSTIN and show GST on your quotations. If you're not GST-registered, you'll never see any tax fields.",
   },
   {
@@ -107,11 +107,11 @@ export const faqContent = [
     a: "Yes. The Quotation & Agreement tool builds a client-ready quotation and a separate team job sheet from the same form — client details, event dates, deliverables, and pricing, exported as a branded PDF using your business name, logo, and contact details from Preferences.",
   },
   {
-    q: "Does KRAMAS work offline?",
-    a: "KRAMAS is a Progressive Web App (PWA) and can be installed on your phone or desktop like a native app. Core functionality is designed to keep working with a poor or temporarily lost connection; changes sync once you're back online.",
+    q: "Does Kramasha work offline?",
+    a: "Kramasha is a Progressive Web App (PWA) and can be installed on your phone or desktop like a native app. Core functionality is designed to keep working with a poor or temporarily lost connection; changes sync once you're back online.",
   },
   {
-    q: "How many devices can I use KRAMAS on?",
+    q: "How many devices can I use Kramasha on?",
     a: "This depends on your plan — Free allows one active device at a time; Pro allows more. Exact numbers are shown under Your Plan in the app.",
   },
   {
@@ -138,7 +138,7 @@ export const faqContent = [
 
 export const privacyPolicyContent = `# Privacy Policy
 
-KRAMAS — Event & Production Management Platform
+Kramasha — Event & Production Management Platform
 Effective Date: [DD Month YYYY]
 Last Updated: [DD Month YYYY]
 
@@ -146,9 +146,9 @@ Last Updated: [DD Month YYYY]
 
 ## 1. Introduction
 
-This Privacy Policy explains how KRAMAS ("we", "us") collects, uses, stores, and protects information when you use our application ("Service").
+This Privacy Policy explains how Kramasha ("we", "us") collects, uses, stores, and protects information when you use our application ("Service").
 
-This Policy applies to (a) information about you as a registered user of KRAMAS, and (b) information about your clients and team members that you choose to enter into your Workspace. Section 8 explains how these two categories are treated differently.
+This Policy applies to (a) information about you as a registered user of Kramasha, and (b) information about your clients and team members that you choose to enter into your Workspace. Section 8 explains how these two categories are treated differently.
 
 ---
 
@@ -206,7 +206,7 @@ We do not sell your personal information or your clients' information to third p
 
 4.2. Access to your Workspace data is restricted to your authenticated account through database-level access controls, so that other Workspaces cannot access your data.
 
-### 4.3. Can KRAMAS access my data? (Plain-language explanation)
+### 4.3. Can Kramasha access my data? (Plain-language explanation)
 
 We believe this deserves a direct answer, not a vague one.
 
@@ -264,10 +264,10 @@ To exercise these rights, contact us at [support/privacy email].
 The Service is designed to let you (an event manager, photographer, or similar business) store information about your own clients — their names, contact details, and payment history — as part of managing your events and quotations.
 
 In relation to this data:
-   - You are the data controller/fiduciary, and we are your data processor/service provider. You are responsible for ensuring you have a lawful basis and, where required, consent from your clients to store their personal information in KRAMAS.
+   - You are the data controller/fiduciary, and we are your data processor/service provider. You are responsible for ensuring you have a lawful basis and, where required, consent from your clients to store their personal information in Kramasha.
    - We process this data only as instructed by you, to provide the Service, and do not independently use it for our own purposes (e.g., marketing).
    - If one of your clients contacts us directly about their data, we will generally direct them to you as the data controller, unless legally required to act otherwise.
-   - You should ensure your own client-facing communications (e.g., your own privacy notice to your clients, if applicable) reflect your use of KRAMAS to store their information.
+   - You should ensure your own client-facing communications (e.g., your own privacy notice to your clients, if applicable) reflect your use of Kramasha to store their information.
 
 ---
 
@@ -310,7 +310,7 @@ For general privacy questions, contact [support email].
 
 export const termsOfServiceContent = `# Terms of Service
 
-KRAMAS — Event & Production Management Platform
+Kramasha — Event & Production Management Platform
 Effective Date: [DD Month YYYY]
 Last Updated: [DD Month YYYY]
 
@@ -318,7 +318,7 @@ Last Updated: [DD Month YYYY]
 
 ## 1. Acceptance of Terms
 
-These Terms of Service ("Terms") govern access to and use of KRAMAS (the "Service", "App", "we", "us"), operated by KRAMAS, having its registered office at [registered address] ("Company").
+These Terms of Service ("Terms") govern access to and use of Kramasha (the "Service", "App", "we", "us"), operated by Kramasha, having its registered office at [registered address] ("Company").
 
 By creating an account, accessing, or using the Service, you ("User", "you") agree to be bound by these Terms and by our Privacy Policy and Disclaimer, which are incorporated by reference. If you do not agree, do not use the Service.
 
@@ -328,7 +328,7 @@ If you are using the Service on behalf of a business, you confirm you have the a
 
 ## 2. Description of the Service
 
-KRAMAS is a workspace-based software-as-a-service application that helps event managers, photographers, videographers, architects, and similar service businesses manage events/projects, team assignments, payments, quotations, and related business records ("Workspace").
+Kramasha is a workspace-based software-as-a-service application that helps event managers, photographers, videographers, architects, and similar service businesses manage events/projects, team assignments, payments, quotations, and related business records ("Workspace").
 
 Each account operates within its own isolated Workspace. The Service is provided on an "as available" basis and features may be added, changed, or removed at our discretion, including differences between Free and Pro plans (see Section 5).
 
@@ -409,7 +409,7 @@ Access to the Service on multiple simultaneous devices/sessions is governed by y
 
 ## 9. Intellectual Property
 
-The Service, including its software, design, branding, and underlying technology (excluding Your Data), is owned by KRAMAS and protected by applicable intellectual property laws. Nothing in these Terms grants you any right to our trademarks, logos, or brand assets except as necessary to use the Service as intended.
+The Service, including its software, design, branding, and underlying technology (excluding Your Data), is owned by Kramasha and protected by applicable intellectual property laws. Nothing in these Terms grants you any right to our trademarks, logos, or brand assets except as necessary to use the Service as intended.
 
 ---
 
@@ -437,13 +437,13 @@ The Service is provided "as is" and "as available" without warranties of any kin
 
 ## 13. Limitation of Liability
 
-To the maximum extent permitted by applicable law, KRAMAS shall not be liable for any indirect, incidental, special, consequential, or punitive damages, or any loss of profits, revenue, data, or business opportunity, arising out of or related to your use of the Service. Our total aggregate liability for any claim arising from these Terms or the Service shall not exceed the amount you paid us for the Service in the [12 months] preceding the claim, or [₹1,000], whichever is greater.
+To the maximum extent permitted by applicable law, Kramasha shall not be liable for any indirect, incidental, special, consequential, or punitive damages, or any loss of profits, revenue, data, or business opportunity, arising out of or related to your use of the Service. Our total aggregate liability for any claim arising from these Terms or the Service shall not exceed the amount you paid us for the Service in the [12 months] preceding the claim, or [₹1,000], whichever is greater.
 
 ---
 
 ## 14. Indemnification
 
-You agree to indemnify and hold KRAMAS harmless from any claims, damages, or expenses (including reasonable legal fees) arising from your breach of these Terms, your misuse of the Service, or Your Data, including any claim brought by a third party (e.g., your own client) relating to data you stored about them.
+You agree to indemnify and hold Kramasha harmless from any claims, damages, or expenses (including reasonable legal fees) arising from your breach of these Terms, your misuse of the Service, or Your Data, including any claim brought by a third party (e.g., your own client) relating to data you stored about them.
 
 ---
 

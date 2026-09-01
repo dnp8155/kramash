@@ -9,7 +9,7 @@ import { getAppLanguage } from "@/components/layout/LanguageSwitcher";
 import { cn } from "@/lib/utils";
 
 const WELCOME = {
-  en: "Hi! I'm your KRAMAS assistant. I can analyze your events, clients, team payments, and finances. Ask me anything, or use a quick action below.",
+  en: "Hi! I'm your Kramasha assistant. I can analyze your events, clients, team payments, and finances. Ask me anything, or use a quick action below.",
   hi: "नमस्ते! मैं आपका क्रमशः सहायक हूँ। मैं आपके इवेंट, क्लाइंट, टीम पेमेंट और फाइनेंस विश्लेषण कर सकता हूँ। कुछ भी पूछें या नीचे दिए त्वरित कार्य का उपयोग करें।",
   gu: "નમસ્તે! હું તમારો ક્રમશઃ સહાયક છું. હું તમારા ઇવેન્ટ, ક્લાયન્ટ, ટીમ પેમેન્ટ અને ફાઇનન્સનું વિશ્લેષણ કરી શકું છું. કંઈપણ પૂછો અથવા નીચેના ક્વિક એક્શનનો ઉપયોગ કરો.",
 };
@@ -129,7 +129,7 @@ export default function AgentBot() {
                   <Sparkles className="w-4 h-4 text-primary-foreground" />
                 </div>
                 <div>
-                  <div className="text-sm font-semibold text-foreground">KRAMAS Assistant</div>
+                  <div className="text-sm font-semibold text-foreground">Kramasha Assistant</div>
                   <div className="text-[11px] text-muted-foreground">
                     {language === "hi" ? "हिंदी में" : language === "gu" ? "ગુજરાતીમાં" : "English"}
                   </div>

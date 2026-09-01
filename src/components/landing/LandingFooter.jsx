@@ -10,7 +10,7 @@ export default function LandingFooter() {
           <div>
             <div className="flex items-center gap-2.5 mb-3">
               <Logo size={32} className="shadow-sm" />
-              <span className="font-heading text-sm font-bold text-foreground">KRAMAS</span>
+              <span className="font-heading text-sm font-bold text-foreground">Kramasha</span>
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed max-w-xs">
               The all-in-one workspace for service businesses — clients, projects, teams, quotations and finances in one place.
@@ -47,7 +47,7 @@ export default function LandingFooter() {
         </div>
 
         <div className="pt-6 border-t border-border/60 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} KRAMAS. All rights reserved.</p>
+          <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} Kramasha. All rights reserved.</p>
           <div className="flex items-center gap-4">
             <p className="text-xs text-muted-foreground">Built for service businesses in India</p>
           </div>

@@ -13,7 +13,7 @@ export default function PrivacyPolicy() {
         <div className="max-w-3xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2 text-sm font-semibold text-foreground hover:opacity-80 transition-opacity">
             <div className="w-7 h-7 rounded-lg bg-primary text-primary-foreground flex items-center justify-center font-heading font-bold text-sm">K</div>
-            KRAMAS
+            Kramasha
           </Link>
           <Link to="/login">
             <Button size="sm" variant="outline">Sign in</Button>
@@ -34,7 +34,7 @@ export default function PrivacyPolicy() {
           <h1 className="text-2xl sm:text-3xl font-heading font-bold text-foreground">Privacy Policy</h1>
         </div>
         <p className="text-sm text-muted-foreground mb-8">
-          KRAMAS — Event &amp; Production Management Platform
+          Kramasha — Event &amp; Production Management Platform
         </p>
 
         <article className="prose-legal">
@@ -61,7 +61,7 @@ export default function PrivacyPolicy() {
         </article>
 
         <div className="mt-10 pt-6 border-t border-border text-xs text-muted-foreground">
-          <Link to="/" className="hover:text-foreground transition-colors">← Back to KRAMAS</Link>
+          <Link to="/" className="hover:text-foreground transition-colors">← Back to Kramasha</Link>
         </div>
       </main>
     </div>

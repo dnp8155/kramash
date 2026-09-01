@@ -69,7 +69,7 @@ export default function AppUpdates() {
         <div className="bg-primary text-primary-foreground border border-primary rounded-lg p-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-sm">
             <RefreshCw className="w-4 h-4" />
-            A new version of KRAMAS is available.
+            A new version of Kramasha is available.
           </div>
           <Button
             variant="outline"
@@ -89,7 +89,7 @@ export default function AppUpdates() {
         {isPwaInstalled || installed ? (
           <div className="flex items-center gap-2 text-sm text-success">
             <CheckCircle2 className="w-4 h-4" />
-            KRAMAS is installed on this device.
+            Kramasha is installed on this device.
           </div>
         ) : needsIOSGuidance ? (
           <div className="space-y-2">
@@ -99,12 +99,12 @@ export default function AppUpdates() {
             <ol className="space-y-1.5 text-sm text-muted-foreground pl-4">
               <li>1. Tap the <Share className="w-3.5 h-3.5 inline mx-0.5" /> Share button in Safari</li>
               <li>2. Select "Add to Home Screen"</li>
-              <li>3. Tap "Add" to install KRAMAS</li>
+              <li>3. Tap "Add" to install Kramasha</li>
             </ol>
           </div>
         ) : canInstall ? (
           <div className="flex items-center justify-between gap-3">
-            <p className="text-sm text-muted-foreground">Install KRAMAS as an app on your device.</p>
+            <p className="text-sm text-muted-foreground">Install Kramasha as an app on your device.</p>
             <Button variant="primary" size="sm" onClick={handleInstall} disabled={installing}>
               {installing ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Installing…</> : <><Download className="w-3.5 h-3.5" /> Install</>}
             </Button>
@@ -144,7 +144,7 @@ export default function AppUpdates() {
           </div>
         ) : notifPermission === "denied" ? (
           <p className="text-sm text-muted-foreground">
-            Notifications are blocked. Update your browser settings to allow notifications from KRAMAS.
+            Notifications are blocked. Update your browser settings to allow notifications from Kramasha.
           </p>
         ) : notifPermission === "unsupported" ? (
           <p className="text-sm text-muted-foreground">Browser notifications are not supported on this device.</p>

@@ -314,7 +314,7 @@ export default function EventTracking() {
       <footer className="border-t border-slate-200 py-6 mt-4">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
           <div className="text-xs text-slate-400">
-            Powered by <span className="font-semibold text-slate-500">KRAMAS</span> · Professional Event Management
+            Powered by <span className="font-semibold text-slate-500">Kramasha</span> · Professional Event Management
           </div>
         </div>
       </footer>

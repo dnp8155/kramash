@@ -28,7 +28,7 @@ function formatSingle(date) {
   return `${date.getDate()} ${MONTHS[date.getMonth()]} ${date.getFullYear()}`;
 }
 
-// Format an event date range, matching the KRAMAS style:
+// Format an event date range, matching the Kramasha style:
 // "26 Aug 2026" | "23, 25 Apr 2026" | "31 Jan, 1 Feb 2026" | "31 Dec 2026, 1 Jan 2027"
 export function formatEventDate(startStr, endStr) {
   const start = parseISODate(startStr);

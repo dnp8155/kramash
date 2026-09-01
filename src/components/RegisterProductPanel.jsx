@@ -33,7 +33,7 @@ export default function RegisterProductPanel() {
           <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-lg overflow-hidden shrink-0">
             <Logo size={32} />
           </div>
-          <span className="font-heading text-lg font-bold tracking-tight">KRAMAS</span>
+          <span className="font-heading text-lg font-bold tracking-tight">Kramasha</span>
         </Link>
 
         {/* Main content */}
@@ -42,7 +42,7 @@ export default function RegisterProductPanel() {
             YOUR WORKSPACE STARTS HERE
           </div>
           <h2 className="font-heading text-3xl xl:text-[2.25rem] font-bold leading-tight tracking-tight">
-            Set up KRAMAS around the way you work.
+            Set up Kramasha around the way you work.
           </h2>
           <p className="mt-4 text-sidebar-muted text-base leading-relaxed">
             Choose your business category, configure your services and team, and start managing work from one connected workspace.
@@ -111,7 +111,7 @@ export default function RegisterProductPanel() {
             ))}
           </div>
           <p className="text-xs text-sidebar-muted/60">
-            © {new Date().getFullYear()} KRAMAS. All rights reserved.
+            © {new Date().getFullYear()} Kramasha. All rights reserved.
           </p>
         </div>
       </div>

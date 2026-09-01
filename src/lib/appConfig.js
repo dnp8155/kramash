@@ -2,8 +2,8 @@
 // All version info and environment config lives here — never hardcode elsewhere.
 
 export const APP_CONFIG = {
-  name: "KRAMAS",
-  shortName: "KRAMAS",
+  name: "Kramasha",
+  shortName: "Kramasha",
   version: "1.0.0",
   phase: "Phase 8 Beta",
   versionLabel: "Version 1.0.0 Beta",

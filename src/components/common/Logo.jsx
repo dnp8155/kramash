@@ -9,7 +9,7 @@ export default function Logo({ size = 36, className = "" }) {
     >
       <img
         src={LOGO_URL}
-        alt="KRAMAS"
+        alt="Kramasha"
         className="max-w-full max-h-full object-contain"
         draggable={false}
       />

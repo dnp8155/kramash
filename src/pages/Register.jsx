@@ -59,7 +59,7 @@ export default function Register() {
   const phoneFromOtp = searchParams.get("phone");
 
   useEffect(() => {
-    document.title = "Create Account — KRAMAS";
+    document.title = "Create Account — Kramasha";
     const meta = document.createElement("meta");
     meta.name = "robots";
     meta.content = "noindex, follow";
@@ -172,7 +172,7 @@ export default function Register() {
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2.5 self-start">
           <Logo size={36} className="shadow-md" />
-          <span className="font-heading text-lg font-bold tracking-tight text-foreground">KRAMAS</span>
+          <span className="font-heading text-lg font-bold tracking-tight text-foreground">Kramasha</span>
         </Link>
 
         {/* Form area — vertically centered, slightly above center */}
@@ -248,7 +248,7 @@ export default function Register() {
           ) : (
             <>
               <h1 className="font-heading text-2xl sm:text-[1.75rem] font-bold tracking-tight text-foreground leading-tight">
-                Create your KRAMAS account.
+                Create your Kramasha account.
               </h1>
               <p className="text-muted-foreground mt-2 text-sm">
                 Start with your account. We'll set up your business workspace next.
@@ -421,7 +421,7 @@ export default function Register() {
         </div>
 
         {/* Footer */}
-        <p className="text-xs text-muted-foreground/40">© 2026 KRAMAS</p>
+        <p className="text-xs text-muted-foreground/40">© 2026 Kramasha</p>
       </div>
 
       {/* Right: Product visual — desktop only */}

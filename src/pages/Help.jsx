@@ -73,8 +73,8 @@ const faqs = [
     a: "Go to Your Plan page, click 'Upgrade to Pro'. Choose billing cycle, complete payment, and your plan upgrades instantly with all premium features."
   },
   {
-    q: "Can I use KRAMAS offline?",
-    a: "Yes. KRAMAS caches your data locally. You can view and edit data offline. Changes sync automatically when you reconnect to the internet."
+    q: "Can I use Kramasha offline?",
+    a: "Yes. Kramasha caches your data locally. You can view and edit data offline. Changes sync automatically when you reconnect to the internet."
   },
   {
     q: "How do I change my business category or work labels?",

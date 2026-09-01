@@ -48,7 +48,7 @@ export default function DashboardPreview({ terminology: term }) {
               <div className="w-7 h-7 rounded-lg bg-white flex items-center justify-center shrink-0 overflow-hidden">
                 <Logo size={18} />
               </div>
-              <span className="text-sidebar-foreground text-xs font-bold hidden sm:block">KRAMAS</span>
+              <span className="text-sidebar-foreground text-xs font-bold hidden sm:block">Kramasha</span>
             </div>
             {navItems.map((item, i) => (
               <div

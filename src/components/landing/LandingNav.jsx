@@ -32,7 +32,7 @@ export default function LandingNav() {
       <div className="mx-auto max-w-6xl px-4 sm:px-6 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5">
           <Logo size={36} className="shadow-md" />
-          <span className="font-heading text-lg font-bold tracking-tight text-foreground">KRAMAS</span>
+          <span className="font-heading text-lg font-bold tracking-tight text-foreground">Kramasha</span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-muted-foreground">

@@ -28,7 +28,7 @@ export default function AdminLayout() {
               <Logo size={32} />
             </div>
             <div>
-              <div className="font-semibold text-sm leading-tight">KRAMAS</div>
+              <div className="font-semibold text-sm leading-tight">Kramasha</div>
               <div className="text-xs text-muted-foreground">SaaS Admin</div>
             </div>
           </div>

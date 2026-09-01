@@ -96,7 +96,7 @@ export default function YourPlan() {
         keyId: res.key_id,
         amount: res.amount,
         currency: res.currency,
-        name: workspace?.name || "KRAMAS",
+        name: workspace?.name || "Kramasha",
         prefill: {
           name: workspace?.name || "",
           email: workspace?.email || "",

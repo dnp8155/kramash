@@ -1,4 +1,4 @@
-// KRAMAS Service Worker — basic cache-first for static assets,
+// Kramasha Service Worker — basic cache-first for static assets,
 // network-first for navigation, with update flow (SKIP_WAITING).
 
 const CACHE_NAME = "kramas-v1";
