@@ -11,7 +11,6 @@ import Select from "@/components/common/Select";
 import EmptyState from "@/components/common/EmptyState";
 import LoadingState from "@/components/common/LoadingState";
 import PageHeader from "@/components/common/PageHeader";
-import FeatureGuide from "@/components/help/FeatureGuide";
 import {
   HelpCircle,
   LifeBuoy,
@@ -27,8 +26,7 @@ import {
   Bug,
   Lightbulb,
   CreditCard,
-  UserCircle,
-  BookOpen
+  UserCircle
 } from "lucide-react";
 
 const categoryConfig = {
@@ -94,7 +92,7 @@ export default function Help() {
   const { user } = useAuth();
   const { workspace } = useWorkspace();
 
-  const [activeTab, setActiveTab] = useState("guide");
+  const [activeTab, setActiveTab] = useState("contact");
   const [tickets, setTickets] = useState([]);
   const [loadingTickets, setLoadingTickets] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -177,7 +175,7 @@ export default function Help() {
   return (
     <div className="p-4 sm:p-6 space-y-6 max-w-[1400px] mx-auto">
       <PageHeader
-        title={t("Help & Support")}
+        title={t("Support Desk")}
         subtitle={t("Get answers, report issues, or reach out to our team")}
         icon={LifeBuoy}
       />
@@ -225,7 +223,6 @@ export default function Help() {
       {/* Tabs */}
       <div className="flex gap-1 border-b border-border">
         {[
-          { id: "guide", label: "Help Desk", icon: BookOpen },
           { id: "contact", label: "Contact Us", icon: Send },
           { id: "tickets", label: "My Tickets", icon: MessageSquare },
           { id: "faq", label: "FAQs", icon: HelpCircle }
@@ -244,11 +241,6 @@ export default function Help() {
           </button>
         ))}
       </div>
-
-      {/* Help Desk — Feature Guide */}
-      {activeTab === "guide" && (
-        <FeatureGuide />
-      )}
 
       {/* Contact Form */}
       {activeTab === "contact" && (

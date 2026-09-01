@@ -36,6 +36,7 @@ import Settings from '@/pages/Settings';
 import AppUpdates from '@/pages/AppUpdates';
 import YourPlan from '@/pages/YourPlan';
 import Help from '@/pages/Help';
+import HelpDesk from '@/pages/HelpDesk';
 import More from '@/pages/More';
 import TermsOfService from '@/pages/TermsOfService';
 import PrivacyPolicy from '@/pages/PrivacyPolicy';
@@ -128,6 +129,7 @@ const AuthenticatedApp = () => {
           <Route path="/app-updates" element={<AppUpdates />} />
           <Route path="/plan" element={<YourPlan />} />
           <Route path="/help" element={<Help />} />
+          <Route path="/help-desk" element={<HelpDesk />} />
           <Route path="/more" element={<More />} />
         </Route>
       </Route>
