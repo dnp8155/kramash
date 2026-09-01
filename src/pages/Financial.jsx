@@ -9,6 +9,8 @@ import RecordPaymentDialog from "@/components/financial/RecordPaymentDialog";
 import RecordExpenseDialog from "@/components/financial/RecordExpenseDialog";
 import EditTransactionDialog from "@/components/financial/EditTransactionDialog";
 import OutstandingReceivables from "@/components/financial/OutstandingReceivables";
+import FinancialYearCard from "@/components/financial/FinancialYearCard";
+import FinancialYearForm from "@/components/financial/FinancialYearForm";
 import Button from "@/components/common/Button";
 import Select from "@/components/common/Select";
 import LoadingState from "@/components/common/LoadingState";
@@ -32,7 +34,7 @@ import {
   methodBreakdown
 } from "@/lib/financeService";
 import { formatMoney } from "@/utils/format";
-import { Download, Plus, Wallet, Receipt, AlertTriangle, TrendingUp as TrendingUpIcon, TrendingDown as TrendingDownIcon } from "lucide-react";
+import { Download, Plus, Wallet, Receipt, AlertTriangle, Trash2, TrendingUp as TrendingUpIcon, TrendingDown as TrendingDownIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { exportFinancialCsv } from "@/lib/exportUtils";
 import PageHeader from "@/components/common/PageHeader";
@@ -58,21 +60,25 @@ export default function Financial() {
   const [showExpense, setShowExpense] = useState(false);
   const [editing, setEditing] = useState(null);
   const [voiding, setVoiding] = useState(null);
+  const [showFYForm, setShowFYForm] = useState(false);
+  const [editingFY, setEditingFY] = useState(null);
+  const [deletingFY, setDeletingFY] = useState(null);
   const queryClient = useQueryClient();
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["financial", workspaceId],
     queryFn: async () => {
       await ensureDefaultExpenseCategories(workspaceId);
-      const [tx, evs, cls, membs, asgns, cats] = await Promise.all([
+      const [tx, evs, cls, membs, asgns, cats, fys] = await Promise.all([
         loadAllTransactions(workspaceId),
         base44.entities.Event.filter({ workspace_id: workspaceId }, "-start_date", 500),
         base44.entities.Client.filter({ workspace_id: workspaceId }, "name", 500),
         base44.entities.TeamMember.filter({ workspace_id: workspaceId }, "name", 500),
         base44.entities.EventTeamAssignment.filter({ workspace_id: workspaceId }, "-created_date", 1000),
-        loadExpenseCategories(workspaceId)
+        loadExpenseCategories(workspaceId),
+        base44.entities.FinancialYear.filter({ workspace_id: workspaceId }, "start_date", 100)
       ]);
-      return { allTx: tx || [], events: evs || [], clients: cls || [], members: membs || [], assignments: asgns || [], categories: cats || [] };
+      return { allTx: tx || [], events: evs || [], clients: cls || [], members: membs || [], assignments: asgns || [], categories: cats || [], fiscalYears: fys || [] };
     },
     enabled: !!workspaceId
   });
@@ -82,9 +88,38 @@ export default function Financial() {
   const members = data?.members || [];
   const assignments = data?.assignments || [];
   const categories = data?.categories || [];
+  const fiscalYears = data?.fiscalYears || [];
   const load = () => {
     queryClient.invalidateQueries({ queryKey: ["financial", workspaceId] });
-    invalidateEntities(queryClient, ["FinancialTransaction"]);
+    invalidateEntities(queryClient, ["FinancialTransaction", "FinancialYear"]);
+  };
+
+  // Set active FY: deactivate all others, activate selected, and set fy state.
+  const handleSetActiveFY = async (fyRecord) => {
+    try {
+      await base44.entities.FinancialYear.updateMany(
+        { workspace_id: workspaceId, is_active: true },
+        { $set: { is_active: false } }
+      );
+      await base44.entities.FinancialYear.update(fyRecord.id, { is_active: true });
+      setFy(fyRecord.fy_id);
+      toast({ title: t("Financial year set active"), description: fyRecord.label });
+      load();
+    } catch (e) {
+      toast({ title: t("Failed to set active"), description: e?.message, variant: "destructive" });
+    }
+  };
+
+  const handleDeleteFY = async () => {
+    if (!deletingFY) return;
+    try {
+      await base44.entities.FinancialYear.delete(deletingFY.id);
+      toast({ title: t("Financial year deleted") });
+      setDeletingFY(null);
+      load();
+    } catch (e) {
+      toast({ title: t("Failed to delete"), description: e?.message, variant: "destructive" });
+    }
   };
 
   useEffect(() => {
@@ -129,8 +164,8 @@ export default function Financial() {
 
   const breakdown = useMemo(() => methodBreakdown(activeFyTx), [activeFyTx]);
 
-  // Per-FY breakdown for the Financial Years tab.
-  const fyBreakdown = useMemo(() => {
+  // Per-FY summary map keyed by fy_id (e.g. "FY2024-25") — derived from all active transactions.
+  const fySummaryMap = useMemo(() => {
     const map = {};
     for (const t of allTx) {
       if (t.status !== "ACTIVE") continue;
@@ -140,11 +175,14 @@ export default function Financial() {
       if (t.transaction_type === "CLIENT_RECEIPT") map[label].received += Number(t.amount) || 0;
       else map[label].paid += Number(t.amount) || 0;
     }
-    return financialYearLabels(6).map((label) => ({
-      label,
-      ...(map[label] || { received: 0, paid: 0 })
-    }));
+    return map;
   }, [allTx]);
+
+  // Sync fy state to the active FinancialYear entity on first load.
+  useEffect(() => {
+    const activeFY = fiscalYears.find((f) => f.is_active);
+    if (activeFY) setFy(activeFY.fy_id);
+  }, [fiscalYears]);
 
   const handleVoid = async () => {
     if (!voiding) return;
@@ -192,17 +230,19 @@ export default function Financial() {
             </button>
           ))}
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <Button variant="outline" size="sm" onClick={() => setShowExpense(true)}>
-            <Receipt className="w-3.5 h-3.5" /> {t("Record Expense")}
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => setShowTeamPayment(true)}>
-            <Wallet className="w-3.5 h-3.5" /> {t("Team Payment")}
-          </Button>
-          <Button size="sm" onClick={() => setShowClientPayment(true)}>
-            <Plus className="w-3.5 h-3.5" /> {t("Record Payment")}
-          </Button>
-        </div>
+        {tab === "Payment Activity" && (
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button variant="outline" size="sm" onClick={() => setShowExpense(true)}>
+              <Receipt className="w-3.5 h-3.5" /> {t("Record Expense")}
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setShowTeamPayment(true)}>
+              <Wallet className="w-3.5 h-3.5" /> {t("Team Payment")}
+            </Button>
+            <Button size="sm" onClick={() => setShowClientPayment(true)}>
+              <Plus className="w-3.5 h-3.5" /> {t("Record Payment")}
+            </Button>
+          </div>
+        )}
       </div>
 
       {tab === "Payment Activity" && (
@@ -340,54 +380,40 @@ export default function Financial() {
       )}
 
       {tab === "Financial Years" && (
-        <div className="bg-card border border-border rounded-lg overflow-hidden">
-          <div className="hidden sm:grid grid-cols-[2fr_1fr_1fr_1fr] gap-4 px-4 py-2.5 border-b border-border text-xs font-medium text-muted-foreground uppercase tracking-wide">
-            <span>{t("Financial Year")}</span>
-            <span className="text-right">{t("Received")}</span>
-            <span className="text-right">{t("Paid")}</span>
-            <span className="text-right">{t("Profit")}</span>
-          </div>
-          {fyBreakdown.map((row) => {
-            const profit = row.received - row.paid;
-            return (
-              <div
-                key={row.label}
-                className={cn(
-                  "grid grid-cols-2 sm:grid-cols-[2fr_1fr_1fr_1fr] gap-2 sm:gap-4 px-4 py-3 border-b border-border last:border-0 hover:bg-muted/40",
-                  row.label === fy && "bg-primary/5"
-                )}
-              >
-                <button
-                  onClick={() => { setFy(row.label); setTab("Payment Activity"); }}
-                  className="text-sm font-medium text-primary text-left hover:underline col-span-2 sm:col-span-1"
-                >
-                  {row.label}
-                </button>
-                <div className="sm:contents">
-                  <div className="flex sm:block justify-between">
-                    <span className="sm:hidden text-xs text-muted-foreground">{t("Rec")}</span>
-                    <span className="text-sm text-success sm:text-right">{formatMoney(row.received, currency)}</span>
-                  </div>
-                  <div className="flex sm:block justify-between">
-                    <span className="sm:hidden text-xs text-muted-foreground">{t("Paid")}</span>
-                    <span className="text-sm text-destructive sm:text-right">{formatMoney(row.paid, currency)}</span>
-                  </div>
-                  <div className="flex sm:block justify-between">
-                    <span className="sm:hidden text-xs text-muted-foreground">{t("Profit")}</span>
-                    <span className={cn("text-sm font-semibold sm:text-right", profit >= 0 ? "text-success" : "text-destructive")}>
-                      {formatMoney(profit, currency)}
-                    </span>
-                  </div>
-                </div>
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {fiscalYears.length === 0 && (
+              <div className="col-span-full bg-card border border-border rounded-lg p-10 text-center text-sm text-muted-foreground">
+                {t("No financial years added yet.")}
+                <br />
+                {t("Click \"Add Financial Year\" below to create one.")}
               </div>
-            );
-          })}
-          {fyBreakdown.every((r) => r.received === 0 && r.paid === 0) && (
-            <div className="p-10 text-center text-sm text-muted-foreground">
-              {t("No financial activity recorded yet.")}
-            </div>
-          )}
-        </div>
+            )}
+            {fiscalYears.map((fyRecord) => {
+              const s = fySummaryMap[fyRecord.fy_id] || { received: 0, paid: 0 };
+              const summary = { ...s, profit: s.received - s.paid };
+              return (
+                <FinancialYearCard
+                  key={fyRecord.id}
+                  fy={fyRecord}
+                  summary={summary}
+                  currency={currency}
+                  onSetActive={handleSetActiveFY}
+                  onEdit={(f) => { setEditingFY(f); setShowFYForm(true); }}
+                  onDelete={(f) => setDeletingFY(f)}
+                />
+              );
+            })}
+          </div>
+          <div className="flex justify-center pt-2">
+            <Button
+              size="md"
+              onClick={() => { setEditingFY(null); setShowFYForm(true); }}
+            >
+              <Plus className="w-4 h-4" /> {t("Add Financial Year")}
+            </Button>
+          </div>
+        </>
       )}
 
       {/* Dialogs */}
@@ -428,6 +454,36 @@ export default function Financial() {
         transaction={editing}
         currency={currency}
       />
+      <FinancialYearForm
+        open={showFYForm}
+        onClose={() => { setShowFYForm(false); setEditingFY(null); }}
+        onSaved={load}
+        workspaceId={workspaceId}
+        editing={editingFY}
+      />
+
+      {/* Delete FY confirmation */}
+      {deletingFY && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setDeletingFY(null)}>
+          <div className="bg-card border border-border rounded-lg max-w-sm w-full p-5" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start gap-2">
+              <Trash2 className="w-5 h-5 text-destructive mt-0.5 shrink-0" />
+              <div>
+                <h3 className="text-sm font-semibold">{t("Delete this financial year?")}</h3>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {deletingFY.label} ({deletingFY.fy_id})
+                  <br />
+                  {t("Transactions recorded in this period will remain, but the year card will be removed.")}
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-4">
+              <Button variant="outline" size="sm" onClick={() => setDeletingFY(null)}>{t("Cancel")}</Button>
+              <Button variant="destructive" size="sm" onClick={handleDeleteFY}>{t("Delete")}</Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Void confirmation */}
       {voiding && (
