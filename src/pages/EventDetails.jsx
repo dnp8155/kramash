@@ -406,6 +406,7 @@ export default function EventDetails() {
           quotations={quotations}
           invoices={invoices}
           currency={currency}
+          workspace={workspace}
         />
       )}
 

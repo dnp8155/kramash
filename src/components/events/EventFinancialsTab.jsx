@@ -1,8 +1,10 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Card from "@/components/common/Card";
 import Button from "@/components/common/Button";
 import EmptyState from "@/components/common/EmptyState";
+import InvoicePrintView from "@/components/invoice/InvoicePrintView";
+import { base44 } from "@/api/base44Client";
 import { formatMoney } from "@/utils/format";
 import { FileText, Receipt, CheckCircle2, Clock, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -24,8 +26,12 @@ const fmtDate = (iso) => {
   return d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
 };
 
-export default function EventFinancialsTab({ event, quotations, invoices, currency }) {
+export default function EventFinancialsTab({ event, quotations, invoices, currency, workspace }) {
   const navigate = useNavigate();
+
+  const [previewInvoice, setPreviewInvoice] = useState(null);
+  const [previewItems, setPreviewItems] = useState([]);
+  const [loadingItems, setLoadingItems] = useState(false);
 
   const summary = useMemo(() => {
     const acceptedQuotes = quotations.filter((q) => q.status === "accepted");
@@ -44,6 +50,20 @@ export default function EventFinancialsTab({ event, quotations, invoices, curren
       invoiceCount: invoices.length
     };
   }, [quotations, invoices]);
+
+  const openInvoicePreview = async (inv) => {
+    setPreviewInvoice(inv);
+    setPreviewItems([]);
+    setLoadingItems(true);
+    try {
+      const items = await base44.entities.InvoiceItem.filter({ invoice_id: inv.id }, "sort_order", 500);
+      setPreviewItems(items || []);
+    } catch (e) {
+      setPreviewItems([]);
+    } finally {
+      setLoadingItems(false);
+    }
+  };
 
   return (
     <div className="space-y-5">
@@ -113,7 +133,7 @@ export default function EventFinancialsTab({ event, quotations, invoices, curren
               const st = STATUS_STYLES[inv.status] || STATUS_STYLES.draft;
               const balance = inv.balance_due || 0;
               return (
-                <button key={inv.id} onClick={() => navigate(`/invoices/${inv.id}`)} className="w-full flex items-center justify-between gap-4 p-3.5 rounded-lg border border-border hover:bg-muted/50 transition-colors text-left group">
+                <button key={inv.id} onClick={() => openInvoicePreview(inv)} className="w-full flex items-center justify-between gap-4 p-3.5 rounded-lg border border-border hover:bg-muted/50 transition-colors text-left group">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2.5">
                       <span className="font-mono text-sm font-medium text-foreground">{inv.invoice_number}</span>
@@ -138,6 +158,18 @@ export default function EventFinancialsTab({ event, quotations, invoices, curren
           </div>
         )}
       </Card>
+
+      {previewInvoice && (
+        <InvoicePrintView
+          open={!!previewInvoice}
+          onClose={() => setPreviewInvoice(null)}
+          invoice={previewInvoice}
+          items={previewItems}
+          workspace={workspace}
+          currency={currency}
+          onEdit={() => navigate(`/invoices/${previewInvoice.id}`)}
+        />
+      )}
     </div>
   );
 }
