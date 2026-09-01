@@ -395,7 +395,7 @@ export default function FeatureGuide() {
 
       {/* Search results mode */}
       {searchResults ? (
-        <div className="space-y-3">
+        <div className="space-y-4">
           <p className="text-sm text-muted-foreground">
             {searchResults.length} result{searchResults.length !== 1 ? "s" : ""} for "{search}"
           </p>
@@ -406,44 +406,51 @@ export default function FeatureGuide() {
               <p className="text-xs text-muted-foreground mt-1">Try a different search term.</p>
             </Card>
           ) : (
-            searchResults.map((feat, idx) => {
-              const Icon = feat.icon;
-              const isOpen = openFeature === `search-${idx}`;
-              return (
-                <Card key={`search-${idx}`} className="overflow-hidden">
-                  <button
-                    onClick={() => setOpenFeature(isOpen ? null : `search-${idx}`)}
-                    className="w-full flex items-start gap-3 p-4 text-left hover:bg-muted/30 transition-colors"
-                  >
-                    <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center shrink-0", feat.categoryBg)}>
-                      <Icon className={cn("w-4 h-4", feat.categoryColor)} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2">
-                        <h4 className="text-sm font-semibold text-foreground">{feat.title}</h4>
-                        {isOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" /> : <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />}
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+              {searchResults.map((feat, idx) => {
+                const Icon = feat.icon;
+                const isOpen = openFeature === `search-${idx}`;
+                return (
+                  <Card key={`search-${idx}`} className={cn("group overflow-hidden transition-all hover:shadow-card-hover hover:-translate-y-0.5", isOpen && "sm:col-span-2 xl:col-span-3 ring-1 ring-primary/30")}>
+                    <button
+                      onClick={() => setOpenFeature(isOpen ? null : `search-${idx}`)}
+                      className="w-full flex flex-col gap-3 p-5 text-left"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className={cn("w-11 h-11 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105", feat.categoryBg)}>
+                          <Icon className={cn("w-5 h-5", feat.categoryColor)} />
+                        </div>
+                        <div className={cn(
+                          "w-7 h-7 rounded-full flex items-center justify-center transition-all",
+                          isOpen ? "bg-primary text-primary-foreground rotate-180" : "bg-muted text-muted-foreground"
+                        )}>
+                          <ChevronDown className="w-4 h-4" />
+                        </div>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-0.5">{feat.desc}</p>
-                      <span className="inline-block mt-1.5 text-[10px] font-medium text-muted-foreground uppercase tracking-wide">{feat.categoryLabel}</span>
-                    </div>
-                  </button>
-                  {isOpen && (
-                    <div className="px-4 pb-4 pt-1 border-t border-border">
-                      <ol className="space-y-2.5 mt-3">
-                        {feat.steps.map((step, sIdx) => (
-                          <li key={sIdx} className="flex gap-2.5 text-sm text-foreground">
-                            <span className={cn("w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 mt-0.5", feat.categoryBg, feat.categoryColor)}>
-                              {sIdx + 1}
-                            </span>
-                            <span className="leading-relaxed">{step}</span>
-                          </li>
-                        ))}
-                      </ol>
-                    </div>
-                  )}
-                </Card>
-              );
-            })
+                      <div>
+                        <h4 className="text-base font-semibold text-foreground">{feat.title}</h4>
+                        <p className="text-sm text-muted-foreground mt-1 leading-relaxed">{feat.desc}</p>
+                        <span className="inline-block mt-2 text-[10px] font-medium text-muted-foreground uppercase tracking-wide">{feat.categoryLabel}</span>
+                      </div>
+                    </button>
+                    {isOpen && (
+                      <div className="px-5 pb-5 border-t border-border bg-muted/20">
+                        <ol className="space-y-3 mt-4">
+                          {feat.steps.map((step, sIdx) => (
+                            <li key={sIdx} className="flex gap-3 text-sm text-foreground">
+                              <span className={cn("w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 mt-0.5", feat.categoryBg, feat.categoryColor)}>
+                                {sIdx + 1}
+                              </span>
+                              <span className="leading-relaxed">{step}</span>
+                            </li>
+                          ))}
+                        </ol>
+                      </div>
+                    )}
+                  </Card>
+                );
+              })}
+            </div>
           )}
         </div>
       ) : (
@@ -493,39 +500,56 @@ export default function FeatureGuide() {
             </div>
 
             {/* Feature cards */}
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
               {current.features.map((feat, idx) => {
                 const Icon = feat.icon;
                 const globalIdx = `${current.id}-${idx}`;
                 const isOpen = openFeature === globalIdx;
                 return (
-                  <Card key={globalIdx} className={cn("overflow-hidden transition-all", isOpen && "xl:col-span-2")}>
+                  <Card
+                    key={globalIdx}
+                    className={cn(
+                      "group overflow-hidden transition-all hover:shadow-card-hover hover:-translate-y-0.5 cursor-pointer",
+                      isOpen && "sm:col-span-2 xl:col-span-3 ring-1 ring-primary/30"
+                    )}
+                  >
                     <button
                       onClick={() => setOpenFeature(isOpen ? null : globalIdx)}
-                      className="w-full flex items-start gap-3 p-4 text-left hover:bg-muted/30 transition-colors"
+                      className="w-full flex flex-col gap-3 p-5 text-left"
                     >
-                      <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center shrink-0", current.bg)}>
-                        <Icon className={cn("w-4 h-4", current.color)} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2">
-                          <h4 className="text-sm font-semibold text-foreground">{feat.title}</h4>
-                          {isOpen ? (
-                            <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" />
-                          ) : (
-                            <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
-                          )}
+                      <div className="flex items-center justify-between">
+                        <div className={cn("w-11 h-11 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105", current.bg)}>
+                          <Icon className={cn("w-5 h-5", current.color)} />
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">{feat.desc}</p>
+                        <div className={cn(
+                          "w-7 h-7 rounded-full flex items-center justify-center transition-all",
+                          isOpen ? "bg-primary text-primary-foreground rotate-180" : "bg-muted text-muted-foreground"
+                        )}>
+                          <ChevronDown className="w-4 h-4" />
+                        </div>
+                      </div>
+                      <div>
+                        <h4 className="text-base font-semibold text-foreground">{feat.title}</h4>
+                        <p className="text-sm text-muted-foreground mt-1 leading-relaxed">{feat.desc}</p>
+                      </div>
+                      <div className={cn(
+                        "flex items-center gap-1.5 text-xs font-medium pt-1 transition-colors",
+                        isOpen ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
+                      )}>
+                        {isOpen ? (
+                          <>Hide steps <ChevronUp className="w-3.5 h-3.5" /></>
+                        ) : (
+                          <>View {feat.steps.length} steps <ChevronDown className="w-3.5 h-3.5" /></>
+                        )}
                       </div>
                     </button>
                     {isOpen && (
-                      <div className="px-4 pb-4 pt-1 border-t border-border">
-                        <ol className="space-y-2.5 mt-3">
+                      <div className="px-5 pb-5 border-t border-border bg-muted/20">
+                        <ol className="space-y-3 mt-4">
                           {feat.steps.map((step, sIdx) => (
-                            <li key={sIdx} className="flex gap-2.5 text-sm text-foreground">
+                            <li key={sIdx} className="flex gap-3 text-sm text-foreground">
                               <span className={cn(
-                                "w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 mt-0.5",
+                                "w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 mt-0.5",
                                 current.bg, current.color
                               )}>
                                 {sIdx + 1}
