@@ -1,89 +1,87 @@
-// KRAMAS Service Worker
-// Safe caching: app shell + static assets only. Never caches API/auth responses.
-const SW_VERSION = "kramas-v2";
-const SHELL_CACHE = `${SW_VERSION}-shell`;
-const ASSET_CACHE = `${SW_VERSION}-assets`;
+// Kramashah Service Worker — basic cache-first for static assets,
+// network-first for navigation, with update flow (SKIP_WAITING).
 
-// App shell URLs to precache.
-const SHELL_URLS = ["/", "/index.html", "/manifest.json", "/icon.svg", "/offline.html"];
+const CACHE_NAME = "kramashah-v1";
+const STATIC_ASSETS = ["/", "/index.html", "/manifest.json", "/offline.html"];
 
-// Never cache these patterns (private data + auth + API).
-const NEVER_CACHE = [
-  /\/api\//,
-  /\/v2\//,
-  /base44/,
-  /auth/,
-  /token/,
-  /integration/,
-  /entities\//,
-  /functions\//,
-];
-
+// Install: pre-cache core shell.
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(SHELL_CACHE).then((cache) => cache.addAll(SHELL_URLS)).then(() => self.skipWaiting())
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS)).catch(() => {})
   );
+  self.skipWaiting();
 });
 
+// Activate: clear old caches.
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((names) =>
-      Promise.all(
-        names
-          .filter((n) => !n.startsWith(SW_VERSION))
-          .map((n) => caches.delete(n))
-      )
-    ).then(() => self.clients.claim())
+    caches.keys().then((keys) =>
+      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
+    )
   );
+  self.clients.claim();
 });
 
-function shouldNeverCache(url) {
-  return NEVER_CACHE.some((p) => p.test(url));
-}
+// Message handler: allow page to trigger skip waiting.
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
+});
 
+// Fetch strategy:
+// - Navigation requests: network-first, fall back to cached shell or offline page.
+// - Static assets (same-origin): cache-first.
+// - API/media (cross-origin): network, cache response if ok.
 self.addEventListener("fetch", (event) => {
-  const req = event.request;
-  if (req.method !== "GET") return;
+  const { request } = event;
+  if (request.method !== "GET") return;
 
-  const url = new URL(req.url);
-
-  // Never intercept API/auth calls — always go to network.
-  if (shouldNeverCache(url.pathname) || url.origin !== self.location.origin) return;
-
-  // Navigation requests: network-first, fall back to cached shell or offline page.
-  if (req.mode === "navigate") {
+  // Navigation: network-first.
+  if (request.mode === "navigate") {
     event.respondWith(
-      fetch(req)
-        .then((res) => {
-          const copy = res.clone();
-          caches.open(SHELL_CACHE).then((c) => c.put("/index.html", copy));
-          return res;
+      fetch(request)
+        .then((resp) => {
+          const copy = resp.clone();
+          caches.open(CACHE_NAME).then((c) => c.put(request, copy)).catch(() => {});
+          return resp;
         })
         .catch(() =>
-          caches.match("/index.html").then((r) => r || caches.match("/offline.html"))
+          caches.match(request).then((cached) => cached || caches.match("/index.html"))
         )
     );
     return;
   }
 
-  // Static assets (JS, CSS, fonts, images): network-first to ensure latest version,
-  // fall back to cache only when offline.
-  event.respondWith(
-    fetch(req)
-      .then((res) => {
-        if (res && res.status === 200 && res.type === "basic") {
-          const copy = res.clone();
-          caches.open(ASSET_CACHE).then((c) => c.put(req, copy));
-        }
-        return res;
-      })
-      .catch(() => caches.match(req).then((r) => r))
-  );
-});
+  const url = new URL(request.url);
 
-// Handle skip-waiting message from client (for updates).
-self.addEventListener("message", (event) => {
-  if (event.data && event.data.type === "SKIP_WAITING") {
-    self.skipWaiting();
+  // Same-origin static assets: cache-first.
+  if (url.origin === self.location.origin) {
+    event.respondWith(
+      caches.match(request).then((cached) =>
+        cached ||
+        fetch(request).then((resp) => {
+          if (resp.ok) {
+            const copy = resp.clone();
+            caches.open(CACHE_NAME).then((c) => c.put(request, copy)).catch(() => {});
+          }
+          return resp;
+        }).catch(() => cached)
+      )
+    );
+    return;
   }
+
+  // Cross-origin (API, media): network, cache if ok.
+  event.respondWith(
+    fetch(request)
+      .then((resp) => {
+        if (resp.ok && resp.type === "basic") {
+          const copy = resp.clone();
+          caches.open(CACHE_NAME).then((c) => c.put(request, copy)).catch(() => {});
+        }
+        return resp;
+      })
+      .catch(() => caches.match(request))
+  );
 });

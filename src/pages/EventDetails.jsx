@@ -507,8 +507,8 @@ export default function EventDetails() {
           ) : (
             <div className="divide-y divide-border">
               {eventTransactions.map((t) => (
-                <div key={t.id} className="flex items-center justify-between py-2.5">
-                  <div>
+                <div key={t.id} className="flex items-center justify-between gap-3 py-2.5">
+                  <div className="min-w-0 flex-1">
                     <div className="text-sm font-medium text-foreground">
                       {t.transaction_type === "CLIENT_RECEIPT" ? "Client Payment" :
                        t.transaction_type === "TEAM_PAYMENT" ? "Team Payment" : "Expense"}
@@ -516,7 +516,7 @@ export default function EventDetails() {
                     <div className="text-xs text-muted-foreground">{formatEventDate(t.transaction_date)} · {t.payment_method}</div>
                   </div>
                   <div className={cn(
-                    "text-sm font-semibold",
+                    "text-sm font-semibold shrink-0",
                     t.transaction_type === "CLIENT_RECEIPT" ? "text-success" : "text-warning"
                   )}>
                     {t.transaction_type === "CLIENT_RECEIPT" ? "+" : "-"}{formatMoney(t.amount, currency)}

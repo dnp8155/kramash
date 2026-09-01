@@ -45,44 +45,52 @@ function PackageRow({ item, index, updateItem, removeItem, currency, readOnly })
   return (
     <div className="border border-border rounded-lg bg-card overflow-hidden">
       {/* Package header row */}
-      <div className="flex items-center gap-3 p-3 bg-secondary/40">
-        <button
-          type="button"
-          onClick={() => setExpanded(!expanded)}
-          className="text-muted-foreground hover:text-foreground shrink-0"
-        >
-          {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-        </button>
-        <Package className="w-4 h-4 text-primary shrink-0" />
-        <Input
-          value={item.name || ""}
-          onChange={(e) => updateItem(index, "name", e.target.value)}
-          placeholder="Package name (e.g. Wedding Package)"
-          disabled={readOnly}
-          className="flex-1 bg-card"
-        />
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="text-xs text-muted-foreground">Rate</span>
-          <Input
-            type="number"
-            value={item.unit_rate || 0}
-            onChange={(e) => updateItem(index, "unit_rate", e.target.value)}
-            disabled={readOnly}
-            className="w-24 text-right bg-card"
-          />
-        </div>
-        <span className="text-sm font-medium text-foreground w-24 text-right tabular-nums">
-          {formatMoney(Number(item.unit_rate || 0) * Number(item.quantity || 1), currency)}
-        </span>
-        {!readOnly && (
+      <div className="p-3 bg-secondary/40 space-y-2">
+        {/* Name row */}
+        <div className="flex items-center gap-2">
           <button
-            onClick={() => removeItem(index)}
-            className="text-destructive hover:bg-destructive/10 p-1.5 rounded-md transition-colors shrink-0"
-            title="Remove package"
+            type="button"
+            onClick={() => setExpanded(!expanded)}
+            className="text-muted-foreground hover:text-foreground shrink-0"
           >
-            <Trash2 className="w-4 h-4" />
+            {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
-        )}
+          <Package className="w-4 h-4 text-primary shrink-0" />
+          <Input
+            value={item.name || ""}
+            onChange={(e) => updateItem(index, "name", e.target.value)}
+            placeholder="Package name (e.g. Wedding Package)"
+            disabled={readOnly}
+            className="flex-1 bg-card"
+          />
+          {!readOnly && (
+            <button
+              onClick={() => removeItem(index)}
+              className="text-destructive hover:bg-destructive/10 p-1.5 rounded-md transition-colors shrink-0"
+              title="Remove package"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+        {/* Rate + Amount row */}
+        <div className="flex items-center gap-2 sm:gap-3 sm:pl-10">
+          <div className="flex items-center gap-1.5 flex-1 sm:flex-none">
+            <span className="text-xs text-muted-foreground shrink-0">Rate</span>
+            <Input
+              type="number"
+              value={item.unit_rate || 0}
+              onChange={(e) => updateItem(index, "unit_rate", e.target.value)}
+              disabled={readOnly}
+              className="w-full sm:w-24 text-right bg-card"
+            />
+          </div>
+          <div className="flex items-center gap-1.5 justify-end flex-1 sm:flex-none sm:w-24">
+            <span className="text-sm font-medium text-foreground tabular-nums text-right">
+              {formatMoney(Number(item.unit_rate || 0) * Number(item.quantity || 1), currency)}
+            </span>
+          </div>
+        </div>
       </div>
 
       {/* Nested events table */}
@@ -187,47 +195,55 @@ function PackageRow({ item, index, updateItem, removeItem, currency, readOnly })
 // Simple line item row
 function LineItemRow({ item, index, updateItem, removeItem, currency, readOnly }) {
   return (
-    <div className="flex items-center gap-3 p-3 border border-border rounded-lg bg-card">
-      <FilePlus className="w-4 h-4 text-muted-foreground shrink-0" />
-      <Input
-        value={item.name || ""}
-        onChange={(e) => updateItem(index, "name", e.target.value)}
-        placeholder="Item description"
-        disabled={readOnly}
-        className="flex-1"
-      />
-      <div className="flex items-center gap-2 shrink-0">
-        <span className="text-xs text-muted-foreground">Qty</span>
+    <div className="p-3 border border-border rounded-lg bg-card space-y-2">
+      {/* Name row */}
+      <div className="flex items-center gap-2">
+        <FilePlus className="w-4 h-4 text-muted-foreground shrink-0" />
         <Input
-          type="number"
-          value={item.quantity || 1}
-          onChange={(e) => updateItem(index, "quantity", e.target.value)}
+          value={item.name || ""}
+          onChange={(e) => updateItem(index, "name", e.target.value)}
+          placeholder="Item description"
           disabled={readOnly}
-          className="w-16 text-center"
+          className="flex-1"
         />
+        {!readOnly && (
+          <button
+            onClick={() => removeItem(index)}
+            className="text-destructive hover:bg-destructive/10 p-1.5 rounded-md transition-colors shrink-0"
+            title="Remove item"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        )}
       </div>
-      <div className="flex items-center gap-2 shrink-0">
-        <span className="text-xs text-muted-foreground">Rate</span>
-        <Input
-          type="number"
-          value={item.unit_rate || 0}
-          onChange={(e) => updateItem(index, "unit_rate", e.target.value)}
-          disabled={readOnly}
-          className="w-24 text-right"
-        />
+      {/* Qty / Rate / Amount row */}
+      <div className="flex items-center gap-2 sm:gap-3 sm:pl-6">
+        <div className="flex items-center gap-1.5 flex-1 sm:flex-none">
+          <span className="text-xs text-muted-foreground shrink-0">Qty</span>
+          <Input
+            type="number"
+            value={item.quantity || 1}
+            onChange={(e) => updateItem(index, "quantity", e.target.value)}
+            disabled={readOnly}
+            className="w-full sm:w-16 text-center"
+          />
+        </div>
+        <div className="flex items-center gap-1.5 flex-1 sm:flex-none">
+          <span className="text-xs text-muted-foreground shrink-0">Rate</span>
+          <Input
+            type="number"
+            value={item.unit_rate || 0}
+            onChange={(e) => updateItem(index, "unit_rate", e.target.value)}
+            disabled={readOnly}
+            className="w-full sm:w-24 text-right"
+          />
+        </div>
+        <div className="flex items-center gap-1.5 justify-end flex-1 sm:flex-none sm:w-24">
+          <span className="text-sm font-medium text-foreground tabular-nums text-right">
+            {formatMoney(Number(item.unit_rate || 0) * Number(item.quantity || 1), currency)}
+          </span>
+        </div>
       </div>
-      <span className="text-sm font-medium text-foreground w-24 text-right tabular-nums">
-        {formatMoney(Number(item.unit_rate || 0) * Number(item.quantity || 1), currency)}
-      </span>
-      {!readOnly && (
-        <button
-          onClick={() => removeItem(index)}
-          className="text-destructive hover:bg-destructive/10 p-1.5 rounded-md transition-colors shrink-0"
-          title="Remove item"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
-      )}
     </div>
   );
 }
