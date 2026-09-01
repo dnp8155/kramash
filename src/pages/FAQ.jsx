@@ -13,7 +13,7 @@ export default function FAQ() {
         <div className="max-w-3xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2 text-sm font-semibold text-foreground hover:opacity-80 transition-opacity">
             <div className="w-7 h-7 rounded-lg bg-primary text-primary-foreground flex items-center justify-center font-heading font-bold text-sm">K</div>
-            Kramasha
+            KRAMAS
           </Link>
           <Link to="/login">
             <Button size="sm" variant="outline">Sign in</Button>
@@ -33,7 +33,7 @@ export default function FAQ() {
           <h1 className="text-2xl sm:text-3xl font-heading font-bold text-foreground">Frequently Asked Questions</h1>
         </div>
         <p className="text-sm text-muted-foreground mb-8">
-          Everything you need to know about Kramasha — pricing, data, features and setup.
+          Everything you need to know about KRAMAS — pricing, data, features and setup.
         </p>
 
         <div className="space-y-3">
@@ -64,7 +64,7 @@ export default function FAQ() {
         </div>
 
         <div className="mt-10 pt-6 border-t border-border text-xs text-muted-foreground">
-          <Link to="/" className="hover:text-foreground transition-colors">← Back to Kramasha</Link>
+          <Link to="/" className="hover:text-foreground transition-colors">← Back to KRAMAS</Link>
         </div>
       </main>
     </div>

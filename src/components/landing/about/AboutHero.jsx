@@ -22,7 +22,7 @@ export default function AboutHero() {
           </h1>
 
           <p className="mt-6 text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            <span className="font-heading font-semibold text-foreground">Kramasha</span> — <span className="italic">क्रमशः</span> — means "in sequence, one step at a time." That's how a service business should actually run: not scattered across five WhatsApp chats and three Excel sheets, but in order, in one place.
+            <span className="font-heading font-semibold text-foreground">KRAMAS</span> — <span className="italic">क्रमशः</span> — means "in sequence, one step at a time." That's how a service business should actually run: not scattered across five WhatsApp chats and three Excel sheets, but in order, in one place.
           </p>
 
           <div className="mt-9 flex flex-col sm:flex-row gap-3 justify-center">

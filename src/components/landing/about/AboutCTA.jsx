@@ -12,7 +12,7 @@ export default function AboutCTA() {
             Run your business in order.
           </h2>
           <p className="text-sm sm:text-base text-primary-foreground/80 leading-relaxed mb-8">
-            Kramasha is free during beta — the full app, including everything currently marked Pro. Start your workspace in minutes.
+            KRAMAS is free during beta — the full app, including everything currently marked Pro. Start your workspace in minutes.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link

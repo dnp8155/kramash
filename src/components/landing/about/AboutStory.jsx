@@ -20,7 +20,7 @@ export default function AboutStory() {
                 Most small and growing businesses in this space run on Excel sheets and memory. It works — until it doesn't. A missed follow-up, a forgotten payment, a team member booked twice by accident. The cost isn't just money; it's the mental load of holding it all in your head.
               </p>
               <p>
-                Kramasha exists to take that load off your plate. One workspace. Every event, every payment, every team member — <span className="font-semibold text-foreground">in order</span>.
+                KRAMAS exists to take that load off your plate. One workspace. Every event, every payment, every team member — <span className="font-semibold text-foreground">in order</span>.
               </p>
             </div>
           </div>
@@ -33,7 +33,7 @@ export default function AboutStory() {
                 We're not building software to replace how you run your business. We're building it so you can finally stop running it from your memory.
               </p>
               <div className="mt-6 pt-5 border-t border-border">
-                <p className="text-sm font-semibold text-foreground">The Kramasha team</p>
+                <p className="text-sm font-semibold text-foreground">The KRAMAS team</p>
                 <p className="text-xs text-muted-foreground mt-0.5">Built with real studios and event businesses, in the loop.</p>
               </div>
             </div>
