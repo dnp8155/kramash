@@ -19,8 +19,9 @@ function safeParse(str) {
   try { return JSON.parse(str); } catch { return null; }
 }
 
-const TEAL = "#1D3D3F";
-const GOLD = "#D9A96E";
+const TEAL = "#1A3C3D";
+const GOLD = "#B89C74";
+const SERIF = 'Georgia, "Times New Roman", Times, serif';
 const BORDER = "#E5E7EB";
 const LIGHT_BG = "#F3F4F6";
 const TEXT_PRIMARY = "#1A1A1A";
@@ -96,7 +97,7 @@ export default function InvoicePrintView({ open, onClose, invoice, items, worksp
       </div>
 
       {/* Printable invoice */}
-      <div className="invoice-print-area w-full max-w-[720px] bg-white print:max-w-none print:w-full" style={{ color: TEXT_PRIMARY }}>
+      <div className="invoice-print-area w-full max-w-[720px] bg-white print:max-w-none print:w-full" style={{ color: TEXT_PRIMARY, fontFamily: SERIF }}>
         {/* Branded Header Banner */}
         <div className="px-8 py-6 flex items-center gap-4" style={{ backgroundColor: TEAL }}>
           {logo ? (
@@ -117,8 +118,8 @@ export default function InvoicePrintView({ open, onClose, invoice, items, worksp
           <div className="text-right">
             <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: TEXT_MUTED }}>Prepared For</p>
             <p className="font-bold text-base">{clientName || "—"}</p>
-            {clientEmail && <p className="text-sm mt-0.5" style={{ color: TEXT_MUTED }}>{clientEmail}</p>}
-            {clientPhone && <p className="text-sm" style={{ color: TEXT_MUTED }}>{clientPhone}</p>}
+            {clientEmail && <p className="text-sm mt-0.5" style={{ color: TEXT_PRIMARY }}>{clientEmail}</p>}
+            {clientPhone && <p className="text-sm" style={{ color: TEXT_PRIMARY }}>{clientPhone}</p>}
             <p className="text-sm mt-2" style={{ color: TEXT_MUTED }}>
               {invoice.invoice_number} · {fmtDate(invoice.invoice_date)}
             </p>
@@ -152,11 +153,11 @@ export default function InvoicePrintView({ open, onClose, invoice, items, worksp
                     <tbody>
                       {nestedEvents.map((ev, i) => (
                         <tr key={i} style={{ borderBottom: `1px solid ${BORDER}` }}>
-                          <td className="py-3 pr-4 font-medium">{ev.event || ev.name || "—"}</td>
-                          <td className="py-3 pr-4" style={{ color: TEXT_MUTED }}>{ev.date ? fmtDate(ev.date) : "—"}</td>
-                          <td className="py-3 pr-4" style={{ color: TEXT_MUTED }}>{ev.location || "—"}</td>
-                          <td className="py-3 pr-4" style={{ color: TEXT_MUTED }}>{ev.slot || "—"}</td>
-                          <td className="py-3" style={{ color: TEXT_MUTED }}>{ev.team_size || "—"}</td>
+                          <td className="py-3 pr-4 font-medium">{ev.event || ev.name || ""}</td>
+                          <td className="py-3 pr-4" style={{ color: TEXT_MUTED }}>{ev.date ? fmtDate(ev.date) : ""}</td>
+                          <td className="py-3 pr-4" style={{ color: TEXT_MUTED }}>{ev.location || ""}</td>
+                          <td className="py-3 pr-4" style={{ color: TEXT_MUTED }}>{ev.slot || ""}</td>
+                          <td className="py-3" style={{ color: TEXT_MUTED }}>{ev.team_size || ""}</td>
                         </tr>
                       ))}
                     </tbody>
