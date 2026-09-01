@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { useAuth } from "@/lib/AuthContext";
 import LandingNav from "@/components/landing/LandingNav";
 import Hero from "@/components/landing/Hero";
 import ProductProof from "@/components/landing/ProductProof";
@@ -17,23 +17,15 @@ import LandingFooter from "@/components/landing/LandingFooter";
 
 export default function Landing() {
   const navigate = useNavigate();
-  const [checking, setChecking] = useState(true);
+  const { isAuthenticated, isLoadingAuth } = useAuth();
 
   useEffect(() => {
-    let active = true;
-    base44.auth
-      .isAuthenticated()
-      .then((authed) => {
-        if (active && authed) navigate("/events", { replace: true });
-      })
-      .catch(() => {})
-      .finally(() => active && setChecking(false));
-    return () => {
-      active = false;
-    };
-  }, [navigate]);
+    if (!isLoadingAuth && isAuthenticated) {
+      navigate("/events", { replace: true });
+    }
+  }, [isAuthenticated, isLoadingAuth, navigate]);
 
-  if (checking) {
+  if (isLoadingAuth) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin" />
