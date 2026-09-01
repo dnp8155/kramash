@@ -293,11 +293,15 @@ export default function QuotationEditor() {
       const data = { ...buildData(), status: "draft" };
       if (isNew) {
         const q = await createQuotation(workspaceId, data, items);
+        queryClient.removeQueries({ queryKey: ["quotations"] });
+        queryClient.removeQueries({ queryKey: ["event"] });
         invalidateEntities(queryClient, ["Quotation", "QuotationItem", "Event"]);
         toast({ title: "Quotation saved as draft" });
         navigate(`/quotation/${q.id}`, { replace: true });
       } else {
         await updateQuotation(workspaceId, id, data, items);
+        queryClient.removeQueries({ queryKey: ["quotations"] });
+        queryClient.removeQueries({ queryKey: ["event"] });
         invalidateEntities(queryClient, ["Quotation", "QuotationItem", "Event"]);
         toast({ title: "Quotation updated" });
         load();
@@ -348,6 +352,9 @@ export default function QuotationEditor() {
         invoiceError = true;
       }
 
+      queryClient.removeQueries({ queryKey: ["quotations"] });
+      queryClient.removeQueries({ queryKey: ["event"] });
+      queryClient.removeQueries({ queryKey: ["invoices"] });
       invalidateEntities(queryClient, ["Quotation", "QuotationItem", "Event", "Invoice", "InvoiceItem"]);
 
       if (inv) {

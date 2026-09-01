@@ -47,6 +47,15 @@ export const ENTITY_INVALIDATION_KEYS = {
   QuotationItem: [
     ["quotation"]
   ],
+  Invoice: [
+    ["invoices"],
+    ["invoice"],
+    ["financial"],
+    ["event"]
+  ],
+  InvoiceItem: [
+    ["invoice"]
+  ],
   FinancialTransaction: [
     ["financial"],
     ["event"],

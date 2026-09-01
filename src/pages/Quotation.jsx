@@ -54,7 +54,9 @@ export default function Quotation() {
       ]);
       return { quotations: qs || [], clients: cl || [], events: ev || [] };
     },
-    enabled: !!workspaceId
+    enabled: !!workspaceId,
+    staleTime: 0,
+    refetchOnMount: "always"
   });
   const quotations = data?.quotations || [];
   const clients = data?.clients || [];

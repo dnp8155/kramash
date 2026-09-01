@@ -59,7 +59,9 @@ export default function Invoices() {
       ]);
       return { invoices: invs || [], clients: cl || [], events: ev || [] };
     },
-    enabled: !!workspaceId
+    enabled: !!workspaceId,
+    staleTime: 0,
+    refetchOnMount: "always"
   });
 
   const invoices = data?.invoices || [];
