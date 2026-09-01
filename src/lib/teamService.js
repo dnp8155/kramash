@@ -108,6 +108,24 @@ export function findConflicts(memberId, startDate, endDate, assignments, eventsB
 
 // ---- Availability ----
 
+// Check if a date falls within an assignment's booking window.
+// Priority: per-member booking range → event_dates (non-consecutive) → event start/end.
+export function isBookedOnDate(a, ev, dateISO) {
+  if (!ev || ev.status === "cancelled") return false;
+  // Per-member booking range takes priority
+  if (a.booking_start_date) {
+    const bEnd = a.booking_end_date || a.booking_start_date;
+    return dateISO >= a.booking_start_date && dateISO <= bEnd;
+  }
+  // Non-consecutive event dates
+  if (Array.isArray(ev.event_dates) && ev.event_dates.length > 0) {
+    return ev.event_dates.includes(dateISO);
+  }
+  // Fallback to event start/end
+  const end = ev.end_date || ev.start_date;
+  return dateISO >= ev.start_date && dateISO <= end;
+}
+
 // Derive availability status for a member on a given ISO date.
 // Returns "available" | "booked" | "blocked" | "inactive".
 export function availabilityForDate(member, dateISO, assignments, eventsById, blockDates = []) {
@@ -122,9 +140,7 @@ export function availabilityForDate(member, dateISO, assignments, eventsById, bl
     if (a.team_member_id !== member.id) continue;
     if (a.assignment_status === "removed") continue;
     const ev = eventsById[a.event_id];
-    if (!ev || ev.status === "cancelled") continue;
-    const end = ev.end_date || ev.start_date;
-    if (dateISO >= ev.start_date && dateISO <= end) return "booked";
+    if (isBookedOnDate(a, ev, dateISO)) return "booked";
   }
   return "available";
 }
@@ -138,10 +154,10 @@ export function splitAvailability(members, dateISO, assignments, eventsById, blo
     const st = availabilityForDate(m, dateISO, assignments, eventsById, blockDates);
     if (st === "inactive") continue;
     if (st === "booked") {
-      const ev = assignments
+      const match = assignments
         .filter((a) => a.team_member_id === m.id && a.assignment_status !== "removed")
-        .map((a) => eventsById[a.event_id])
-        .find((e) => e && e.status !== "cancelled" && dateISO >= e.start_date && dateISO <= (e.end_date || e.start_date));
+        .find((a) => isBookedOnDate(a, eventsById[a.event_id], dateISO));
+      const ev = match ? eventsById[match.event_id] : null;
       booked.push({ member: m, event: ev });
     } else if (st === "blocked") {
       const blk = (blockDates || []).find((b) => b.team_member_id === m.id && b.status !== "cancelled" && dateISO >= b.start_date && dateISO <= (b.end_date || b.start_date));
