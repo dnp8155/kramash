@@ -12,6 +12,7 @@ import EventForm from "@/components/events/EventForm";
 import EventAssignmentCard from "@/components/events/EventAssignmentCard";
 import EventServicesTab from "@/components/events/EventServicesTab";
 import EventProgressTab from "@/components/events/EventProgressTab";
+import EventFinancialsTab from "@/components/events/EventFinancialsTab";
 import AssignTeamDialog from "@/components/team/AssignTeamDialog";
 import RecordPaymentDialog from "@/components/financial/RecordPaymentDialog";
 import RecordExpenseDialog from "@/components/financial/RecordExpenseDialog";
@@ -63,6 +64,10 @@ export default function EventDetails() {
         base44.entities.Service.filter({ workspace_id: workspaceId }, "name", 500),
         base44.entities.EventDayAssignment.filter({ workspace_id: workspaceId }, "date", 1000)
       ]);
+      const [quotes, invs] = await Promise.all([
+        base44.entities.Quotation.filter({ workspace_id: workspaceId, event_id: ev.id }, "-quotation_date", 200).catch(() => []),
+        base44.entities.Invoice.filter({ workspace_id: workspaceId, event_id: ev.id }, "-invoice_date", 200).catch(() => [])
+      ]);
       const evIds = [...new Set((asgns || []).map((a) => a.event_id))];
       const evMap = {};
       evMap[ev.id] = ev;
@@ -86,7 +91,9 @@ export default function EventDetails() {
         blockDates: blocks || [],
         services: svcs || [],
         dayAssignments: dayAsgns || [],
-        eventsById: evMap
+        eventsById: evMap,
+        quotations: quotes || [],
+        invoices: invs || []
       };
     },
     enabled: !!id && !!workspaceId
@@ -102,6 +109,8 @@ export default function EventDetails() {
   const services = data?.services || [];
   const dayAssignments = data?.dayAssignments || [];
   const eventsById = data?.eventsById || {};
+  const quotations = data?.quotations || [];
+  const invoices = data?.invoices || [];
   const notFound = !!data?.notFound;
   const hasError = !!error && !data;
   const load = () => {
@@ -235,7 +244,7 @@ export default function EventDetails() {
     );
   }
 
-  const tabs = ["Team", "Services", "Payments", "Notes", "Progress"];
+  const tabs = ["Team", "Financials", "Services", "Payments", "Notes", "Progress"];
   const eventTransactions = transactions.filter((t) => t.status === "ACTIVE");
 
   const toggleService = async (serviceId) => {
@@ -391,6 +400,15 @@ export default function EventDetails() {
       </div>
 
       {/* Tab content */}
+      {tab === "Financials" && (
+        <EventFinancialsTab
+          event={event}
+          quotations={quotations}
+          invoices={invoices}
+          currency={currency}
+        />
+      )}
+
       {tab === "Services" && (
         <EventServicesTab
           event={event}
