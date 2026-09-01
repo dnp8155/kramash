@@ -98,29 +98,27 @@ export default function InvoicePrintView({ open, onClose, invoice, items, worksp
 
       {/* Printable invoice */}
       <div className="invoice-print-area w-full max-w-[720px] bg-white print:max-w-none print:w-full" style={{ color: TEXT_PRIMARY, fontFamily: SERIF }}>
-        {/* Branded Header Banner */}
-        <div className="px-8 py-6 flex items-center gap-4" style={{ backgroundColor: TEAL }}>
-          {logo ? (
-            <img src={logo} alt="logo" className="w-12 h-12 object-contain rounded" />
-          ) : (
-            <div className="w-12 h-12 rounded flex items-center justify-center text-white font-bold text-xl bg-white/10">
-              {bizName?.charAt(0)?.toUpperCase() || "K"}
+        {/* Branded Header Banner with Prepared For on right */}
+        <div className="px-8 py-6 flex items-start justify-between gap-4" style={{ backgroundColor: TEAL }}>
+          <div className="flex items-center gap-4">
+            {logo ? (
+              <img src={logo} alt="logo" className="w-12 h-12 object-contain rounded bg-white/10 p-1" />
+            ) : (
+              <div className="w-12 h-12 rounded flex items-center justify-center text-white font-bold text-xl bg-white/10">
+                {bizName?.charAt(0)?.toUpperCase() || "K"}
+              </div>
+            )}
+            <div>
+              <h1 className="text-xl font-bold text-white leading-tight">{bizName}</h1>
+              {bizTagline && <p className="text-sm text-white/80 mt-0.5">{bizTagline}</p>}
             </div>
-          )}
-          <div>
-            <h1 className="text-xl font-bold text-white leading-tight">{bizName}</h1>
-            {bizTagline && <p className="text-sm text-white/80 mt-0.5">{bizTagline}</p>}
           </div>
-        </div>
-
-        {/* Client Info Section — right-aligned */}
-        <div className="px-8 py-6 flex justify-end">
           <div className="text-right">
-            <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: TEXT_MUTED }}>Prepared For</p>
-            <p className="font-bold text-base">{clientName || "—"}</p>
-            {clientEmail && <p className="text-sm mt-0.5" style={{ color: TEXT_PRIMARY }}>{clientEmail}</p>}
-            {clientPhone && <p className="text-sm" style={{ color: TEXT_PRIMARY }}>{clientPhone}</p>}
-            <p className="text-sm mt-2" style={{ color: TEXT_MUTED }}>
+            <p className="text-xs font-semibold uppercase tracking-wider mb-2 text-white/70">Prepared For</p>
+            <p className="font-bold text-base text-white">{clientName || "—"}</p>
+            {clientPhone && <p className="text-sm mt-0.5 text-white/90">{clientPhone}</p>}
+            {clientEmail && <p className="text-sm text-white/90">{clientEmail}</p>}
+            <p className="text-sm mt-2 text-white/70">
               {invoice.invoice_number} · {fmtDate(invoice.invoice_date)}
             </p>
           </div>
