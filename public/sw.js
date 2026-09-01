@@ -1,7 +1,7 @@
-// Kramashah Service Worker — basic cache-first for static assets,
+// KRAMAS Service Worker — basic cache-first for static assets,
 // network-first for navigation, with update flow (SKIP_WAITING).
 
-const CACHE_NAME = "kramashah-v1";
+const CACHE_NAME = "kramas-v1";
 const STATIC_ASSETS = ["/", "/index.html", "/manifest.json", "/offline.html"];
 
 // Install: pre-cache core shell.

@@ -13,7 +13,7 @@ export default function ForgotPassword() {
   const [sent, setSent] = useState(false);
 
   useEffect(() => {
-    document.title = "Reset password — Kramashah";
+    document.title = "Reset password — KRAMAS";
   }, []);
 
   const handleSubmit = async (e) => {

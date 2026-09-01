@@ -12,7 +12,7 @@ export default function AuthLayout({ icon: Icon, title, subtitle, footer, childr
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2.5 mb-8 lg:hidden">
             <Logo size={36} className="shadow-md" />
-            <span className="font-heading text-lg font-bold tracking-tight text-foreground">Kramashah</span>
+            <span className="font-heading text-lg font-bold tracking-tight text-foreground">KRAMAS</span>
           </Link>
 
           {/* Header */}

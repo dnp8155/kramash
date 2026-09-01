@@ -42,10 +42,10 @@ export default function ProblemSolution() {
             </div>
           </div>
 
-          {/* Right: Kramashah workflow */}
+          {/* Right: KRAMAS workflow */}
           <div>
             <div className="text-sm font-semibold text-primary uppercase tracking-wider mb-6 text-center lg:text-left">
-              The Kramashah way
+              The KRAMAS way
             </div>
             <div className="rounded-2xl border border-border bg-card p-6 shadow-card">
               <div className="space-y-3">
@@ -65,7 +65,7 @@ export default function ProblemSolution() {
               </div>
               <div className="mt-5 pt-5 border-t border-border/60">
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  Kramashah turns the entire workflow into one connected system.
+                  KRAMAS turns the entire workflow into one connected system.
                 </p>
               </div>
             </div>

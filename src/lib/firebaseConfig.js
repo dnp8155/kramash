@@ -12,9 +12,9 @@ import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: "AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-  authDomain: "kramashah-XXXXX.firebaseapp.com",
-  projectId: "kramashah-XXXXX",
-  storageBucket: "kramashah-XXXXX.appspot.com",
+  authDomain: "kramas-XXXXX.firebaseapp.com",
+  projectId: "kramas-XXXXX",
+  storageBucket: "kramas-XXXXX.appspot.com",
   messagingSenderId: "XXXXXXXXXXXXX",
   appId: "1:XXXXXXXXXXXXX:web:XXXXXXXXXXXXXXXXXXXX"
 };

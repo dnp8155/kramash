@@ -17,7 +17,7 @@ export default function QuotationPreview() {
             <Logo size={26} />
           </div>
           <div>
-            <div className="text-sm font-bold text-sidebar-foreground">Kramashah Studio</div>
+            <div className="text-sm font-bold text-sidebar-foreground">KRAMAS Studio</div>
             <div className="text-[10px] text-sidebar-muted">QUOTATION · QT-2026-0042</div>
           </div>
         </div>

@@ -64,9 +64,9 @@ const industries = [
     key: "OTHER",
     icon: Wrench,
     title: "Other Service Businesses",
-    copy: "Configure your own services, team roles and projects while keeping the same powerful Kramashah workflow.",
+    copy: "Configure your own services, team roles and projects while keeping the same powerful KRAMAS workflow.",
     chips: ["Custom Roles", "Custom Services", "Projects", "Quotations", "Finance"],
-    note: "Consulting, Agencies, Catering, Fitness Trainers and more — if you run a service business, Kramashah fits.",
+    note: "Consulting, Agencies, Catering, Fitness Trainers and more — if you run a service business, KRAMAS fits.",
   },
 ];
 
@@ -85,7 +85,7 @@ export default function IndustrySection() {
             One platform. Your terminology. Your workflow.
           </h2>
           <p className="mt-4 text-muted-foreground text-base sm:text-lg leading-relaxed">
-            Kramashah adapts to the way your business works instead of forcing every industry into the same vocabulary.
+            KRAMAS adapts to the way your business works instead of forcing every industry into the same vocabulary.
           </p>
         </div>
 

@@ -3,20 +3,20 @@ import { ChevronDown } from "lucide-react";
 
 const faqs = [
   {
-    q: "Is Kramashah only for photographers and event businesses?",
+    q: "Is KRAMAS only for photographers and event businesses?",
     a: "No. Photography, Event Management and Architecture have ready-made workflows, while Other Service Business lets you configure your own roles, services and projects.",
   },
   {
     q: "Can architects use Projects instead of Events?",
-    a: "Yes. Kramashah automatically adapts its terminology based on your business category, so Architecture workspaces use Projects, Project Sites and Project Teams.",
+    a: "Yes. KRAMAS automatically adapts its terminology based on your business category, so Architecture workspaces use Projects, Project Sites and Project Teams.",
   },
   {
-    q: "Can I use Kramashah without GST?",
+    q: "Can I use KRAMAS without GST?",
     a: "Yes. GST is optional. Non-GST businesses can use quotations and financial features normally.",
   },
   {
-    q: "Does Kramashah support GST billing?",
-    a: "Kramashah supports optional GST in quotations, including CGST/SGST and IGST modes. It does not handle statutory GST filing or compliance certification.",
+    q: "Does KRAMAS support GST billing?",
+    a: "KRAMAS supports optional GST in quotations, including CGST/SGST and IGST modes. It does not handle statutory GST filing or compliance certification.",
   },
   {
     q: "Can my team availability be tracked?",
@@ -27,8 +27,8 @@ const faqs = [
     a: "Your existing business data isn't deleted if you downgrade. You keep all your clients, projects, quotations and financial records — only plan-specific features and limits change.",
   },
   {
-    q: "Is Kramashah a mobile app?",
-    a: "Kramashah is a responsive web application with PWA support and can be installed on supported devices. It is not a native Android or iOS app.",
+    q: "Is KRAMAS a mobile app?",
+    a: "KRAMAS is a responsive web application with PWA support and can be installed on supported devices. It is not a native Android or iOS app.",
   },
 ];
 

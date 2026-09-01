@@ -36,7 +36,7 @@ export default function DashboardPreview({ terminology: term }) {
           <div className="w-2.5 h-2.5 rounded-full bg-yellow-400/80" />
           <div className="w-2.5 h-2.5 rounded-full bg-green-400/80" />
           <div className="ml-3 flex-1 max-w-xs h-5 rounded-md bg-card border border-border/60 text-[10px] text-muted-foreground flex items-center px-2">
-            app.kramashah.com/dashboard
+            app.kramas.com/dashboard
           </div>
         </div>
 
@@ -48,7 +48,7 @@ export default function DashboardPreview({ terminology: term }) {
               <div className="w-7 h-7 rounded-lg bg-white flex items-center justify-center shrink-0 overflow-hidden">
                 <Logo size={18} />
               </div>
-              <span className="text-sidebar-foreground text-xs font-bold hidden sm:block">Kramashah</span>
+              <span className="text-sidebar-foreground text-xs font-bold hidden sm:block">KRAMAS</span>
             </div>
             {navItems.map((item, i) => (
               <div

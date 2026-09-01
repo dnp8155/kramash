@@ -19,7 +19,7 @@ export default function ResetPassword() {
   const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
-    document.title = "New password — Kramashah";
+    document.title = "New password — KRAMAS";
   }, []);
 
   const handleSubmit = async (e) => {

@@ -106,7 +106,7 @@ export default async function (req) {
               await base44.asServiceRole.integrations.Core.SendEmail({
                 to: email,
                 subject: `${is24 ? reminderTomorrow : reminderComing}: ${ev.title}`,
-                body: `Hi ${m.user_name || ""},\n\nThis is a reminder that "${ev.title}" ${reminderVerb} ${ev.start_date}${ev.venue ? ` at ${ev.venue}` : ""}.\n\n— ${workspace?.name || "Kramashah"}`
+                body: `Hi ${m.user_name || ""},\n\nThis is a reminder that "${ev.title}" ${reminderVerb} ${ev.start_date}${ev.venue ? ` at ${ev.venue}` : ""}.\n\n— ${workspace?.name || "KRAMAS"}`
               });
             } catch (e) {
               // Email send is best-effort; don't fail the whole function.
