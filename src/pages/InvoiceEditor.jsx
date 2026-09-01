@@ -447,7 +447,19 @@ export default function InvoiceEditor() {
         <InvoicePrintView
           open={showPrintView}
           onClose={() => setShowPrintView(false)}
-          invoice={existingInvoice}
+          invoice={{
+            ...existingInvoice,
+            invoice_number: invoiceNumber,
+            invoice_date: invoiceDate,
+            due_date: dueDate,
+            client_id: clientId,
+            event_id: eventId,
+            status,
+            discount_type: discountType,
+            discount_value: Number(discountValue) || 0,
+            gst_applicable: gstApplicable,
+            notes
+          }}
           items={items}
           workspace={workspace}
           currency={currency}
