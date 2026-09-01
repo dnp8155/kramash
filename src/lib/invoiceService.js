@@ -245,6 +245,13 @@ export async function deleteInvoice(workspaceId, invoiceId) {
 // ---- Create from accepted quotation ----
 
 export async function createFromQuotation(workspaceId, quotation, quotationItems) {
+  // Prevent duplicates: if an invoice already exists for this quotation, return it.
+  const existing = await base44.entities.Invoice.filter(
+    { workspace_id: workspaceId, quotation_id: quotation.id }, "-invoice_date", 1
+  );
+  if (existing && existing.length > 0) {
+    return existing[0];
+  }
   const invoiceNumber = await generateInvoiceNumber(workspaceId);
   // Convert quotation items into invoice items (flatten into line_items).
   const items = (quotationItems || []).map((it) => ({

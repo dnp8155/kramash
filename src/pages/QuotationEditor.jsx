@@ -293,12 +293,12 @@ export default function QuotationEditor() {
       const data = { ...buildData(), status: "draft" };
       if (isNew) {
         const q = await createQuotation(workspaceId, data, items);
-        invalidateEntities(queryClient, ["Quotation", "QuotationItem"]);
+        invalidateEntities(queryClient, ["Quotation", "QuotationItem", "Event"]);
         toast({ title: "Quotation saved as draft" });
         navigate(`/quotation/${q.id}`, { replace: true });
       } else {
         await updateQuotation(workspaceId, id, data, items);
-        invalidateEntities(queryClient, ["Quotation", "QuotationItem"]);
+        invalidateEntities(queryClient, ["Quotation", "QuotationItem", "Event"]);
         toast({ title: "Quotation updated" });
         load();
       }
@@ -327,15 +327,40 @@ export default function QuotationEditor() {
         business_snapshot: buildBusinessSnapshot(workspace),
         event_snapshot: buildEventSnapshot(refCheck.event || event)
       };
+      let q;
       if (isNew) {
-        const q = await createQuotation(workspaceId, data, items, snapshots);
-        invalidateEntities(queryClient, ["Quotation", "QuotationItem"]);
+        q = await createQuotation(workspaceId, data, items, snapshots);
+      } else {
+        q = await updateQuotation(workspaceId, id, data, items, snapshots);
+      }
+
+      // Auto-create invoice from the finalized quotation (skip if one already exists)
+      let inv = null;
+      let invoiceError = false;
+      try {
+        const existingInvs = await base44.entities.Invoice.filter(
+          { workspace_id: workspaceId, quotation_id: q.id }, "-invoice_date", 10
+        );
+        if (!existingInvs || existingInvs.length === 0) {
+          inv = await createFromQuotation(workspaceId, q, items);
+        }
+      } catch (e) {
+        invoiceError = true;
+      }
+
+      invalidateEntities(queryClient, ["Quotation", "QuotationItem", "Event", "Invoice", "InvoiceItem"]);
+
+      if (inv) {
+        toast({ title: "Quotation finalized & invoice created", description: inv.invoice_number });
+      } else if (invoiceError) {
+        toast({ title: "Quotation finalized", description: "Invoice could not be created automatically.", variant: "destructive" });
+      } else {
         toast({ title: "Quotation finalized" });
+      }
+
+      if (isNew) {
         navigate(`/quotation/${q.id}`, { replace: true });
       } else {
-        await updateQuotation(workspaceId, id, data, items, snapshots);
-        invalidateEntities(queryClient, ["Quotation", "QuotationItem"]);
-        toast({ title: "Quotation finalized" });
         load();
       }
     } catch (e) {
