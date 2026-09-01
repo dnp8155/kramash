@@ -1,4 +1,4 @@
-import { Mail, Phone, User } from "lucide-react";
+import { Mail, Phone } from "lucide-react";
 
 // Clean client info card — beige background, shows name/email/phone.
 export default function InvoiceClientCard({ client }) {

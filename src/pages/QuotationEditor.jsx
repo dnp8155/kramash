@@ -509,6 +509,23 @@ export default function QuotationEditor() {
             {QUOTATION_STATUS_META[status]?.label || status}
           </span>
           <span className="text-sm font-medium text-muted-foreground">{quotationNumber}</span>
+          {status === "accepted" && existingQuotation && (
+            <Button
+              size="sm"
+              onClick={async () => {
+                try {
+                  const inv = await createFromQuotation(workspaceId, existingQuotation, items);
+                  invalidateEntities(queryClient, ["Invoice", "InvoiceItem"]);
+                  toast({ title: "Invoice created", description: inv.invoice_number });
+                  navigate(`/invoices/${inv.id}`);
+                } catch (e) {
+                  setError(e?.message || "Failed to create invoice.");
+                }
+              }}
+            >
+              <Receipt className="w-3.5 h-3.5" /> Create Invoice
+            </Button>
+          )}
         </div>
       </div>
 

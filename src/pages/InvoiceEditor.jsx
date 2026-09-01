@@ -12,7 +12,7 @@ import LoadingState from "@/components/common/LoadingState";
 import EmptyState from "@/components/common/EmptyState";
 import { formatMoney } from "@/utils/format";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
-import { AlertTriangle, ArrowLeft } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Plus } from "lucide-react";
 import InvoiceClientCard from "@/components/invoice/InvoiceClientCard";
 import InvoiceProductsSection from "@/components/invoice/InvoiceProductsSection";
 import InvoiceFinancials from "@/components/invoice/InvoiceFinancials";
@@ -23,7 +23,6 @@ import {
   computeInvoiceTotals
 } from "@/lib/invoiceService";
 import ClientForm from "@/components/clients/ClientForm";
-import { Plus } from "lucide-react";
 
 const today = () => new Date().toISOString().slice(0, 10);
 
