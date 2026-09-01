@@ -66,8 +66,6 @@ export default function InvoicePrintView({ open, onClose, invoice, items, worksp
   const clientPhone = clientSnap?.phone || "";
 
   const statusInfo = STATUS_LABELS[invoice?.status] || STATUS_LABELS.draft;
-  const amountPaid = invoice?.amount_paid || 0;
-  const balanceDue = totals.grandTotal - amountPaid;
 
   const packages = items.filter((it) => it.item_type === "package");
   const lineItems = items.filter((it) => it.item_type !== "package");
@@ -114,21 +112,16 @@ export default function InvoicePrintView({ open, onClose, invoice, items, worksp
           </div>
         </div>
 
-        {/* Client Info Section */}
-        <div className="px-8 py-6 flex justify-between items-start gap-6">
-          <div>
+        {/* Client Info Section — right-aligned */}
+        <div className="px-8 py-6 flex justify-end">
+          <div className="text-right">
             <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: TEXT_MUTED }}>Prepared For</p>
             <p className="font-bold text-base">{clientName || "—"}</p>
             {clientEmail && <p className="text-sm mt-0.5" style={{ color: TEXT_MUTED }}>{clientEmail}</p>}
             {clientPhone && <p className="text-sm" style={{ color: TEXT_MUTED }}>{clientPhone}</p>}
-          </div>
-          <div className="text-right">
-            <p className="text-sm" style={{ color: TEXT_MUTED }}>
+            <p className="text-sm mt-2" style={{ color: TEXT_MUTED }}>
               {invoice.invoice_number} · {fmtDate(invoice.invoice_date)}
             </p>
-            {invoice.due_date && (
-              <p className="text-sm mt-1" style={{ color: TEXT_MUTED }}>Due {fmtDate(invoice.due_date)}</p>
-            )}
           </div>
         </div>
 
@@ -201,45 +194,43 @@ export default function InvoicePrintView({ open, onClose, invoice, items, worksp
             <p className="text-sm text-center py-8" style={{ color: TEXT_MUTED }}>No items</p>
           )}
 
-          {/* Totals */}
-          <div className="mt-6 pt-4 border-t" style={{ borderColor: BORDER }}>
-            <div className="flex justify-between text-sm mb-2">
-              <span style={{ color: TEXT_MUTED }}>Subtotal</span>
-              <span className="tabular-nums">{formatMoney(totals.subtotal, currency)}</span>
-            </div>
-            {totals.discountAmount > 0 && (
-              <div className="flex justify-between text-sm mb-2">
-                <span style={{ color: TEXT_MUTED }}>Discount {invoice.discount_type === "percent" ? `(${invoice.discount_value}%)` : ""}</span>
-                <span className="tabular-nums">−{formatMoney(totals.discountAmount, currency)}</span>
-              </div>
-            )}
-            {invoice.gst_applicable && totals.gstTotal > 0 && (
-              invoice.gst_mode === "igst" ? (
+          {/* Grand total — minimal, only if there are adjustments beyond package totals */}
+          {(totals.discountAmount > 0 || (invoice.gst_applicable && totals.gstTotal > 0)) && (
+            <div className="mt-6 pt-4 border-t" style={{ borderColor: BORDER }}>
+              {totals.discountAmount > 0 && (
                 <div className="flex justify-between text-sm mb-2">
-                  <span style={{ color: TEXT_MUTED }}>IGST ({workspace?.default_gst_rate || 18}%)</span>
-                  <span className="tabular-nums">{formatMoney(totals.igstAmount, currency)}</span>
+                  <span style={{ color: TEXT_MUTED }}>Discount {invoice.discount_type === "percent" ? `(${invoice.discount_value}%)` : ""}</span>
+                  <span className="tabular-nums">−{formatMoney(totals.discountAmount, currency)}</span>
                 </div>
-              ) : (
-                <>
+              )}
+              {invoice.gst_applicable && totals.gstTotal > 0 && (
+                invoice.gst_mode === "igst" ? (
                   <div className="flex justify-between text-sm mb-2">
-                    <span style={{ color: TEXT_MUTED }}>CGST ({(workspace?.default_gst_rate || 18) / 2}%)</span>
-                    <span className="tabular-nums">{formatMoney(totals.cgstAmount, currency)}</span>
+                    <span style={{ color: TEXT_MUTED }}>IGST ({workspace?.default_gst_rate || 18}%)</span>
+                    <span className="tabular-nums">{formatMoney(totals.igstAmount, currency)}</span>
                   </div>
-                  <div className="flex justify-between text-sm mb-2">
-                    <span style={{ color: TEXT_MUTED }}>SGST ({(workspace?.default_gst_rate || 18) / 2}%)</span>
-                    <span className="tabular-nums">{formatMoney(totals.sgstAmount, currency)}</span>
-                  </div>
-                </>
-              )
-            )}
-            <div className="flex justify-between items-baseline pt-3 mt-1 border-t" style={{ borderColor: TEXT_PRIMARY }}>
-              <span className="text-lg font-bold">Total</span>
-              <span className="text-xl font-bold tabular-nums">{formatMoney(totals.grandTotal, currency)}</span>
+                ) : (
+                  <>
+                    <div className="flex justify-between text-sm mb-2">
+                      <span style={{ color: TEXT_MUTED }}>CGST ({(workspace?.default_gst_rate || 18) / 2}%)</span>
+                      <span className="tabular-nums">{formatMoney(totals.cgstAmount, currency)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm mb-2">
+                      <span style={{ color: TEXT_MUTED }}>SGST ({(workspace?.default_gst_rate || 18) / 2}%)</span>
+                      <span className="tabular-nums">{formatMoney(totals.sgstAmount, currency)}</span>
+                    </div>
+                  </>
+                )
+              )}
+              <div className="flex justify-between items-baseline pt-3 mt-1 border-t" style={{ borderColor: TEXT_PRIMARY }}>
+                <span className="text-lg font-bold">Total</span>
+                <span className="text-xl font-bold tabular-nums">{formatMoney(totals.grandTotal, currency)}</span>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
-        {/* What you receive / Notes */}
+        {/* What you receive */}
         {invoice.notes && (
           <div className="px-8 pb-6">
             <h2 className="text-lg font-bold pb-2 mb-3" style={{ borderBottom: `2px solid ${GOLD}` }}>
@@ -249,29 +240,15 @@ export default function InvoicePrintView({ open, onClose, invoice, items, worksp
           </div>
         )}
 
+        {/* Terms & Conditions */}
         {invoice.terms_and_conditions && (
-          <div className="px-8 pb-6">
+          <div className="px-8 pb-8">
             <h2 className="text-lg font-bold pb-2 mb-3" style={{ borderBottom: `2px solid ${GOLD}` }}>
               Terms & Conditions
             </h2>
             <p className="text-sm leading-relaxed whitespace-pre-line" style={{ color: "#444" }}>{invoice.terms_and_conditions}</p>
           </div>
         )}
-
-        {/* Payment balance */}
-        <div className="px-8 pb-8">
-          <div className="rounded-lg border p-4" style={{ borderColor: BORDER, backgroundColor: LIGHT_BG }}>
-            <div className="flex items-center justify-between text-sm">
-              <span style={{ color: TEXT_MUTED }}>Paid <span className="font-bold text-black tabular-nums">{formatMoney(amountPaid, currency)}</span></span>
-              <span style={{ color: "#b91c1c" }}>Balance due <span className="font-bold tabular-nums">{formatMoney(balanceDue, currency)}</span></span>
-            </div>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="px-8 py-5 border-t text-center" style={{ borderColor: BORDER }}>
-          <p className="text-sm font-medium" style={{ color: TEXT_MUTED }}>Thank you for your business!</p>
-        </div>
       </div>
     </div>
   );
