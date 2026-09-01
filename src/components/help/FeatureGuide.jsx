@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Card from "@/components/common/Card";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, CalendarDays, Users, UserCircle, Wallet,
   FileText, Receipt, Calculator, Settings, CreditCard,
   Smartphone, Share2, ChevronDown, ChevronUp, BookOpen,
-  Rocket, ClipboardList, Bell, Palette, Shield
+  Rocket, ClipboardList, Bell, Palette, Shield, Search, X
 } from "lucide-react";
 
 const CATEGORIES = [
@@ -348,93 +348,201 @@ const CATEGORIES = [
 export default function FeatureGuide() {
   const [openFeature, setOpenFeature] = useState(null);
   const [activeCategory, setActiveCategory] = useState("getting-started");
+  const [search, setSearch] = useState("");
+
+  // Search across all features
+  const searchResults = useMemo(() => {
+    if (!search.trim()) return null;
+    const q = search.toLowerCase();
+    const results = [];
+    CATEGORIES.forEach((cat) => {
+      cat.features.forEach((feat) => {
+        if (
+          feat.title.toLowerCase().includes(q) ||
+          feat.desc.toLowerCase().includes(q) ||
+          feat.steps.some((s) => s.toLowerCase().includes(q))
+        ) {
+          results.push({ ...feat, categoryLabel: cat.label, categoryBg: cat.bg, categoryColor: cat.color });
+        }
+      });
+    });
+    return results;
+  }, [search]);
 
   const current = CATEGORIES.find((c) => c.id === activeCategory) || CATEGORIES[0];
 
   return (
     <div className="space-y-5">
-      {/* Category selector — horizontal scroll on mobile */}
-      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
-        {CATEGORIES.map((cat) => {
-          const Icon = cat.icon;
-          const active = activeCategory === cat.id;
-          return (
-            <button
-              key={cat.id}
-              onClick={() => { setActiveCategory(cat.id); setOpenFeature(null); }}
-              className={cn(
-                "flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all shrink-0",
-                active
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "bg-card border border-border text-foreground hover:bg-muted"
-              )}
-            >
-              <Icon className="w-4 h-4" />
-              {cat.label}
-            </button>
-          );
-        })}
+      {/* Search bar */}
+      <div className="relative max-w-xl">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search features — try 'invoice', 'team', 'GST'..."
+          className="w-full h-11 pl-10 pr-10 rounded-xl border border-border bg-card text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40 transition-all"
+        />
+        {search && (
+          <button
+            onClick={() => setSearch("")}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
-      {/* Category header */}
-      <div className="flex items-center gap-3">
-        <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center shrink-0", current.bg)}>
-          <current.icon className={cn("w-5 h-5", current.color)} />
-        </div>
-        <div>
-          <h3 className="text-base font-semibold text-foreground">{current.label}</h3>
-          <p className="text-xs text-muted-foreground">{current.features.length} guide{current.features.length > 1 ? "s" : ""} in this section</p>
-        </div>
-      </div>
-
-      {/* Feature cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {current.features.map((feat, idx) => {
-          const Icon = feat.icon;
-          const globalIdx = `${current.id}-${idx}`;
-          const isOpen = openFeature === globalIdx;
-          return (
-            <Card key={globalIdx} className="overflow-hidden">
-              <button
-                onClick={() => setOpenFeature(isOpen ? null : globalIdx)}
-                className="w-full flex items-start gap-3 p-4 text-left hover:bg-muted/30 transition-colors"
-              >
-                <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center shrink-0", current.bg)}>
-                  <Icon className={cn("w-4.5 h-4.5", current.color)} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-2">
-                    <h4 className="text-sm font-semibold text-foreground">{feat.title}</h4>
-                    {isOpen ? (
-                      <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" />
-                    ) : (
-                      <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
-                    )}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">{feat.desc}</p>
-                </div>
-              </button>
-              {isOpen && (
-                <div className="px-4 pb-4 pt-1 border-t border-border">
-                  <ol className="space-y-2.5 mt-3">
-                    {feat.steps.map((step, sIdx) => (
-                      <li key={sIdx} className="flex gap-2.5 text-sm text-foreground">
-                        <span className={cn(
-                          "w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 mt-0.5",
-                          current.bg, current.color
-                        )}>
-                          {sIdx + 1}
-                        </span>
-                        <span className="leading-relaxed">{step}</span>
-                      </li>
-                    ))}
-                  </ol>
-                </div>
-              )}
+      {/* Search results mode */}
+      {searchResults ? (
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            {searchResults.length} result{searchResults.length !== 1 ? "s" : ""} for "{search}"
+          </p>
+          {searchResults.length === 0 ? (
+            <Card className="p-8 text-center">
+              <Search className="w-8 h-8 text-muted-foreground/40 mx-auto mb-2" />
+              <p className="text-sm font-medium text-foreground">No features found</p>
+              <p className="text-xs text-muted-foreground mt-1">Try a different search term.</p>
             </Card>
-          );
-        })}
-      </div>
+          ) : (
+            searchResults.map((feat, idx) => {
+              const Icon = feat.icon;
+              const isOpen = openFeature === `search-${idx}`;
+              return (
+                <Card key={`search-${idx}`} className="overflow-hidden">
+                  <button
+                    onClick={() => setOpenFeature(isOpen ? null : `search-${idx}`)}
+                    className="w-full flex items-start gap-3 p-4 text-left hover:bg-muted/30 transition-colors"
+                  >
+                    <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center shrink-0", feat.categoryBg)}>
+                      <Icon className={cn("w-4 h-4", feat.categoryColor)} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <h4 className="text-sm font-semibold text-foreground">{feat.title}</h4>
+                        {isOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" /> : <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">{feat.desc}</p>
+                      <span className="inline-block mt-1.5 text-[10px] font-medium text-muted-foreground uppercase tracking-wide">{feat.categoryLabel}</span>
+                    </div>
+                  </button>
+                  {isOpen && (
+                    <div className="px-4 pb-4 pt-1 border-t border-border">
+                      <ol className="space-y-2.5 mt-3">
+                        {feat.steps.map((step, sIdx) => (
+                          <li key={sIdx} className="flex gap-2.5 text-sm text-foreground">
+                            <span className={cn("w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 mt-0.5", feat.categoryBg, feat.categoryColor)}>
+                              {sIdx + 1}
+                            </span>
+                            <span className="leading-relaxed">{step}</span>
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  )}
+                </Card>
+              );
+            })
+          )}
+        </div>
+      ) : (
+        <div className="flex flex-col lg:flex-row gap-5">
+          {/* Sidebar — categories (sticky on desktop) */}
+          <aside className="lg:w-60 shrink-0">
+            <div className="lg:sticky lg:top-4 space-y-1">
+              {CATEGORIES.map((cat) => {
+                const Icon = cat.icon;
+                const active = activeCategory === cat.id;
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => { setActiveCategory(cat.id); setOpenFeature(null); }}
+                    className={cn(
+                      "w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-left",
+                      active
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "text-foreground hover:bg-muted"
+                    )}
+                  >
+                    <Icon className="w-4 h-4 shrink-0" />
+                    <span className="flex-1 truncate">{cat.label}</span>
+                    <span className={cn(
+                      "text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0",
+                      active ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted text-muted-foreground"
+                    )}>
+                      {cat.features.length}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </aside>
+
+          {/* Main content — feature guides */}
+          <div className="flex-1 min-w-0 space-y-3">
+            {/* Category title */}
+            <div className="flex items-center gap-3 pb-1">
+              <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0", current.bg)}>
+                <current.icon className={cn("w-5 h-5", current.color)} />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-foreground">{current.label}</h3>
+                <p className="text-xs text-muted-foreground">{current.features.length} guide{current.features.length > 1 ? "s" : ""} • click any card to see steps</p>
+              </div>
+            </div>
+
+            {/* Feature cards */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
+              {current.features.map((feat, idx) => {
+                const Icon = feat.icon;
+                const globalIdx = `${current.id}-${idx}`;
+                const isOpen = openFeature === globalIdx;
+                return (
+                  <Card key={globalIdx} className={cn("overflow-hidden transition-all", isOpen && "xl:col-span-2")}>
+                    <button
+                      onClick={() => setOpenFeature(isOpen ? null : globalIdx)}
+                      className="w-full flex items-start gap-3 p-4 text-left hover:bg-muted/30 transition-colors"
+                    >
+                      <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center shrink-0", current.bg)}>
+                        <Icon className={cn("w-4 h-4", current.color)} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <h4 className="text-sm font-semibold text-foreground">{feat.title}</h4>
+                          {isOpen ? (
+                            <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" />
+                          ) : (
+                            <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">{feat.desc}</p>
+                      </div>
+                    </button>
+                    {isOpen && (
+                      <div className="px-4 pb-4 pt-1 border-t border-border">
+                        <ol className="space-y-2.5 mt-3">
+                          {feat.steps.map((step, sIdx) => (
+                            <li key={sIdx} className="flex gap-2.5 text-sm text-foreground">
+                              <span className={cn(
+                                "w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 mt-0.5",
+                                current.bg, current.color
+                              )}>
+                                {sIdx + 1}
+                              </span>
+                              <span className="leading-relaxed">{step}</span>
+                            </li>
+                          ))}
+                        </ol>
+                      </div>
+                    )}
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
