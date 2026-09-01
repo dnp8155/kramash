@@ -143,9 +143,19 @@ export default function WorkspaceSettings() {
         <Field label="Owner Name"><Input value={user?.full_name || ""} disabled placeholder="Owner name" /></Field>
         <Field label="Business / Workspace Name"><Input value={form.name} onChange={(e) => set("name", e.target.value)} /></Field>
         <Field label="Business Type">
-          <Select value={form.business_type} onChange={(e) => set("business_type", e.target.value)}>
+          <Select
+            value={form.business_type}
+            onChange={(e) => set("business_type", e.target.value)}
+            disabled={!!workspace?.business_type}
+            className={workspace?.business_type ? "opacity-60 cursor-not-allowed" : ""}
+          >
             {businessTypes.map((b) => <option key={b}>{b}</option>)}
           </Select>
+          {workspace?.business_type && (
+            <p className="text-[11px] text-muted-foreground mt-1">
+              Business type is locked after initial setup and cannot be changed.
+            </p>
+          )}
         </Field>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Field label="Business Phone"><Input value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="+91…" /></Field>

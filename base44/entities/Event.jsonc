@@ -37,6 +37,10 @@
       },
       "default": []
     },
+    "financial_year": {
+      "type": "string",
+      "title": "Financial Year (e.g. FY2026-27)"
+    },
     "team_member_ids": {
       "type": "array",
       "title": "Assigned Team Member IDs",

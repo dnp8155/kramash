@@ -17,7 +17,7 @@ import AssignTeamDialog from "@/components/team/AssignTeamDialog";
 import RecordPaymentDialog from "@/components/financial/RecordPaymentDialog";
 import RecordExpenseDialog from "@/components/financial/RecordExpenseDialog";
 import { useToast } from "@/components/ui/use-toast";
-import { currentFY, fyRange } from "@/lib/dates";
+import { currentFY, fyRange, fyForDate, formatEventDate } from "@/lib/dates";
 import { formatMoney } from "@/utils/format";
 import {
   eventFinancialSummary,
@@ -321,8 +321,8 @@ export default function EventDetails() {
             <DetailField label="Client / Event" value={event.title} />
             <DetailField label="Event Type" value={event.event_type || "—"} />
             <DetailField label="Contract Value" value={formatMoney(event.contract_value || 0, currency)} />
-            <DetailField label="Start Date" value={event.start_date ? new Date(event.start_date + "T00:00:00").toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—"} />
-            <DetailField label="End Date" value={event.end_date ? new Date(event.end_date + "T00:00:00").toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—"} />
+            <DetailField label="Start Date" value={event.start_date ? formatEventDate(event.start_date) : "—"} />
+            <DetailField label="End Date" value={event.end_date ? formatEventDate(event.end_date) : "—"} />
             <DetailField label="Financial Year" value={fyLabel} />
           </div>
 
@@ -512,7 +512,7 @@ export default function EventDetails() {
                       {t.transaction_type === "CLIENT_RECEIPT" ? "Client Payment" :
                        t.transaction_type === "TEAM_PAYMENT" ? "Team Payment" : "Expense"}
                     </div>
-                    <div className="text-xs text-muted-foreground">{t.transaction_date} · {t.payment_method}</div>
+                    <div className="text-xs text-muted-foreground">{formatEventDate(t.transaction_date)} · {t.payment_method}</div>
                   </div>
                   <div className={cn(
                     "text-sm font-semibold",

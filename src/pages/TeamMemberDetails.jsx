@@ -238,6 +238,9 @@ function AssignmentList({ items, transactions, currency, onOpen, onPay }) {
         const remaining = Math.max(0, agreed - paid);
         const overpaid = paid > agreed ? paid - agreed : 0;
         const status = teamPaymentStatus(paid, agreed);
+        // Per-member booking dates (fall back to event dates)
+        const bkStart = a.booking_start_date || ev.start_date;
+        const bkEnd = a.booking_end_date || ev.end_date || bkStart;
         return (
           <div
             key={a.id}
@@ -247,7 +250,7 @@ function AssignmentList({ items, transactions, currency, onOpen, onPay }) {
             <button onClick={() => onOpen(ev)} className="min-w-0 flex-1 text-left">
               <div className="text-sm font-medium text-foreground truncate">{ev.title}</div>
               <div className="text-xs text-muted-foreground">
-                {formatEventDate(ev.start_date, ev.end_date)}{ev.venue ? ` · ${ev.venue}` : ""}
+                {formatEventDate(bkStart, bkEnd)}{ev.venue ? ` · ${ev.venue}` : ""}
                 {a.role_name_snapshot ? ` · ${a.role_name_snapshot}` : ""}
               </div>
               <div className="text-xs text-muted-foreground sm:hidden mt-0.5">

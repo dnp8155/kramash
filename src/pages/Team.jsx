@@ -226,6 +226,7 @@ export default function Team() {
                   member={m}
                   assignments={assignments}
                   transactions={transactions}
+                  eventsById={eventsById}
                   currentUser={user}
                   currency={currency}
                   onEdit={openEdit}

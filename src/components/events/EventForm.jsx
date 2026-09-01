@@ -14,6 +14,7 @@ import ClientForm from "@/components/clients/ClientForm";
 import ChipPicker from "@/components/common/ChipPicker";
 import DateRangeChips from "@/components/common/DateRangeChips";
 import { Plus, Users, Briefcase } from "lucide-react";
+import { fyOptions, fyForDate } from "@/lib/dates";
 
 const PHOTO_EVENT_TYPES = ["Wedding", "Pre-Wedding", "Reception", "Engagement", "Haldi", "Mehndi", "Birthday", "Corporate", "Portfolio", "Other"];
 const GENERIC_WORK_TYPES = ["Project", "Assignment", "Consultation", "Site Visit", "Contract", "Other"];
@@ -21,6 +22,7 @@ const GENERIC_WORK_TYPES = ["Project", "Assignment", "Consultation", "Site Visit
 const empty = {
   client_id: "", title: "", event_type: "",
   start_date: "", end_date: "", event_dates: [],
+  financial_year: "",
   team_member_ids: [], service_ids: [],
   venue: "", venue_address: "",
   status: "upcoming", contract_value: 0, description: "", notes: ""
@@ -146,6 +148,7 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
       const dates = (form.event_dates || []).slice().sort();
       const startDate = form.start_date;
       const endDate = form.end_date || startDate;
+      const fy = form.financial_year || fyForDate(startDate) || "";
       const payload = {
         workspace_id: workspaceId,
         client_id: form.client_id,
@@ -154,6 +157,7 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
         start_date: startDate,
         end_date: endDate,
         event_dates: dates,
+        financial_year: fy,
         team_member_ids: form.team_member_ids || [],
         service_ids: form.service_ids || [],
         venue: form.venue.trim(),
@@ -305,6 +309,23 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
                       onStartChange={(v) => set("start_date", v)}
                       onEndChange={(v) => set("end_date", v)}
                     />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Financial Year</Label>
+                    <Select
+                      value={form.financial_year || fyForDate(form.start_date) || ""}
+                      onChange={(e) => set("financial_year", e.target.value)}
+                      className="w-full"
+                    >
+                      <option value="">Auto (from date)</option>
+                      {fyOptions(5).map((f) => (
+                        <option key={f.value} value={f.value}>{f.label}</option>
+                      ))}
+                    </Select>
+                    <p className="text-[11px] text-muted-foreground">
+                      For future-year bookings. Defaults to the FY of the start date.
+                    </p>
                   </div>
                 </div>
 

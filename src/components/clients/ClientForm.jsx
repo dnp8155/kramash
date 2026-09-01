@@ -7,11 +7,22 @@ import Button from "@/components/common/Button";
 import Input from "@/components/common/Input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { lookupCity } from "@/lib/cityMapping";
 
 const empty = {
   name: "", phone: "", alternate_phone: "", email: "",
   address: "", city: "", state: "", country: "", notes: ""
 };
+
+// Coerce every field to a string so null/undefined from the DB never crashes .trim()
+function coerceStrings(client) {
+  if (!client) return empty;
+  const out = { ...empty };
+  for (const k of Object.keys(empty)) {
+    out[k] = client[k] == null ? "" : String(client[k]);
+  }
+  return out;
+}
 
 export default function ClientForm({ open, onClose, onSaved, client = null, workspaceId }) {
   const [form, setForm] = useState(empty);
@@ -21,11 +32,20 @@ export default function ClientForm({ open, onClose, onSaved, client = null, work
   useEffect(() => {
     if (open) {
       setError("");
-      setForm(client ? { ...empty, ...client } : empty);
+      setForm(coerceStrings(client));
     }
   }, [open, client]);
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+
+  // Auto-fill state & country when city matches a known Indian city.
+  const onCityChange = (val) => {
+    set("city", val);
+    const match = lookupCity(val);
+    if (match) {
+      setForm((f) => ({ ...f, city: val, state: match.state, country: match.country }));
+    }
+  };
 
   const validate = () => {
     if (!form.name?.trim()) return "Client name is required.";
@@ -108,7 +128,7 @@ export default function ClientForm({ open, onClose, onSaved, client = null, work
           <div className="grid grid-cols-3 gap-3">
             <div className="space-y-1.5">
               <Label>City</Label>
-              <Input value={form.city} onChange={(e) => set("city", e.target.value)} />
+              <Input value={form.city} onChange={(e) => onCityChange(e.target.value)} placeholder="e.g. Vadodara" />
             </div>
             <div className="space-y-1.5">
               <Label>State</Label>

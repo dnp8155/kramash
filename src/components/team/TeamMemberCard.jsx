@@ -1,7 +1,9 @@
-import { Pencil, Trash2, ExternalLink, Archive, RotateCcw } from "lucide-react";
+import { Pencil, Trash2, ExternalLink, Archive, RotateCcw, Calendar } from "lucide-react";
 import { TEAM_MEMBER_STATUS, AVAILABILITY_STATUS } from "@/constants/teamConfig";
 import { formatMoney } from "@/utils/format";
 import { memberBookingCount } from "@/lib/teamService";
+import { formatEventDate, isUpcomingDate, todayISO } from "@/lib/dates";
+import { teamMemberTypes } from "@/constants/preferencesConfig";
 import { cn } from "@/lib/utils";
 
 // Derive a display status: inactive members show inactive; active members
@@ -12,10 +14,13 @@ function displayStatus(member, assignments) {
   return count > 0 ? AVAILABILITY_STATUS.booked : AVAILABILITY_STATUS.available;
 }
 
-export default function TeamMemberCard({ member, assignments = [], transactions = [], currentUser, currency = "INR", onEdit, onArchive, onDelete, onOpen }) {
+export default function TeamMemberCard({ member, assignments = [], transactions = [], eventsById = {}, currentUser, currency = "INR", onEdit, onArchive, onDelete, onOpen }) {
   const status = displayStatus(member, assignments);
   const bookings = memberBookingCount(member.id, assignments);
   const active = member.status === "active";
+
+  // Member type indicator (pink/blue/grey from preferences)
+  const memberType = teamMemberTypes.find((t) => t.id === member.member_type_id);
 
   // Financial: total agreed rate from active assignments, total paid from TEAM_PAYMENT transactions.
   const memberAssignments = assignments.filter(
@@ -27,13 +32,35 @@ export default function TeamMemberCard({ member, assignments = [], transactions 
     .reduce((s, t) => s + (Number(t.amount) || 0), 0);
   const remaining = Math.max(0, totalRate - totalPaid);
 
+  // Next upcoming booking with per-member dates
+  const today = todayISO();
+  const upcomingBookings = memberAssignments
+    .map((a) => {
+      const ev = eventsById[a.event_id];
+      if (!ev || ev.status === "cancelled") return null;
+      const start = a.booking_start_date || ev.start_date;
+      const end = a.booking_end_date || ev.end_date || start;
+      if (end < today) return null;
+      return { a, ev, start, end };
+    })
+    .filter(Boolean)
+    .sort((x, y) => x.start.localeCompare(y.start));
+  const nextBooking = upcomingBookings[0] || null;
+
   const isSelf = currentUser && member.email && currentUser.email &&
     member.email.toLowerCase() === currentUser.email.toLowerCase();
 
   return (
     <div className="bg-card border border-border rounded-lg p-4">
-      {/* Header: status dot + name + SELF badge + role + actions */}
+      {/* Header: type dot + status dot + name + SELF badge + role + actions */}
       <div className="flex items-center gap-2">
+        {memberType && (
+          <span
+            className="w-2.5 h-2.5 rounded-full shrink-0 border border-white/20"
+            style={{ backgroundColor: memberType.color }}
+            title={memberType.title}
+          />
+        )}
         <span className={cn("w-2.5 h-2.5 rounded-full shrink-0", status.dot)} />
         <button
           onClick={() => onOpen?.(member)}
@@ -65,14 +92,25 @@ export default function TeamMemberCard({ member, assignments = [], transactions 
         </button>
       </div>
 
-      {/* Bookings row */}
-      <div className="mt-2.5 flex items-center gap-1.5 text-sm">
-        <span className="text-xs text-muted-foreground">Bookings:</span>
-        <button onClick={() => onOpen?.(member)} className="text-foreground font-medium hover:underline flex items-center gap-1">
-          {bookings}
-          {bookings > 0 && <ExternalLink className="w-3 h-3 text-muted-foreground" />}
-        </button>
-      </div>
+      {/* Next booking date — clearly visible */}
+      {nextBooking ? (
+        <div className="mt-2.5 flex items-center gap-1.5 text-sm">
+          <Calendar className="w-3.5 h-3.5 text-primary shrink-0" />
+          <span className="text-xs text-muted-foreground">Next:</span>
+          <button onClick={() => onOpen?.(member)} className="text-foreground font-medium hover:underline">
+            {formatEventDate(nextBooking.start, nextBooking.end)}
+          </button>
+          <span className="text-xs text-muted-foreground truncate hidden sm:inline">· {nextBooking.ev.title}</span>
+        </div>
+      ) : (
+        <div className="mt-2.5 flex items-center gap-1.5 text-sm">
+          <span className="text-xs text-muted-foreground">Bookings:</span>
+          <button onClick={() => onOpen?.(member)} className="text-foreground font-medium hover:underline flex items-center gap-1">
+            {bookings}
+            {bookings > 0 && <ExternalLink className="w-3 h-3 text-muted-foreground" />}
+          </button>
+        </div>
+      )}
 
       {/* Financial footer: RATE / PAID / REMAINING */}
       <div className="mt-3 grid grid-cols-3 gap-2 pt-3 border-t border-border">

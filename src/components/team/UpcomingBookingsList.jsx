@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { parseISODate, toISODate, todayISO } from "@/lib/dates";
+import { todayISO, formatEventDate } from "@/lib/dates";
 import { CalendarDays } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -13,13 +13,15 @@ export default function UpcomingBookingsList({ members = [], assignments = [], e
       if (!ev || ev.status === "cancelled") continue;
       const m = members.find((x) => x.id === a.team_member_id);
       if (!m) continue;
-      const end = ev.end_date || ev.start_date;
+      // Per-member booking dates, fall back to event dates
+      const start = a.booking_start_date || ev.start_date;
+      const end = a.booking_end_date || ev.end_date || start;
       if (end < today) continue; // skip past
       out.push({
         key: a.id,
         member: m,
         event: ev,
-        start: ev.start_date,
+        start,
         end
       });
     }
@@ -27,16 +29,7 @@ export default function UpcomingBookingsList({ members = [], assignments = [], e
     return out.slice(0, 30);
   }, [members, assignments, eventsById]);
 
-  const fmt = (s, e) => {
-    const d = parseISODate(s);
-    if (!d) return s;
-    const same = s === e;
-    const label = d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
-    if (same) return label;
-    const d2 = parseISODate(e);
-    if (!d2) return label;
-    return `${d.toLocaleDateString("en-IN", { day: "2-digit", month: "short" })} – ${d2.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}`;
-  };
+  const fmt = (s, e) => formatEventDate(s, e);
 
   if (rows.length === 0) {
     return (

@@ -27,6 +27,10 @@
       "type": "string",
       "title": "Profession"
     },
+    "member_type_id": {
+      "type": "string",
+      "title": "Team Member Type ID (e.g. Bride Side / Groom Side)"
+    },
     "default_rate": {
       "type": "number",
       "title": "Default Rate",

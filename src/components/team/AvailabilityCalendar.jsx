@@ -42,26 +42,39 @@ export default function AvailabilityCalendar({ members = [], assignments = [], e
   }, [view]);
 
   // Map: dateISO -> array of { member, event } for booked members.
+  // Uses event_dates (specific shoot days) when available, otherwise the
+  // per-member booking date range, falling back to event start/end.
   const bookingsByDate = useMemo(() => {
     const map = {};
+    const addDate = (iso, m, ev, a) => {
+      if (!map[iso]) map[iso] = [];
+      if (!map[iso].some((b) => b.event?.id === ev.id && b.member.id === m.id)) {
+        map[iso].push({ member: m, event: ev, assignment: a });
+      }
+    };
     for (const m of members) {
       if (m.status === "inactive") continue;
       for (const a of assignments) {
         if (a.team_member_id !== m.id || a.assignment_status === "removed") continue;
         const ev = eventsById[a.event_id];
         if (!ev || ev.status === "cancelled") continue;
-        const end = ev.end_date || ev.start_date;
-        let cur = parseISODate(ev.start_date);
-        const endD = parseISODate(end);
-        if (!cur || !endD) continue;
-        while (cur <= endD) {
-          const iso = toISODate(cur);
-          if (!map[iso]) map[iso] = [];
-          // Avoid duplicate event entries on the same day.
-          if (!map[iso].some((b) => b.event?.id === ev.id)) {
-            map[iso].push({ member: m, event: ev, assignment: a });
+        // Prefer event_dates (non-consecutive shoot days) when present
+        const evDates = Array.isArray(ev.event_dates) && ev.event_dates.length > 0
+          ? ev.event_dates
+          : null;
+        if (evDates) {
+          for (const d of evDates) addDate(d, m, ev, a);
+        } else {
+          // Per-member booking range, else event start/end
+          const start = a.booking_start_date || ev.start_date;
+          const end = a.booking_end_date || ev.end_date || start;
+          let cur = parseISODate(start);
+          const endD = parseISODate(end);
+          if (!cur || !endD) continue;
+          while (cur <= endD) {
+            addDate(toISODate(cur), m, ev, a);
+            cur.setDate(cur.getDate() + 1);
           }
-          cur.setDate(cur.getDate() + 1);
         }
       }
     }

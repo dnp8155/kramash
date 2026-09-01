@@ -10,10 +10,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { RATE_TYPES, TEAM_MEMBER_STATUS } from "@/constants/teamConfig";
 import { loadActiveRoles } from "@/lib/teamService";
+import { teamMemberTypes } from "@/constants/preferencesConfig";
 
 const empty = {
   name: "", phone: "", email: "",
   role_id: "", profession: "",
+  member_type_id: "",
   default_rate: "", rate_type: "Per Event",
   status: "active", notes: ""
 };
@@ -85,6 +87,7 @@ export default function TeamMemberForm({ open, onClose, onSaved, member = null, 
         email: form.email.trim(),
         role_id: form.role_id || "",
         profession: form.profession.trim(),
+        member_type_id: form.member_type_id || "",
         default_rate: Number(form.default_rate) || 0,
         rate_type: form.rate_type,
         status: form.status,
@@ -173,6 +176,16 @@ export default function TeamMemberForm({ open, onClose, onSaved, member = null, 
                 {RATE_TYPES.map((r) => <option key={r} value={r}>{r}</option>)}
               </Select>
             </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Member Type</Label>
+            <Select value={form.member_type_id} onChange={(e) => set("member_type_id", e.target.value)} className="w-full">
+              <option value="">None</option>
+              {teamMemberTypes.map((t) => (
+                <option key={t.id} value={t.id}>{t.title}</option>
+              ))}
+            </Select>
           </div>
 
           <div className="space-y-1.5">

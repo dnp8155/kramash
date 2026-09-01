@@ -6,14 +6,6 @@ import { base44 } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
 
-// Format "YYYY-MM-DD" → "25 Jan 2026"
-function fmtDate(str) {
-  if (!str) return "—";
-  const [y, m, d] = str.split("-").map(Number);
-  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-  return `${d} ${months[m - 1]} ${y}`;
-}
-
 export default function EventAssignmentCard({
   assignment,
   member,
@@ -26,6 +18,7 @@ export default function EventAssignmentCard({
   onRefresh,
 }) {
   const [showHistory, setShowHistory] = useState(false);
+  const [showFinancials, setShowFinancials] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
   const { toast } = useToast();
 
@@ -76,8 +69,16 @@ export default function EventAssignmentCard({
         {assignment.role_name_snapshot || member?.profession || "—"}
       </div>
 
-      {/* Details grid */}
-      <div className="grid grid-cols-2 gap-3 mb-3">
+      {/* Dates — always visible (compact on mobile) */}
+      <div className="text-xs text-muted-foreground mb-3 sm:hidden">
+        <span className="font-medium text-foreground">{datesLabel}</span>
+      </div>
+
+      {/* Details grid — hidden on mobile unless toggled */}
+      <div className={cn(
+        "grid grid-cols-2 gap-3 mb-3",
+        showFinancials ? "flex" : "hidden sm:grid"
+      )}>
         <div>
           <div className="text-xs font-medium text-muted-foreground">Rate</div>
           <div className="text-sm font-semibold text-foreground tabular-nums">{formatMoney(rate, currency)}</div>
@@ -95,6 +96,15 @@ export default function EventAssignmentCard({
           <div className="text-sm font-semibold text-warning tabular-nums">{formatMoney(remaining, currency)}</div>
         </div>
       </div>
+
+      {/* Mobile show/hide financials toggle */}
+      <button
+        onClick={() => setShowFinancials((s) => !s)}
+        className="sm:hidden flex items-center gap-1.5 text-xs font-medium text-primary hover:underline w-full mb-2"
+      >
+        {showFinancials ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+        {showFinancials ? "Hide Financials" : "Show Financials"}
+      </button>
 
       {/* Action buttons */}
       <div className="flex items-center gap-2 mb-1">
@@ -143,8 +153,8 @@ export default function EventAssignmentCard({
                 className="flex items-center justify-between bg-muted/40 rounded-md px-3 py-2"
               >
                 <div>
-                  <div className="text-xs font-semibold text-foreground">{fmtDate(t.transaction_date)}</div>
-                  <div className="text-[11px] text-muted-foreground">{t.payment_method}</div>
+                  <div className="text-xs font-semibold text-foreground">{formatEventDate(t.transaction_date)}</div>
+                  <div className="text-[11px] text-muted-foreground">{t.payment_method || "—"}</div>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-semibold text-foreground tabular-nums">
