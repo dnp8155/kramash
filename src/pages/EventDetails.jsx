@@ -261,7 +261,8 @@ export default function EventDetails() {
   };
 
   const fyLabel = (() => {
-    const r = fyRange(currentFY());
+    const fy = event?.financial_year || fyForDate(event?.start_date) || currentFY();
+    const r = fyRange(fy);
     if (!r) return "—";
     const s = r.start.split("-"), e = r.end.split("-");
     const m = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -288,7 +289,7 @@ export default function EventDetails() {
               <span className="capitalize">{event.status}</span>
             </span>
             {event.event_type && <> · {event.event_type}</>}
-            {event.start_date && <> · {new Date(event.start_date + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</>}
+            {event.start_date && <> · {formatEventDate(event.start_date, event.end_date)}</>}
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
