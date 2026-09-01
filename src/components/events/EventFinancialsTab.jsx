@@ -5,8 +5,16 @@ import Button from "@/components/common/Button";
 import EmptyState from "@/components/common/EmptyState";
 import InvoicePrintView from "@/components/invoice/InvoicePrintView";
 import { base44 } from "@/api/base44Client";
+import { useToast } from "@/components/ui/use-toast";
+import { invalidateEntities } from "@/lib/queryInvalidation";
+import { eventFinancialSummary } from "@/lib/financeService";
 import { formatMoney } from "@/utils/format";
-import { FileText, Receipt, CheckCircle2, Clock, ArrowRight } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  FileText, Receipt, CheckCircle2, Clock, ArrowRight,
+  Copy, Link as LinkIcon, Eye, Download, Pencil, Trash2,
+  Users, Wallet, TrendingUp
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const STATUS_STYLES = {
@@ -26,54 +34,94 @@ const fmtDate = (iso) => {
   return d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
 };
 
-export default function EventFinancialsTab({ event, quotations, invoices, currency, workspace }) {
+export default function EventFinancialsTab({
+  event, quotations, invoices, transactions, assignments,
+  currency, workspace, onRefresh
+}) {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const [previewInvoice, setPreviewInvoice] = useState(null);
   const [previewItems, setPreviewItems] = useState([]);
-  const [loadingItems, setLoadingItems] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
 
-  const summary = useMemo(() => {
-    const acceptedQuotes = quotations.filter((q) => q.status === "accepted");
-    const totalQuoted = quotations.reduce((s, q) => s + (q.grand_total || 0), 0);
-    const totalAccepted = acceptedQuotes.reduce((s, q) => s + (q.grand_total || 0), 0);
-    const totalInvoiced = invoices.reduce((s, i) => s + (i.grand_total || 0), 0);
-    const totalInvoicePaid = invoices.reduce((s, i) => s + (i.amount_paid || 0), 0);
-    const totalInvoiceBalance = invoices.reduce((s, i) => s + (i.balance_due || 0), 0);
-    return {
-      totalQuoted,
-      totalAccepted,
-      totalInvoiced,
-      totalInvoicePaid,
-      totalInvoiceBalance,
-      acceptedCount: acceptedQuotes.length,
-      invoiceCount: invoices.length
-    };
-  }, [quotations, invoices]);
+  const fin = useMemo(
+    () => eventFinancialSummary(event, transactions, assignments),
+    [event, transactions, assignments]
+  );
+
+  const packageValue = fin.contractValue || 0;
+  const pct = (v) => packageValue > 0 ? Math.round((v / packageValue) * 100) : 0;
 
   const openInvoicePreview = async (inv) => {
     setPreviewInvoice(inv);
     setPreviewItems([]);
-    setLoadingItems(true);
     try {
       const items = await base44.entities.InvoiceItem.filter({ invoice_id: inv.id }, "sort_order", 500);
       setPreviewItems(items || []);
     } catch (e) {
       setPreviewItems([]);
+    }
+  };
+
+  const copyInvoiceNumber = async (inv) => {
+    try {
+      await navigator.clipboard.writeText(inv.invoice_number || "");
+      toast({ title: "Invoice number copied" });
+    } catch (e) {
+      toast({ title: "Could not copy", variant: "destructive" });
+    }
+  };
+
+  const copyShareLink = async (inv) => {
+    const url = `${window.location.origin}/invoices/${inv.id}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast({ title: "Invoice link copied" });
+    } catch (e) {
+      toast({ title: "Could not copy", variant: "destructive" });
+    }
+  };
+
+  const printInvoice = async (inv) => {
+    await openInvoicePreview(inv);
+    setTimeout(() => {
+      document.body.classList.add("printing-invoice");
+      window.print();
+      setTimeout(() => document.body.classList.remove("printing-invoice"), 600);
+    }, 400);
+  };
+
+  const deleteInvoice = async (inv) => {
+    if (!window.confirm(`Delete invoice ${inv.invoice_number}? This cannot be undone.`)) return;
+    setDeletingId(inv.id);
+    try {
+      await base44.entities.InvoiceItem.deleteMany({ invoice_id: inv.id });
+      await base44.entities.Invoice.delete(inv.id);
+      invalidateEntities(queryClient, ["Invoice", "InvoiceItem"]);
+      toast({ title: "Invoice deleted" });
+      onRefresh?.();
+    } catch (e) {
+      toast({ title: e?.message || "Failed to delete", variant: "destructive" });
     } finally {
-      setLoadingItems(false);
+      setDeletingId(null);
     }
   };
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <SummaryCard label="Total Quoted" value={formatMoney(summary.totalQuoted, currency)} sub={`${quotations.length} quotation${quotations.length !== 1 ? "s" : ""}`} icon={FileText} />
-        <SummaryCard label="Accepted Value" value={formatMoney(summary.totalAccepted, currency)} sub={`${summary.acceptedCount} accepted`} icon={CheckCircle2} tone="success" />
-        <SummaryCard label="Total Invoiced" value={formatMoney(summary.totalInvoiced, currency)} sub={`${summary.invoiceCount} invoice${summary.invoiceCount !== 1 ? "s" : ""}`} icon={Receipt} />
-        <SummaryCard label="Invoice Balance" value={formatMoney(summary.totalInvoiceBalance, currency)} sub={`${formatMoney(summary.totalInvoicePaid, currency)} paid`} icon={Clock} tone={summary.totalInvoiceBalance > 0 ? "warning" : "success"} />
+      {/* 6 Financial summary cards */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <FinCard label="Package" value={formatMoney(packageValue, currency)} sub={`${pct(packageValue)}% base`} icon={Wallet} />
+        <FinCard label="Received" value={formatMoney(fin.received, currency)} sub={`${pct(fin.received)}% collected`} icon={CheckCircle2} tone="default" />
+        <FinCard label="Balance Due" value={formatMoney(fin.pending, currency)} sub={`${pct(fin.pending)}% pending`} icon={Clock} tone={fin.pending > 0 ? "danger" : "success"} />
+        <FinCard label="Team Cost" value={formatMoney(fin.teamPaid, currency)} sub={`${pct(fin.teamPaid)}% of package`} icon={Users} tone="warning" />
+        <FinCard label="Other Expenses" value={formatMoney(fin.expenses, currency)} sub={`${pct(fin.expenses)}% of package`} icon={Receipt} />
+        <FinCard label="Net Profit" value={formatMoney(fin.profit, currency)} sub={`${pct(fin.profit)}% margin`} icon={TrendingUp} tone="success" />
       </div>
 
+      {/* Quotations */}
       <Card className="p-5">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
@@ -115,6 +163,7 @@ export default function EventFinancialsTab({ event, quotations, invoices, curren
         )}
       </Card>
 
+      {/* Invoices — table with inline actions */}
       <Card className="p-5">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
@@ -125,36 +174,59 @@ export default function EventFinancialsTab({ event, quotations, invoices, curren
             <Receipt className="w-3.5 h-3.5" /> New Invoice
           </Button>
         </div>
+
         {invoices.length === 0 ? (
           <EmptyState title="No invoices" description="Generate an invoice after a quotation is accepted." />
         ) : (
-          <div className="space-y-2">
-            {invoices.map((inv) => {
-              const st = STATUS_STYLES[inv.status] || STATUS_STYLES.draft;
-              const balance = inv.balance_due || 0;
-              return (
-                <button key={inv.id} onClick={() => openInvoicePreview(inv)} className="w-full flex items-center justify-between gap-4 p-3.5 rounded-lg border border-border hover:bg-muted/50 transition-colors text-left group">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2.5">
-                      <span className="font-mono text-sm font-medium text-foreground">{inv.invoice_number}</span>
-                      <span className={cn("px-2 py-0.5 rounded-full text-[11px] font-medium", st.bg, st.text)}>{st.label}</span>
+          <div className="border border-border rounded-lg overflow-hidden">
+            {/* Header row (desktop) */}
+            <div className="hidden md:grid grid-cols-[1.4fr_1fr_1fr_1.2fr_2fr] gap-3 px-4 py-2.5 bg-muted/60 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+              <div>Invoice</div>
+              <div>Date</div>
+              <div className="text-right">Amount</div>
+              <div>Status</div>
+              <div className="text-right">Actions</div>
+            </div>
+            <div className="divide-y divide-border">
+              {invoices.map((inv) => {
+                const st = STATUS_STYLES[inv.status] || STATUS_STYLES.draft;
+                const balance = inv.balance_due || 0;
+                return (
+                  <div key={inv.id} className="grid grid-cols-1 md:grid-cols-[1.4fr_1fr_1fr_1.2fr_2fr] gap-3 px-4 py-3 items-center hover:bg-muted/30 transition-colors">
+                    {/* Invoice number + mobile meta */}
+                    <div className="min-w-0">
+                      <button onClick={() => openInvoicePreview(inv)} className="font-mono text-sm font-medium text-foreground hover:text-primary transition-colors text-left">
+                        {inv.invoice_number}
+                      </button>
+                      <div className="md:hidden text-xs text-muted-foreground mt-1 flex flex-wrap gap-x-3 gap-y-1">
+                        <span>{fmtDate(inv.invoice_date)}</span>
+                        <span className="font-medium text-foreground">{formatMoney(inv.grand_total || 0, currency)}</span>
+                        <span className={cn("px-2 py-0.5 rounded-full text-[11px] font-medium", st.bg, st.text)}>{st.label}</span>
+                      </div>
                     </div>
-                    <div className="text-xs text-muted-foreground mt-1">
-                      {fmtDate(inv.invoice_date)}{inv.due_date ? ` · Due ${fmtDate(inv.due_date)}` : ""}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 shrink-0">
-                    <div className="text-right">
+                    <div className="hidden md:block text-sm text-muted-foreground">{fmtDate(inv.invoice_date)}</div>
+                    <div className="hidden md:block text-right">
                       <div className="text-sm font-bold tabular-nums text-foreground">{formatMoney(inv.grand_total || 0, currency)}</div>
                       <div className={cn("text-[11px]", balance > 0 ? "text-warning" : "text-success")}>
                         {balance > 0 ? `${formatMoney(balance, currency)} due` : "Fully paid"}
                       </div>
                     </div>
-                    <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                    <div className="hidden md:block">
+                      <span className={cn("px-2.5 py-1 rounded-full text-[11px] font-medium capitalize", st.bg, st.text)}>{st.label}</span>
+                    </div>
+                    {/* Actions */}
+                    <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                      <ActionButton title="View" icon={Eye} onClick={() => openInvoicePreview(inv)} />
+                      <ActionButton title="Copy number" icon={Copy} onClick={() => copyInvoiceNumber(inv)} />
+                      <ActionButton title="Copy link" icon={LinkIcon} onClick={() => copyShareLink(inv)} />
+                      <ActionButton title="Download / Print" icon={Download} onClick={() => printInvoice(inv)} />
+                      <ActionButton title="Edit" icon={Pencil} onClick={() => navigate(`/invoices/${inv.id}`)} />
+                      <ActionButton title="Delete" icon={Trash2} onClick={() => deleteInvoice(inv)} danger loading={deletingId === inv.id} />
+                    </div>
                   </div>
-                </button>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         )}
       </Card>
@@ -174,8 +246,13 @@ export default function EventFinancialsTab({ event, quotations, invoices, curren
   );
 }
 
-function SummaryCard({ label, value, sub, icon: Icon, tone = "default" }) {
-  const toneClasses = { success: "text-success", warning: "text-warning", default: "text-foreground" };
+function FinCard({ label, value, sub, icon: Icon, tone = "default" }) {
+  const toneClasses = {
+    default: "text-foreground",
+    success: "text-success",
+    warning: "text-warning",
+    danger: "text-destructive"
+  };
   return (
     <div className="bg-card border border-border rounded-xl p-4">
       <div className="flex items-center justify-between mb-2">
@@ -185,5 +262,25 @@ function SummaryCard({ label, value, sub, icon: Icon, tone = "default" }) {
       <div className={cn("text-lg font-bold tabular-nums", toneClasses[tone])}>{value}</div>
       <div className="text-[11px] text-muted-foreground mt-0.5">{sub}</div>
     </div>
+  );
+}
+
+function ActionButton({ title, icon: Icon, onClick, danger, loading }) {
+  return (
+    <button
+      title={title}
+      onClick={onClick}
+      disabled={loading}
+      className={cn(
+        "w-8 h-8 rounded-md flex items-center justify-center border border-border bg-card text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-50",
+        danger && "hover:text-destructive hover:border-destructive/40 hover:bg-destructive/5"
+      )}
+    >
+      {loading ? (
+        <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+      ) : (
+        <Icon className="w-3.5 h-3.5" />
+      )}
+    </button>
   );
 }
