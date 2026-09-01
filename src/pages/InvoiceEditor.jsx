@@ -12,10 +12,11 @@ import LoadingState from "@/components/common/LoadingState";
 import EmptyState from "@/components/common/EmptyState";
 import { formatMoney } from "@/utils/format";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
-import { AlertTriangle, ArrowLeft, Plus } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Plus, Eye } from "lucide-react";
 import InvoiceClientCard from "@/components/invoice/InvoiceClientCard";
 import InvoiceProductsSection from "@/components/invoice/InvoiceProductsSection";
 import InvoiceFinancials from "@/components/invoice/InvoiceFinancials";
+import InvoicePrintView from "@/components/invoice/InvoicePrintView";
 import {
   generateInvoiceNumber, loadInvoice,
   createInvoice, updateInvoice, deleteInvoice,
@@ -68,6 +69,7 @@ export default function InvoiceEditor() {
   const [events, setEvents] = useState([]);
   const [existingInvoice, setExistingInvoice] = useState(null);
   const [showClientForm, setShowClientForm] = useState(false);
+  const [showPrintView, setShowPrintView] = useState(false);
 
   const readOnly = status === "paid" || status === "cancelled";
 
@@ -279,6 +281,11 @@ export default function InvoiceEditor() {
             </span>
           )}
           <Button variant="outline" onClick={() => navigate("/invoices")}>Cancel</Button>
+          {!isNew && existingInvoice && (
+            <Button variant="outline" onClick={() => setShowPrintView(true)}>
+              <Eye className="w-4 h-4" /> View / Print
+            </Button>
+          )}
           <Button onClick={save} disabled={saving || readOnly}>
             {saving ? "Saving…" : "Save Invoice"}
           </Button>
@@ -435,6 +442,17 @@ export default function InvoiceEditor() {
           setClientId(savedClient.id);
         }}
       />
+
+      {!isNew && existingInvoice && (
+        <InvoicePrintView
+          open={showPrintView}
+          onClose={() => setShowPrintView(false)}
+          invoice={existingInvoice}
+          items={items}
+          workspace={workspace}
+          currency={currency}
+        />
+      )}
     </div>
   );
 }

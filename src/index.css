@@ -179,3 +179,31 @@
     box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--ring) / 0.4);
   }
 }
+
+/* ---- Invoice Print ---- */
+@media print {
+  body.printing-invoice * {
+    visibility: hidden;
+  }
+  body.printing-invoice .invoice-print-area,
+  body.printing-invoice .invoice-print-area * {
+    visibility: visible;
+  }
+  body.printing-invoice .invoice-print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100% !important;
+    max-width: none !important;
+    box-shadow: none !important;
+  }
+  body.printing-invoice .no-print {
+    display: none !important;
+  }
+  body.printing-invoice {
+    background: white !important;
+  }
+  @page {
+    margin: 12mm;
+  }
+}

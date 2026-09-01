@@ -13,11 +13,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { formatMoney } from "@/utils/format";
 import { loadInvoices, deleteInvoice } from "@/lib/invoiceService";
 import { base44 } from "@/api/base44Client";
-import { Plus, Search, Trash2, FileText, IndianRupee, CheckCircle2, Clock } from "lucide-react";
+import { Plus, Search, Trash2, FileText, IndianRupee, CheckCircle2, Clock, Printer } from "lucide-react";
 import PageHeader from "@/components/common/PageHeader";
 import StatCard from "@/components/common/StatCard";
 import { cn } from "@/lib/utils";
 import { invalidateEntities } from "@/lib/queryInvalidation";
+import { loadInvoice } from "@/lib/invoiceService";
+import InvoicePrintView from "@/components/invoice/InvoicePrintView";
 
 const fmtDate = (iso) => {
   if (!iso) return "—";
@@ -44,6 +46,8 @@ export default function Invoices() {
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
+  const [printInvoice, setPrintInvoice] = useState(null);
+  const [printItems, setPrintItems] = useState([]);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["invoices", workspaceId],
@@ -99,6 +103,17 @@ export default function Invoices() {
       invalidateEntities(queryClient, ["Invoice", "InvoiceItem"]);
     } catch (e) {
       toast({ title: "Delete failed", description: e?.message, variant: "destructive" });
+    }
+  };
+
+  const onPrint = async (inv) => {
+    try {
+      const result = await loadInvoice(workspaceId, inv.id);
+      if (!result) { toast({ title: "Could not load invoice", variant: "destructive" }); return; }
+      setPrintInvoice(result.invoice);
+      setPrintItems(result.items || []);
+    } catch (e) {
+      toast({ title: "Failed to load invoice", variant: "destructive" });
     }
   };
 
@@ -173,9 +188,14 @@ export default function Invoices() {
                   <div className="text-xs text-muted-foreground">{fmtDate(inv.invoice_date)}</div>
                   <div className="mt-3 flex items-center justify-between">
                     <span className="text-sm font-semibold text-foreground">{formatMoney(inv.grand_total, currency)}</span>
-                    <button onClick={(e) => { e.stopPropagation(); onDelete(inv); }} className="text-muted-foreground hover:text-destructive p-1">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center gap-1">
+                      <button onClick={(e) => { e.stopPropagation(); onPrint(inv); }} className="text-muted-foreground hover:text-foreground p-1" title="View / Print">
+                        <Printer className="w-4 h-4" />
+                      </button>
+                      <button onClick={(e) => { e.stopPropagation(); onDelete(inv); }} className="text-muted-foreground hover:text-destructive p-1" title="Delete">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
@@ -193,7 +213,7 @@ export default function Invoices() {
                     <th className="text-left px-4 py-3 font-semibold">Date</th>
                     <th className="text-right px-4 py-3 font-semibold">Total</th>
                     <th className="text-left px-4 py-3 font-semibold">Status</th>
-                    <th className="px-4 py-3 font-semibold w-12"></th>
+                    <th className="px-4 py-3 font-semibold w-20"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -215,9 +235,14 @@ export default function Invoices() {
                           </span>
                         </td>
                         <td className="px-4 py-3.5" onClick={(e) => e.stopPropagation()}>
-                          <button onClick={() => onDelete(inv)} className="text-muted-foreground hover:text-destructive p-1.5 rounded-md hover:bg-muted transition-colors" title="Delete">
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          <div className="flex items-center gap-1">
+                            <button onClick={() => onPrint(inv)} className="text-muted-foreground hover:text-foreground p-1.5 rounded-md hover:bg-muted transition-colors" title="View / Print">
+                              <Printer className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => onDelete(inv)} className="text-muted-foreground hover:text-destructive p-1.5 rounded-md hover:bg-muted transition-colors" title="Delete">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -227,6 +252,17 @@ export default function Invoices() {
             </div>
           </div>
         </>
+      )}
+
+      {printInvoice && (
+        <InvoicePrintView
+          open={!!printInvoice}
+          onClose={() => { setPrintInvoice(null); setPrintItems([]); }}
+          invoice={printInvoice}
+          items={printItems}
+          workspace={workspace}
+          currency={currency}
+        />
       )}
     </div>
   );
