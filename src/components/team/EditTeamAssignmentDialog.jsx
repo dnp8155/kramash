@@ -10,7 +10,8 @@ import { Label } from "@/components/ui/label";
 import { RATE_TYPES } from "@/constants/teamConfig";
 import { formatEventDate, parseISODate } from "@/lib/dates";
 import { formatMoney } from "@/utils/format";
-import { Info } from "lucide-react";
+import { Info, Crown } from "lucide-react";
+import { isSelfMember } from "@/lib/teamService";
 import { cn } from "@/lib/utils";
 
 const DEFAULT_MEMBER_TYPES = [
@@ -183,9 +184,11 @@ export default function EditTeamAssignmentDialog({
           {/* Member name — read-only */}
           <div className="space-y-1.5">
             <Label>Team Member</Label>
-            <div className="px-3 py-2 rounded-lg bg-muted/50 text-sm font-medium text-foreground border border-border">
+            <div className="px-3 py-2 rounded-lg bg-muted/50 text-sm font-medium text-foreground border border-border flex items-center gap-1.5">
+              {isSelfMember(member) && <Crown className="w-3.5 h-3.5 text-primary shrink-0" />}
               {member?.name || "Unknown member"}
               {member?.profession ? ` — ${member.profession}` : ""}
+              {isSelfMember(member) && <span className="text-xs text-primary font-semibold">(Self)</span>}
             </div>
           </div>
 

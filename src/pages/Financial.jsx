@@ -442,6 +442,7 @@ export default function Financial() {
         events={events}
         assignments={assignments}
         membersById={membersById}
+        preselectedEventId=""
       />
       <RecordExpenseDialog
         open={showExpense}

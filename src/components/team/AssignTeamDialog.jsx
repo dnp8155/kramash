@@ -81,6 +81,7 @@ export default function AssignTeamDialog({
   }, [open, event]);
 
   const selectedMember = members.find((m) => m.id === memberId);
+  const selectedMemberIsSelf = isSelfMember(selectedMember);
   const conflicts = memberId && event
     ? findConflicts(memberId, event.start_date, event.end_date, assignments, eventsById, event.id)
     : [];
@@ -132,6 +133,7 @@ export default function AssignTeamDialog({
   const onMemberChange = (id) => {
     setMemberId(id);
     setOverrideConflict(false);
+    setRecordPayment(false);
     const m = members.find((x) => x.id === id);
     if (m) {
       const rid = m.role_id || "";
@@ -222,7 +224,7 @@ export default function AssignTeamDialog({
       if (!currentIds.includes(memberId)) {
         await base44.entities.Event.update(event.id, { team_member_ids: [...currentIds, memberId] });
       }
-      // Record payment if enabled
+      // Record payment if enabled (routed through backend for SELF guard)
       if (recordPayment) {
         const fy = resolveFYForDate(paymentDate, fiscalYears);
         if (!fy) {
@@ -230,18 +232,17 @@ export default function AssignTeamDialog({
           setSaving(false);
           return;
         }
-        await base44.entities.FinancialTransaction.create({
+        await base44.functions.invoke("recordPayment", {
+          kind: "team",
           workspace_id: workspaceId,
-          financial_year_id: fy.id,
           event_id: event.id,
-          transaction_type: "TEAM_PAYMENT",
+          assignment_id: saved.id,
           team_member_id: memberId,
-          team_assignment_id: saved.id,
           amount: Number(paymentAmount),
           payment_method: paymentMethod,
           transaction_date: paymentDate,
           notes: `Payment for ${role?.name || member?.profession || "assignment"}${mType ? ` (${mType.title})` : ""}${notes.trim() ? ` · ${notes.trim()}` : ""}`,
-          status: "ACTIVE"
+          financial_year_id: fy.id
         });
       }
       onSaved?.(saved);
@@ -281,6 +282,12 @@ export default function AssignTeamDialog({
               <p className="text-xs text-destructive font-medium">
                 {selectedMember?.name} is already assigned to this event.
               </p>
+            )}
+            {selectedMemberIsSelf && (
+              <div className="flex items-center gap-1.5 text-xs font-medium text-primary">
+                <Crown className="w-3.5 h-3.5" />
+                Workspace Owner (Self) — owner share, no external payment.
+              </div>
             )}
           </div>
 
@@ -387,16 +394,24 @@ export default function AssignTeamDialog({
             <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Assignment notes (optional)" />
           </div>
 
-          {/* Record Payment toggle */}
+          {/* Record Payment toggle — disabled for Self (owner) */}
           <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Wallet className="w-4 h-4 text-muted-foreground" />
-                <Label className="cursor-pointer">Record Payment Now</Label>
+                <Label className={cn(!selectedMemberIsSelf && "cursor-pointer")}>Record Payment Now</Label>
               </div>
-              <Toggle checked={recordPayment} onChange={setRecordPayment} label="Record Payment" />
+              <Toggle
+                checked={recordPayment && !selectedMemberIsSelf}
+                onChange={selectedMemberIsSelf ? () => {} : setRecordPayment}
+                label="Record Payment"
+              />
             </div>
-            {recordPayment && (
+            {selectedMemberIsSelf ? (
+              <p className="text-xs text-muted-foreground">
+                The workspace owner cannot be paid as a team member — this assignment is treated as owner share.
+              </p>
+            ) : recordPayment && (
               <div className="space-y-3 pt-1 border-t border-border">
                 <p className="text-xs text-muted-foreground">
                   Creates a team payment transaction. Financial Year is auto-assigned from the payment date.

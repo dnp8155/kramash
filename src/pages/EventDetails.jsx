@@ -446,6 +446,7 @@ export default function EventDetails() {
           currency={currency}
           onAddService={() => setShowServiceAssign(true)}
           onRemoveService={(a) => removeServiceAssignment(a)}
+          membersById={membersById}
         />
       )}
 

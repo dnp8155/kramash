@@ -15,7 +15,8 @@ import { resolveFYForDate } from "@/lib/financialYearService";
 import { useFinancialYear } from "@/hooks/useFinancialYear";
 import { formatMoney } from "@/utils/format";
 import { todayISO } from "@/lib/dates";
-import { AlertTriangle } from "lucide-react";
+import { isSelfMember } from "@/lib/teamService";
+import { AlertTriangle, Crown } from "lucide-react";
 
 // Unified dialog for recording a Client Payment or a Team Payment.
 // mode = "client" | "team"
@@ -70,13 +71,15 @@ export default function RecordPaymentDialog({
     [events, eventId]
   );
 
-  // Team mode: assignments for the selected event.
+  // Team mode: assignments for the selected event (exclude Self/owner — no payment).
   const eventAssignments = useMemo(() => {
     if (mode !== "team" || !eventId) return [];
-    return assignments.filter(
-      (a) => a.event_id === eventId && a.assignment_status !== "removed"
-    );
-  }, [mode, eventId, assignments]);
+    return assignments.filter((a) => {
+      if (a.event_id !== eventId || a.assignment_status === "removed") return false;
+      const m = membersById[a.team_member_id];
+      return !isSelfMember(m);
+    });
+  }, [mode, eventId, assignments, membersById]);
 
   const selectedAssignment = useMemo(
     () => eventAssignments.find((a) => a.id === assignmentId),
@@ -105,37 +108,12 @@ export default function RecordPaymentDialog({
     setError("");
     try {
       const amt = Number(amount);
-      let payload, ok = true;
+      let ok = true;
       if (mode === "client") {
         ok = await verifyClientPaymentRefs(workspaceId, eventId, clientId);
-        payload = {
-          workspace_id: workspaceId,
-          event_id: eventId,
-          transaction_type: "CLIENT_RECEIPT",
-          client_id: clientId,
-          amount: amt,
-          payment_method: method,
-          transaction_date: date,
-          reference_number: reference.trim(),
-          notes: notes.trim(),
-          status: "ACTIVE"
-        };
       } else {
         const a = selectedAssignment;
         ok = await verifyTeamPaymentRefs(workspaceId, eventId, assignmentId, a.team_member_id);
-        payload = {
-          workspace_id: workspaceId,
-          event_id: eventId,
-          transaction_type: "TEAM_PAYMENT",
-          team_member_id: a.team_member_id,
-          team_assignment_id: assignmentId,
-          amount: amt,
-          payment_method: method,
-          transaction_date: date,
-          reference_number: reference.trim(),
-          notes: notes.trim(),
-          status: "ACTIVE"
-        };
       }
       if (!ok) {
         setError("This payment could not be linked to the selected event. Please verify your selection.");
@@ -149,8 +127,38 @@ export default function RecordPaymentDialog({
         setSaving(false);
         return;
       }
-      payload.financial_year_id = fy.id;
-      const saved = await base44.entities.FinancialTransaction.create(payload);
+      let saved;
+      if (mode === "client") {
+        saved = await base44.entities.FinancialTransaction.create({
+          workspace_id: workspaceId,
+          financial_year_id: fy.id,
+          event_id: eventId,
+          transaction_type: "CLIENT_RECEIPT",
+          client_id: clientId,
+          amount: amt,
+          payment_method: method,
+          transaction_date: date,
+          reference_number: reference.trim(),
+          notes: notes.trim(),
+          status: "ACTIVE"
+        });
+      } else {
+        // Team payments go through the backend for SELF guard protection
+        const a = selectedAssignment;
+        saved = await base44.functions.invoke("recordPayment", {
+          kind: "team",
+          workspace_id: workspaceId,
+          event_id: eventId,
+          assignment_id: assignmentId,
+          team_member_id: a.team_member_id,
+          amount: amt,
+          payment_method: method,
+          transaction_date: date,
+          reference_number: reference.trim(),
+          notes: notes.trim(),
+          financial_year_id: fy.id
+        });
+      }
       onSaved?.(saved);
       onClose?.();
     } catch (err) {
@@ -211,6 +219,11 @@ export default function RecordPaymentDialog({
                     </option>
                   );
                 })}
+                {eventId && assignments.some((a) => a.event_id === eventId && a.assignment_status !== "removed" && isSelfMember(membersById[a.team_member_id])) && (
+                  <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                    <Crown className="w-3 h-3 text-primary" /> Owner (Self) assignments are excluded — owner share is not paid externally.
+                  </p>
+                )}
               </Select>
               {eventId && eventAssignments.length === 0 && (
                 <p className="text-xs text-muted-foreground">No active team assignments for this event.</p>

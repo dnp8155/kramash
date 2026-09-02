@@ -1,14 +1,16 @@
-import { Plus, Briefcase, Trash2, Layers } from "lucide-react";
+import { Plus, Briefcase, Trash2, Layers, Crown } from "lucide-react";
 import Card from "@/components/common/Card";
 import Button from "@/components/common/Button";
 import EmptyState from "@/components/common/EmptyState";
 import { formatMoney } from "@/utils/format";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
+import { isSelfMember } from "@/lib/teamService";
 import { cn } from "@/lib/utils";
 
 export default function EventServicesTab({
   event, services, serviceAssignments, currency,
-  onAddService, onRemoveService
+  onAddService, onRemoveService,
+  membersById = {}
 }) {
   const term = useBusinessTerminology();
   const activeAssignments = (serviceAssignments || []).filter((a) => a.assignment_status !== "removed");
@@ -58,7 +60,10 @@ export default function EventServicesTab({
                         </span>
                       )}
                     </div>
-                    <div className="text-xs text-muted-foreground truncate">
+                    <div className="text-xs text-muted-foreground truncate flex items-center gap-1">
+                      {a.provider_id && isSelfMember(membersById[a.provider_id]) && (
+                        <Crown className="w-3 h-3 text-primary shrink-0" />
+                      )}
                       {a.provider_name_snapshot ? `Provider: ${a.provider_name_snapshot}` : "No provider"}
                       {a.rate_type ? ` · ${a.rate_type}` : ""}
                     </div>

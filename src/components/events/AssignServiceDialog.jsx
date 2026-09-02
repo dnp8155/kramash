@@ -12,7 +12,9 @@ import { PAYMENT_METHOD_LIST } from "@/constants/financeConfig";
 import { formatMoney } from "@/utils/format";
 import { resolveFYForDate } from "@/lib/financialYearService";
 import { useFinancialYear } from "@/hooks/useFinancialYear";
-import { Wallet, Plus } from "lucide-react";
+import { isSelfMember } from "@/lib/teamService";
+import { Wallet, Plus, Crown } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default function AssignServiceDialog({
   open, onClose, onSaved,
@@ -50,6 +52,14 @@ export default function AssignServiceDialog({
       setPaymentMethod("Cash");
     }
   }, [open, event]);
+
+  // Reset record payment when provider changes to Self
+  useEffect(() => {
+    if (selectedProviderIsSelf) setRecordPayment(false);
+  }, [selectedProviderIsSelf]);
+
+  const selectedProvider = members.find((m) => m.id === providerId);
+  const selectedProviderIsSelf = isSelfMember(selectedProvider);
 
   const onServiceChange = (id) => {
     setServiceId(id);
@@ -105,7 +115,7 @@ export default function AssignServiceDialog({
           service_ids: [...currentIds, serviceId]
         });
       }
-      // Record payment if enabled
+      // Record payment if enabled (routed through backend for SELF guard)
       if (recordPayment) {
         const fy = resolveFYForDate(paymentDate, fiscalYears);
         if (!fy) {
@@ -113,17 +123,16 @@ export default function AssignServiceDialog({
           setSaving(false);
           return;
         }
-        await base44.entities.FinancialTransaction.create({
+        await base44.functions.invoke("recordPayment", {
+          kind: "service",
           workspace_id: workspaceId,
-          financial_year_id: fy.id,
           event_id: event.id,
-          transaction_type: "BUSINESS_EXPENSE",
-          expense_category_name_snapshot: `Service: ${svc?.name || ""}`,
+          service_assignment_id: saved.id,
           amount: Number(paymentAmount),
           payment_method: paymentMethod,
           transaction_date: paymentDate,
           notes: `Service payment: ${svc?.name || ""}${provider ? ` (${provider.name})` : ""}${notes.trim() ? ` · ${notes.trim()}` : ""}`,
-          status: "ACTIVE"
+          financial_year_id: fy.id
         });
       }
       onSaved?.(saved);
@@ -156,6 +165,12 @@ export default function AssignServiceDialog({
               ))}
             </Select>
             <p className="text-xs text-muted-foreground">The person or company responsible for this service.</p>
+            {selectedProviderIsSelf && (
+              <div className="flex items-center gap-1.5 text-xs font-medium text-primary">
+                <Crown className="w-3.5 h-3.5" />
+                Workspace Owner (Self) — owner share, no external payment.
+              </div>
+            )}
           </div>
 
           {/* Service */}
@@ -238,16 +253,24 @@ export default function AssignServiceDialog({
             <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Assignment notes (optional)" />
           </div>
 
-          {/* Record Payment toggle */}
+          {/* Record Payment toggle — disabled when provider is Self (owner) */}
           <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Wallet className="w-4 h-4 text-muted-foreground" />
-                <Label className="cursor-pointer">Record Payment Now</Label>
+                <Label className={cn(!selectedProviderIsSelf && "cursor-pointer")}>Record Payment Now</Label>
               </div>
-              <Toggle checked={recordPayment} onChange={setRecordPayment} label="Record Payment" />
+              <Toggle
+                checked={recordPayment && !selectedProviderIsSelf}
+                onChange={selectedProviderIsSelf ? () => {} : setRecordPayment}
+                label="Record Payment"
+              />
             </div>
-            {recordPayment && (
+            {selectedProviderIsSelf ? (
+              <p className="text-xs text-muted-foreground">
+                The workspace owner cannot be paid as a service provider — this is treated as owner share.
+              </p>
+            ) : recordPayment && (
               <div className="space-y-3 pt-1 border-t border-border">
                 <p className="text-xs text-muted-foreground">
                   Creates an expense transaction. Financial Year is auto-assigned from the payment date.
