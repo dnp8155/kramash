@@ -6,11 +6,15 @@ import {
 import Button from "@/components/common/Button";
 import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
+import Toggle from "@/components/common/Toggle";
 import { Label } from "@/components/ui/label";
 import { RATE_TYPES } from "@/constants/teamConfig";
+import { PAYMENT_METHOD_LIST } from "@/constants/financeConfig";
 import { findConflicts } from "@/lib/teamService";
-import { formatEventDate, parseISODate, toISODate } from "@/lib/dates";
-import { AlertTriangle, Ban } from "lucide-react";
+import { formatEventDate, parseISODate, toISODate, todayISO } from "@/lib/dates";
+import { resolveFYForDate } from "@/lib/financialYearService";
+import { useFinancialYear } from "@/hooks/useFinancialYear";
+import { AlertTriangle, Ban, Wallet } from "lucide-react";
 
 // Count days between two ISO date strings (inclusive)
 function daysBetween(startStr, endStr) {
@@ -36,6 +40,12 @@ export default function AssignTeamDialog({
   const [overrideConflict, setOverrideConflict] = useState(false);
   const [bookingStart, setBookingStart] = useState("");
   const [bookingEnd, setBookingEnd] = useState("");
+  // Record Payment toggle + fields
+  const [recordPayment, setRecordPayment] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState("");
+  const [paymentDate, setPaymentDate] = useState(todayISO());
+  const [paymentMethod, setPaymentMethod] = useState("Cash");
+  const { fiscalYears } = useFinancialYear();
 
   useEffect(() => {
     if (open) {
@@ -49,6 +59,11 @@ export default function AssignTeamDialog({
       // Default booking dates to event dates
       setBookingStart(event?.start_date || "");
       setBookingEnd(event?.end_date || event?.start_date || "");
+      // Reset payment fields
+      setRecordPayment(false);
+      setPaymentAmount("");
+      setPaymentDate(todayISO());
+      setPaymentMethod("Cash");
     }
   }, [open, event]);
 
@@ -129,6 +144,14 @@ export default function AssignTeamDialog({
     if (!rateType) return "Please select a rate type.";
     if (conflicts.length > 0 && !overrideConflict) return "Please confirm the booking conflict to proceed.";
     if (blockConflicts.length > 0 && !overrideConflict) return "This member has blocked dates — please confirm to proceed.";
+    if (recordPayment) {
+      const amt = Number(paymentAmount);
+      if (!paymentAmount || isNaN(amt) || amt <= 0) return "Payment amount must be greater than zero.";
+      if (!paymentDate) return "Please select a payment date.";
+      if (!paymentMethod) return "Please select a payment method.";
+      const fy = resolveFYForDate(paymentDate, fiscalYears);
+      if (!fy) return "No Financial Year is available for this payment date. Please create the applicable Financial Year first.";
+    }
     return "";
   };
 
@@ -160,6 +183,29 @@ export default function AssignTeamDialog({
       const currentIds = Array.isArray(event?.team_member_ids) ? event.team_member_ids : [];
       if (!currentIds.includes(memberId)) {
         await base44.entities.Event.update(event.id, { team_member_ids: [...currentIds, memberId] });
+      }
+      // If Record Payment is ON, create a TEAM_PAYMENT transaction linked to
+      // the FY that contains the payment date (not the booking date).
+      if (recordPayment) {
+        const fy = resolveFYForDate(paymentDate, fiscalYears);
+        if (!fy) {
+          setError("No Financial Year is available for this payment date. Please create the applicable Financial Year first.");
+          setSaving(false);
+          return;
+        }
+        await base44.entities.FinancialTransaction.create({
+          workspace_id: workspaceId,
+          financial_year_id: fy.id,
+          event_id: event.id,
+          transaction_type: "TEAM_PAYMENT",
+          team_member_id: memberId,
+          team_assignment_id: saved.id,
+          amount: Number(paymentAmount),
+          payment_method: paymentMethod,
+          transaction_date: paymentDate,
+          notes: `Payment for ${role?.name || member?.profession || "assignment"} · ${notes.trim()}`.trim(),
+          status: "ACTIVE"
+        });
       }
       onSaved?.(saved);
       onClose?.();
@@ -248,6 +294,59 @@ export default function AssignTeamDialog({
           <div className="space-y-1.5">
             <Label>Notes</Label>
             <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Assignment notes (optional)" />
+          </div>
+
+          {/* Record Payment toggle */}
+          <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Wallet className="w-4 h-4 text-muted-foreground" />
+                <Label className="cursor-pointer">Record Payment Now</Label>
+              </div>
+              <Toggle checked={recordPayment} onChange={setRecordPayment} label="Record Payment" />
+            </div>
+            {recordPayment && (
+              <div className="space-y-3 pt-1 border-t border-border">
+                <p className="text-xs text-muted-foreground">
+                  Creates a team payment transaction. Financial Year is auto-assigned from the payment date.
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label>Payment Amount (₹) <span className="text-destructive">*</span></Label>
+                    <Input
+                      type="number"
+                      min="0.01"
+                      step="0.01"
+                      value={paymentAmount}
+                      onChange={(e) => setPaymentAmount(e.target.value)}
+                      placeholder="0"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Payment Date <span className="text-destructive">*</span></Label>
+                    <Input type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Payment Method <span className="text-destructive">*</span></Label>
+                  <Select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} className="w-full">
+                    {PAYMENT_METHOD_LIST.map((m) => <option key={m} value={m}>{m}</option>)}
+                  </Select>
+                </div>
+                {paymentDate && (() => {
+                  const fy = resolveFYForDate(paymentDate, fiscalYears);
+                  return fy ? (
+                    <p className="text-xs text-muted-foreground">
+                      Will be recorded under <span className="font-medium text-foreground">{fy.fy_id}</span> ({fy.label})
+                    </p>
+                  ) : (
+                    <p className="text-xs text-destructive">
+                      No Financial Year covers this date. Create the applicable FY first.
+                    </p>
+                  );
+                })()}
+              </div>
+            )}
           </div>
 
           {conflicts.length > 0 && (
