@@ -45,7 +45,6 @@ export default function EventDetails() {
   const [showClientPayment, setShowClientPayment] = useState(false);
   const [showExpense, setShowExpense] = useState(false);
   const [teamPayAssignment, setTeamPayAssignment] = useState(null);
-  const [showServicePicker, setShowServicePicker] = useState(false);
   const [showServiceAssign, setShowServiceAssign] = useState(false);
   const [tab, setTab] = useState("Team");
   const queryClient = useQueryClient();
