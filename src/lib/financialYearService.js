@@ -56,7 +56,33 @@ export async function ensureDefaultFY(workspaceId) {
   const refreshed = await base44.entities.FinancialYear.filter(
     { workspace_id: workspaceId }, "-start_date", 100
   );
-  return refreshed || [];
+  // Deduplicate: if race conditions created multiple records with the same
+  // fy_id, keep the active one (or first) and delete the rest.
+  return dedupeFYs(refreshed || []);
+}
+
+// Remove duplicate FY records (same fy_id), keeping the active one.
+async function dedupeFYs(fys) {
+  const byFyId = {};
+  for (const fy of fys) {
+    if (!byFyId[fy.fy_id]) byFyId[fy.fy_id] = [];
+    byFyId[fy.fy_id].push(fy);
+  }
+  for (const [fyId, records] of Object.entries(byFyId)) {
+    if (records.length > 1) {
+      const keep = records.find(r => r.is_active) || records[0];
+      for (const r of records) {
+        if (r.id !== keep.id) {
+          try { await base44.entities.FinancialYear.delete(r.id); } catch (e) {}
+        }
+      }
+    }
+  }
+  return fys.filter(f => {
+    const records = byFyId[f.fy_id];
+    const keep = records.find(r => r.is_active) || records[0];
+    return f.id === keep.id;
+  });
 }
 
 // ---- FY resolution ----
