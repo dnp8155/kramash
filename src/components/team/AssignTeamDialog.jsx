@@ -116,12 +116,17 @@ export default function AssignTeamDialog({
   // Number of selected working dates
   const workingDayCount = workingDates.length || 1;
 
-  // Auto-recalculate rate when working dates change and rate type is Per Day
-  const recalcRate = (dates, currentRateType, defaultRate, force = false) => {
-    if (currentRateType === "Per Day" && defaultRate != null) {
-      const days = dates.length || 1;
-      setAgreedRate(String(Number(defaultRate) * days));
-    }
+  // Resolve the Role record for the currently selected member.
+  // The Role's configured rate (from Preferences) is the source of truth —
+  // the Team Member master record does NOT carry its own rate.
+  const selectedRole = roles.find((r) => r.id === roleId);
+  const roleRate = selectedRole?.default_rate;
+  const roleRateConfigured = selectedRole != null && Number(selectedRole.default_rate) > 0;
+
+  const calcSuggestedRate = (rt, rate, days) => {
+    if (rate == null) return "";
+    if (rt === "Per Day") return String(Number(rate) * (days || 1));
+    return String(Number(rate));
   };
 
   const onMemberChange = (id) => {
@@ -129,17 +134,14 @@ export default function AssignTeamDialog({
     setOverrideConflict(false);
     const m = members.find((x) => x.id === id);
     if (m) {
-      const rt = m.rate_type || "Per Event";
-      const dr = m.default_rate != null ? m.default_rate : 0;
+      const rid = m.role_id || "";
+      setRoleId(rid);
+      setMemberTypeId(""); // Member Type is event-specific — start blank
+      const role = roles.find((r) => r.id === rid);
+      const rt = role?.rate_type || "Per Event";
       setRateType(rt);
-      setRoleId(m.role_id || "");
-      setMemberTypeId(m.member_type_id || "");
-      if (rt === "Per Day") {
-        const days = workingDates.length || 1;
-        setAgreedRate(String(Number(dr) * days));
-      } else {
-        setAgreedRate(String(dr));
-      }
+      const days = workingDates.length || 1;
+      setAgreedRate(calcSuggestedRate(rt, role?.default_rate, days));
     }
   };
 
@@ -147,11 +149,10 @@ export default function AssignTeamDialog({
     setWorkingDates((prev) => {
       const has = prev.includes(date);
       const next = has ? prev.filter((d) => d !== date) : [...prev, date].sort();
-      // Recalculate if Per Day
-      const m = members.find((x) => x.id === memberId);
-      if (m && m.rate_type === "Per Day") {
+      // Recalculate if Per Day, using the Role's configured rate
+      if (rateType === "Per Day" && selectedRole) {
         const days = next.length || 1;
-        setAgreedRate(String(Number(m.default_rate || 0) * days));
+        setAgreedRate(calcSuggestedRate("Per Day", selectedRole.default_rate, days));
       }
       return next;
     });
@@ -160,9 +161,11 @@ export default function AssignTeamDialog({
   const onRoleChange = (id) => {
     setRoleId(id);
     const r = roles.find((x) => x.id === id);
-    if (r && agreedRate === "") {
-      setAgreedRate(String(r.default_rate));
-      setRateType(r.rate_type || rateType);
+    if (r) {
+      const rt = r.rate_type || "Per Event";
+      setRateType(rt);
+      const days = workingDates.length || 1;
+      setAgreedRate(calcSuggestedRate(rt, r.default_rate, days));
     }
   };
 
@@ -335,9 +338,14 @@ export default function AssignTeamDialog({
             {workingDates.length > 0 && (
               <p className="text-xs text-muted-foreground">
                 {workingDates.length} day(s) selected
-                {rateType === "Per Day" && selectedMember?.default_rate
-                  ? ` · Calculated: ${formatMoney(Number(selectedMember.default_rate) * workingDates.length, "INR")}`
+                {rateType === "Per Day" && roleRateConfigured
+                  ? ` · Calculated: ${formatMoney(Number(roleRate) * workingDates.length, "INR")}`
                   : ""}
+              </p>
+            )}
+            {selectedRole && !roleRateConfigured && (
+              <p className="text-xs text-warning">
+                Rate not configured for the "{selectedRole.name}" role. Please configure the role rate in Preferences.
               </p>
             )}
           </div>
@@ -353,22 +361,20 @@ export default function AssignTeamDialog({
                 onChange={(e) => setAgreedRate(e.target.value)}
                 placeholder="0"
               />
-              {rateType === "Per Day" && selectedMember?.default_rate && (
+              {rateType === "Per Day" && roleRateConfigured && (
                 <p className="text-[11px] text-muted-foreground">
-                  {formatMoney(selectedMember.default_rate, "INR")}/day × {workingDayCount} = {formatMoney(Number(selectedMember.default_rate) * workingDayCount, "INR")}
+                  {formatMoney(roleRate, "INR")}/day × {workingDayCount} = {formatMoney(Number(roleRate) * workingDayCount, "INR")}
                 </p>
               )}
             </div>
             <div className="space-y-1.5">
               <Label>Rate Type</Label>
               <Select value={rateType} onChange={(e) => {
-                setRateType(e.target.value);
-                const m = members.find((x) => x.id === memberId);
-                if (e.target.value === "Per Day" && m?.default_rate) {
+                const newType = e.target.value;
+                setRateType(newType);
+                if (selectedRole) {
                   const days = workingDates.length || 1;
-                  setAgreedRate(String(Number(m.default_rate) * days));
-                } else if (m && e.target.value !== "Per Day") {
-                  setAgreedRate(String(m.default_rate || 0));
+                  setAgreedRate(calcSuggestedRate(newType, selectedRole.default_rate, days));
                 }
               }} className="w-full">
                 {RATE_TYPES.map((r) => <option key={r} value={r}>{r}</option>)}

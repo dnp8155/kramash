@@ -8,15 +8,16 @@ import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { RATE_TYPES, TEAM_MEMBER_STATUS } from "@/constants/teamConfig";
+import { TEAM_MEMBER_STATUS } from "@/constants/teamConfig";
 import { loadActiveRoles } from "@/lib/teamService";
-import { teamMemberTypes } from "@/constants/preferencesConfig";
 
+// Master Team Member form — identity + role + contact + status + notes only.
+// Rate and Member Type are NOT collected here:
+//  - Rate is derived from the selected Role's configuration in Preferences.
+//  - Member Type is event-specific (selected at Event assignment time).
 const empty = {
   name: "", phone: "", email: "",
   role_id: "", profession: "",
-  member_type_id: "",
-  default_rate: "", rate_type: "Per Event",
   status: "active", notes: ""
 };
 
@@ -30,7 +31,7 @@ export default function TeamMemberForm({ open, onClose, onSaved, member = null, 
   useEffect(() => {
     if (open) {
       setError("");
-      setForm(member ? { ...empty, ...member, default_rate: member.default_rate ?? "" } : empty);
+      setForm(member ? { ...empty, ...member } : empty);
       loadRoles();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -51,16 +52,12 @@ export default function TeamMemberForm({ open, onClose, onSaved, member = null, 
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
+  // Selecting a Role caches the role_id and profession (name snapshot).
+  // The Role's configured rate stays in Preferences — it is NOT copied here.
   const onRoleChange = (roleId) => {
     const role = roles.find((r) => r.id === roleId);
     if (role) {
-      setForm((f) => ({
-        ...f,
-        role_id: role.id,
-        profession: role.name,
-        default_rate: f.default_rate === "" ? role.default_rate : f.default_rate,
-        rate_type: f.rate_type || role.rate_type
-      }));
+      setForm((f) => ({ ...f, role_id: role.id, profession: role.name }));
     } else {
       setForm((f) => ({ ...f, role_id: "", profession: "" }));
     }
@@ -68,8 +65,8 @@ export default function TeamMemberForm({ open, onClose, onSaved, member = null, 
 
   const validate = () => {
     if (!form.name.trim()) return "Name is required.";
+    if (!form.role_id) return "Please select a Role / Profession.";
     if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) return "Enter a valid email address.";
-    if (!form.rate_type) return "Please select a rate type.";
     return "";
   };
 
@@ -87,9 +84,6 @@ export default function TeamMemberForm({ open, onClose, onSaved, member = null, 
         email: form.email.trim(),
         role_id: form.role_id || "",
         profession: form.profession.trim(),
-        member_type_id: form.member_type_id || "",
-        default_rate: Number(form.default_rate) || 0,
-        rate_type: form.rate_type,
         status: form.status,
         notes: form.notes.trim()
       };
@@ -122,70 +116,37 @@ export default function TeamMemberForm({ open, onClose, onSaved, member = null, 
         <DialogHeader>
           <DialogTitle>{member ? "Edit Team Member" : "Add Team Member"}</DialogTitle>
           <DialogDescription>
-            {member ? "Update team member details." : "Add a new team member to your workspace."}
+            {member ? "Update team member details." : "Add a person to your workspace team roster."}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-3">
           <div className="space-y-1.5">
             <Label>Name <span className="text-destructive">*</span></Label>
-            <Input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="e.g. Rahul Shah" autoFocus />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label>Phone</Label>
-              <Input value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="Mobile number" />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Email</Label>
-              <Input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="email@example.com" />
-            </div>
+            <Input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="Enter team member name" autoFocus />
           </div>
 
           <div className="space-y-1.5">
-            <Label>Role / Profession</Label>
+            <Label>Mobile Number (optional)</Label>
+            <Input value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="Enter mobile number" />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Email (optional)</Label>
+            <Input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="Enter email" />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Role / Profession <span className="text-destructive">*</span></Label>
             <Select value={form.role_id} onChange={(e) => onRoleChange(e.target.value)} className="w-full">
-              <option value="">{loadingRoles ? "Loading roles…" : "Select a role (optional)"}</option>
+              <option value="">{loadingRoles ? "Loading roles…" : "Select a role"}</option>
               {roles.map((r) => (
                 <option key={r.id} value={r.id}>{r.name}</option>
               ))}
             </Select>
-            <Input
-              value={form.profession}
-              onChange={(e) => set("profession", e.target.value)}
-              placeholder="Profession (free text)"
-              className="mt-1.5"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label>Default Rate (₹)</Label>
-              <Input
-                type="number"
-                min="0"
-                value={form.default_rate}
-                onChange={(e) => set("default_rate", e.target.value)}
-                placeholder="0"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Rate Type</Label>
-              <Select value={form.rate_type} onChange={(e) => set("rate_type", e.target.value)} className="w-full">
-                {RATE_TYPES.map((r) => <option key={r} value={r}>{r}</option>)}
-              </Select>
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label>Member Type</Label>
-            <Select value={form.member_type_id} onChange={(e) => set("member_type_id", e.target.value)} className="w-full">
-              <option value="">None</option>
-              {teamMemberTypes.map((t) => (
-                <option key={t.id} value={t.id}>{t.title}</option>
-              ))}
-            </Select>
+            {roles.length === 0 && !loadingRoles && (
+              <p className="text-xs text-muted-foreground">No roles configured. Add roles in Preferences.</p>
+            )}
           </div>
 
           <div className="space-y-1.5">
@@ -197,8 +158,8 @@ export default function TeamMemberForm({ open, onClose, onSaved, member = null, 
           </div>
 
           <div className="space-y-1.5">
-            <Label>Notes</Label>
-            <Textarea value={form.notes} onChange={(e) => set("notes", e.target.value)} placeholder="Internal notes" rows={2} />
+            <Label>Notes (optional)</Label>
+            <Textarea value={form.notes} onChange={(e) => set("notes", e.target.value)} placeholder="Add notes" rows={2} />
           </div>
 
           {error && <p className="text-sm text-destructive">{error}</p>}
@@ -206,7 +167,7 @@ export default function TeamMemberForm({ open, onClose, onSaved, member = null, 
           <DialogFooter className="pt-2">
             <Button type="button" variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
             <Button type="submit" disabled={saving}>
-              {saving ? "Saving…" : member ? "Save Changes" : "Add Member"}
+              {saving ? "Saving…" : member ? "Save Changes" : "Add to Roster"}
             </Button>
           </DialogFooter>
         </form>

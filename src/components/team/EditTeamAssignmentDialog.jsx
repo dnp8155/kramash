@@ -66,15 +66,27 @@ export default function EditTeamAssignmentDialog({
     }
   }, [open, assignment]);
 
+  // Resolve the Role record — the Role's configured rate (Preferences) is the
+  // source of truth for the suggested rate, not the member's cached default_rate.
+  const selectedRole = roles.find((r) => r.id === roleId);
+  const roleRate = selectedRole?.default_rate;
+  const roleRateConfigured = selectedRole != null && Number(selectedRole.default_rate) > 0;
+
+  const calcSuggested = (rt, rate, days) => {
+    if (rate == null) return "";
+    if (rt === "Per Day") return String(Number(rate) * (days || 1));
+    return String(Number(rate));
+  };
+
   // Toggle a working date — recalculates suggested rate for Per Day if user hasn't manually overridden
   const toggleWorkingDate = (date) => {
     setWorkingDates((prev) => {
       const has = prev.includes(date);
       const next = has ? prev.filter((d) => d !== date) : [...prev, date].sort();
       // Auto-recalculate only for Per Day rate type AND only if user hasn't manually edited the rate
-      if (rateType === "Per Day" && !rateManuallyEdited && member?.default_rate != null) {
+      if (rateType === "Per Day" && !rateManuallyEdited && roleRate != null) {
         const days = next.length || 1;
-        setAgreedRate(String(Number(member.default_rate) * days));
+        setAgreedRate(calcSuggested("Per Day", roleRate, days));
       }
       return next;
     });
@@ -82,12 +94,21 @@ export default function EditTeamAssignmentDialog({
 
   const onRateTypeChange = (newType) => {
     setRateType(newType);
-    // Recalculate suggested rate when switching to Per Day (only if not manually edited)
-    if (newType === "Per Day" && !rateManuallyEdited && member?.default_rate != null) {
+    // Recalculate suggested rate when switching rate type (only if not manually edited)
+    if (!rateManuallyEdited && roleRate != null) {
       const days = workingDates.length || 1;
-      setAgreedRate(String(Number(member.default_rate) * days));
-    } else if (newType !== "Per Day" && !rateManuallyEdited && member?.default_rate != null) {
-      setAgreedRate(String(member.default_rate));
+      setAgreedRate(calcSuggested(newType, roleRate, days));
+    }
+  };
+
+  const onRoleChange = (id) => {
+    setRoleId(id);
+    const r = roles.find((x) => x.id === id);
+    if (r && !rateManuallyEdited) {
+      const rt = r.rate_type || rateType;
+      setRateType(rt);
+      const days = workingDates.length || 1;
+      setAgreedRate(calcSuggested(rt, r.default_rate, days));
     }
   };
 
@@ -171,7 +192,7 @@ export default function EditTeamAssignmentDialog({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>Role</Label>
-              <Select value={roleId} onChange={(e) => setRoleId(e.target.value)} className="w-full">
+              <Select value={roleId} onChange={(e) => onRoleChange(e.target.value)} className="w-full">
                 <option value="">Default / no role</option>
                 {roles.map((r) => (
                   <option key={r.id} value={r.id}>{r.name}</option>
@@ -222,9 +243,14 @@ export default function EditTeamAssignmentDialog({
             {workingDates.length > 0 && (
               <p className="text-xs text-muted-foreground">
                 {workingDates.length} day(s) selected
-                {rateType === "Per Day" && member?.default_rate
-                  ? ` · Suggested: ${formatMoney(Number(member.default_rate) * workingDates.length, "INR")}`
+                {rateType === "Per Day" && roleRateConfigured
+                  ? ` · Suggested: ${formatMoney(Number(roleRate) * workingDates.length, "INR")}`
                   : ""}
+              </p>
+            )}
+            {selectedRole && !roleRateConfigured && (
+              <p className="text-xs text-warning">
+                Rate not configured for the "{selectedRole.name}" role. Please configure the role rate in Preferences.
               </p>
             )}
           </div>
@@ -240,9 +266,9 @@ export default function EditTeamAssignmentDialog({
                 onChange={(e) => onRateChange(e.target.value)}
                 placeholder="0"
               />
-              {rateType === "Per Day" && member?.default_rate && (
+              {rateType === "Per Day" && roleRateConfigured && (
                 <p className="text-[11px] text-muted-foreground">
-                  {formatMoney(member.default_rate, "INR")}/day × {workingDates.length || 1} = {formatMoney(Number(member.default_rate) * (workingDates.length || 1), "INR")}
+                  {formatMoney(roleRate, "INR")}/day × {workingDates.length || 1} = {formatMoney(Number(roleRate) * (workingDates.length || 1), "INR")}
                   {rateManuallyEdited && " · manually overridden"}
                 </p>
               )}
