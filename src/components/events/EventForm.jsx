@@ -17,9 +17,7 @@ import { Plus } from "lucide-react";
 import { fyForDate } from "@/lib/dates";
 import { useFinancialYear } from "@/hooks/useFinancialYear";
 import { fyDisplayLabel, fyRecordValue } from "@/lib/financialYearService";
-
-const PHOTO_EVENT_TYPES = ["Wedding", "Pre-Wedding", "Reception", "Engagement", "Haldi", "Mehndi", "Birthday", "Corporate", "Portfolio", "Other"];
-const GENERIC_WORK_TYPES = ["Project", "Assignment", "Consultation", "Site Visit", "Contract", "Other"];
+import { getEventTypes } from "@/lib/eventTypeService";
 
 const empty = {
   client_id: "", title: "", event_type: "",
@@ -30,10 +28,10 @@ const empty = {
   status: "upcoming", contract_value: 0, description: "", notes: ""
 };
 
-export default function EventForm({ open, onClose, onSaved, event = null, workspaceId, term, currency = "INR" }) {
+export default function EventForm({ open, onClose, onSaved, event = null, workspaceId, workspace, term, currency = "INR" }) {
   const t = term || {};
   const { fiscalYears } = useFinancialYear();
-  const workTypes = t.category === "ARCHITECTURE" || t.category === "OTHER" ? GENERIC_WORK_TYPES : PHOTO_EVENT_TYPES;
+  const workTypes = getEventTypes(workspace, t.category);
   const [form, setForm] = useState(empty);
   const [clients, setClients] = useState([]);
   const [loadingClients, setLoadingClients] = useState(false);

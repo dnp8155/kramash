@@ -20,15 +20,13 @@ import ClientForm from "@/components/clients/ClientForm";
 import QuickClientForm from "@/components/clients/QuickClientForm";
 import { EVENT_STATUS, EVENT_STATUS_ORDER } from "@/constants/statusConfig";
 import { CURRENCY_SYMBOLS } from "@/constants/financeConfig";
+import { getEventTypes } from "@/lib/eventTypeService";
 import { cn } from "@/lib/utils";
 import {
   ArrowLeft, Plus, Users, Briefcase, Save, Loader2, AlertCircle,
   FolderPlus, FolderOpen, HelpCircle, MapPin, CalendarDays, FileText,
   Wallet, Calendar, Clock, CheckCircle2, XCircle, User
 } from "lucide-react";
-
-const PHOTO_EVENT_TYPES = ["Wedding", "Pre-Wedding", "Reception", "Engagement", "Haldi", "Mehndi", "Birthday", "Corporate", "Portfolio", "Other"];
-const GENERIC_WORK_TYPES = ["Project", "Assignment", "Consultation", "Site Visit", "Contract", "Other"];
 
 const STATUS_ICONS = {
   upcoming: Calendar,
@@ -66,7 +64,7 @@ export default function EventEditor() {
   const tTerm = term || {};
   const isEdit = !!id;
 
-  const workTypes = tTerm.category === "ARCHITECTURE" || tTerm.category === "OTHER" ? GENERIC_WORK_TYPES : PHOTO_EVENT_TYPES;
+  const workTypes = getEventTypes(workspace, tTerm.category);
 
   const [form, setForm] = useState(empty);
   const [clients, setClients] = useState([]);

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Share2, Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Share2, Trash2, ChevronDown, ChevronUp, Pencil } from "lucide-react";
 import { formatMoney } from "@/utils/format";
 import { formatEventDate } from "@/lib/dates";
 import { base44 } from "@/api/base44Client";
@@ -16,6 +16,7 @@ export default function EventAssignmentCard({
   onRemove,
   onShare,
   onRefresh,
+  onEdit,
 }) {
   const [showHistory, setShowHistory] = useState(false);
   const [showFinancials, setShowFinancials] = useState(false);
@@ -121,7 +122,13 @@ export default function EventAssignmentCard({
       </button>
 
       {/* Action buttons */}
-      <div className="flex items-center gap-2 mb-1">
+      <div className="flex items-center gap-2 mb-1 flex-wrap">
+        <button
+          onClick={() => onEdit?.(assignment)}
+          className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+        >
+          <Pencil className="w-3 h-3" /> Edit
+        </button>
         <button
           onClick={() => onAddPayment?.(assignment)}
           className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-md bg-success/10 text-success hover:bg-success/20 transition-colors"

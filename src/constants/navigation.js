@@ -21,7 +21,6 @@ import {
   CreditCard,
   KeyRound,
   LifeBuoy,
-  BookOpen,
   Headphones
 } from "lucide-react";
 
@@ -33,8 +32,7 @@ export const mainNav = [
   { label: "Financial", path: "/financial", icon: Wallet },
   { label: "Quotation & Agreement", path: "/quotation", icon: FileText },
   { label: "Invoices", path: "/invoices", icon: Receipt },
-  { label: "Help Desk", path: "/help-desk", icon: BookOpen },
-  { label: "Support Desk", path: "/help", icon: Headphones }
+  { label: "Help & Support", path: "/help", icon: Headphones }
 ];
 
 export const moreNav = [

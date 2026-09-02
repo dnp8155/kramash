@@ -11,6 +11,7 @@ import Select from "@/components/common/Select";
 import EmptyState from "@/components/common/EmptyState";
 import LoadingState from "@/components/common/LoadingState";
 import PageHeader from "@/components/common/PageHeader";
+import FeatureGuide from "@/components/help/FeatureGuide";
 import {
   HelpCircle,
   LifeBuoy,
@@ -26,7 +27,8 @@ import {
   Bug,
   Lightbulb,
   CreditCard,
-  UserCircle
+  UserCircle,
+  BookOpen
 } from "lucide-react";
 
 const categoryConfig = {
@@ -175,8 +177,8 @@ export default function Help() {
   return (
     <div className="p-4 sm:p-6 space-y-6 max-w-[1400px] mx-auto">
       <PageHeader
-        title={t("Support Desk")}
-        subtitle={t("Get answers, report issues, or reach out to our team")}
+        title={t("Help & Support")}
+        subtitle={t("Browse guides, get answers, or reach out to our team")}
         icon={LifeBuoy}
       />
 
@@ -221,8 +223,9 @@ export default function Help() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-border">
+      <div className="flex gap-1 border-b border-border overflow-x-auto">
         {[
+          { id: "help-center", label: "Help Center", icon: BookOpen },
           { id: "contact", label: "Contact Us", icon: Send },
           { id: "tickets", label: "My Tickets", icon: MessageSquare },
           { id: "faq", label: "FAQs", icon: HelpCircle }

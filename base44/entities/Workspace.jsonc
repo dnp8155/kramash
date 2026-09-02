@@ -124,6 +124,10 @@
       "type": "string",
       "title": "Team Member Types (JSON)"
     },
+    "event_types": {
+      "type": "string",
+      "title": "Event / Work Types (JSON array of strings)"
+    },
     "display_preferences": {
       "type": "string",
       "title": "Display Preferences (JSON)"

@@ -14,6 +14,7 @@ import EventServicesTab from "@/components/events/EventServicesTab";
 import EventProgressTab from "@/components/events/EventProgressTab";
 import EventFinancialsTab from "@/components/events/EventFinancialsTab";
 import AssignTeamDialog from "@/components/team/AssignTeamDialog";
+import EditTeamAssignmentDialog from "@/components/team/EditTeamAssignmentDialog";
 import AssignServiceDialog from "@/components/events/AssignServiceDialog";
 import RecordPaymentDialog from "@/components/financial/RecordPaymentDialog";
 import RecordExpenseDialog from "@/components/financial/RecordExpenseDialog";
@@ -46,6 +47,7 @@ export default function EventDetails() {
   const [showExpense, setShowExpense] = useState(false);
   const [teamPayAssignment, setTeamPayAssignment] = useState(null);
   const [showServiceAssign, setShowServiceAssign] = useState(false);
+  const [editingAssignment, setEditingAssignment] = useState(null);
   const [tab, setTab] = useState("Team");
   const queryClient = useQueryClient();
 
@@ -497,6 +499,7 @@ export default function EventDetails() {
                     onRemove={removeAssignment}
                     onShare={shareAssignment}
                     onRefresh={load}
+                    onEdit={(asg) => setEditingAssignment(asg)}
                   />
                 ))}
               </div>
@@ -585,6 +588,7 @@ export default function EventDetails() {
         onSaved={load}
         event={event}
         workspaceId={workspaceId}
+        workspace={workspace}
         term={term}
         currency={currency}
       />
@@ -612,6 +616,18 @@ export default function EventDetails() {
         services={services}
         members={members.filter((m) => m.status === "active")}
         existingAssignments={serviceAssignments}
+      />
+
+      <EditTeamAssignmentDialog
+        open={!!editingAssignment}
+        onClose={() => setEditingAssignment(null)}
+        onSaved={load}
+        assignment={editingAssignment}
+        event={event}
+        workspace={workspace}
+        workspaceId={workspaceId}
+        member={editingAssignment ? membersById[editingAssignment.team_member_id] : null}
+        roles={roles.filter((r) => r.status === "active")}
       />
 
       <RecordPaymentDialog
