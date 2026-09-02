@@ -71,18 +71,6 @@ export function financialYearRange(label) {
   };
 }
 
-// Generate a list of FY labels ending at the current FY (most recent first).
-export function financialYearLabels(count = 5) {
-  const now = new Date();
-  let y = now.getFullYear();
-  if (now.getMonth() < 3) y -= 1;
-  const labels = [];
-  for (let i = 0; i < count; i++) {
-    labels.push(`FY ${y - i}-${String((y - i) + 1).slice(-2)}`);
-  }
-  return labels;
-}
-
 // True when an ISO date (YYYY-MM-DD) falls inside the given FY label.
 export function dateInFY(dateISO, label) {
   if (!dateISO) return false;

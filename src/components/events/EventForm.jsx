@@ -14,7 +14,9 @@ import ClientForm from "@/components/clients/ClientForm";
 import ChipPicker from "@/components/common/ChipPicker";
 import DateRangeChips from "@/components/common/DateRangeChips";
 import { Plus, Users, Briefcase } from "lucide-react";
-import { fyOptions, fyForDate } from "@/lib/dates";
+import { fyForDate } from "@/lib/dates";
+import { useFinancialYear } from "@/hooks/useFinancialYear";
+import { fyDisplayLabel, fyRecordValue } from "@/lib/financialYearService";
 
 const PHOTO_EVENT_TYPES = ["Wedding", "Pre-Wedding", "Reception", "Engagement", "Haldi", "Mehndi", "Birthday", "Corporate", "Portfolio", "Other"];
 const GENERIC_WORK_TYPES = ["Project", "Assignment", "Consultation", "Site Visit", "Contract", "Other"];
@@ -30,6 +32,7 @@ const empty = {
 
 export default function EventForm({ open, onClose, onSaved, event = null, workspaceId, term, currency = "INR" }) {
   const t = term || {};
+  const { fiscalYears } = useFinancialYear();
   const workTypes = t.category === "ARCHITECTURE" || t.category === "OTHER" ? GENERIC_WORK_TYPES : PHOTO_EVENT_TYPES;
   const [form, setForm] = useState(empty);
   const [clients, setClients] = useState([]);
@@ -319,8 +322,8 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
                       className="w-full"
                     >
                       <option value="">Auto (from date)</option>
-                      {fyOptions(5).map((f) => (
-                        <option key={f.value} value={f.value}>{f.label}</option>
+                      {fiscalYears.map((fy) => (
+                        <option key={fy.id} value={fyRecordValue(fy)}>{fyDisplayLabel(fy)}</option>
                       ))}
                     </Select>
                     <p className="text-[11px] text-muted-foreground">

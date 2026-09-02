@@ -123,17 +123,6 @@ export function currentFY() {
   return fyForDate(todayISO());
 }
 
-// Generate a list of FY options around the current year.
-export function fyOptions(count = 3) {
-  const cur = Number(String(currentFY()).slice(0, 4));
-  const opts = [];
-  for (let i = count - 1; i >= 0; i--) {
-    const y = cur - i;
-    opts.push({ value: `${y}-${String(y + 1).slice(-2)}`, label: `FY ${y}-${y + 1}` });
-  }
-  return opts;
-}
-
 export function isWithinFY(dateStr, fyLabel) {
   const range = fyRange(fyLabel);
   if (!range) return true;

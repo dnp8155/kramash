@@ -16,7 +16,7 @@ import {
 export async function ensureDefaultFY(workspaceId) {
   if (!workspaceId) return [];
   let existing = await base44.entities.FinancialYear.filter(
-    { workspace_id: workspaceId }, "start_date", 100
+    { workspace_id: workspaceId }, "-start_date", 100
   );
   existing = existing || [];
 
@@ -54,7 +54,7 @@ export async function ensureDefaultFY(workspaceId) {
   });
 
   const refreshed = await base44.entities.FinancialYear.filter(
-    { workspace_id: workspaceId }, "start_date", 100
+    { workspace_id: workspaceId }, "-start_date", 100
   );
   return refreshed || [];
 }
@@ -108,7 +108,7 @@ export async function validateFYRange(workspaceId, startDate, endDate, excludeId
   if (startDate >= endDate) return { valid: false, error: "Start date must be before end date." };
 
   const existing = await base44.entities.FinancialYear.filter(
-    { workspace_id: workspaceId }, "start_date", 100
+    { workspace_id: workspaceId }, "-start_date", 100
   );
   for (const fy of (existing || [])) {
     if (excludeId && fy.id === excludeId) continue;
@@ -129,6 +129,13 @@ export function fyDisplayLabel(fy) {
   const m = fy.fy_id?.match(/FY\s*(\d{4})-(\d{2})/);
   if (m) return `FY ${m[1]}-${m[2]}`;
   return fy.fy_id || fy.label || "";
+}
+
+// Convert a FY record to the short value format used by Event.financial_year
+// e.g. "FY2026-27" -> "2026-27"
+export function fyRecordValue(fy) {
+  if (!fy || !fy.fy_id) return "";
+  return fy.fy_id.replace(/^FY\s*/, "").trim();
 }
 
 // Derived display status: Active | Closed | Upcoming | Current

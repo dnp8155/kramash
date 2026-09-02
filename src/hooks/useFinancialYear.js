@@ -12,6 +12,12 @@ export function useFinancialYear() {
   const [selectedFYId, setSelectedFYId] = useState(null);
   const queryClient = useQueryClient();
 
+  // Reset selection when workspace changes — prevents stale FY from
+  // the previous workspace appearing briefly during the switch.
+  useEffect(() => {
+    setSelectedFYId(null);
+  }, [workspaceId]);
+
   const { data: fiscalYears = [], isLoading } = useQuery({
     queryKey: ["financial-years", workspaceId],
     queryFn: async () => {

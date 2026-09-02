@@ -14,17 +14,20 @@ import Button from "@/components/common/Button";
 import PageHeader from "@/components/common/PageHeader";
 import { Users, Plus, Download, CalendarCheck, Clock, CheckCircle2, CalendarDays } from "lucide-react";
 import StatCard from "@/components/common/StatCard";
-import { isToday, isThisWeek, isUpcomingDate, isPastDate, isWithinFY, fyOptions, currentFY } from "@/lib/dates";
+import { isToday, isThisWeek, isUpcomingDate, isPastDate, isWithinFY } from "@/lib/dates";
 import { exportEventsCsv } from "@/lib/exportUtils";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
 import { useT } from "@/hooks/useT";
 import { invalidateEntities } from "@/lib/queryInvalidation";
+import { useFinancialYear } from "@/hooks/useFinancialYear";
+import { fyDisplayLabel, fyRecordValue } from "@/lib/financialYearService";
 
 export default function Events() {
   const { workspaceId, workspace } = useWorkspace();
   const navigate = useNavigate();
   const term = useBusinessTerminology();
   const t = useT();
+  const { fiscalYears } = useFinancialYear();
 
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -138,9 +141,9 @@ export default function Events() {
           </Select>
           <Select value={fyFilter} onChange={(e) => setFyFilter(e.target.value)}>
             <option value="all">{t("All Years")}</option>
-            {fyOptions(3).map((f) => (
-              <option key={f.value} value={f.value}>
-                {f.label}{f.value === currentFY() ? ` ${t("(Current)")}` : ""}
+            {fiscalYears.map((fy) => (
+              <option key={fy.id} value={fyRecordValue(fy)}>
+                {fyDisplayLabel(fy)}
               </option>
             ))}
           </Select>

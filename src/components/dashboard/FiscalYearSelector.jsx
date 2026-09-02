@@ -26,7 +26,7 @@ export default function FiscalYearSelector({ size = "md" }) {
   if (loading || !fiscalYears.length) {
     return (
       <div className={`${sizeClasses[size]} flex items-center rounded-lg border border-border bg-card text-muted-foreground shadow-xs`}>
-        {loading ? "Loading…" : "No FY"}
+        {loading ? "Loading…" : "No Financial Year available"}
       </div>
     );
   }
