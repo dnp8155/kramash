@@ -68,26 +68,26 @@ export default function InvoicePrintView({ open, onClose, invoice, items, worksp
   return (
     <div className="fixed inset-0 z-50 bg-black/60 flex flex-col">
       {/* Toolbar */}
-      <div className="flex items-center justify-between px-4 py-3 bg-card border-b border-border">
-        <div className="flex items-center gap-2">
-          <span className="text-xl font-bold" style={{ fontFamily: 'Georgia, "Times New Roman", Times, serif' }}>
+      <div className="flex items-center justify-between gap-2 px-4 py-3 bg-card border-b border-border">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-base sm:text-xl font-bold truncate" style={{ fontFamily: 'Georgia, "Times New Roman", Times, serif' }}>
             Invoice {invoice.invoice_number}
           </span>
-          <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-medium" style={{ backgroundColor: "#E5E5E5", color: "#4B5563" }}>
+          <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-medium shrink-0" style={{ backgroundColor: "#E5E5E5", color: "#4B5563" }}>
             {statusInfo.label}
           </span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <Button variant="outline" onClick={handlePrint} style={{ borderColor: "#CCCCCC", backgroundColor: "#FFFFFF", color: "#000000" }}>
-            <Download className="w-4 h-4" /> PDF
+            <Download className="w-4 h-4" /> <span className="hidden sm:inline">PDF</span>
           </Button>
           {onEdit && (
             <Button variant="outline" onClick={onEdit} style={{ borderColor: "#CCCCCC", backgroundColor: "#FFFFFF", color: "#000000" }}>
-              <Pencil className="w-4 h-4" /> Edit
+              <Pencil className="w-4 h-4" /> <span className="hidden sm:inline">Edit</span>
             </Button>
           )}
           <Button onClick={onClose} style={{ backgroundColor: "#1A3C3D" }} className="text-white hover:opacity-90">
-            <X className="w-4 h-4" /> Close
+            <X className="w-4 h-4" /> <span className="hidden sm:inline">Close</span>
           </Button>
         </div>
       </div>

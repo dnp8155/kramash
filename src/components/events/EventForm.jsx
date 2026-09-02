@@ -142,7 +142,7 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
   return (
     <>
       <Dialog open={open && !showClientForm} onOpenChange={(o) => !o && onClose?.()}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-0 gap-0">
+        <DialogContent className="max-w-3xl max-h-[90dvh] overflow-y-auto p-0 gap-0">
           <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-muted/30">
             <div>
               <DialogTitle className="text-lg font-bold tracking-tight">{event ? t.editWorkItemLabel || "Edit Event" : t.addWorkItemLabel || "Add Event"}</DialogTitle>
