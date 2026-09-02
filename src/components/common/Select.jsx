@@ -1,8 +1,8 @@
 import { cn } from "@/lib/utils";
 
 const sizes = {
-  sm: "h-8 text-xs px-2.5",
-  md: "h-9 text-sm px-3"
+  sm: "h-8 text-base md:text-xs px-2.5",
+  md: "h-9 text-base md:text-sm px-3"
 };
 
 export default function Select({ className, size = "md", children, ...props }) {

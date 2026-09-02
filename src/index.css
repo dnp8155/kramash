@@ -199,6 +199,15 @@
   }
 }
 
+/* ---- Mobile Input Zoom Prevention ---- */
+/* iOS Safari auto-zooms when form controls have font-size < 16px.
+   Force 16px on mobile for all text-entry controls; desktop unaffected. */
+@media (max-width: 767px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
 /* ---- Invoice Print ---- */
 @media print {
   body.printing-invoice * {
