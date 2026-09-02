@@ -37,6 +37,9 @@ export default function AssignServiceDialog({
   const [paymentMethod, setPaymentMethod] = useState("Cash");
   const { fiscalYears } = useFinancialYear();
 
+  const selectedProvider = members.find((m) => m.id === providerId);
+  const selectedProviderIsSelf = isSelfMember(selectedProvider);
+
   useEffect(() => {
     if (open) {
       setError("");
@@ -57,9 +60,6 @@ export default function AssignServiceDialog({
   useEffect(() => {
     if (selectedProviderIsSelf) setRecordPayment(false);
   }, [selectedProviderIsSelf]);
-
-  const selectedProvider = members.find((m) => m.id === providerId);
-  const selectedProviderIsSelf = isSelfMember(selectedProvider);
 
   const onServiceChange = (id) => {
     setServiceId(id);
@@ -146,7 +146,7 @@ export default function AssignServiceDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose?.()}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-lg max-h-[90dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add Service</DialogTitle>
           <DialogDescription>

@@ -45,6 +45,7 @@ export default function AssignTeamDialog({
   const [paymentDate, setPaymentDate] = useState(todayISO());
   const [paymentMethod, setPaymentMethod] = useState("Cash");
   const { fiscalYears } = useFinancialYear();
+  const currency = workspace?.currency || "INR";
 
   // Parse member types from workspace config
   const memberTypes = useMemo(() => {
@@ -256,7 +257,7 @@ export default function AssignTeamDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose?.()}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-lg max-h-[90dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Assign Team Member</DialogTitle>
           <DialogDescription>
@@ -346,7 +347,7 @@ export default function AssignTeamDialog({
               <p className="text-xs text-muted-foreground">
                 {workingDates.length} day(s) selected
                 {rateType === "Per Day" && roleRateConfigured
-                  ? ` · Calculated: ${formatMoney(Number(roleRate) * workingDates.length, "INR")}`
+                  ? ` · Calculated: ${formatMoney(Number(roleRate) * workingDates.length, currency)}`
                   : ""}
               </p>
             )}

@@ -36,6 +36,7 @@ const fmtDate = (iso) => {
 
 export default function EventFinancialsTab({
   event, quotations, invoices, transactions, assignments,
+  serviceAssignments = [],
   currency, workspace, onRefresh
 }) {
   const navigate = useNavigate();
@@ -47,8 +48,8 @@ export default function EventFinancialsTab({
   const [deletingId, setDeletingId] = useState(null);
 
   const fin = useMemo(
-    () => eventFinancialSummary(event, transactions, assignments),
-    [event, transactions, assignments]
+    () => eventFinancialSummary(event, transactions, assignments, serviceAssignments),
+    [event, transactions, assignments, serviceAssignments]
   );
 
   const packageValue = fin.contractValue || 0;

@@ -431,7 +431,8 @@ export default function EventDetails() {
           quotations={quotations}
           invoices={invoices}
           transactions={transactions}
-          assignments={assignments}
+          assignments={eventAssignments}
+          serviceAssignments={serviceAssignments}
           currency={currency}
           workspace={workspace}
           onRefresh={load}
