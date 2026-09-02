@@ -26,7 +26,7 @@ export const AuthProvider = ({ children }) => {
       // First, check app public settings (with token if available)
       // This will tell us if auth is required, user not registered, etc.
       const appClient = createAxiosClient({
-        baseURL: `/api/apps/public`,
+        baseURL: `${appParams.appBaseUrl || 'https://base44.app'}/api/apps/public`,
         headers: {
           'X-App-Id': appParams.appId
         },
@@ -108,6 +108,12 @@ export const AuthProvider = ({ children }) => {
       
       // If user auth fails, it might be an expired token
       if (error.status === 401 || error.status === 403) {
+        try {
+          localStorage.removeItem('base44_access_token');
+          localStorage.removeItem('token');
+        } catch {
+          // ignore
+        }
         setAuthError({
           type: 'auth_required',
           message: 'Authentication required'
@@ -119,19 +125,21 @@ export const AuthProvider = ({ children }) => {
   const logout = (shouldRedirect = true) => {
     setUser(null);
     setIsAuthenticated(false);
+    try {
+      localStorage.removeItem('base44_access_token');
+      localStorage.removeItem('token');
+      localStorage.removeItem('base44_app_base_url');
+    } catch {
+      // ignore
+    }
     
     if (shouldRedirect) {
-      // Clear token then hard-redirect to /login (SPA route) so Vercel serves index.html
-      base44.auth.logout();
       window.location.href = '/login';
-    } else {
-      base44.auth.logout();
     }
   };
 
   const navigateToLogin = () => {
-    // Use the SDK's redirectToLogin method
-    base44.auth.redirectToLogin(window.location.href);
+    window.location.href = '/login';
   };
 
   return (

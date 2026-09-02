@@ -1,0 +1,4 @@
+{
+  "name": "createPaymentOrder",
+  "entry": "entry.ts"
+}
