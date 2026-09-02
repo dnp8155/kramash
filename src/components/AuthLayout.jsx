@@ -5,7 +5,7 @@ import AuthProductPanel from "@/components/AuthProductPanel";
 
 export default function AuthLayout({ icon: Icon, title, subtitle, footer, children, productPanel }) {
   return (
-    <div className="min-h-screen flex bg-background">
+    <div className="min-h-dvh flex bg-background">
       {/* Left: Form panel */}
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-10 sm:px-6 lg:px-8">
         <div className="w-full max-w-[420px]">

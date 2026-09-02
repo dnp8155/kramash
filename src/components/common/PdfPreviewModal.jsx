@@ -17,7 +17,7 @@ export default function PdfPreviewModal({ url, filename, open, onClose, loading 
   return createPortal(
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-4xl h-[85vh] bg-card border border-border rounded-lg shadow-xl flex flex-col animate-fade-in">
+      <div className="relative w-full max-w-4xl h-[85dvh] bg-card border border-border rounded-lg shadow-xl flex flex-col animate-fade-in">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
           <div className="flex items-center gap-2 min-w-0">

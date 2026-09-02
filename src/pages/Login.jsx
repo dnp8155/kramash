@@ -128,14 +128,14 @@ export default function Login() {
 
   if (!authChecked) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-dvh flex items-center justify-center bg-background">
         <div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-background overflow-x-hidden">
+    <div className="min-h-dvh flex flex-col lg:flex-row bg-background overflow-x-hidden">
       {/* Left: Content column */}
       <div className="flex-1 flex flex-col px-6 py-6 sm:px-10 lg:px-12 xl:px-16 lg:py-8">
         {/* Logo */}

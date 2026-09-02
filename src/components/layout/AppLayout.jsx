@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Outlet } from "react-router-dom";
 import Sidebar from "@/components/layout/Sidebar";
 import TopHeader from "@/components/layout/TopHeader";
@@ -18,8 +18,16 @@ export default function AppLayout() {
   // pages refresh automatically — including changes made from other devices/sessions.
   useRealtimeSync();
 
+  // Lock body scroll when mobile drawer is open
+  useEffect(() => {
+    if (mobileOpen) {
+      document.body.style.overflow = "hidden";
+      return () => { document.body.style.overflow = ""; };
+    }
+  }, [mobileOpen]);
+
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="flex h-[100dvh] overflow-hidden bg-background">
       {/* Desktop sidebar */}
       <aside
         className={`hidden lg:block shrink-0 transition-[width] duration-200 ease-in-out overflow-hidden ${
@@ -33,7 +41,7 @@ export default function AppLayout() {
       {mobileOpen && (
         <div className="lg:hidden fixed inset-0 z-40 flex">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
-          <div className="relative w-64 h-full">
+          <div className="relative w-64 h-full safe-area-left">
             <Sidebar mobile onClose={() => setMobileOpen(false)} />
           </div>
         </div>
@@ -44,7 +52,7 @@ export default function AppLayout() {
         <UpdateBanner />
         <OfflineBanner />
         <TopHeader onMenuClick={() => setMobileOpen(true)} />
-        <main className="flex-1 overflow-y-auto scrollbar-thin pb-20 lg:pb-0">
+        <main className="flex-1 overflow-y-auto scrollbar-thin pb-24 lg:pb-0">
           <ErrorBoundary>
             <Outlet />
           </ErrorBoundary>

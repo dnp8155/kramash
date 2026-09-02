@@ -122,7 +122,7 @@ export default function Onboarding() {
   const canNext3 = form.city.trim() && form.country;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-8">
+    <div className="min-h-dvh flex items-center justify-center bg-background px-4 py-8">
       <div className="w-full max-w-lg">
         {/* Logo */}
         <div className="flex justify-center mb-6">

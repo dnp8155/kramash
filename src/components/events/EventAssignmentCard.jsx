@@ -148,14 +148,14 @@ export default function EventAssignmentCard({
         )}
         <button
           onClick={() => onShare?.(assignment)}
-          className="p-1.5 rounded-md hover:bg-muted text-muted-foreground transition-colors"
+          className="p-2 rounded-md hover:bg-muted text-muted-foreground transition-colors"
           aria-label="Share"
         >
           <Share2 className="w-3.5 h-3.5" />
         </button>
         <button
           onClick={() => onRemove?.(assignment)}
-          className="p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+          className="p-2 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
           aria-label="Remove"
         >
           <Trash2 className="w-3.5 h-3.5" />

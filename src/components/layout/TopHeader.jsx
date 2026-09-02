@@ -6,7 +6,7 @@ import LanguageSwitcher from "@/components/layout/LanguageSwitcher";
 
 export default function TopHeader({ onMenuClick }) {
   return (
-    <header className="flex items-center gap-2 sm:gap-3 px-3 sm:px-6 h-14 border-b border-border bg-card/80 backdrop-blur-md sticky top-0 z-20 shadow-sm">
+    <header className="flex items-center gap-2 sm:gap-3 px-3 sm:px-6 h-14 border-b border-border bg-card/80 backdrop-blur-md sticky top-0 z-20 shadow-sm safe-area-top">
       {/* Mobile menu */}
       <button
         onClick={onMenuClick}

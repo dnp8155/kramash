@@ -128,8 +128,8 @@ export default function Events() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
-        <div className="flex items-center gap-2 sm:ml-auto">
-          <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+        <div className="flex items-center gap-2 sm:ml-auto flex-wrap">
+          <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="flex-1 min-w-[110px] sm:flex-none">
             <option value="all">All {term.workItemPlural} ({events.length})</option>
             <option value="today">{t("Today")}</option>
             <option value="week">{t("This Week")}</option>
@@ -139,7 +139,7 @@ export default function Events() {
             <option value="in-progress">{t("In Progress")}</option>
             <option value="cancelled">{t("Cancelled")}</option>
           </Select>
-          <Select value={fyFilter} onChange={(e) => setFyFilter(e.target.value)}>
+          <Select value={fyFilter} onChange={(e) => setFyFilter(e.target.value)} className="flex-1 min-w-[110px] sm:flex-none">
             <option value="all">{t("All Years")}</option>
             {fiscalYears.map((fy) => (
               <option key={fy.id} value={fyRecordValue(fy)}>
@@ -151,6 +151,7 @@ export default function Events() {
             variant="outline"
             size="icon"
             aria-label="Export"
+            className="shrink-0"
             onClick={() => exportEventsCsv(filtered, clients, fyFilter !== "all" ? fyFilter : null, term)}
             disabled={filtered.length === 0}
           >

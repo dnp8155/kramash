@@ -122,6 +122,25 @@
 }
 
 @layer utilities {
+  /* Safe area insets for PWA standalone mode */
+  .safe-area-top { padding-top: env(safe-area-inset-top); }
+  .safe-area-bottom { padding-bottom: env(safe-area-inset-bottom); }
+  .safe-area-left { padding-left: env(safe-area-inset-left); }
+  .safe-area-right { padding-right: env(safe-area-inset-right); }
+  .safe-area-mt { margin-top: env(safe-area-inset-top); }
+  .safe-area-mb { margin-bottom: env(safe-area-inset-bottom); }
+
+  /* Dynamic viewport height (handles mobile browser chrome) */
+  .h-dvh { height: 100dvh; }
+  .min-h-dvh { min-height: 100dvh; }
+  .max-h-dvh { max-height: 100dvh; }
+
+  /* Text wrapping for long names/emails/notes */
+  .break-anywhere { overflow-wrap: anywhere; word-break: break-word; }
+
+  /* Minimum touch target for mobile accessibility */
+  .touch-min { min-width: 44px; min-height: 44px; }
+
   .scrollbar-thin::-webkit-scrollbar {
     width: 6px;
     height: 6px;

@@ -25,7 +25,7 @@ export default function MobileNavigation() {
   ];
 
   return (
-    <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 px-3 pb-3 pt-1">
+    <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 px-3 pt-1 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
       <div className="flex items-end gap-2 max-w-lg mx-auto">
         {/* Pill nav — vertical icon-over-text */}
         <div className="flex-1 flex items-stretch gap-0.5 bg-card border border-border rounded-full p-1 shadow-md">

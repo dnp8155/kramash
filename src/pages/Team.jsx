@@ -193,14 +193,14 @@ export default function Team() {
               onChange={(e) => setQuery(e.target.value)}
             />
             <div className="flex items-center gap-2 sm:ml-auto">
-              <Select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}>
+              <Select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)} className="flex-1 min-w-[110px] sm:flex-none">
                 <option value="all">All Roles</option>
                 <option value="none">No Role</option>
                 {roles.filter((r) => r.status === "active").map((r) => (
                   <option key={r.id} value={r.id}>{r.name}</option>
                 ))}
               </Select>
-              <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+              <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="flex-1 min-w-[110px] sm:flex-none">
                 <option value="all">All Status</option>
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>

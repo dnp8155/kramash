@@ -64,18 +64,18 @@ export default function TeamMemberCard({ member, assignments = [], transactions 
         <span className="text-xs text-muted-foreground ml-auto truncate hidden sm:block">
           {member.profession || "—"}
         </span>
-        <button onClick={() => onEdit?.(member)} className="text-muted-foreground hover:text-foreground shrink-0" aria-label="Edit">
+        <button onClick={() => onEdit?.(member)} className="text-muted-foreground hover:text-foreground shrink-0 p-1.5 rounded-md hover:bg-muted transition-colors" aria-label="Edit">
           <Pencil className="w-3.5 h-3.5" />
         </button>
         <button
           onClick={() => onArchive?.(member)}
-          className="text-muted-foreground hover:text-warning shrink-0"
+          className="text-muted-foreground hover:text-warning shrink-0 p-1.5 rounded-md hover:bg-muted transition-colors"
           aria-label={active ? "Archive" : "Reactivate"}
           title={active ? "Set inactive" : "Set active"}
         >
           {active ? <Archive className="w-3.5 h-3.5" /> : <RotateCcw className="w-3.5 h-3.5" />}
         </button>
-        <button onClick={() => onDelete?.(member)} className="text-muted-foreground hover:text-destructive shrink-0" aria-label="Delete">
+        <button onClick={() => onDelete?.(member)} className="text-muted-foreground hover:text-destructive shrink-0 p-1.5 rounded-md hover:bg-destructive/5 transition-colors" aria-label="Delete">
           <Trash2 className="w-3.5 h-3.5" />
         </button>
       </div>
