@@ -10,12 +10,12 @@ import Toggle from "@/components/common/Toggle";
 import { Label } from "@/components/ui/label";
 import { RATE_TYPES } from "@/constants/teamConfig";
 import { PAYMENT_METHOD_LIST } from "@/constants/financeConfig";
-import { findConflicts } from "@/lib/teamService";
+import { findConflicts, isSelfMember } from "@/lib/teamService";
 import { formatEventDate, parseISODate, toISODate, todayISO } from "@/lib/dates";
 import { resolveFYForDate } from "@/lib/financialYearService";
 import { useFinancialYear } from "@/hooks/useFinancialYear";
 import { formatMoney } from "@/utils/format";
-import { AlertTriangle, Ban, Wallet } from "lucide-react";
+import { AlertTriangle, Ban, Wallet, Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const DEFAULT_MEMBER_TYPES = [

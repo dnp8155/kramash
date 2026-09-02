@@ -27,18 +27,23 @@
       "type": "string",
       "title": "Profession"
     },
+    "is_self": {
+      "type": "boolean",
+      "title": "Is Self (workspace owner's own roster entry)",
+      "default": false
+    },
     "member_type_id": {
       "type": "string",
-      "title": "Team Member Type ID (e.g. Bride Side / Groom Side)"
+      "title": "Team Member Type ID (legacy \u2014 event-specific, use assignments)"
     },
     "default_rate": {
       "type": "number",
-      "title": "Default Rate",
+      "title": "Default Rate (legacy \u2014 rate comes from Role in Preferences)",
       "default": 0
     },
     "rate_type": {
       "type": "string",
-      "title": "Rate Type",
+      "title": "Rate Type (legacy \u2014 rate comes from Role in Preferences)",
       "default": "Per Event",
       "enum": [
         "Per Event",

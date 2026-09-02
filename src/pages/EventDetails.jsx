@@ -495,6 +495,7 @@ export default function EventDetails() {
                     event={event}
                     currency={currency}
                     transactions={transactions}
+                    isSelf={!!membersById[a.team_member_id]?.is_self}
                     onAddPayment={(asg) => setTeamPayAssignment(asg)}
                     onRemove={removeAssignment}
                     onShare={shareAssignment}

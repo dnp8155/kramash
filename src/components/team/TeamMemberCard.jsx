@@ -1,9 +1,8 @@
-import { Pencil, Trash2, ExternalLink, Archive, RotateCcw, Calendar } from "lucide-react";
+import { Pencil, Trash2, ExternalLink, Archive, RotateCcw, Calendar, Crown } from "lucide-react";
 import { TEAM_MEMBER_STATUS, AVAILABILITY_STATUS } from "@/constants/teamConfig";
 import { formatMoney } from "@/utils/format";
-import { memberBookingCount } from "@/lib/teamService";
+import { memberBookingCount, isSelfMember } from "@/lib/teamService";
 import { formatEventDate, isUpcomingDate, todayISO } from "@/lib/dates";
-import { teamMemberTypes } from "@/constants/preferencesConfig";
 import { cn } from "@/lib/utils";
 
 // Derive a display status: inactive members show inactive; active members
@@ -18,9 +17,6 @@ export default function TeamMemberCard({ member, assignments = [], transactions 
   const status = displayStatus(member, assignments);
   const bookings = memberBookingCount(member.id, assignments);
   const active = member.status === "active";
-
-  // Member type indicator (pink/blue/grey from preferences)
-  const memberType = teamMemberTypes.find((t) => t.id === member.member_type_id);
 
   // Financial: total agreed rate from active assignments, total paid from TEAM_PAYMENT transactions.
   const memberAssignments = assignments.filter(
@@ -47,20 +43,12 @@ export default function TeamMemberCard({ member, assignments = [], transactions 
     .sort((x, y) => x.start.localeCompare(y.start));
   const nextBooking = upcomingBookings[0] || null;
 
-  const isSelf = currentUser && member.email && currentUser.email &&
-    member.email.toLowerCase() === currentUser.email.toLowerCase();
+  const isSelf = isSelfMember(member);
 
   return (
     <div className="bg-card border border-border rounded-lg p-4">
-      {/* Header: type dot + status dot + name + SELF badge + role + actions */}
+      {/* Header: status dot + name + SELF badge + role + actions */}
       <div className="flex items-center gap-2">
-        {memberType && (
-          <span
-            className="w-2.5 h-2.5 rounded-full shrink-0 border border-white/20"
-            style={{ backgroundColor: memberType.color }}
-            title={memberType.title}
-          />
-        )}
         <span className={cn("w-2.5 h-2.5 rounded-full shrink-0", status.dot)} />
         <button
           onClick={() => onOpen?.(member)}
@@ -68,8 +56,8 @@ export default function TeamMemberCard({ member, assignments = [], transactions 
         >
           <span className="truncate">{member.name}</span>
           {isSelf && (
-            <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary shrink-0">
-              Self
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-primary text-primary-foreground shrink-0">
+              <Crown className="w-2.5 h-2.5" /> Self
             </span>
           )}
         </button>

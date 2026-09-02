@@ -6,22 +6,28 @@ import {
 import Button from "@/components/common/Button";
 import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
+import Toggle from "@/components/common/Toggle";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { TEAM_MEMBER_STATUS } from "@/constants/teamConfig";
-import { loadActiveRoles } from "@/lib/teamService";
+import { loadActiveRoles, clearOtherSelfMembers } from "@/lib/teamService";
+import { useAuth } from "@/lib/AuthContext";
+import { Crown } from "lucide-react";
 
 // Master Team Member form — identity + role + contact + status + notes only.
 // Rate and Member Type are NOT collected here:
 //  - Rate is derived from the selected Role's configuration in Preferences.
 //  - Member Type is event-specific (selected at Event assignment time).
+// "This is me" marks the member as the workspace owner's own roster entry (SELF).
 const empty = {
   name: "", phone: "", email: "",
   role_id: "", profession: "",
+  is_self: false,
   status: "active", notes: ""
 };
 
 export default function TeamMemberForm({ open, onClose, onSaved, member = null, workspaceId }) {
+  const { user } = useAuth();
   const [form, setForm] = useState(empty);
   const [roles, setRoles] = useState([]);
   const [loadingRoles, setLoadingRoles] = useState(false);
@@ -31,7 +37,13 @@ export default function TeamMemberForm({ open, onClose, onSaved, member = null, 
   useEffect(() => {
     if (open) {
       setError("");
-      setForm(member ? { ...empty, ...member } : empty);
+      const base = member ? { ...empty, ...member } : empty;
+      // Auto-suggest SELF when the entered email matches the logged-in owner.
+      // This is only a hint — the user explicitly confirms via the toggle.
+      if (!member && user?.email && base.email && base.email.toLowerCase() === user.email.toLowerCase()) {
+        base.is_self = true;
+      }
+      setForm(base);
       loadRoles();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -77,6 +89,14 @@ export default function TeamMemberForm({ open, onClose, onSaved, member = null, 
     setSaving(true);
     setError("");
     try {
+      // Enforce a single SELF per workspace: clear any other Self members first.
+      if (form.is_self) {
+        try {
+          await clearOtherSelfMembers(workspaceId, member?.id || null);
+        } catch (e) {
+          /* non-fatal — backend/RLS will still scope correctly */
+        }
+      }
       const payload = {
         workspace_id: workspaceId,
         name: form.name.trim(),
@@ -84,6 +104,7 @@ export default function TeamMemberForm({ open, onClose, onSaved, member = null, 
         email: form.email.trim(),
         role_id: form.role_id || "",
         profession: form.profession.trim(),
+        is_self: !!form.is_self,
         status: form.status,
         notes: form.notes.trim()
       };
@@ -147,6 +168,21 @@ export default function TeamMemberForm({ open, onClose, onSaved, member = null, 
             {roles.length === 0 && !loadingRoles && (
               <p className="text-xs text-muted-foreground">No roles configured. Add roles in Preferences.</p>
             )}
+          </div>
+
+          <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Crown className="w-4 h-4 text-primary shrink-0" />
+                <div>
+                  <Label className="cursor-pointer">This is me (workspace owner)</Label>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Marks this member as you. Self members cannot be paid as external team — their rate is treated as owner share.
+                  </p>
+                </div>
+              </div>
+              <Toggle checked={!!form.is_self} onChange={(v) => set("is_self", v)} label="Self" />
+            </div>
           </div>
 
           <div className="space-y-1.5">

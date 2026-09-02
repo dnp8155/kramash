@@ -184,3 +184,27 @@ export function memberBookingCount(memberId, assignments) {
     (a) => a.team_member_id === memberId && a.assignment_status !== "removed"
   ).length;
 }
+
+// ---- Self / Owner detection ----
+
+// A Team Member is "Self" when explicitly flagged (is_self). This is a stable,
+// workspace-scoped relationship that survives owner name changes and does not
+// rely on case-sensitive text matching. Email match is only used as an
+// auto-suggest hint in the form, never as the authoritative signal.
+export function isSelfMember(member) {
+  return !!(member && member.is_self === true);
+}
+
+// Before marking a member as Self, clear any other Self members in the same
+// workspace so only one owner-self entry exists. Pass the member id being
+// promoted (or null for a new member) so it is skipped.
+export async function clearOtherSelfMembers(workspaceId, exceptMemberId = null) {
+  if (!workspaceId) return 0;
+  const existing = await loadTeamMembers(workspaceId);
+  const others = existing.filter((m) => m.is_self && m.id !== exceptMemberId);
+  if (others.length === 0) return 0;
+  await base44.entities.TeamMember.bulkUpdate(
+    others.map((m) => ({ id: m.id, is_self: false }))
+  );
+  return others.length;
+}

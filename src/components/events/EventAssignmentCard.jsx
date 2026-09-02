@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Share2, Trash2, ChevronDown, ChevronUp, Pencil } from "lucide-react";
+import { Plus, Share2, Trash2, ChevronDown, ChevronUp, Pencil, Crown } from "lucide-react";
 import { formatMoney } from "@/utils/format";
 import { formatEventDate } from "@/lib/dates";
 import { base44 } from "@/api/base44Client";
@@ -12,6 +12,7 @@ export default function EventAssignmentCard({
   event,
   currency,
   transactions,
+  isSelf = false,
   onAddPayment,
   onRemove,
   onShare,
@@ -55,14 +56,19 @@ export default function EventAssignmentCard({
     <div className="bg-card border border-border rounded-lg p-4">
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
-        <h4 className="text-sm font-semibold text-foreground truncate">
-          {member?.name || "Unknown member"}
+        <h4 className="text-sm font-semibold text-foreground truncate flex items-center gap-1.5">
+          <span className="truncate">{member?.name || "Unknown member"}</span>
+          {isSelf && (
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-primary text-primary-foreground shrink-0">
+              <Crown className="w-2.5 h-2.5" /> Self
+            </span>
+          )}
         </h4>
         <span className={cn(
           "text-xs font-medium px-2 py-0.5 rounded",
-          isDue ? "bg-warning/10 text-warning" : "bg-success/10 text-success"
+          isSelf ? "bg-primary/10 text-primary" : isDue ? "bg-warning/10 text-warning" : "bg-success/10 text-success"
         )}>
-          {isDue ? "Due" : "Paid"}
+          {isSelf ? "Owner Share" : isDue ? "Due" : "Paid"}
         </span>
       </div>
 
@@ -103,12 +109,15 @@ export default function EventAssignmentCard({
           <div className="text-sm font-semibold text-foreground">{datesLabel}</div>
         </div>
         <div>
-          <div className="text-xs font-medium text-muted-foreground">Paid</div>
+          <div className="text-xs font-medium text-muted-foreground">{isSelf ? "Paid" : "Paid"}</div>
           <div className="text-sm font-semibold text-foreground tabular-nums">{formatMoney(paid, currency)}</div>
         </div>
         <div>
-          <div className="text-xs font-medium text-muted-foreground">Remaining</div>
-          <div className="text-sm font-semibold text-warning tabular-nums">{formatMoney(remaining, currency)}</div>
+          <div className="text-xs font-medium text-muted-foreground">{isSelf ? "Owner Share" : "Remaining"}</div>
+          <div className={cn(
+            "text-sm font-semibold tabular-nums",
+            isSelf ? "text-primary" : "text-warning"
+          )}>{formatMoney(remaining, currency)}</div>
         </div>
       </div>
 
@@ -129,12 +138,14 @@ export default function EventAssignmentCard({
         >
           <Pencil className="w-3 h-3" /> Edit
         </button>
-        <button
-          onClick={() => onAddPayment?.(assignment)}
-          className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-md bg-success/10 text-success hover:bg-success/20 transition-colors"
-        >
-          <Plus className="w-3 h-3" /> Add Payment
-        </button>
+        {!isSelf && (
+          <button
+            onClick={() => onAddPayment?.(assignment)}
+            className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-md bg-success/10 text-success hover:bg-success/20 transition-colors"
+          >
+            <Plus className="w-3 h-3" /> Add Payment
+          </button>
+        )}
         <button
           onClick={() => onShare?.(assignment)}
           className="p-1.5 rounded-md hover:bg-muted text-muted-foreground transition-colors"
@@ -151,7 +162,17 @@ export default function EventAssignmentCard({
         </button>
       </div>
 
-      {/* Payment history toggle */}
+      {/* Self note — owner share, no external payment */}
+      {isSelf && (
+        <div className="rounded-md border border-primary/20 bg-primary/5 px-3 py-2 mt-2">
+          <p className="text-xs text-primary font-medium">
+            Owner share — no external payment is recorded for the workspace owner.
+          </p>
+        </div>
+      )}
+
+      {/* Payment history toggle — hidden for Self (no payments can exist) */}
+      {!isSelf && (
       <div className="border-t border-border pt-2 mt-2">
         <button
           onClick={() => setShowHistory((s) => !s)}
@@ -195,6 +216,7 @@ export default function EventAssignmentCard({
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }
