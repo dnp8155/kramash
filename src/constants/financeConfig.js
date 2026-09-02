@@ -78,14 +78,3 @@ export function dateInFY(dateISO, label) {
   if (!r) return true;
   return dateISO >= r.start && dateISO <= r.end;
 }
-
-// Derive the FY label for a given ISO date.
-export function fyLabelForDate(dateISO) {
-  if (!dateISO) return null;
-  const d = new Date(dateISO + "T00:00:00");
-  if (isNaN(d)) return null;
-  const y = d.getFullYear();
-  const m = d.getMonth();
-  if (m >= 3) return `FY ${y}-${String(y + 1).slice(-2)}`;
-  return `FY ${y - 1}-${String(y).slice(-2)}`;
-}
