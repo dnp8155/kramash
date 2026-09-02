@@ -16,7 +16,8 @@ import { Pencil, Trash2, Plus, Download, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { exportFinancialCsv } from "@/lib/exportUtils";
 import { loadAllTransactions } from "@/lib/financeService";
-import { financialYearLabels, currentFinancialYearLabel } from "@/constants/financeConfig";
+import { useFinancialYear } from "@/hooks/useFinancialYear";
+import { txInFY, fyDisplayLabel } from "@/lib/financialYearService";
 import { getIndustryPresets } from "@/constants/industryPresets";
 import TeamMemberTypeManager from "@/components/preferences/TeamMemberTypeManager";
 
@@ -30,7 +31,7 @@ const BUSINESS_TYPE_TO_CATEGORY = {
 export default function Preferences() {
   const { workspaceId, workspace } = useWorkspace();
   const { toast } = useToast();
-  const [exportFy, setExportFy] = useState(currentFinancialYearLabel());
+  const { fiscalYears, selectedFY, selectFY } = useFinancialYear();
   const [exporting, setExporting] = useState(false);
   const [toggles, setToggles] = useState(() => {
     try {
@@ -298,9 +299,9 @@ export default function Preferences() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card title="Export">
           <Field label="Financial year" className="mb-3">
-            <Select value={exportFy} onChange={(e) => setExportFy(e.target.value)}>
-              {financialYearLabels(6).map((l) => (
-                <option key={l} value={l}>{l.replace("FY ", "April ")} - March {("20" + l.split("-")[1])}</option>
+            <Select value={selectedFY?.id || ""} onChange={(e) => selectFY(e.target.value)}>
+              {fiscalYears.map((f) => (
+                <option key={f.id} value={f.id}>{f.label}</option>
               ))}
             </Select>
           </Field>
@@ -315,12 +316,11 @@ export default function Preferences() {
               events.forEach((e) => { eventsById[e.id] = e; });
               clients.forEach((c) => { clientsById[c.id] = c; });
               members.forEach((m) => { membersById[m.id] = m; });
-              const { fyLabelForDate } = await import("@/constants/financeConfig");
-              const fyTx = tx.filter((t) => fyLabelForDate(t.transaction_date) === exportFy);
+              const fyTx = tx.filter((t) => txInFY(t, selectedFY));
               if (fyTx.length === 0) {
                 toast({ title: "No transactions found for this period." });
               } else {
-                exportFinancialCsv(fyTx, { eventsById, clientsById, membersById }, workspace?.currency || "INR", exportFy);
+                exportFinancialCsv(fyTx, { eventsById, clientsById, membersById }, workspace?.currency || "INR", fyDisplayLabel(selectedFY));
                 toast({ title: "Export ready", description: `${fyTx.length} transactions exported.` });
               }
             } catch (e) {
