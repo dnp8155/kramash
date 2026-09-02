@@ -8,11 +8,11 @@
     },
     "fy_id": {
       "type": "string",
-      "title": "Financial Year ID (e.g. FY2024-25)"
+      "title": "Financial Year ID (e.g. FY2026-27)"
     },
     "label": {
       "type": "string",
-      "title": "Label (e.g. April 2024 - March 2025)"
+      "title": "Label (e.g. April 2026 - March 2027)"
     },
     "start_date": {
       "type": "string",
@@ -26,8 +26,17 @@
     },
     "is_active": {
       "type": "boolean",
-      "title": "Is Active (user-selected)",
+      "title": "Is Active (workspace default FY)",
       "default": false
+    },
+    "status": {
+      "type": "string",
+      "title": "Period Status",
+      "default": "open",
+      "enum": [
+        "open",
+        "closed"
+      ]
     }
   },
   "required": [

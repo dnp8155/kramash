@@ -11,6 +11,8 @@ import { PAYMENT_METHOD_LIST } from "@/constants/financeConfig";
 import {
   verifyClientPaymentRefs, verifyTeamPaymentRefs
 } from "@/lib/financeService";
+import { resolveFYForDate } from "@/lib/financialYearService";
+import { useFinancialYear } from "@/hooks/useFinancialYear";
 import { formatMoney } from "@/utils/format";
 import { todayISO } from "@/lib/dates";
 import { AlertTriangle } from "lucide-react";
@@ -39,6 +41,7 @@ export default function RecordPaymentDialog({
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const { fiscalYears } = useFinancialYear();
 
   useEffect(() => {
     if (open) {
@@ -88,6 +91,9 @@ export default function RecordPaymentDialog({
     if (!amount || isNaN(amt) || amt <= 0) return "Amount must be greater than zero.";
     if (!date) return "Please select a payment date.";
     if (!method) return "Please select a payment method.";
+    // Validate FY exists for this date
+    const fy = resolveFYForDate(date, fiscalYears);
+    if (!fy) return "No Financial Year is available for this transaction date. Please create the applicable Financial Year first.";
     return "";
   };
 
@@ -136,6 +142,14 @@ export default function RecordPaymentDialog({
         setSaving(false);
         return;
       }
+      // Resolve and attach FY based on transaction date
+      const fy = resolveFYForDate(date, fiscalYears);
+      if (!fy) {
+        setError("No Financial Year is available for this transaction date. Please create the applicable Financial Year first.");
+        setSaving(false);
+        return;
+      }
+      payload.financial_year_id = fy.id;
       const saved = await base44.entities.FinancialTransaction.create(payload);
       onSaved?.(saved);
       onClose?.();

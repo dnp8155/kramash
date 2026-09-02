@@ -10,6 +10,7 @@ import { Loader2, Check, Building2, MapPin, Receipt, PartyPopper, Camera, PartyP
 import { BUSINESS_CATEGORIES, BUSINESS_CATEGORY_OPTIONS, categoryLabel } from "@/lib/businessTerminology";
 import { getIndustryPresets } from "@/constants/industryPresets";
 import { DEFAULT_EXPENSE_CATEGORIES } from "@/constants/financeConfig";
+import { ensureDefaultFY } from "@/lib/financialYearService";
 
 const currencies = ["INR (₹)", "USD ($)", "EUR (€)", "AED (د.إ)"];
 const timezones = ["Asia/Kolkata", "UTC", "Asia/Dubai", "America/New_York"];
@@ -93,6 +94,10 @@ export default function Onboarding() {
         await base44.entities.ExpenseCategory.bulkCreate(
           DEFAULT_EXPENSE_CATEGORIES.map((n) => ({ workspace_id: workspace.id, name: n, status: "active" }))
         );
+      } catch (e) { /* non-fatal */ }
+      // Auto-create the current applicable Financial Year for the new workspace.
+      try {
+        await ensureDefaultFY(workspace.id);
       } catch (e) { /* non-fatal */ }
       // Initialize Free subscription + seed category-specific services (via backend, enforces RLS).
       try {

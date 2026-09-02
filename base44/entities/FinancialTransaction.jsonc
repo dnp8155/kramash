@@ -6,6 +6,10 @@
       "type": "string",
       "title": "Workspace ID"
     },
+    "financial_year_id": {
+      "type": "string",
+      "title": "Financial Year ID"
+    },
     "event_id": {
       "type": "string",
       "title": "Event ID"

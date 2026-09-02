@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useWorkspace } from "@/lib/WorkspaceContext";
@@ -11,7 +11,8 @@ import { loadTransactions, activeTransactions, memberPaidTotal } from "@/lib/fin
 import { loadTeamMembers, loadAssignments, loadBlockDates, splitAvailability } from "@/lib/teamService";
 import { todayISO, isUpcomingDate, formatEventDate } from "@/lib/dates";
 import { formatMoney } from "@/utils/format";
-import { currentFinancialYearLabel, dateInFY, financialYearRange } from "@/constants/financeConfig";
+import { useFinancialYear } from "@/hooks/useFinancialYear";
+import { txInFY, fyDisplayLabel } from "@/lib/financialYearService";
 import PageHeader from "@/components/common/PageHeader";
 import StatCard from "@/components/common/StatCard";
 import DashboardStatsSkeleton from "@/components/dashboard/DashboardStatsSkeleton";
@@ -31,7 +32,7 @@ export default function Dashboard() {
   const lang = getAppLanguage(user);
   const navigate = useNavigate();
   const currency = workspace?.currency || "INR";
-  const [fyLabel, setFyLabel] = useState(currentFinancialYearLabel());
+  const { selectedFY } = useFinancialYear();
 
   const { data: events = [], isLoading: loadingEvents } = useQuery({
     queryKey: ["dashboard-events", workspaceId],
@@ -87,7 +88,7 @@ export default function Dashboard() {
     const activeTx = activeTransactions(transactions);
     // FY-scoped revenue (selected financial year)
     const fyRevenue = activeTx
-      .filter((t) => t.transaction_type === "CLIENT_RECEIPT" && dateInFY(t.transaction_date, fyLabel))
+      .filter((t) => t.transaction_type === "CLIENT_RECEIPT" && txInFY(t, selectedFY))
       .reduce((s, t) => s + (Number(t.amount) || 0), 0);
 
     // Outstanding: sum over non-cancelled events of max(0, contract_value - received)
@@ -116,15 +117,14 @@ export default function Dashboard() {
     const activeMembers = members.filter((m) => m.status === "active").length;
 
     return { upcoming, fyRevenue, outstanding, topDues, activeMembers };
-  }, [events, transactions, members, clientsById, fyLabel]);
+  }, [events, transactions, members, clientsById, selectedFY]);
 
   // 6-month revenue trend ending at min(today, FY end)
   const trendData = useMemo(() => {
     const activeTx = activeTransactions(transactions);
-    const fyRange = financialYearRange(fyLabel);
-    const now = new Date();
+    const fyEnd = selectedFY?.end_date;
     const todayStr = todayISO();
-    const endRef = fyRange && fyRange.end < todayStr ? fyRange.end : todayStr;
+    const endRef = fyEnd && fyEnd < todayStr ? fyEnd : todayStr;
     const end = new Date(endRef + "T00:00:00");
     const buckets = [];
     for (let i = 5; i >= 0; i--) {
@@ -140,7 +140,7 @@ export default function Dashboard() {
       if (byKey[k]) byKey[k].revenue += Number(t.amount) || 0;
     }
     return buckets;
-  }, [transactions, fyLabel]);
+  }, [transactions, selectedFY]);
 
   // Team wages due: agreed (assignments) minus paid (TEAM_PAYMENT) per member
   const wagesDue = useMemo(() => {
@@ -188,7 +188,7 @@ export default function Dashboard() {
         title={`${greeting}, ${user?.full_name?.split(" ")[0] || t("there")}`}
         subtitle={`${workspace?.name || "Your workspace"} · ${new Date().toLocaleDateString(dateLocale, { weekday: "long", day: "numeric", month: "long", year: "numeric" })}`}
       >
-        <FiscalYearSelector value={fyLabel} onChange={setFyLabel} />
+        <FiscalYearSelector />
       </PageHeader>
 
       {/* Stat cards */}
@@ -208,7 +208,7 @@ export default function Dashboard() {
             value={formatMoney(stats.fyRevenue, currency)}
             icon={TrendingUp}
             tone="success"
-            sub={fyLabel}
+            sub={fyDisplayLabel(selectedFY)}
           />
           <StatCard
             label={t("Outstanding dues")}

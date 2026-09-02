@@ -8,6 +8,8 @@ import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
 import { Label } from "@/components/ui/label";
 import { PAYMENT_METHOD_LIST } from "@/constants/financeConfig";
+import { resolveFYForDate } from "@/lib/financialYearService";
+import { useFinancialYear } from "@/hooks/useFinancialYear";
 import { todayISO } from "@/lib/dates";
 
 // Record a business / event expense. Event is required (Beta is event-level).
@@ -27,6 +29,7 @@ export default function RecordExpenseDialog({
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const { fiscalYears } = useFinancialYear();
 
   useEffect(() => {
     if (open) {
@@ -48,6 +51,8 @@ export default function RecordExpenseDialog({
     if (!amount || isNaN(amt) || amt <= 0) return "Amount must be greater than zero.";
     if (!date) return "Please select an expense date.";
     if (!method) return "Please select a payment method.";
+    const fy = resolveFYForDate(date, fiscalYears);
+    if (!fy) return "No Financial Year is available for this transaction date. Please create the applicable Financial Year first.";
     return "";
   };
 
@@ -66,8 +71,15 @@ export default function RecordExpenseDialog({
         return;
       }
       const cat = categories.find((c) => c.id === categoryId);
+      const fy = resolveFYForDate(date, fiscalYears);
+      if (!fy) {
+        setError("No Financial Year is available for this transaction date. Please create the applicable Financial Year first.");
+        setSaving(false);
+        return;
+      }
       const payload = {
         workspace_id: workspaceId,
+        financial_year_id: fy.id,
         event_id: eventId,
         transaction_type: "BUSINESS_EXPENSE",
         expense_category_id: categoryId,

@@ -8,6 +8,8 @@ import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
 import { Label } from "@/components/ui/label";
 import { PAYMENT_METHOD_LIST, TRANSACTION_TYPES } from "@/constants/financeConfig";
+import { resolveFYForDate } from "@/lib/financialYearService";
+import { useFinancialYear } from "@/hooks/useFinancialYear";
 
 // Edit an existing transaction: amount, date, method, reference, notes.
 // Type and parties are not editable (preserves audit integrity).
@@ -22,6 +24,7 @@ export default function EditTransactionDialog({
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const { fiscalYears } = useFinancialYear();
 
   useEffect(() => {
     if (open && transaction) {
@@ -43,6 +46,8 @@ export default function EditTransactionDialog({
     if (!amount || isNaN(amt) || amt <= 0) return "Amount must be greater than zero.";
     if (!date) return "Please select a date.";
     if (!method) return "Please select a payment method.";
+    const fy = resolveFYForDate(date, fiscalYears);
+    if (!fy) return "No Financial Year is available for this transaction date. Please create the applicable Financial Year first.";
     return "";
   };
 
@@ -53,12 +58,19 @@ export default function EditTransactionDialog({
     setSaving(true);
     setError("");
     try {
+      const fy = resolveFYForDate(date, fiscalYears);
+      if (!fy) {
+        setError("No Financial Year is available for this transaction date. Please create the applicable Financial Year first.");
+        setSaving(false);
+        return;
+      }
       const updated = await base44.entities.FinancialTransaction.update(transaction.id, {
         amount: Number(amount),
         transaction_date: date,
         payment_method: method,
         reference_number: reference.trim(),
-        notes: notes.trim()
+        notes: notes.trim(),
+        financial_year_id: fy.id
       });
       onSaved?.(updated);
       onClose?.();

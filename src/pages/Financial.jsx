@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useWorkspace } from "@/lib/WorkspaceContext";
+import { useFinancialYear } from "@/hooks/useFinancialYear";
+import { txInFY, fyHasTransactions, setActiveFY, fyDisplayLabel } from "@/lib/financialYearService";
 import SummaryCard from "@/components/financial/SummaryCard";
 import { TrendingUp, TrendingDown, ArrowDownLeft } from "lucide-react";
 import PaymentTable from "@/components/financial/PaymentTable";
@@ -11,6 +13,7 @@ import EditTransactionDialog from "@/components/financial/EditTransactionDialog"
 import OutstandingReceivables from "@/components/financial/OutstandingReceivables";
 import FinancialYearCard from "@/components/financial/FinancialYearCard";
 import FinancialYearForm from "@/components/financial/FinancialYearForm";
+import FiscalYearSelector from "@/components/dashboard/FiscalYearSelector";
 import Button from "@/components/common/Button";
 import Select from "@/components/common/Select";
 import LoadingState from "@/components/common/LoadingState";
@@ -18,12 +21,7 @@ import { StatGridSkeleton, TableSkeleton } from "@/components/common/Skeletons";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/use-toast";
 import { PAYMENT_METHODS, PAYMENT_TYPES } from "@/constants/statusConfig";
-import {
-  currentFinancialYearLabel,
-  financialYearLabels,
-  fyLabelForDate,
-  TRANSACTION_TYPES
-} from "@/constants/financeConfig";
+import { TRANSACTION_TYPES } from "@/constants/financeConfig";
 import {
   loadAllTransactions,
   ensureDefaultExpenseCategories,
@@ -34,7 +32,7 @@ import {
   methodBreakdown
 } from "@/lib/financeService";
 import { formatMoney } from "@/utils/format";
-import { Download, Plus, Wallet, Receipt, AlertTriangle, Trash2, TrendingUp as TrendingUpIcon, TrendingDown as TrendingDownIcon } from "lucide-react";
+import { Download, Plus, Wallet, Receipt, AlertTriangle, Trash2, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { exportFinancialCsv } from "@/lib/exportUtils";
 import PageHeader from "@/components/common/PageHeader";
@@ -50,10 +48,11 @@ export default function Financial() {
   const t = useT();
   const tabs = TAB_KEYS;
 
+  const { fiscalYears, selectedFY, selectFY, activeFY, refresh: refreshFY } = useFinancialYear();
+
   const [tab, setTab] = useState("Payment Activity");
   const [method, setMethod] = useState("All");
   const [type, setType] = useState("All");
-  const [fy, setFy] = useState(currentFinancialYearLabel());
 
   const [showClientPayment, setShowClientPayment] = useState(false);
   const [showTeamPayment, setShowTeamPayment] = useState(false);
@@ -69,16 +68,15 @@ export default function Financial() {
     queryKey: ["financial", workspaceId],
     queryFn: async () => {
       await ensureDefaultExpenseCategories(workspaceId);
-      const [tx, evs, cls, membs, asgns, cats, fys] = await Promise.all([
+      const [tx, evs, cls, membs, asgns, cats] = await Promise.all([
         loadAllTransactions(workspaceId),
         base44.entities.Event.filter({ workspace_id: workspaceId }, "-start_date", 500),
         base44.entities.Client.filter({ workspace_id: workspaceId }, "name", 500),
         base44.entities.TeamMember.filter({ workspace_id: workspaceId }, "name", 500),
         base44.entities.EventTeamAssignment.filter({ workspace_id: workspaceId }, "-created_date", 1000),
-        loadExpenseCategories(workspaceId),
-        base44.entities.FinancialYear.filter({ workspace_id: workspaceId }, "start_date", 100)
+        loadExpenseCategories(workspaceId)
       ]);
-      return { allTx: tx || [], events: evs || [], clients: cls || [], members: membs || [], assignments: asgns || [], categories: cats || [], fiscalYears: fys || [] };
+      return { allTx: tx || [], events: evs || [], clients: cls || [], members: membs || [], assignments: asgns || [], categories: cats || [] };
     },
     enabled: !!workspaceId
   });
@@ -88,21 +86,17 @@ export default function Financial() {
   const members = data?.members || [];
   const assignments = data?.assignments || [];
   const categories = data?.categories || [];
-  const fiscalYears = data?.fiscalYears || [];
   const load = () => {
     queryClient.invalidateQueries({ queryKey: ["financial", workspaceId] });
     invalidateEntities(queryClient, ["FinancialTransaction", "FinancialYear"]);
+    refreshFY();
   };
 
-  // Set active FY: deactivate all others, activate selected, and set fy state.
+  // Set active FY: deactivate all others, activate selected.
   const handleSetActiveFY = async (fyRecord) => {
     try {
-      await base44.entities.FinancialYear.updateMany(
-        { workspace_id: workspaceId, is_active: true },
-        { $set: { is_active: false } }
-      );
-      await base44.entities.FinancialYear.update(fyRecord.id, { is_active: true });
-      setFy(fyRecord.fy_id);
+      await setActiveFY(workspaceId, fyRecord.id);
+      selectFY(fyRecord.id);
       toast({ title: t("Financial year set active"), description: fyRecord.label });
       load();
     } catch (e) {
@@ -112,6 +106,16 @@ export default function Financial() {
 
   const handleDeleteFY = async () => {
     if (!deletingFY) return;
+    // Delete protection: block if FY has transactions
+    if (fyHasTransactions(deletingFY, allTx)) {
+      toast({
+        title: t("Cannot delete"),
+        description: t("This Financial Year contains financial records and cannot be deleted."),
+        variant: "destructive"
+      });
+      setDeletingFY(null);
+      return;
+    }
     try {
       await base44.entities.FinancialYear.delete(deletingFY.id);
       toast({ title: t("Financial year deleted") });
@@ -138,9 +142,8 @@ export default function Financial() {
 
   // FY-filtered transactions (active + void, for the activity list; totals use active only).
   const fyTx = useMemo(() => {
-    const r = financialYearLabels(6).find((l) => l === fy) ? fy : null;
     return allTx.filter((t) => {
-      if (r && fyLabelForDate(t.transaction_date) !== r) return false;
+      if (!txInFY(t, selectedFY)) return false;
       if (method !== "All") {
         const cat = t.payment_method === "Cash" ? "Cash" : "Online";
         if (cat !== method) return false;
@@ -151,7 +154,7 @@ export default function Financial() {
       }
       return true;
     });
-  }, [allTx, fy, method, type]);
+  }, [allTx, selectedFY, method, type]);
 
   // Active transactions within the selected FY for totals.
   const activeFyTx = useMemo(() => fyTx.filter((t) => t.status === "ACTIVE"), [fyTx]);
@@ -164,25 +167,27 @@ export default function Financial() {
 
   const breakdown = useMemo(() => methodBreakdown(activeFyTx), [activeFyTx]);
 
-  // Per-FY summary map keyed by fy_id (e.g. "FY2024-25") — derived from all active transactions.
+  // Per-FY summary map keyed by FY record id — derived from all active transactions.
   const fySummaryMap = useMemo(() => {
     const map = {};
+    for (const fy of fiscalYears) {
+      map[fy.id] = { received: 0, paid: 0 };
+    }
     for (const t of allTx) {
       if (t.status !== "ACTIVE") continue;
-      const label = fyLabelForDate(t.transaction_date);
-      if (!label) continue;
-      if (!map[label]) map[label] = { received: 0, paid: 0 };
-      if (t.transaction_type === "CLIENT_RECEIPT") map[label].received += Number(t.amount) || 0;
-      else map[label].paid += Number(t.amount) || 0;
+      // Find the FY this transaction belongs to
+      let fyId = t.financial_year_id;
+      if (!fyId) {
+        // Fallback: find by date range
+        const fy = fiscalYears.find((f) => txInFY(t, f));
+        fyId = fy?.id;
+      }
+      if (!fyId || !map[fyId]) continue;
+      if (t.transaction_type === "CLIENT_RECEIPT") map[fyId].received += Number(t.amount) || 0;
+      else map[fyId].paid += Number(t.amount) || 0;
     }
     return map;
-  }, [allTx]);
-
-  // Sync fy state to the active FinancialYear entity on first load.
-  useEffect(() => {
-    const activeFY = fiscalYears.find((f) => f.is_active);
-    if (activeFY) setFy(activeFY.fy_id);
-  }, [fiscalYears]);
+  }, [allTx, fiscalYears]);
 
   const handleVoid = async () => {
     if (!voiding) return;
@@ -250,16 +255,12 @@ export default function Financial() {
           {/* Showing / export */}
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("Showing")}</span>
-            <Select value={fy} onChange={(e) => setFy(e.target.value)} size="sm">
-              {financialYearLabels(6).map((l) => (
-                <option key={l} value={l}>{l.replace("FY ", "April ")} - March {("20" + l.split("-")[1])}</option>
-              ))}
-            </Select>
+            <FiscalYearSelector size="sm" />
             <Button
               variant="outline"
               size="sm"
               className="sm:ml-auto"
-              onClick={() => exportFinancialCsv(fyTx, { eventsById, clientsById, membersById }, currency, fy)}
+              onClick={() => exportFinancialCsv(fyTx, { eventsById, clientsById, membersById }, currency, fyDisplayLabel(selectedFY))}
               disabled={fyTx.length === 0}
             >
               <Download className="w-3.5 h-3.5" />
@@ -384,14 +385,17 @@ export default function Financial() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {fiscalYears.length === 0 && (
               <div className="col-span-full bg-card border border-border rounded-lg p-10 text-center text-sm text-muted-foreground">
-                {t("No financial years added yet.")}
+                {t("No financial years set up yet.")}
                 <br />
-                {t("Click \"Add Financial Year\" below to create one.")}
+                <Button size="sm" className="mt-3" onClick={() => { setEditingFY(null); setShowFYForm(true); }}>
+                  <Plus className="w-3.5 h-3.5" /> {t("Create Financial Year")}
+                </Button>
               </div>
             )}
             {fiscalYears.map((fyRecord) => {
-              const s = fySummaryMap[fyRecord.fy_id] || { received: 0, paid: 0 };
+              const s = fySummaryMap[fyRecord.id] || { received: 0, paid: 0 };
               const summary = { ...s, profit: s.received - s.paid };
+              const hasTx = fyHasTransactions(fyRecord, allTx);
               return (
                 <FinancialYearCard
                   key={fyRecord.id}
@@ -401,6 +405,7 @@ export default function Financial() {
                   onSetActive={handleSetActiveFY}
                   onEdit={(f) => { setEditingFY(f); setShowFYForm(true); }}
                   onDelete={(f) => setDeletingFY(f)}
+                  hasTransactions={hasTx}
                 />
               );
             })}
@@ -467,19 +472,39 @@ export default function Financial() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setDeletingFY(null)}>
           <div className="bg-card border border-border rounded-lg max-w-sm w-full p-5" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-start gap-2">
-              <Trash2 className="w-5 h-5 text-destructive mt-0.5 shrink-0" />
+              {fyHasTransactions(deletingFY, allTx) ? (
+                <Lock className="w-5 h-5 text-destructive mt-0.5 shrink-0" />
+              ) : (
+                <Trash2 className="w-5 h-5 text-destructive mt-0.5 shrink-0" />
+              )}
               <div>
-                <h3 className="text-sm font-semibold">{t("Delete this financial year?")}</h3>
+                <h3 className="text-sm font-semibold">
+                  {fyHasTransactions(deletingFY, allTx)
+                    ? t("Cannot delete this financial year")
+                    : t("Delete this financial year?")}
+                </h3>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {deletingFY.label} ({deletingFY.fy_id})
-                  <br />
-                  {t("Transactions recorded in this period will remain, but the year card will be removed.")}
+                  {fyHasTransactions(deletingFY, allTx) ? (
+                    <>
+                      {deletingFY.label} ({deletingFY.fy_id})
+                      <br />
+                      {t("This Financial Year contains financial records and cannot be deleted.")}
+                    </>
+                  ) : (
+                    <>
+                      {deletingFY.label} ({deletingFY.fy_id})
+                      <br />
+                      {t("This year has no transactions. Are you sure you want to remove it?")}
+                    </>
+                  )}
                 </p>
               </div>
             </div>
             <div className="flex justify-end gap-2 mt-4">
               <Button variant="outline" size="sm" onClick={() => setDeletingFY(null)}>{t("Cancel")}</Button>
-              <Button variant="destructive" size="sm" onClick={handleDeleteFY}>{t("Delete")}</Button>
+              {!fyHasTransactions(deletingFY, allTx) && (
+                <Button variant="destructive" size="sm" onClick={handleDeleteFY}>{t("Delete")}</Button>
+              )}
             </div>
           </div>
         </div>

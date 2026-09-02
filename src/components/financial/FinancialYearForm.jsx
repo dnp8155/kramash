@@ -11,6 +11,7 @@ import Button from "@/components/common/Button";
 import Input from "@/components/common/Input";
 import { useToast } from "@/components/ui/use-toast";
 import { useT } from "@/hooks/useT";
+import { validateFYRange } from "@/lib/financialYearService";
 
 export default function FinancialYearForm({
   open,
@@ -52,6 +53,13 @@ export default function FinancialYearForm({
     if (!canSave) return;
     setSaving(true);
     try {
+      // Validate: start < end, no overlap with existing FYs
+      const validation = await validateFYRange(workspaceId, startDate, endDate, editing?.id);
+      if (!validation.valid) {
+        toast({ title: t("Cannot save"), description: t(validation.error), variant: "destructive" });
+        setSaving(false);
+        return;
+      }
       if (editing) {
         await base44.entities.FinancialYear.update(editing.id, {
           start_date: startDate,
@@ -68,6 +76,7 @@ export default function FinancialYearForm({
           fy_id: fyId,
           label,
           is_active: false,
+          status: "open",
         });
         toast({ title: t("Financial year added") });
       }

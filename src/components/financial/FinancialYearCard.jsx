@@ -1,15 +1,8 @@
 import { format, parseISO } from "date-fns";
 import { formatMoney } from "@/utils/format";
 import { cn } from "@/lib/utils";
-import { Pencil, Trash2 } from "lucide-react";
-
-function fyStatus(fy) {
-  if (fy.is_active) return "Active";
-  const today = new Date().toISOString().slice(0, 10);
-  if (fy.end_date < today) return "Closed";
-  if (fy.start_date > today) return "Upcoming";
-  return "Current";
-}
+import { Pencil, Trash2, Lock } from "lucide-react";
+import { fyDisplayStatus } from "@/lib/financialYearService";
 
 const statusStyles = {
   Active: "text-success font-semibold",
@@ -24,9 +17,10 @@ export default function FinancialYearCard({
   currency = "INR",
   onSetActive,
   onEdit,
-  onDelete
+  onDelete,
+  hasTransactions = false
 }) {
-  const status = fyStatus(fy);
+  const status = fyDisplayStatus(fy);
   const isActive = fy.is_active;
 
   return (
@@ -106,10 +100,16 @@ export default function FinancialYearCard({
         {onDelete && (
           <button
             onClick={() => onDelete(fy)}
-            className="ml-auto w-7 h-7 flex items-center justify-center text-white bg-destructive rounded-full hover:opacity-90 transition-opacity"
-            aria-label="Delete financial year"
+            className={cn(
+              "ml-auto w-7 h-7 flex items-center justify-center rounded-full transition-opacity",
+              hasTransactions
+                ? "bg-muted text-muted-foreground cursor-not-allowed"
+                : "bg-destructive text-white hover:opacity-90"
+            )}
+            aria-label={hasTransactions ? "Financial year has transactions — cannot delete" : "Delete financial year"}
+            title={hasTransactions ? "Contains financial records — cannot delete" : "Delete"}
           >
-            <Trash2 className="w-3.5 h-3.5" />
+            {hasTransactions ? <Lock className="w-3.5 h-3.5" /> : <Trash2 className="w-3.5 h-3.5" />}
           </button>
         )}
       </div>
