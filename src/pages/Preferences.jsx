@@ -20,6 +20,7 @@ import { useFinancialYear } from "@/hooks/useFinancialYear";
 import { txInFY, fyDisplayLabel } from "@/lib/financialYearService";
 import { getIndustryPresets } from "@/constants/industryPresets";
 import TeamMemberTypeManager from "@/components/preferences/TeamMemberTypeManager";
+import EventTypeManager from "@/components/preferences/EventTypeManager";
 
 const BUSINESS_TYPE_TO_CATEGORY = {
   "Photography": "PHOTOGRAPHY",
@@ -277,10 +278,13 @@ export default function Preferences() {
         </Card>
       </div>
 
-      {/* Member types & display */}
+      {/* Member types, event types & display */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card title="Team Member Types">
           <TeamMemberTypeManager workspace={workspace} />
+        </Card>
+        <Card title="Event / Work Types">
+          <EventTypeManager workspace={workspace} />
         </Card>
         <Card title="Card & Table Display">
           <div className="space-y-3">

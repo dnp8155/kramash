@@ -94,7 +94,7 @@ export default function Help() {
   const { user } = useAuth();
   const { workspace } = useWorkspace();
 
-  const [activeTab, setActiveTab] = useState("contact");
+  const [activeTab, setActiveTab] = useState("help-center");
   const [tickets, setTickets] = useState([]);
   const [loadingTickets, setLoadingTickets] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -244,6 +244,11 @@ export default function Help() {
           </button>
         ))}
       </div>
+
+      {/* Help Center — feature guides */}
+      {activeTab === "help-center" && (
+        <FeatureGuide />
+      )}
 
       {/* Contact Form */}
       {activeTab === "contact" && (

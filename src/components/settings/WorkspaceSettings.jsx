@@ -9,8 +9,6 @@ import Toggle from "@/components/common/Toggle";
 import { Upload, Loader2, Pencil, Check } from "lucide-react";
 import { businessTypes } from "@/constants/preferencesConfig";
 import { toast } from "@/components/ui/use-toast";
-import { uploadFileWithLimit } from "@/lib/storageService";
-import StorageUsageCard from "@/components/common/StorageUsageCard";
 
 const currencies = [{ v: "INR", l: "INR (₹)" }, { v: "USD", l: "USD ($)" }, { v: "EUR", l: "EUR (€)" }, { v: "AED", l: "AED (د.إ)" }];
 const timezones = ["Asia/Kolkata", "UTC", "Asia/Dubai", "America/New_York"];
@@ -60,12 +58,7 @@ export default function WorkspaceSettings() {
     if (file.size > 5 * 1024 * 1024) { toast({ title: "Image too large (max 5MB)." }); return; }
     setUploading(true);
     try {
-      const result = await uploadFileWithLimit(workspace.id, file);
-      if (result.error) {
-        toast({ title: "Storage limit reached", description: "Upgrade your plan to upload more files.", variant: "destructive" });
-        return;
-      }
-      const { file_url } = result;
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
       set("logo", file_url);
       await base44.entities.Workspace.update(workspace.id, { logo: file_url });
       setWorkspace((w) => ({ ...w, logo: file_url }));
@@ -237,8 +230,6 @@ export default function WorkspaceSettings() {
         <Button onClick={save} disabled={saving}>
           {saving ? <><Loader2 className="w-4 h-4 animate-spin" />Saving…</> : "Save Settings"}
         </Button>
-
-        <StorageUsageCard />
       </div>
     </div>
   );

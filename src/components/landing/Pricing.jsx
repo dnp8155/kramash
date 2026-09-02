@@ -20,17 +20,10 @@ function limitLabel(key) {
     max_events: "Projects / Events",
     max_team_members: "Team Members",
     max_services: "Services",
-    max_storage_gb: "Workspace Storage",
     pdf_export_enabled: "PDF Export",
     reminders_enabled: "Reminders",
   };
   return map[key] || key;
-}
-
-function formatStorageGb(gb) {
-  if (!gb || gb <= 0) return null;
-  if (gb >= 1024) return `${(gb / 1024).toFixed(gb % 1024 === 0 ? 0 : 1)} TB`;
-  return `${gb} GB`;
 }
 
 export default function Pricing() {
@@ -65,8 +58,7 @@ export default function Pricing() {
                 : parseInt(String(l.limit_value), 10);
             });
 
-          const storageGb = monthly?.storage_gb || limits.max_storage_gb || 0;
-          return { plan, monthly, limits, storageGb, pricings: planPricings };
+          return { plan, monthly, limits, pricings: planPricings };
         });
 
         setPlanData(data);
@@ -109,22 +101,19 @@ export default function Pricing() {
         </div>
 
         <div className={`grid gap-6 ${planData.length === 3 ? "lg:grid-cols-3" : "sm:grid-cols-2 max-w-3xl mx-auto"}`}>
-          {planData.map(({ plan, monthly, limits, storageGb }, i) => {
+          {planData.map(({ plan, monthly, limits }, i) => {
             const isPopular = i === popularIndex;
             const price = monthly?.price || 0;
             const currency = monthly?.currency || "INR";
             const cycleLabel = monthly?.billing_cycle === "ANNUAL" ? "/ year" : monthly?.billing_cycle === "SIX_MONTHS" ? "/ 6 months" : "/ month";
 
             const limitEntries = Object.entries(limits)
-              .filter(([key]) => key !== "max_storage_gb")
               .map(([key, val]) => {
                 const formatted = formatLimitValue(key, val);
                 if (formatted === null) return null;
                 return { label: limitLabel(key), value: formatted };
               })
               .filter(Boolean);
-
-            const storageDisplay = formatStorageGb(storageGb);
 
             return (
               <div
@@ -174,15 +163,6 @@ export default function Pricing() {
                       <span className="text-muted-foreground">{entry.label}</span>
                     </li>
                   ))}
-                  {storageDisplay && (
-                    <li className="flex items-center gap-3 text-sm text-foreground">
-                      <div className="w-5 h-5 rounded-full bg-success/15 flex items-center justify-center shrink-0">
-                        <Check className="w-3 h-3 text-success" strokeWidth={3} />
-                      </div>
-                      <span className="font-medium">{storageDisplay}</span>
-                      <span className="text-muted-foreground">storage</span>
-                    </li>
-                  )}
                 </ul>
               </div>
             );
