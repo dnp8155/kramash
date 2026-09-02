@@ -139,7 +139,7 @@ export default function Login() {
       {/* Left: Content column */}
       <div className="flex-1 flex flex-col px-6 py-6 sm:px-10 lg:px-12 xl:px-16 lg:py-8">
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-2.5 self-start">
+        <Link to="/" className="flex items-center gap-2.5 self-start relative z-50 cursor-pointer hover:opacity-80 transition-opacity">
           <Logo size={36} className="shadow-md" />
           <span className="font-heading text-lg font-bold tracking-tight text-foreground">Kramasha</span>
         </Link>
