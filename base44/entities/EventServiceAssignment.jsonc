@@ -1,5 +1,5 @@
 {
-  "name": "EventTeamAssignment",
+  "name": "EventServiceAssignment",
   "type": "object",
   "properties": {
     "workspace_id": {
@@ -10,59 +10,41 @@
       "type": "string",
       "title": "Event ID"
     },
-    "team_member_id": {
+    "service_id": {
       "type": "string",
-      "title": "Team Member ID"
+      "title": "Service ID"
     },
-    "role_id": {
+    "service_name_snapshot": {
       "type": "string",
-      "title": "Role ID"
+      "title": "Service Name Snapshot"
     },
-    "role_name_snapshot": {
+    "provider_id": {
       "type": "string",
-      "title": "Role Name Snapshot"
+      "title": "Provider Team Member ID (optional)"
     },
-    "member_type_id": {
+    "provider_name_snapshot": {
       "type": "string",
-      "title": "Member Type ID (e.g. Bride Side / Groom Side)"
-    },
-    "member_type_snapshot": {
-      "type": "string",
-      "title": "Member Type Name Snapshot"
+      "title": "Provider Name Snapshot"
     },
     "agreed_rate": {
       "type": "number",
-      "title": "Agreed Rate",
+      "title": "Agreed Rate (event-specific)",
       "default": 0
     },
     "rate_type": {
       "type": "string",
       "title": "Rate Type",
-      "default": "Per Event",
+      "default": "Fixed",
       "enum": [
-        "Per Event",
+        "Fixed",
         "Per Day",
-        "Fixed"
+        "Per Unit"
       ]
     },
-    "working_dates": {
-      "type": "array",
-      "title": "Working Dates (selected event dates)",
-      "items": {
-        "type": "string",
-        "format": "date"
-      },
-      "default": []
-    },
-    "booking_start_date": {
-      "type": "string",
-      "format": "date",
-      "title": "Booking Start Date (per-member)"
-    },
-    "booking_end_date": {
-      "type": "string",
-      "format": "date",
-      "title": "Booking End Date (per-member)"
+    "is_addon": {
+      "type": "boolean",
+      "title": "Is Add-on (last-minute, adds to contract value)",
+      "default": false
     },
     "assignment_status": {
       "type": "string",
@@ -81,7 +63,7 @@
   "required": [
     "workspace_id",
     "event_id",
-    "team_member_id"
+    "service_id"
   ],
   "rls": {
     "create": {

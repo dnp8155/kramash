@@ -65,8 +65,22 @@ export default function EventAssignmentCard({
         </span>
       </div>
 
-      <div className="text-xs text-muted-foreground mb-3">
-        {assignment.role_name_snapshot || member?.profession || "—"}
+      <div className="flex items-center gap-2 mb-3 flex-wrap">
+        <span className="text-xs text-muted-foreground">
+          {assignment.role_name_snapshot || member?.profession || "—"}
+        </span>
+        {assignment.member_type_snapshot && (
+          <span className={cn(
+            "text-[10px] font-semibold px-1.5 py-0.5 rounded",
+            assignment.member_type_snapshot?.toLowerCase().includes("bride")
+              ? "bg-pink-100 text-pink-700"
+              : assignment.member_type_snapshot?.toLowerCase().includes("groom")
+                ? "bg-blue-100 text-blue-700"
+                : "bg-muted text-muted-foreground"
+          )}>
+            {assignment.member_type_snapshot}
+          </span>
+        )}
       </div>
 
       {/* Dates — always visible (compact on mobile) */}

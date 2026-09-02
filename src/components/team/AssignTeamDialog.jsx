@@ -14,52 +14,65 @@ import { findConflicts } from "@/lib/teamService";
 import { formatEventDate, parseISODate, toISODate, todayISO } from "@/lib/dates";
 import { resolveFYForDate } from "@/lib/financialYearService";
 import { useFinancialYear } from "@/hooks/useFinancialYear";
+import { formatMoney } from "@/utils/format";
 import { AlertTriangle, Ban, Wallet } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-// Count days between two ISO date strings (inclusive)
-function daysBetween(startStr, endStr) {
-  if (!startStr) return 1;
-  const s = parseISODate(startStr);
-  const e = parseISODate(endStr || startStr);
-  if (!s || !e) return 1;
-  return Math.max(1, Math.round((e - s) / 86400000) + 1);
-}
+const DEFAULT_MEMBER_TYPES = [
+  { id: "mt1", title: "Bride Side", color: "#ec4899" },
+  { id: "mt2", title: "Groom Side", color: "#3b82f6" },
+  { id: "mt3", title: "Common", color: "#6b7280" },
+];
 
 export default function AssignTeamDialog({
   open, onClose, onSaved,
-  event, workspaceId,
+  event, workspaceId, workspace,
   members = [], roles = [], assignments = [], eventsById = {}, blockDates = []
 }) {
   const [memberId, setMemberId] = useState("");
   const [roleId, setRoleId] = useState("");
+  const [memberTypeId, setMemberTypeId] = useState("");
   const [agreedRate, setAgreedRate] = useState("");
   const [rateType, setRateType] = useState("Per Event");
+  const [workingDates, setWorkingDates] = useState([]);
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [overrideConflict, setOverrideConflict] = useState(false);
-  const [bookingStart, setBookingStart] = useState("");
-  const [bookingEnd, setBookingEnd] = useState("");
-  // Record Payment toggle + fields
+  // Record Payment
   const [recordPayment, setRecordPayment] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentDate, setPaymentDate] = useState(todayISO());
   const [paymentMethod, setPaymentMethod] = useState("Cash");
   const { fiscalYears } = useFinancialYear();
 
+  // Parse member types from workspace config
+  const memberTypes = useMemo(() => {
+    try {
+      const parsed = workspace?.team_member_types ? JSON.parse(workspace.team_member_types) : null;
+      return parsed && Array.isArray(parsed) ? parsed : DEFAULT_MEMBER_TYPES;
+    } catch {
+      return DEFAULT_MEMBER_TYPES;
+    }
+  }, [workspace]);
+
+  // Event's available dates (event_dates array or fallback to start_date)
+  const eventDates = useMemo(() => {
+    const dates = event?.event_dates?.length ? event.event_dates : (event?.start_date ? [event.start_date] : []);
+    return [...dates].sort();
+  }, [event]);
+
   useEffect(() => {
     if (open) {
       setError("");
       setMemberId("");
       setRoleId("");
+      setMemberTypeId("");
       setAgreedRate("");
       setRateType("Per Event");
+      setWorkingDates(eventDates.length > 0 ? [eventDates[0]] : []);
       setNotes("");
       setOverrideConflict(false);
-      // Default booking dates to event dates
-      setBookingStart(event?.start_date || "");
-      setBookingEnd(event?.end_date || event?.start_date || "");
-      // Reset payment fields
       setRecordPayment(false);
       setPaymentAmount("");
       setPaymentDate(todayISO());
@@ -72,7 +85,15 @@ export default function AssignTeamDialog({
     ? findConflicts(memberId, event.start_date, event.end_date, assignments, eventsById, event.id)
     : [];
 
-  // Block-date conflicts: check each day in the event range for a block entry.
+  // Unique member check — same member can't be assigned twice to the same event
+  const alreadyAssigned = useMemo(() => {
+    if (!memberId || !assignments) return false;
+    return assignments.some(
+      (a) => a.event_id === event?.id && a.team_member_id === memberId && a.assignment_status !== "removed"
+    );
+  }, [memberId, assignments, event]);
+
+  // Block-date conflicts
   const blockConflicts = useMemo(() => {
     if (!memberId || !event) return [];
     const start = parseISODate(event.start_date);
@@ -92,10 +113,13 @@ export default function AssignTeamDialog({
     return hits;
   }, [memberId, event, blockDates]);
 
-  // Auto-recalculate rate when dates change and rate type is Per Day
-  const recalcRate = (start, end, currentRate, currentRateType, defaultRate) => {
-    if (currentRateType === "Per Day" && defaultRate) {
-      const days = daysBetween(start, end);
+  // Number of selected working dates
+  const workingDayCount = workingDates.length || 1;
+
+  // Auto-recalculate rate when working dates change and rate type is Per Day
+  const recalcRate = (dates, currentRateType, defaultRate, force = false) => {
+    if (currentRateType === "Per Day" && defaultRate != null) {
+      const days = dates.length || 1;
       setAgreedRate(String(Number(defaultRate) * days));
     }
   };
@@ -109,8 +133,9 @@ export default function AssignTeamDialog({
       const dr = m.default_rate != null ? m.default_rate : 0;
       setRateType(rt);
       setRoleId(m.role_id || "");
+      setMemberTypeId(m.member_type_id || "");
       if (rt === "Per Day") {
-        const days = daysBetween(bookingStart, bookingEnd);
+        const days = workingDates.length || 1;
         setAgreedRate(String(Number(dr) * days));
       } else {
         setAgreedRate(String(dr));
@@ -118,16 +143,18 @@ export default function AssignTeamDialog({
     }
   };
 
-  const onBookingStartChange = (val) => {
-    setBookingStart(val);
-    const m = members.find((x) => x.id === memberId);
-    recalcRate(val, bookingEnd, agreedRate, rateType, m?.default_rate);
-  };
-
-  const onBookingEndChange = (val) => {
-    setBookingEnd(val);
-    const m = members.find((x) => x.id === memberId);
-    recalcRate(bookingStart, val, agreedRate, rateType, m?.default_rate);
+  const toggleWorkingDate = (date) => {
+    setWorkingDates((prev) => {
+      const has = prev.includes(date);
+      const next = has ? prev.filter((d) => d !== date) : [...prev, date].sort();
+      // Recalculate if Per Day
+      const m = members.find((x) => x.id === memberId);
+      if (m && m.rate_type === "Per Day") {
+        const days = next.length || 1;
+        setAgreedRate(String(Number(m.default_rate || 0) * days));
+      }
+      return next;
+    });
   };
 
   const onRoleChange = (id) => {
@@ -141,12 +168,16 @@ export default function AssignTeamDialog({
 
   const validate = () => {
     if (!memberId) return "Please select a team member.";
+    if (alreadyAssigned) return `${selectedMember?.name || "This member"} is already assigned to this event. A team member can only be assigned once per event.`;
     if (!rateType) return "Please select a rate type.";
+    if (workingDates.length === 0) return "Please select at least one working date.";
     if (conflicts.length > 0 && !overrideConflict) return "Please confirm the booking conflict to proceed.";
     if (blockConflicts.length > 0 && !overrideConflict) return "This member has blocked dates — please confirm to proceed.";
+    const amt = Number(agreedRate);
+    if (agreedRate === "" || isNaN(amt) || amt < 0) return "Rate must be a valid non-negative number.";
     if (recordPayment) {
-      const amt = Number(paymentAmount);
-      if (!paymentAmount || isNaN(amt) || amt <= 0) return "Payment amount must be greater than zero.";
+      const pAmt = Number(paymentAmount);
+      if (!paymentAmount || isNaN(pAmt) || pAmt <= 0) return "Payment amount must be greater than zero.";
       if (!paymentDate) return "Please select a payment date.";
       if (!paymentMethod) return "Please select a payment method.";
       const fy = resolveFYForDate(paymentDate, fiscalYears);
@@ -164,28 +195,31 @@ export default function AssignTeamDialog({
     try {
       const role = roles.find((r) => r.id === roleId);
       const member = members.find((m) => m.id === memberId);
+      const mType = memberTypes.find((t) => t.id === memberTypeId);
+      const sortedDates = [...workingDates].sort();
       const payload = {
         workspace_id: workspaceId,
         event_id: event.id,
         team_member_id: memberId,
         role_id: roleId || "",
         role_name_snapshot: role?.name || member?.profession || "",
+        member_type_id: memberTypeId || "",
+        member_type_snapshot: mType?.title || "",
         agreed_rate: Number(agreedRate) || 0,
         rate_type: rateType,
+        working_dates: sortedDates,
+        booking_start_date: sortedDates[0] || event?.start_date || "",
+        booking_end_date: sortedDates[sortedDates.length - 1] || sortedDates[0] || event?.start_date || "",
         assignment_status: "assigned",
-        notes: notes.trim(),
-        booking_start_date: bookingStart || event?.start_date || "",
-        booking_end_date: bookingEnd || event?.end_date || event?.start_date || ""
+        notes: notes.trim()
       };
       const saved = await base44.entities.EventTeamAssignment.create(payload);
-      // Keep event.team_member_ids in sync so the Events table (which reads
-      // from the event record) reflects assignments made here.
+      // Keep event.team_member_ids in sync
       const currentIds = Array.isArray(event?.team_member_ids) ? event.team_member_ids : [];
       if (!currentIds.includes(memberId)) {
         await base44.entities.Event.update(event.id, { team_member_ids: [...currentIds, memberId] });
       }
-      // If Record Payment is ON, create a TEAM_PAYMENT transaction linked to
-      // the FY that contains the payment date (not the booking date).
+      // Record payment if enabled
       if (recordPayment) {
         const fy = resolveFYForDate(paymentDate, fiscalYears);
         if (!fy) {
@@ -203,7 +237,7 @@ export default function AssignTeamDialog({
           amount: Number(paymentAmount),
           payment_method: paymentMethod,
           transaction_date: paymentDate,
-          notes: `Payment for ${role?.name || member?.profession || "assignment"} · ${notes.trim()}`.trim(),
+          notes: `Payment for ${role?.name || member?.profession || "assignment"}${mType ? ` (${mType.title})` : ""}${notes.trim() ? ` · ${notes.trim()}` : ""}`,
           status: "ACTIVE"
         });
       }
@@ -240,37 +274,73 @@ export default function AssignTeamDialog({
             {members.length === 0 && (
               <p className="text-xs text-muted-foreground">No team members available. Add members from the Team page.</p>
             )}
+            {alreadyAssigned && (
+              <p className="text-xs text-destructive font-medium">
+                {selectedMember?.name} is already assigned to this event.
+              </p>
+            )}
           </div>
 
-          <div className="space-y-1.5">
-            <Label>Role for this event</Label>
-            <Select value={roleId} onChange={(e) => onRoleChange(e.target.value)} className="w-full">
-              <option value="">Default / no role</option>
-              {roles.map((r) => (
-                <option key={r.id} value={r.id}>{r.name}</option>
-              ))}
-            </Select>
-          </div>
-
-          {/* Per-member booking dates */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label>Booking Start Date</Label>
-              <Input type="date" value={bookingStart} onChange={(e) => onBookingStartChange(e.target.value)} />
+              <Label>Role</Label>
+              <Select value={roleId} onChange={(e) => onRoleChange(e.target.value)} className="w-full">
+                <option value="">Default / no role</option>
+                {roles.map((r) => (
+                  <option key={r.id} value={r.id}>{r.name}</option>
+                ))}
+              </Select>
             </div>
             <div className="space-y-1.5">
-              <Label>Booking End Date</Label>
-              <Input type="date" value={bookingEnd} onChange={(e) => onBookingEndChange(e.target.value)} />
+              <Label>Type</Label>
+              <Select value={memberTypeId} onChange={(e) => setMemberTypeId(e.target.value)} className="w-full">
+                <option value="">No type</option>
+                {memberTypes.map((t) => (
+                  <option key={t.id} value={t.id}>{t.title}</option>
+                ))}
+              </Select>
             </div>
           </div>
-          {bookingStart && bookingEnd && (
-            <p className="text-xs text-muted-foreground -mt-1">
-              {daysBetween(bookingStart, bookingEnd)} day(s) · {formatEventDate(bookingStart, bookingEnd)}
-              {rateType === "Per Day" && members.find(m => m.id === memberId)?.default_rate
-                ? ` · Auto-calculated: ₹${Number(members.find(m => m.id === memberId)?.default_rate) * daysBetween(bookingStart, bookingEnd)}`
-                : ""}
-            </p>
-          )}
+
+          {/* Working Dates — multi-select from event's available dates */}
+          <div className="space-y-1.5">
+            <Label>Working Date(s) <span className="text-destructive">*</span></Label>
+            {eventDates.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {eventDates.map((d) => {
+                  const selected = workingDates.includes(d);
+                  const dt = parseISODate(d);
+                  const day = dt?.getDate();
+                  const month = dt?.toLocaleString("en-IN", { month: "short" });
+                  return (
+                    <button
+                      key={d}
+                      type="button"
+                      onClick={() => toggleWorkingDate(d)}
+                      className={cn(
+                        "px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all",
+                        selected
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-card border-border text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                      )}
+                    >
+                      {day} {month}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">No event dates available. Set dates on the event first.</p>
+            )}
+            {workingDates.length > 0 && (
+              <p className="text-xs text-muted-foreground">
+                {workingDates.length} day(s) selected
+                {rateType === "Per Day" && selectedMember?.default_rate
+                  ? ` · Calculated: ${formatMoney(Number(selectedMember.default_rate) * workingDates.length, "INR")}`
+                  : ""}
+              </p>
+            )}
+          </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
@@ -278,14 +348,29 @@ export default function AssignTeamDialog({
               <Input
                 type="number"
                 min="0"
+                step="0.01"
                 value={agreedRate}
                 onChange={(e) => setAgreedRate(e.target.value)}
                 placeholder="0"
               />
+              {rateType === "Per Day" && selectedMember?.default_rate && (
+                <p className="text-[11px] text-muted-foreground">
+                  {formatMoney(selectedMember.default_rate, "INR")}/day × {workingDayCount} = {formatMoney(Number(selectedMember.default_rate) * workingDayCount, "INR")}
+                </p>
+              )}
             </div>
             <div className="space-y-1.5">
               <Label>Rate Type</Label>
-              <Select value={rateType} onChange={(e) => setRateType(e.target.value)} className="w-full">
+              <Select value={rateType} onChange={(e) => {
+                setRateType(e.target.value);
+                const m = members.find((x) => x.id === memberId);
+                if (e.target.value === "Per Day" && m?.default_rate) {
+                  const days = workingDates.length || 1;
+                  setAgreedRate(String(Number(m.default_rate) * days));
+                } else if (m && e.target.value !== "Per Day") {
+                  setAgreedRate(String(m.default_rate || 0));
+                }
+              }} className="w-full">
                 {RATE_TYPES.map((r) => <option key={r} value={r}>{r}</option>)}
               </Select>
             </div>

@@ -13,7 +13,7 @@ import { CURRENCY_SYMBOLS } from "@/constants/financeConfig";
 import ClientForm from "@/components/clients/ClientForm";
 import ChipPicker from "@/components/common/ChipPicker";
 import DateRangeChips from "@/components/common/DateRangeChips";
-import { Plus, Users, Briefcase } from "lucide-react";
+import { Plus } from "lucide-react";
 import { fyForDate } from "@/lib/dates";
 import { useFinancialYear } from "@/hooks/useFinancialYear";
 import { fyDisplayLabel, fyRecordValue } from "@/lib/financialYearService";
@@ -36,8 +36,6 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
   const workTypes = t.category === "ARCHITECTURE" || t.category === "OTHER" ? GENERIC_WORK_TYPES : PHOTO_EVENT_TYPES;
   const [form, setForm] = useState(empty);
   const [clients, setClients] = useState([]);
-  const [teamMembers, setTeamMembers] = useState([]);
-  const [services, setServices] = useState([]);
   const [loadingClients, setLoadingClients] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -53,7 +51,6 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
       }
       setForm(base);
       loadClients();
-      loadTeamAndServices();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, event]);
@@ -71,60 +68,7 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
     }
   };
 
-  const loadTeamAndServices = async () => {
-    if (!workspaceId) return;
-    try {
-      const [team, svcs] = await Promise.all([
-        base44.entities.TeamMember.filter({ workspace_id: workspaceId, status: "active" }, "name", 200),
-        base44.entities.Service.filter({ workspace_id: workspaceId, status: "active" }, "name", 200)
-      ]);
-      setTeamMembers(team || []);
-      setServices(svcs || []);
-    } catch (e) {
-      setTeamMembers([]);
-      setServices([]);
-    }
-  };
-
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
-
-  // Sync team_member_ids on the event to EventTeamAssignment records so the
-  // EventDetails Team tab (which reads assignments) stays in sync with the form.
-  const syncTeamAssignments = async (eventId, teamMemberIds) => {
-    const existing = await base44.entities.EventTeamAssignment.filter({
-      workspace_id: workspaceId,
-      event_id: eventId,
-      assignment_status: "assigned"
-    });
-    const existingByMember = {};
-    (existing || []).forEach((a) => { existingByMember[a.team_member_id] = a; });
-    const ids = teamMemberIds || [];
-    const toCreate = ids.filter((id) => !existingByMember[id]);
-    const toRemove = (existing || []).filter((a) => !ids.includes(a.team_member_id));
-    if (toCreate.length > 0) {
-      await base44.entities.EventTeamAssignment.bulkCreate(
-        toCreate.map((id) => {
-          const m = teamMembers.find((x) => x.id === id);
-          return {
-            workspace_id: workspaceId,
-            event_id: eventId,
-            team_member_id: id,
-            role_id: m?.role_id || "",
-            role_name_snapshot: m?.profession || "",
-            agreed_rate: m?.default_rate || 0,
-            rate_type: m?.rate_type || "Per Event",
-            assignment_status: "assigned",
-            notes: ""
-          };
-        })
-      );
-    }
-    if (toRemove.length > 0) {
-      await base44.entities.EventTeamAssignment.bulkUpdate(
-        toRemove.map((a) => ({ id: a.id, assignment_status: "removed" }))
-      );
-    }
-  };
 
   // event_dates = selected shoot days within the start/end range.
   const setEventDates = (dates) => {
@@ -161,8 +105,8 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
         end_date: endDate,
         event_dates: dates,
         financial_year: fy,
-        team_member_ids: form.team_member_ids || [],
-        service_ids: form.service_ids || [],
+        team_member_ids: event?.team_member_ids || [],
+        service_ids: event?.service_ids || [],
         venue: form.venue.trim(),
         venue_address: form.venue_address.trim(),
         status: form.status,
@@ -176,10 +120,6 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
       } else {
         const res = await base44.functions.invoke("createEvent", payload);
         saved = res.data || res;
-      }
-      const eventId = saved?.id || event?.id;
-      if (eventId) {
-        try { await syncTeamAssignments(eventId, payload.team_member_ids); } catch (e) { /* non-fatal */ }
       }
       onSaved?.(saved);
       onClose?.();
@@ -200,8 +140,6 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
 
   const workTypeOptions = workTypes.map((wt) => ({ value: wt, label: wt }));
   const statusOptions = EVENT_STATUS_ORDER.map((s) => ({ value: s, label: EVENT_STATUS[s].label }));
-  const teamOptions = teamMembers.map((m) => ({ value: m.id, label: m.name }));
-  const serviceOptions = services.map((s) => ({ value: s.id, label: s.name }));
 
   return (
     <>
@@ -329,33 +267,6 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
                     <p className="text-[11px] text-muted-foreground">
                       For future-year bookings. Defaults to the FY of the start date.
                     </p>
-                  </div>
-                </div>
-
-                <div className="space-y-2.5 pt-1">
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">Assignments</p>
-                  <div className="space-y-1.5">
-                    <Label className="flex items-center gap-1.5 text-xs"><Briefcase className="w-3.5 h-3.5" /> Services</Label>
-                    <ChipPicker
-                      options={serviceOptions}
-                      value={form.service_ids || []}
-                      onChange={(v) => set("service_ids", v)}
-                      multiple
-                      size="sm"
-                      emptyText="No services found. Add services from the Services page."
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label className="flex items-center gap-1.5 text-xs"><Users className="w-3.5 h-3.5" /> Team Members</Label>
-                    <ChipPicker
-                      options={teamOptions}
-                      value={form.team_member_ids || []}
-                      onChange={(v) => set("team_member_ids", v)}
-                      multiple
-                      size="sm"
-                      emptyText="No team members found. Add team from the Team page."
-                    />
                   </div>
                 </div>
 

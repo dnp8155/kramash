@@ -14,6 +14,7 @@ import EventServicesTab from "@/components/events/EventServicesTab";
 import EventProgressTab from "@/components/events/EventProgressTab";
 import EventFinancialsTab from "@/components/events/EventFinancialsTab";
 import AssignTeamDialog from "@/components/team/AssignTeamDialog";
+import AssignServiceDialog from "@/components/events/AssignServiceDialog";
 import RecordPaymentDialog from "@/components/financial/RecordPaymentDialog";
 import RecordExpenseDialog from "@/components/financial/RecordExpenseDialog";
 import { useToast } from "@/components/ui/use-toast";
@@ -45,6 +46,7 @@ export default function EventDetails() {
   const [showExpense, setShowExpense] = useState(false);
   const [teamPayAssignment, setTeamPayAssignment] = useState(null);
   const [showServicePicker, setShowServicePicker] = useState(false);
+  const [showServiceAssign, setShowServiceAssign] = useState(false);
   const [tab, setTab] = useState("Team");
   const queryClient = useQueryClient();
 
@@ -53,7 +55,7 @@ export default function EventDetails() {
     queryFn: async () => {
       const ev = await base44.entities.Event.get(id);
       if (!ev || ev.workspace_id !== workspaceId) return { notFound: true };
-      const [clList, membs, rles, asgns, tx, cats, blocks, svcs, dayAsgns] = await Promise.all([
+      const [clList, membs, rles, asgns, tx, cats, blocks, svcs, dayAsgns, svcAsgns] = await Promise.all([
         ev.client_id ? base44.entities.Client.get(ev.client_id).catch(() => null) : Promise.resolve(null),
         base44.entities.TeamMember.filter({ workspace_id: workspaceId }, "name", 500),
         base44.entities.TeamRole.filter({ workspace_id: workspaceId }, "name", 200),
@@ -62,7 +64,8 @@ export default function EventDetails() {
         loadExpenseCategories(workspaceId),
         base44.entities.TeamBlockDate.filter({ workspace_id: workspaceId }, "-start_date", 500),
         base44.entities.Service.filter({ workspace_id: workspaceId }, "name", 500),
-        base44.entities.EventDayAssignment.filter({ workspace_id: workspaceId }, "date", 1000)
+        base44.entities.EventDayAssignment.filter({ workspace_id: workspaceId }, "date", 1000),
+        base44.entities.EventServiceAssignment.filter({ workspace_id: workspaceId, event_id: ev.id }, "-created_date", 500)
       ]);
       const [quotes, invs] = await Promise.all([
         base44.entities.Quotation.filter({ workspace_id: workspaceId, event_id: ev.id }, "-quotation_date", 200).catch(() => []),
@@ -91,6 +94,7 @@ export default function EventDetails() {
         blockDates: blocks || [],
         services: svcs || [],
         dayAssignments: dayAsgns || [],
+        serviceAssignments: svcAsgns || [],
         eventsById: evMap,
         quotations: quotes || [],
         invoices: invs || []
@@ -108,6 +112,7 @@ export default function EventDetails() {
   const blockDates = data?.blockDates || [];
   const services = data?.services || [];
   const dayAssignments = data?.dayAssignments || [];
+  const serviceAssignments = data?.serviceAssignments || [];
   const eventsById = data?.eventsById || {};
   const quotations = data?.quotations || [];
   const invoices = data?.invoices || [];
@@ -117,7 +122,7 @@ export default function EventDetails() {
     queryClient.invalidateQueries({ queryKey: ["event", id, workspaceId] });
     // Also refresh every other page that depends on this event's data:
     // dashboard stats/calendar, events list, financial totals, team-member bookings.
-    invalidateEntities(queryClient, ["Event", "EventTeamAssignment", "EventDayAssignment", "FinancialTransaction"]);
+    invalidateEntities(queryClient, ["Event", "EventTeamAssignment", "EventDayAssignment", "EventServiceAssignment", "FinancialTransaction"]);
   };
 
   const eventAssignments = useMemo(
@@ -130,8 +135,8 @@ export default function EventDetails() {
   }, [members]);
 
   const fin = useMemo(
-    () => eventFinancialSummary(event, transactions, eventAssignments),
-    [event, transactions, eventAssignments]
+    () => eventFinancialSummary(event, transactions, eventAssignments, serviceAssignments),
+    [event, transactions, eventAssignments, serviceAssignments]
   );
   const clientStatus = clientPaymentStatus(fin.received, fin.contractValue);
   const currency = workspace?.currency || "INR";
@@ -141,9 +146,16 @@ export default function EventDetails() {
   const teamTotalRemaining = Math.max(0, fin.teamAgreed - fin.teamPaid);
 
   const removeAssignment = async (a) => {
+    // Check for associated payments — don't silently delete financial history
+    const hasPayments = transactions.some(
+      (t) => t.team_assignment_id === a.id && t.status === "ACTIVE"
+    );
+    const msg = hasPayments
+      ? `This team member has ${transactions.filter(t => t.team_assignment_id === a.id && t.status === "ACTIVE").length} payment record(s). Removing the assignment will NOT delete the payment history. Continue?`
+      : `Remove ${membersById[a.team_member_id]?.name || "this member"} from the ${term.workItemSingular.toLowerCase()}?`;
+    if (!confirm(msg)) return;
     try {
       await base44.entities.EventTeamAssignment.update(a.id, { assignment_status: "removed" });
-      // Keep event.team_member_ids in sync so the Events table reflects removals.
       const currentIds = Array.isArray(event?.team_member_ids) ? event.team_member_ids : [];
       if (currentIds.includes(a.team_member_id)) {
         await base44.entities.Event.update(event.id, {
@@ -247,16 +259,22 @@ export default function EventDetails() {
   const tabs = ["Team", "Financials", "Services", "Payments", "Notes", "Progress"];
   const eventTransactions = transactions.filter((t) => t.status === "ACTIVE");
 
-  const toggleService = async (serviceId) => {
-    const current = event.service_ids || [];
-    const has = current.includes(serviceId);
-    const updated = has ? current.filter((x) => x !== serviceId) : [...current, serviceId];
+  const removeServiceAssignment = async (a) => {
+    // Check if this assignment has associated payments
+    const hasPayments = transactions.some(
+      (t) => t.status === "ACTIVE" && t.event_id === event.id &&
+      t.notes?.includes(a.service_name_snapshot || "")
+    );
+    const msg = hasPayments
+      ? `This service has associated payment records. Removing it will NOT delete the payment history. Continue?`
+      : `Remove ${a.service_name_snapshot || "this service"} from the ${term.workItemSingular.toLowerCase()}?`;
+    if (!confirm(msg)) return;
     try {
-      await base44.entities.Event.update(event.id, { service_ids: updated });
-      toast({ title: has ? "Service removed" : "Service added" });
+      await base44.entities.EventServiceAssignment.update(a.id, { assignment_status: "removed" });
+      toast({ title: "Service removed" });
       load();
     } catch (e) {
-      toast({ title: "Failed to update services", description: e?.message, variant: "destructive" });
+      toast({ title: "Failed to remove service", description: e?.message, variant: "destructive" });
     }
   };
 
@@ -321,7 +339,12 @@ export default function EventDetails() {
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4">
             <DetailField label="Client / Event" value={event.title} />
             <DetailField label="Event Type" value={event.event_type || "—"} />
-            <DetailField label="Contract Value" value={formatMoney(event.contract_value || 0, currency)} />
+            <DetailField label="Contract Value" value={formatMoney(fin.contractValue || 0, currency)} />
+            {fin.addonTotal > 0 && (
+              <div className="text-[11px] text-muted-foreground">
+                Base: {formatMoney(fin.baseContractValue, currency)} + Add-ons: {formatMoney(fin.addonTotal, currency)}
+              </div>
+            )}
             <DetailField label="Start Date" value={event.start_date ? formatEventDate(event.start_date) : "—"} />
             <DetailField label="End Date" value={event.end_date ? formatEventDate(event.end_date) : "—"} />
             <DetailField label="Financial Year" value={fyLabel} />
@@ -418,9 +441,10 @@ export default function EventDetails() {
         <EventServicesTab
           event={event}
           services={services}
+          serviceAssignments={serviceAssignments}
           currency={currency}
-          onAddService={() => setShowServicePicker(true)}
-          onRemoveService={(sid) => toggleService(sid)}
+          onAddService={() => setShowServiceAssign(true)}
+          onRemoveService={(a) => removeServiceAssignment(a)}
         />
       )}
 
@@ -572,11 +596,23 @@ export default function EventDetails() {
         onSaved={load}
         event={event}
         workspaceId={workspaceId}
+        workspace={workspace}
         members={members.filter((m) => m.status === "active")}
         roles={roles.filter((r) => r.status === "active")}
         assignments={assignments}
         eventsById={eventsById}
         blockDates={blockDates}
+      />
+
+      <AssignServiceDialog
+        open={showServiceAssign}
+        onClose={() => setShowServiceAssign(false)}
+        onSaved={load}
+        event={event}
+        workspaceId={workspaceId}
+        services={services}
+        members={members.filter((m) => m.status === "active")}
+        existingAssignments={serviceAssignments}
       />
 
       <RecordPaymentDialog
@@ -617,41 +653,6 @@ export default function EventDetails() {
         preselectedEventId={event.id}
       />
 
-      {/* Service picker dialog */}
-      {showServicePicker && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowServicePicker(false)}>
-          <div className="bg-card rounded-xl shadow-lg w-full max-w-md mx-4 p-5" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-semibold">Add Services</h3>
-              <button onClick={() => setShowServicePicker(false)} className="text-muted-foreground hover:text-foreground text-xl leading-none">×</button>
-            </div>
-            <div className="max-h-80 overflow-y-auto space-y-2">
-              {services.filter((s) => s.status === "active").map((s) => {
-                const selected = (event.service_ids || []).includes(s.id);
-                return (
-                  <button
-                    key={s.id}
-                    onClick={() => toggleService(s.id)}
-                    className={cn(
-                      "w-full flex items-center justify-between p-3 rounded-lg border transition-all text-left",
-                      selected ? "bg-primary/5 border-primary" : "border-border hover:bg-muted"
-                    )}
-                  >
-                    <div>
-                      <div className="text-sm font-medium text-foreground">{s.name}</div>
-                      <div className="text-xs text-muted-foreground">{s.rate_type} · {formatMoney(s.default_rate || 0, currency)}</div>
-                    </div>
-                    {selected && <div className="w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs">✓</div>}
-                  </button>
-                );
-              })}
-              {services.filter((s) => s.status === "active").length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-4">No services available. Create services first.</p>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
