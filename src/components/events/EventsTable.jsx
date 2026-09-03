@@ -5,10 +5,10 @@ import LoadingState from "@/components/common/LoadingState";
 import EmptyState from "@/components/common/EmptyState";
 import Button from "@/components/common/Button";
 import { EVENT_STATUS } from "@/constants/statusConfig";
-import { formatEventDates, isThisWeek } from "@/lib/dates";
+import { formatEventDates, isThisWeek, formatAssignedDates } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 
-export default function EventsTable({ events, clients, teamMap = {}, serviceMap = {}, loading, onEventClick, onEditEvent, onAdd, canAdd, term }) {
+export default function EventsTable({ events, clients, teamMap = {}, serviceMap = {}, assignmentsByEvent = {}, loading, onEventClick, onEditEvent, onAdd, canAdd, term }) {
   const t = term || {};
   if (loading) {
     return (
@@ -52,7 +52,7 @@ export default function EventsTable({ events, clients, teamMap = {}, serviceMap 
             {weekEvents.length} {t.workItemSingular || "Event"}{weekEvents.length > 1 ? "s" : ""} This Week
           </div>
           {weekEvents.map((e) => (
-            <Row key={e.id} event={e} term={t} clientName={clientName(e.client_id)} teamMap={teamMap} serviceMap={serviceMap} onClick={() => onEventClick(e)} onEdit={() => onEditEvent(e)} />
+            <Row key={e.id} event={e} term={t} clientName={clientName(e.client_id)} teamMap={teamMap} serviceMap={serviceMap} assignmentsByEvent={assignmentsByEvent} onClick={() => onEventClick(e)} onEdit={() => onEditEvent(e)} />
           ))}
         </>
       )}
@@ -63,7 +63,7 @@ export default function EventsTable({ events, clients, teamMap = {}, serviceMap 
             All {t.workItemPlural || "Events"}
           </div>
           {laterEvents.map((e) => (
-            <Row key={e.id} event={e} term={t} clientName={clientName(e.client_id)} teamMap={teamMap} serviceMap={serviceMap} onClick={() => onEventClick(e)} onEdit={() => onEditEvent(e)} />
+            <Row key={e.id} event={e} term={t} clientName={clientName(e.client_id)} teamMap={teamMap} serviceMap={serviceMap} assignmentsByEvent={assignmentsByEvent} onClick={() => onEventClick(e)} onEdit={() => onEditEvent(e)} />
           ))}
         </>
       )}
@@ -71,9 +71,10 @@ export default function EventsTable({ events, clients, teamMap = {}, serviceMap 
   );
 }
 
-function Row({ event, clientName, teamMap, serviceMap, onClick, onEdit, term }) {
+function Row({ event, clientName, teamMap, serviceMap, assignmentsByEvent, onClick, onEdit, term }) {
   const teamNames = (event.team_member_ids || []).map((id) => teamMap[id]?.name).filter(Boolean);
   const serviceNames = (event.service_ids || []).map((id) => serviceMap[id]?.name).filter(Boolean);
+  const eventAssignments = assignmentsByEvent?.[event.id] || [];
   const [open, setOpen] = useState(false);
   const shortId = `#${event.id.slice(-4)}`;
 
@@ -142,7 +143,25 @@ function Row({ event, clientName, teamMap, serviceMap, onClick, onEdit, term }) 
                 <span className="line-clamp-2">{event.notes}</span>
               </div>
             )}
-            {teamNames.length > 0 && (
+            {eventAssignments.length > 0 ? (
+              <div className="flex items-start gap-2 text-muted-foreground">
+                <Users className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                <ul className="space-y-1 min-w-0">
+                  {eventAssignments.map((a) => {
+                    const m = teamMap[a.team_member_id];
+                    const name = m?.name || "Unknown";
+                    const role = a.role_name_snapshot || m?.profession || "—";
+                    const dates = formatAssignedDates(a, event);
+                    return (
+                      <li key={a.id} className="text-xs break-anywhere">
+                        <span className="font-medium text-foreground">{name}</span>
+                        <span className="text-muted-foreground"> — {role} — {dates}</span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ) : teamNames.length > 0 && (
               <div className="flex items-start gap-2 text-muted-foreground">
                 <Users className="w-3.5 h-3.5 mt-0.5 shrink-0" />
                 <div className="flex flex-wrap gap-1.5">

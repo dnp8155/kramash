@@ -3,6 +3,8 @@ import Card from "@/components/common/Card";
 import Button from "@/components/common/Button";
 import EmptyState from "@/components/common/EmptyState";
 import ServiceAssignmentCard from "@/components/events/ServiceAssignmentCard";
+import FinancialSummaryCards from "@/components/events/FinancialSummaryCards";
+import { serviceAssignmentPaid } from "@/lib/financeService";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
 
 export default function EventServicesTab({
@@ -14,8 +16,22 @@ export default function EventServicesTab({
   const term = useBusinessTerminology();
   const activeAssignments = (serviceAssignments || []).filter((a) => a.assignment_status !== "removed");
 
+  // Services-only financial summary (PART 2): excludes Team Member/Role amounts.
+  const serviceTotalRate = activeAssignments.reduce((s, a) => s + (Number(a.agreed_rate) || 0), 0);
+  const serviceTotalPaid = activeAssignments.reduce(
+    (s, a) => s + serviceAssignmentPaid(transactions, a.id), 0
+  );
+  const serviceTotalRemaining = Math.max(0, serviceTotalRate - serviceTotalPaid);
+
   return (
     <div className="space-y-4">
+      <FinancialSummaryCards
+        totalRate={serviceTotalRate}
+        totalPayments={serviceTotalPaid}
+        totalRemaining={serviceTotalRemaining}
+        currency={currency}
+      />
+
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Briefcase className="w-4 h-4 text-muted-foreground" />

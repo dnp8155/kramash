@@ -13,6 +13,8 @@ import EventAssignmentCard from "@/components/events/EventAssignmentCard";
 import EventServicesTab from "@/components/events/EventServicesTab";
 import EventProgressTab from "@/components/events/EventProgressTab";
 import EventFinancialsTab from "@/components/events/EventFinancialsTab";
+import FinancialSummaryCards from "@/components/events/FinancialSummaryCards";
+import TeamBookingBySide from "@/components/events/TeamBookingBySide";
 import AssignTeamDialog from "@/components/team/AssignTeamDialog";
 import EditTeamAssignmentDialog from "@/components/team/EditTeamAssignmentDialog";
 import AssignServiceDialog from "@/components/events/AssignServiceDialog";
@@ -489,12 +491,20 @@ export default function EventDetails() {
 
       {tab === "Team" && (
         <div className="space-y-4">
-          {/* Team summary cards */}
-          <div className="grid grid-cols-3 gap-3">
-            <TeamStatCard label="Total Rate" value={formatMoney(teamTotalRate, currency)} />
-            <TeamStatCard label="Total Payments" value={formatMoney(teamTotalPaid, currency)} />
-            <TeamStatCard label="Total Remaining" value={formatMoney(teamTotalRemaining, currency)} tone="warning" />
-          </div>
+          {/* Team-only financial summary (PART 1) */}
+          <FinancialSummaryCards
+            totalRate={teamTotalRate}
+            totalPayments={teamTotalPaid}
+            totalRemaining={teamTotalRemaining}
+            currency={currency}
+          />
+
+          {/* Date-wise team booking visibility, grouped by Member Type / Side (PART 5-10) */}
+          <TeamBookingBySide
+            assignments={eventAssignments}
+            membersById={membersById}
+            event={event}
+          />
 
           {/* Assignments */}
           {eventAssignments.length === 0 ? (

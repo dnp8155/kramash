@@ -39,11 +39,12 @@ export default function Events() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["events", workspaceId],
     queryFn: async () => {
-      const [evList, clList, tmList, svList] = await Promise.all([
+      const [evList, clList, tmList, svList, asgList] = await Promise.all([
         base44.entities.Event.filter({ workspace_id: workspaceId }, "-start_date", 500),
         base44.entities.Client.filter({ workspace_id: workspaceId }, "name", 500),
         base44.entities.TeamMember.filter({ workspace_id: workspaceId }, "name", 500),
-        base44.entities.Service.filter({ workspace_id: workspaceId }, "name", 500)
+        base44.entities.Service.filter({ workspace_id: workspaceId }, "name", 500),
+        base44.entities.EventTeamAssignment.filter({ workspace_id: workspaceId }, "-created_date", 1000)
       ]);
       const map = {};
       (clList || []).forEach((c) => { map[c.id] = c; });
@@ -51,7 +52,15 @@ export default function Events() {
       (tmList || []).forEach((m) => { teamMap[m.id] = m; });
       const serviceMap = {};
       (svList || []).forEach((s) => { serviceMap[s.id] = s; });
-      return { events: evList || [], clients: map, teamMap, serviceMap };
+      // Active team assignments grouped by event — powers date-wise booking
+      // visibility in the expanded event list rows (PART 9).
+      const assignmentsByEvent = {};
+      (asgList || []).forEach((a) => {
+        if (a.assignment_status === "removed") return;
+        if (!assignmentsByEvent[a.event_id]) assignmentsByEvent[a.event_id] = [];
+        assignmentsByEvent[a.event_id].push(a);
+      });
+      return { events: evList || [], clients: map, teamMap, serviceMap, assignmentsByEvent };
     },
     enabled: !!workspaceId
   });
@@ -59,6 +68,7 @@ export default function Events() {
   const clients = data?.clients || {};
   const teamMap = data?.teamMap || {};
   const serviceMap = data?.serviceMap || {};
+  const assignmentsByEvent = data?.assignmentsByEvent || {};
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ["events", workspaceId] });
     invalidateEntities(queryClient, ["Event", "EventTeamAssignment"]);
@@ -173,6 +183,7 @@ export default function Events() {
           clients={clients}
           teamMap={teamMap}
           serviceMap={serviceMap}
+          assignmentsByEvent={assignmentsByEvent}
           loading={isLoading}
           onEventClick={openEvent}
           onEditEvent={openEdit}

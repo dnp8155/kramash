@@ -71,6 +71,33 @@ export function formatEventDates(event) {
   return formatEventDate(event?.start_date, event?.end_date);
 }
 
+// Format the exact dates a team member was assigned to an event.
+// Prefers the assignment's working_dates array (non-consecutive selected dates),
+// then falls back to the per-member booking_start_date / booking_end_date range,
+// then to the event's own date range. Never assumes every event date applies.
+export function formatAssignedDates(assignment, event) {
+  const wd = Array.isArray(assignment?.working_dates)
+    ? assignment.working_dates.filter(Boolean)
+    : [];
+  if (wd.length > 0) {
+    const parsed = wd.map(parseISODate).filter(Boolean).sort((a, b) => a - b);
+    if (parsed.length === 0) return "—";
+    const first = parsed[0];
+    const last = parsed[parsed.length - 1];
+    if (first.getMonth() === last.getMonth() && first.getFullYear() === last.getFullYear()) {
+      const days = parsed.map((d) => d.getDate()).join(", ");
+      return `${days} ${MONTHS[last.getMonth()]} ${last.getFullYear()}`;
+    }
+    const sameYear = parsed.every((d) => d.getFullYear() === first.getFullYear());
+    return parsed
+      .map((d) => `${d.getDate()} ${MONTHS[d.getMonth()]}${sameYear ? "" : ` ${d.getFullYear()}`}`)
+      .join(", ") + (sameYear ? ` ${first.getFullYear()}` : "");
+  }
+  const start = assignment?.booking_start_date || event?.start_date;
+  const end = assignment?.booking_end_date || event?.end_date || start;
+  return formatEventDate(start, end);
+}
+
 export function isToday(dateStr) {
   return dateStr === todayISO();
 }
