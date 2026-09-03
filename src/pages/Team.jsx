@@ -53,7 +53,7 @@ export default function Team() {
     queryKey: ["team", workspaceId],
     queryFn: async () => {
       await ensureDefaultRoles(workspaceId);
-      const [membs, rles, asgns, txns, blocks, svcAsgns, svcProviders, expenseTxns] = await Promise.all([
+      const [membs, rles, asgns, txns, blocks, svcAsgns, svcProviders, expenseTxns, dayAsgns, svcs] = await Promise.all([
         loadTeamMembers(workspaceId),
         loadRoles(workspaceId),
         loadAssignments(workspaceId),
@@ -61,7 +61,9 @@ export default function Team() {
         loadBlockDates(workspaceId),
         base44.entities.EventServiceAssignment.filter({ workspace_id: workspaceId }, "-created_date", 1000),
         loadServiceProviders(workspaceId),
-        base44.entities.FinancialTransaction.filter({ workspace_id: workspaceId, transaction_type: "BUSINESS_EXPENSE", status: "ACTIVE" }, "-transaction_date", 1000)
+        base44.entities.FinancialTransaction.filter({ workspace_id: workspaceId, transaction_type: "BUSINESS_EXPENSE", status: "ACTIVE" }, "-transaction_date", 1000),
+        base44.entities.EventDayAssignment.filter({ workspace_id: workspaceId }, "date", 1000),
+        base44.entities.Service.filter({ workspace_id: workspaceId }, "name", 500)
       ]);
       const evIds = [...new Set([
         ...((asgns || []).map((a) => a.event_id)),
@@ -85,7 +87,9 @@ export default function Team() {
         eventsById: evMap,
         serviceAssignments: svcAsgns || [],
         serviceProviders: svcProviders || [],
-        expenseTransactions: expenseTxns || []
+        expenseTransactions: expenseTxns || [],
+        dayAssignments: dayAsgns || [],
+        services: svcs || []
       };
     },
     enabled: !!workspaceId
@@ -98,6 +102,8 @@ export default function Team() {
   const eventsById = data?.eventsById || {};
   const serviceAssignments = data?.serviceAssignments || [];
   const expenseTransactions = data?.expenseTransactions || [];
+  const dayAssignments = data?.dayAssignments || [];
+  const services = data?.services || [];
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ["team", workspaceId] });
     invalidateEntities(queryClient, ["TeamMember", "TeamBlockDate", "EventTeamAssignment", "EventServiceAssignment", "FinancialTransaction"]);
@@ -321,6 +327,9 @@ export default function Team() {
               assignments={assignments}
               eventsById={eventsById}
               blockDates={blockDates}
+              serviceAssignments={serviceAssignments}
+              dayAssignments={dayAssignments}
+              services={services}
               currency={currency}
               onEventClick={(ev) => navigate(`/events/${ev.id}`)}
               onBlockDate={(date) => { setBlockPreselect({ memberId: null, date }); setShowBlock(true); }}
@@ -329,6 +338,9 @@ export default function Team() {
               members={members}
               assignments={assignments}
               eventsById={eventsById}
+              serviceAssignments={serviceAssignments}
+              dayAssignments={dayAssignments}
+              services={services}
               onEventClick={(ev) => navigate(`/events/${ev.id}`)}
             />
           </div>

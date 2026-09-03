@@ -483,6 +483,7 @@ export default function EventDetails() {
           members={members}
           services={services}
           eventAssignments={eventAssignments}
+          serviceAssignments={serviceAssignments}
           dayAssignments={dayAssignments}
           otherDayAssignments={dayAssignments.filter((a) => a.event_id !== event.id)}
           blockDates={blockDates}

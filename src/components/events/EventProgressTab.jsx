@@ -19,6 +19,7 @@ export default function EventProgressTab({
   members,
   services,
   eventAssignments,
+  serviceAssignments,
   dayAssignments,
   otherDayAssignments,
   blockDates,
@@ -92,6 +93,7 @@ export default function EventProgressTab({
                 members={members}
                 services={services}
                 eventAssignments={(eventAssignments || []).filter((a) => a.event_id === event.id && a.assignment_status !== "removed")}
+                serviceAssignments={(serviceAssignments || []).filter((a) => a.assignment_status !== "removed")}
                 dayAssignments={dayAssignments.filter((a) => a.event_id === event.id)}
                 otherDayAssignments={otherDayAssignments}
                 blockDates={blockDates}

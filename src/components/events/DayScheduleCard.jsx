@@ -4,7 +4,8 @@ import { cn } from "@/lib/utils";
 import { isAssignedToDate } from "@/lib/dates";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Calendar, Users, Briefcase, Loader2, AlertTriangle, Check } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar, Users, Briefcase, Loader2, AlertTriangle, Check, Crown, Settings2 } from "lucide-react";
 
 const DAY_STATUS = {
   planned: { label: "Planned", cls: "bg-muted text-muted-foreground border-border" },
@@ -30,6 +31,7 @@ export default function DayScheduleCard({
   event, date, workspaceId,
   members = [], services = [],
   eventAssignments = [],
+  serviceAssignments = [],
   dayAssignments = [],
   otherDayAssignments = [],
   blockDates = [],
@@ -70,21 +72,55 @@ export default function DayScheduleCard({
 
   // Team members actually assigned to THIS date — pulled from the Team tab's
   // date-mapped assignments (working_dates / booking range / event dates).
-  const dayTeamMembers = useMemo(() => {
+  // Each entry carries the assignment so we can show the event-specific side/type.
+  const dayTeamAssignments = useMemo(() => {
     const memberMap = {};
     members.forEach((m) => { memberMap[m.id] = m; });
     return eventAssignments
       .filter((a) => isAssignedToDate(a, date, event))
-      .map((a) => memberMap[a.team_member_id])
-      .filter(Boolean);
+      .map((a) => ({ member: memberMap[a.team_member_id], assignment: a }))
+      .filter((x) => x.member);
   }, [eventAssignments, members, date, event]);
+  const dayTeamMembers = dayTeamAssignments.map((x) => x.member);
 
-  // Services scheduled for THIS date — from the per-day schedule record.
+  // Provider lookup: service_id → provider_name_snapshot (from the Services tab).
+  const providerByServiceId = useMemo(() => {
+    const map = {};
+    (serviceAssignments || []).forEach((a) => {
+      if (a.assignment_status !== "removed") map[a.service_id] = a.provider_name_snapshot;
+    });
+    return map;
+  }, [serviceAssignments]);
+
+  // Services scheduled for THIS date — from the per-day schedule record,
+  // enriched with provider info from the Services tab.
   const dayServices = useMemo(() => {
     const serviceMap = {};
     services.forEach((s) => { serviceMap[s.id] = s; });
-    return (serviceIds || []).map((id) => serviceMap[id]).filter(Boolean);
-  }, [serviceIds, services]);
+    return (serviceIds || []).map((id) => ({
+      service: serviceMap[id],
+      provider: providerByServiceId[id]
+    })).filter((x) => x.service);
+  }, [serviceIds, services, providerByServiceId]);
+
+  // Options for the service popover — only services already assigned to this
+  // event from the Services tab (not every workspace service).
+  const eventServiceOptions = useMemo(() => {
+    const serviceMap = {};
+    services.forEach((s) => { serviceMap[s.id] = s; });
+    return (serviceAssignments || [])
+      .filter((a) => a.assignment_status !== "removed")
+      .map((a) => ({
+        value: a.service_id,
+        label: serviceMap[a.service_id]?.name || a.service_name_snapshot || "Unknown",
+        provider: a.provider_name_snapshot
+      }));
+  }, [serviceAssignments, services]);
+
+  const toggleService = (id, checked) => {
+    setServiceIds((prev) => checked ? [...prev, id] : prev.filter((x) => x !== id));
+    markDirty();
+  };
 
   // conflict detection: team member booked elsewhere on this date or blocked
   const conflictsByMember = useMemo(() => {
@@ -194,45 +230,96 @@ export default function DayScheduleCard({
         <Label className="flex items-center gap-1.5 text-xs">
           <Users className="w-3.5 h-3.5" /> Team for this day
         </Label>
-        {dayTeamMembers.length > 0 ? (
+        {dayTeamAssignments.length > 0 ? (
           <div className="flex flex-wrap gap-2">
-            {dayTeamMembers.map((m) => (
-              <span
-                key={m.id}
-                className={cn(
-                  "inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium",
-                  conflictsByMember[m.id]
-                    ? "bg-warning/10 text-warning border-warning/30"
-                    : "bg-primary/10 text-primary border-primary/20"
-                )}
-              >
-                {m.name}
-              </span>
-            ))}
+            {dayTeamAssignments.map(({ member: m, assignment: a }) => {
+              const side = a?.member_type_snapshot;
+              const role = a?.role_name_snapshot;
+              const isSelf = !!m.is_self;
+              return (
+                <span
+                  key={m.id}
+                  className={cn(
+                    "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium",
+                    conflictsByMember[m.id]
+                      ? "bg-warning/10 text-warning border-warning/30"
+                      : isSelf
+                        ? "bg-warning/10 text-warning border-warning/30"
+                        : "bg-primary/10 text-primary border-primary/20"
+                  )}
+                >
+                  {isSelf && <Crown className="w-3 h-3 text-warning shrink-0" />}
+                  <span>{m.name}</span>
+                  {isSelf && <span className="text-[10px] font-semibold text-warning">SELF</span>}
+                  {!isSelf && side && (
+                    <span className="text-[10px] text-muted-foreground border-l border-current/20 pl-1 ml-0.5">{side}</span>
+                  )}
+                  {!isSelf && !side && role && (
+                    <span className="text-[10px] text-muted-foreground border-l border-current/20 pl-1 ml-0.5">{role}</span>
+                  )}
+                </span>
+              );
+            })}
           </div>
         ) : (
           <p className="text-xs text-muted-foreground italic">No team assigned for this day.</p>
         )}
       </div>
 
-      {/* Services — read-only, date-filtered from the per-day schedule */}
+      {/* Services — date-filtered from the per-day schedule, with provider info */}
       <div className="space-y-1.5">
         <Label className="flex items-center gap-1.5 text-xs">
           <Briefcase className="w-3.5 h-3.5" /> Services for this day
         </Label>
         {dayServices.length > 0 ? (
           <div className="flex flex-wrap gap-2">
-            {dayServices.map((s) => (
+            {dayServices.map(({ service: s, provider }) => (
               <span
                 key={s.id}
                 className="inline-flex items-center rounded-full border bg-muted text-foreground border-border px-2.5 py-1 text-xs font-medium"
               >
                 {s.name}
+                {provider && <span className="text-[10px] text-muted-foreground ml-1">— {provider}</span>}
               </span>
             ))}
           </div>
         ) : (
           <p className="text-xs text-muted-foreground italic">No services added for this day.</p>
+        )}
+        {eventServiceOptions.length > 0 && (
+          <Popover>
+            <PopoverTrigger asChild>
+              <button type="button" className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
+                <Settings2 className="w-3 h-3" /> Manage services for this day
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 p-1" align="start">
+              <div className="max-h-60 overflow-y-auto">
+                {eventServiceOptions.map((opt) => {
+                  const checked = serviceIds.includes(opt.value);
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => toggleService(opt.value, !checked)}
+                      className="w-full flex items-start gap-2 px-2 py-1.5 rounded-md hover:bg-muted text-left"
+                    >
+                      <span className={cn(
+                        "mt-0.5 w-4 h-4 rounded border flex items-center justify-center shrink-0",
+                        checked ? "bg-primary border-primary" : "border-border"
+                      )}>
+                        {checked && <Check className="w-3 h-3 text-primary-foreground" />}
+                      </span>
+                      <div className="min-w-0">
+                        <div className="text-xs font-medium text-foreground truncate">{opt.label}</div>
+                        {opt.provider && <div className="text-[10px] text-muted-foreground truncate">{opt.provider}</div>}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </PopoverContent>
+          </Popover>
         )}
       </div>
 
