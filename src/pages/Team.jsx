@@ -26,6 +26,9 @@ import StatCard from "@/components/common/StatCard";
 import PageHeader from "@/components/common/PageHeader";
 import { usePlan } from "@/hooks/usePlan";
 import { invalidateEntities } from "@/lib/queryInvalidation";
+import { loadServiceProviders } from "@/lib/serviceProviderService";
+import { buildPersonStatements } from "@/lib/personStatementService";
+import PersonStatementCard from "@/components/team/PersonStatementCard";
 
 export default function Team() {
   const { workspaceId, workspace } = useWorkspace();
@@ -50,14 +53,20 @@ export default function Team() {
     queryKey: ["team", workspaceId],
     queryFn: async () => {
       await ensureDefaultRoles(workspaceId);
-      const [membs, rles, asgns, txns, blocks] = await Promise.all([
+      const [membs, rles, asgns, txns, blocks, svcAsgns, svcProviders, expenseTxns] = await Promise.all([
         loadTeamMembers(workspaceId),
         loadRoles(workspaceId),
         loadAssignments(workspaceId),
         base44.entities.FinancialTransaction.filter({ workspace_id: workspaceId, transaction_type: "TEAM_PAYMENT", status: "ACTIVE" }, "-transaction_date", 1000),
-        loadBlockDates(workspaceId)
+        loadBlockDates(workspaceId),
+        base44.entities.EventServiceAssignment.filter({ workspace_id: workspaceId }, "-created_date", 1000),
+        loadServiceProviders(workspaceId),
+        base44.entities.FinancialTransaction.filter({ workspace_id: workspaceId, transaction_type: "BUSINESS_EXPENSE", status: "ACTIVE" }, "-transaction_date", 1000)
       ]);
-      const evIds = [...new Set((asgns || []).map((a) => a.event_id))];
+      const evIds = [...new Set([
+        ...((asgns || []).map((a) => a.event_id)),
+        ...((svcAsgns || []).map((a) => a.event_id))
+      ])];
       const evMap = {};
       await Promise.all(
         evIds.map(async (id) => {
@@ -67,7 +76,17 @@ export default function Team() {
           } catch (e) { /* event may be gone */ }
         })
       );
-      return { members: membs || [], roles: rles || [], assignments: asgns || [], transactions: txns || [], blockDates: blocks || [], eventsById: evMap };
+      return {
+        members: membs || [],
+        roles: rles || [],
+        assignments: asgns || [],
+        transactions: txns || [],
+        blockDates: blocks || [],
+        eventsById: evMap,
+        serviceAssignments: svcAsgns || [],
+        serviceProviders: svcProviders || [],
+        expenseTransactions: expenseTxns || []
+      };
     },
     enabled: !!workspaceId
   });
@@ -77,9 +96,11 @@ export default function Team() {
   const transactions = data?.transactions || [];
   const blockDates = data?.blockDates || [];
   const eventsById = data?.eventsById || {};
+  const serviceAssignments = data?.serviceAssignments || [];
+  const expenseTransactions = data?.expenseTransactions || [];
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ["team", workspaceId] });
-    invalidateEntities(queryClient, ["TeamMember", "TeamBlockDate", "EventTeamAssignment"]);
+    invalidateEntities(queryClient, ["TeamMember", "TeamBlockDate", "EventTeamAssignment", "EventServiceAssignment", "FinancialTransaction"]);
   };
 
   const rolesById = useMemo(() => {
@@ -102,6 +123,17 @@ export default function Team() {
       return true;
     });
   }, [members, query, roleFilter, statusFilter]);
+
+  const personStatements = useMemo(
+    () => buildPersonStatements({
+      members,
+      teamAssignments: assignments,
+      serviceAssignments,
+      transactions: [...transactions, ...expenseTransactions],
+      eventsById
+    }),
+    [members, assignments, serviceAssignments, transactions, expenseTransactions, eventsById]
+  );
 
   const openNew = () => { setEditing(null); setShowForm(true); };
   const openEdit = (m) => { setEditing(m); setShowForm(true); };
@@ -160,7 +192,7 @@ export default function Team() {
       </div>
 
       <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-lg w-full sm:w-auto">
-        {["Roster", "Availability Calendar"].map((t) => (
+        {["Roster", "Statements", "Availability Calendar"].map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -250,6 +282,30 @@ export default function Team() {
             );
           })()}
         </>
+      ) : tab === "Statements" ? (
+        isLoading ? (
+          <CardGridSkeleton count={6} />
+        ) : personStatements.length === 0 ? (
+          <Card className="p-0">
+            <EmptyState
+              title="No statements yet"
+              description="Consolidated person-wise payment statements will appear here once team members or service providers have assignments."
+            />
+          </Card>
+        ) : (
+          <>
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <p className="text-sm text-muted-foreground">
+                {personStatements.length} person{personStatements.length !== 1 ? "s" : ""} · consolidated across team & service assignments
+              </p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {personStatements.map((ps) => (
+                <PersonStatementCard key={ps.key} statement={ps} currency={currency} />
+              ))}
+            </div>
+          </>
+        )
       ) : (
         isLoading ? (
           <Skeleton className="h-96 w-full rounded-lg" />
