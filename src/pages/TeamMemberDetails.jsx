@@ -15,9 +15,10 @@ import { TEAM_MEMBER_STATUS } from "@/constants/teamConfig";
 import { formatEventDate, isUpcomingDate, isPastDate } from "@/lib/dates";
 import { formatMoney } from "@/utils/format";
 import { assignmentPaid, memberPaidTotal, teamPaymentStatus } from "@/lib/financeService";
-import { ArrowLeft, Pencil, Phone, Mail, StickyNote, Calendar, ArrowRight, Wallet } from "lucide-react";
+import { ArrowLeft, Pencil, Phone, Mail, StickyNote, Calendar, ArrowRight, Wallet, Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { invalidateEntities } from "@/lib/queryInvalidation";
+import { isSelfMember } from "@/lib/teamService";
 
 export default function TeamMemberDetails() {
   const { id } = useParams();
@@ -110,6 +111,7 @@ export default function TeamMemberDetails() {
   const totalPaid = memberPaidTotal(transactions, member.id);
   const totalRemaining = Math.max(0, totalEarnings - totalPaid);
   const currency = workspace?.currency || "INR";
+  const selfMember = isSelfMember(member);
 
   return (
     <div className="p-4 sm:p-6 space-y-4 max-w-[1100px] mx-auto">
@@ -124,9 +126,16 @@ export default function TeamMemberDetails() {
 
       {/* Profile */}
       <Card className="p-5">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <span className={`w-3 h-3 rounded-full ${TEAM_MEMBER_STATUS[member.status]?.dot}`} />
-          <h1 className="text-xl font-semibold text-foreground">{member.name}</h1>
+          <h1 className="text-xl font-semibold text-foreground flex items-center gap-1.5">
+            {member.name}
+            {selfMember && (
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-primary text-primary-foreground">
+                <Crown className="w-2.5 h-2.5" /> Self
+              </span>
+            )}
+          </h1>
           <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
             {TEAM_MEMBER_STATUS[member.status]?.label}
           </span>
@@ -158,12 +167,16 @@ export default function TeamMemberDetails() {
           <div className="text-lg font-semibold mt-1">{upcoming.length}</div>
         </Card>
         <Card className="p-4">
-          <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Agreed Earnings</div>
+          <div className="text-[10px] text-muted-foreground uppercase tracking-wide">
+            {selfMember ? "Owner Share" : "Agreed Earnings"}
+          </div>
           <div className="text-lg font-semibold mt-1 flex items-center gap-1">
             <Wallet className="w-4 h-4 text-muted-foreground" /> {formatMoney(totalEarnings, currency)}
           </div>
           <div className="text-[10px] text-muted-foreground mt-0.5">
-            Paid: {formatMoney(totalPaid, currency)} · Remaining: {formatMoney(totalRemaining, currency)}
+            {selfMember
+              ? `Internal share · Not externally payable`
+              : `Paid: ${formatMoney(totalPaid, currency)} · Remaining: ${formatMoney(totalRemaining, currency)}`}
           </div>
         </Card>
       </div>
@@ -180,6 +193,7 @@ export default function TeamMemberDetails() {
             items={upcoming}
             transactions={transactions}
             currency={currency}
+            isSelf={selfMember}
             onOpen={(ev) => navigate(`/events/${ev.id}`)}
             onPay={(a) => setPayAssignment(a)}
           />
@@ -198,6 +212,7 @@ export default function TeamMemberDetails() {
             items={past}
             transactions={transactions}
             currency={currency}
+            isSelf={selfMember}
             onOpen={(ev) => navigate(`/events/${ev.id}`)}
             onPay={(a) => setPayAssignment(a)}
           />
@@ -229,7 +244,7 @@ export default function TeamMemberDetails() {
   );
 }
 
-function AssignmentList({ items, transactions, currency, onOpen, onPay }) {
+function AssignmentList({ items, transactions, currency, isSelf, onOpen, onPay }) {
   return (
     <div className="divide-y divide-border">
       {items.map(({ a, ev }) => {
@@ -254,37 +269,51 @@ function AssignmentList({ items, transactions, currency, onOpen, onPay }) {
                 {a.role_name_snapshot ? ` · ${a.role_name_snapshot}` : ""}
               </div>
               <div className="text-xs text-muted-foreground sm:hidden mt-0.5">
-                Agreed {formatMoney(agreed, currency)} · Paid {formatMoney(paid, currency)}
+                {isSelf
+                  ? `Share ${formatMoney(agreed, currency)}`
+                  : `Agreed ${formatMoney(agreed, currency)} · Paid ${formatMoney(paid, currency)}`}
               </div>
             </button>
             <div className="text-right hidden sm:block">
-              <div className="text-xs text-muted-foreground">Agreed {formatMoney(agreed, currency)}</div>
-              <div className="text-xs text-muted-foreground">Paid {formatMoney(paid, currency)}</div>
+              <div className="text-xs text-muted-foreground">
+                {isSelf ? "Share" : "Agreed"} {formatMoney(agreed, currency)}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {isSelf ? "Owner" : "Paid"} {isSelf ? "share" : formatMoney(paid, currency)}
+              </div>
             </div>
             <div className="text-right shrink-0">
-              <span className={cn(
-                "text-[10px] px-1.5 py-0.5 rounded font-medium uppercase tracking-wide",
-                status === "Paid" ? "bg-success/10 text-success" :
-                status === "Overpaid" ? "bg-warning/10 text-warning" :
-                status === "Partial" ? "bg-amber-100 text-amber-700" :
-                "bg-muted text-muted-foreground"
-              )}>
-                {status}
-              </span>
-              {overpaid > 0 ? (
+              {isSelf ? (
+                <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wide bg-primary text-primary-foreground">
+                  <Crown className="w-2.5 h-2.5" /> Self
+                </span>
+              ) : (
+                <span className={cn(
+                  "text-[10px] px-1.5 py-0.5 rounded font-medium uppercase tracking-wide",
+                  status === "Paid" ? "bg-success/10 text-success" :
+                  status === "Overpaid" ? "bg-warning/10 text-warning" :
+                  status === "Partial" ? "bg-amber-100 text-amber-700" :
+                  "bg-muted text-muted-foreground"
+                )}>
+                  {status}
+                </span>
+              )}
+              {!isSelf && (overpaid > 0 ? (
                 <div className="text-xs text-warning mt-0.5">Over {formatMoney(overpaid, currency)}</div>
               ) : (
                 <div className="text-xs text-muted-foreground mt-0.5">Rem {formatMoney(remaining, currency)}</div>
-              )}
+              ))}
             </div>
-            <button
-              onClick={() => onPay(a)}
-              className="text-primary hover:text-primary-hover p-1 shrink-0"
-              aria-label="Record payment"
-              title="Record payment"
-            >
-              <Wallet className="w-4 h-4" />
-            </button>
+            {!isSelf && (
+              <button
+                onClick={() => onPay(a)}
+                className="text-primary hover:text-primary-hover p-1 shrink-0"
+                aria-label="Record payment"
+                title="Record payment"
+              >
+                <Wallet className="w-4 h-4" />
+              </button>
+            )}
             <StatusBadge status={ev.status} />
             <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0" />
           </div>

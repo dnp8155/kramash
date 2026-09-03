@@ -8,7 +8,7 @@ import { useT } from "@/hooks/useT";
 import { getAppLanguage, DATE_LOCALES } from "@/lib/i18n";
 import { base44 } from "@/api/base44Client";
 import { loadTransactions, activeTransactions, memberPaidTotal } from "@/lib/financeService";
-import { loadTeamMembers, loadAssignments, loadBlockDates, splitAvailability } from "@/lib/teamService";
+import { loadTeamMembers, loadAssignments, loadBlockDates, splitAvailability, isSelfMember } from "@/lib/teamService";
 import { todayISO, isUpcomingDate, formatEventDate } from "@/lib/dates";
 import { formatMoney } from "@/utils/format";
 import { useFinancialYear } from "@/hooks/useFinancialYear";
@@ -154,6 +154,8 @@ export default function Dashboard() {
     let totalDue = 0;
     for (const m of members) {
       if (m.status === "inactive") continue;
+      // SELF (workspace owner) is not an external payable liability — exclude from wages due.
+      if (isSelfMember(m)) continue;
       const agreed = agreedByMember[m.id] || 0;
       if (agreed <= 0) continue;
       const paid = memberPaidTotal(activeTx, m.id);

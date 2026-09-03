@@ -100,28 +100,28 @@ export default function TeamMemberCard({ member, assignments = [], transactions 
         </div>
       )}
 
-      {/* Financial footer: RATE / PAID / REMAINING */}
+      {/* Financial footer: RATE / PAID / REMAINING (SELF → Share, not a liability) */}
       <div className="mt-3 grid grid-cols-3 gap-2 pt-3 border-t border-border">
         <div>
-          <div className="text-xs text-muted-foreground font-medium">Rate</div>
+          <div className="text-xs text-muted-foreground font-medium">{isSelf ? "Share" : "Rate"}</div>
           <div className="text-sm font-bold text-foreground tabular-nums mt-0.5">{formatMoney(totalRate, currency)}</div>
         </div>
         <div>
-          <div className="text-xs text-muted-foreground font-medium">Paid</div>
+          <div className="text-xs text-muted-foreground font-medium">{isSelf ? "Owner" : "Paid"}</div>
           <div className={cn(
             "text-sm font-bold tabular-nums mt-0.5",
-            totalPaid >= totalRate && totalRate > 0 ? "text-success" : "text-foreground"
+            !isSelf && totalPaid >= totalRate && totalRate > 0 ? "text-success" : "text-foreground"
           )}>
-            {formatMoney(totalPaid, currency)}
+            {isSelf ? "—" : formatMoney(totalPaid, currency)}
           </div>
         </div>
         <div>
-          <div className="text-xs text-muted-foreground font-medium">Remaining</div>
+          <div className="text-xs text-muted-foreground font-medium">{isSelf ? "Internal" : "Remaining"}</div>
           <div className={cn(
             "text-sm font-bold tabular-nums mt-0.5",
-            remaining > 0 ? "text-warning" : "text-success"
+            isSelf ? "text-primary" : remaining > 0 ? "text-warning" : "text-success"
           )}>
-            {formatMoney(remaining, currency)}
+            {isSelf ? "Share" : formatMoney(remaining, currency)}
           </div>
         </div>
       </div>
