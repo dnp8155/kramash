@@ -95,6 +95,18 @@ export default function AssignTeamDialog({
     );
   }, [memberId, assignments, event]);
 
+  // SELF duplicate prevention — only one owner-self assignment per event
+  const selfMember = useMemo(() => members.find((m) => isSelfMember(m)), [members]);
+  const selfAlreadyAssigned = useMemo(() => {
+    if (!selfMember || !assignments) return false;
+    return assignments.some(
+      (a) => a.event_id === event?.id && a.team_member_id === selfMember.id && a.assignment_status !== "removed"
+    );
+  }, [selfMember, assignments, event]);
+  const availableMembers = selfAlreadyAssigned
+    ? members.filter((m) => !isSelfMember(m))
+    : members;
+
   // Block-date conflicts
   const blockConflicts = useMemo(() => {
     if (!memberId || !event) return [];
@@ -174,6 +186,7 @@ export default function AssignTeamDialog({
 
   const validate = () => {
     if (!memberId) return "Please select a team member.";
+    if (selectedMemberIsSelf && selfAlreadyAssigned) return "Owner / Self is already assigned to this event.";
     if (alreadyAssigned) return `${selectedMember?.name || "This member"} is already assigned to this event. A team member can only be assigned once per event.`;
     if (!rateType) return "Please select a rate type.";
     if (workingDates.length === 0) return "Please select at least one working date.";
@@ -219,12 +232,9 @@ export default function AssignTeamDialog({
         assignment_status: "assigned",
         notes: notes.trim()
       };
-      const saved = await base44.entities.EventTeamAssignment.create(payload);
-      // Keep event.team_member_ids in sync
-      const currentIds = Array.isArray(event?.team_member_ids) ? event.team_member_ids : [];
-      if (!currentIds.includes(memberId)) {
-        await base44.entities.Event.update(event.id, { team_member_ids: [...currentIds, memberId] });
-      }
+      const result = await base44.functions.invoke("createTeamAssignment", payload);
+      const saved = result.data || result;
+      // team_member_ids sync is handled inside createTeamAssignment
       // Record payment if enabled (routed through backend for SELF guard)
       if (recordPayment) {
         const fy = resolveFYForDate(paymentDate, fiscalYears);
@@ -249,7 +259,14 @@ export default function AssignTeamDialog({
       onSaved?.(saved);
       onClose?.();
     } catch (err) {
-      setError(err?.message || "Failed to assign team member. Please try again.");
+      const data = err?.response?.data || err;
+      if (data?.error === "SELF_ALREADY_ASSIGNED") {
+        setError(data.message || "Owner / Self is already assigned to this event.");
+      } else if (data?.error === "ALREADY_ASSIGNED") {
+        setError(data.message || "This member is already assigned to this event.");
+      } else {
+        setError(err?.message || "Failed to assign team member. Please try again.");
+      }
     } finally {
       setSaving(false);
     }
@@ -270,7 +287,7 @@ export default function AssignTeamDialog({
             <Label>Team Member <span className="text-destructive">*</span></Label>
             <Select value={memberId} onChange={(e) => onMemberChange(e.target.value)} className="w-full">
               <option value="">Select a team member</option>
-              {members.map((m) => (
+              {availableMembers.map((m) => (
                 <option key={m.id} value={m.id} disabled={m.status === "inactive"}>
                   {m.name}{m.status === "inactive" ? " (Inactive)" : ""}{m.profession ? ` — ${m.profession}` : ""}
                 </option>
@@ -278,6 +295,11 @@ export default function AssignTeamDialog({
             </Select>
             {members.length === 0 && (
               <p className="text-xs text-muted-foreground">No team members available. Add members from the Team page.</p>
+            )}
+            {selfAlreadyAssigned && (
+              <p className="text-xs text-muted-foreground">
+                Owner (Self) is already assigned to this event and cannot be added again.
+              </p>
             )}
             {alreadyAssigned && (
               <p className="text-xs text-destructive font-medium">

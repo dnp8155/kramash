@@ -17,7 +17,8 @@ import { Plus } from "lucide-react";
 import { fyForDate } from "@/lib/dates";
 import { useFinancialYear } from "@/hooks/useFinancialYear";
 import { fyDisplayLabel, fyRecordValue } from "@/lib/financialYearService";
-import { getEventTypes } from "@/lib/eventTypeService";
+import { getEventTypes, buildAllEventTypes, normalizeEventType, mergeEventTypes } from "@/lib/eventTypeService";
+import EventTypeAutocomplete from "@/components/events/EventTypeAutocomplete";
 
 const empty = {
   client_id: "", title: "", event_type: "",
@@ -31,7 +32,8 @@ const empty = {
 export default function EventForm({ open, onClose, onSaved, event = null, workspaceId, workspace, term, currency = "INR" }) {
   const t = term || {};
   const { fiscalYears } = useFinancialYear();
-  const workTypes = getEventTypes(workspace, t.category);
+  const [usedEventTypes, setUsedEventTypes] = useState([]);
+  const workTypes = buildAllEventTypes(workspace, t.category, usedEventTypes);
   const [form, setForm] = useState(empty);
   const [clients, setClients] = useState([]);
   const [loadingClients, setLoadingClients] = useState(false);
@@ -49,6 +51,7 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
       }
       setForm(base);
       loadClients();
+      loadUsedEventTypes();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, event]);
@@ -63,6 +66,17 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
       setClients([]);
     } finally {
       setLoadingClients(false);
+    }
+  };
+
+  const loadUsedEventTypes = async () => {
+    if (!workspaceId) return;
+    try {
+      const events = await base44.entities.Event.filter({ workspace_id: workspaceId }, "-created_date", 200);
+      const types = (events || []).map((e) => e.event_type).filter(Boolean);
+      setUsedEventTypes([...new Set(types)]);
+    } catch {
+      setUsedEventTypes([]);
     }
   };
 
@@ -118,6 +132,19 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
       } else {
         const res = await base44.functions.invoke("createEvent", payload);
         saved = res.data || res;
+      }
+      // Auto-add new event type to workspace config for future suggestions
+      const eventType = normalizeEventType(form.event_type);
+      if (eventType) {
+        try {
+          const currentTypes = getEventTypes(workspace, t.category);
+          const updatedTypes = mergeEventTypes(currentTypes, eventType);
+          if (updatedTypes.length !== currentTypes.length) {
+            await base44.entities.Workspace.update(workspaceId, {
+              event_types: JSON.stringify(updatedTypes)
+            });
+          }
+        } catch { /* non-critical — event is already saved */ }
       }
       onSaved?.(saved);
       onClose?.();
@@ -189,11 +216,11 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
 
                   <div className="space-y-1.5">
                     <Label className="text-xs">{t.workItemTypeLabel || "Event Type"}</Label>
-                    <ChipPicker
-                      options={workTypeOptions}
+                    <EventTypeAutocomplete
                       value={form.event_type}
                       onChange={(v) => set("event_type", v)}
-                      size="sm"
+                      suggestions={workTypes}
+                      placeholder="Type or select an event type"
                     />
                   </div>
 

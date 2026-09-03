@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription
@@ -39,6 +39,18 @@ export default function AssignServiceDialog({
 
   const selectedProvider = members.find((m) => m.id === providerId);
   const selectedProviderIsSelf = isSelfMember(selectedProvider);
+
+  // SELF duplicate prevention — only one owner-self provider per event
+  const selfMember = useMemo(() => members.find((m) => isSelfMember(m)), [members]);
+  const selfAlreadyProvider = useMemo(() => {
+    if (!selfMember) return false;
+    return (existingAssignments || []).some(
+      (a) => a.provider_id === selfMember.id && a.assignment_status !== "removed"
+    );
+  }, [selfMember, existingAssignments]);
+  const availableProviders = selfAlreadyProvider
+    ? members.filter((m) => !isSelfMember(m))
+    : members;
 
   useEffect(() => {
     if (open) {
@@ -160,11 +172,16 @@ export default function AssignServiceDialog({
             <Label>Service Provider</Label>
             <Select value={providerId} onChange={(e) => setProviderId(e.target.value)} className="w-full">
               <option value="">No specific provider</option>
-              {members.map((m) => (
+              {availableProviders.map((m) => (
                 <option key={m.id} value={m.id}>{m.name}{m.profession ? ` — ${m.profession}` : ""}</option>
               ))}
             </Select>
             <p className="text-xs text-muted-foreground">The person or company responsible for this service.</p>
+            {selfAlreadyProvider && (
+              <p className="text-xs text-muted-foreground">
+                Owner (Self) is already assigned as a provider for this event.
+              </p>
+            )}
             {selectedProviderIsSelf && (
               <div className="flex items-center gap-1.5 text-xs font-medium text-primary">
                 <Crown className="w-3.5 h-3.5" />
