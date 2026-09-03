@@ -13,17 +13,24 @@ import { formatMoney } from "@/utils/format";
 import { resolveFYForDate } from "@/lib/financialYearService";
 import { useFinancialYear } from "@/hooks/useFinancialYear";
 import { isSelfMember } from "@/lib/teamService";
+import {
+  normalizeProviderName,
+  ensureServiceProvider,
+  buildProviderSuggestions
+} from "@/lib/serviceProviderService";
+import ServiceProviderAutocomplete from "@/components/events/ServiceProviderAutocomplete";
 import { Wallet, Plus, Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function AssignServiceDialog({
   open, onClose, onSaved,
-  event, workspaceId,
+  event, workspaceId, currency = "INR",
   services = [], members = [],
+  providers = [],
   existingAssignments = []
 }) {
+  const [provider, setProvider] = useState({ id: "", name: "", type: "custom" });
   const [serviceId, setServiceId] = useState("");
-  const [providerId, setProviderId] = useState("");
   const [agreedRate, setAgreedRate] = useState("");
   const [rateType, setRateType] = useState("Fixed");
   const [isAddon, setIsAddon] = useState(false);
@@ -37,8 +44,13 @@ export default function AssignServiceDialog({
   const [paymentMethod, setPaymentMethod] = useState("Cash");
   const { fiscalYears } = useFinancialYear();
 
-  const selectedProvider = members.find((m) => m.id === providerId);
-  const selectedProviderIsSelf = isSelfMember(selectedProvider);
+  const suggestions = useMemo(
+    () => buildProviderSuggestions(members, providers),
+    [members, providers]
+  );
+
+  const selectedMember = provider.type === "member" ? members.find((m) => m.id === provider.id) : null;
+  const selectedProviderIsSelf = isSelfMember(selectedMember);
 
   // SELF duplicate prevention — only one owner-self provider per event
   const selfMember = useMemo(() => members.find((m) => isSelfMember(m)), [members]);
@@ -48,15 +60,18 @@ export default function AssignServiceDialog({
       (a) => a.provider_id === selfMember.id && a.assignment_status !== "removed"
     );
   }, [selfMember, existingAssignments]);
-  const availableProviders = selfAlreadyProvider
-    ? members.filter((m) => !isSelfMember(m))
-    : members;
+
+  // Filter out SELF from suggestions if already assigned as a provider for this event
+  const filteredSuggestions = useMemo(() => {
+    if (!selfAlreadyProvider) return suggestions;
+    return suggestions.filter((s) => !s.isSelf);
+  }, [suggestions, selfAlreadyProvider]);
 
   useEffect(() => {
     if (open) {
       setError("");
+      setProvider({ id: "", name: "", type: "custom" });
       setServiceId("");
-      setProviderId("");
       setAgreedRate("");
       setRateType("Fixed");
       setIsAddon(false);
@@ -105,14 +120,21 @@ export default function AssignServiceDialog({
     setError("");
     try {
       const svc = services.find((s) => s.id === serviceId);
-      const provider = members.find((m) => m.id === providerId);
+      const providerName = normalizeProviderName(provider.name);
+
+      // If a custom provider was entered, save it to the ServiceProvider master
+      // so it appears in future suggestions (dedup is handled inside ensureServiceProvider).
+      if (provider.type === "custom" && providerName) {
+        await ensureServiceProvider(workspaceId, providerName, providers);
+      }
+
       const payload = {
         workspace_id: workspaceId,
         event_id: event.id,
         service_id: serviceId,
         service_name_snapshot: svc?.name || "",
-        provider_id: providerId || "",
-        provider_name_snapshot: provider?.name || "",
+        provider_id: provider.type === "member" ? provider.id : "",
+        provider_name_snapshot: providerName,
         agreed_rate: Number(agreedRate) || 0,
         rate_type: rateType,
         is_addon: isAddon,
@@ -143,7 +165,7 @@ export default function AssignServiceDialog({
           amount: Number(paymentAmount),
           payment_method: paymentMethod,
           transaction_date: paymentDate,
-          notes: `Service payment: ${svc?.name || ""}${provider ? ` (${provider.name})` : ""}${notes.trim() ? ` · ${notes.trim()}` : ""}`,
+          notes: `Service payment: ${svc?.name || ""}${providerName ? ` (${providerName})` : ""}${notes.trim() ? ` · ${notes.trim()}` : ""}`,
           financial_year_id: fy.id
         });
       }
@@ -167,16 +189,18 @@ export default function AssignServiceDialog({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-3">
-          {/* Service Provider */}
+          {/* Service Provider — autocomplete with custom entry */}
           <div className="space-y-1.5">
             <Label>Service Provider</Label>
-            <Select value={providerId} onChange={(e) => setProviderId(e.target.value)} className="w-full">
-              <option value="">No specific provider</option>
-              {availableProviders.map((m) => (
-                <option key={m.id} value={m.id}>{m.name}{m.profession ? ` — ${m.profession}` : ""}</option>
-              ))}
-            </Select>
-            <p className="text-xs text-muted-foreground">The person or company responsible for this service.</p>
+            <ServiceProviderAutocomplete
+              value={provider}
+              onChange={setProvider}
+              suggestions={filteredSuggestions}
+              placeholder="Type or select a provider…"
+            />
+            <p className="text-xs text-muted-foreground">
+              Select an existing provider or type a new one. Custom providers are saved to your workspace for future use.
+            </p>
             {selfAlreadyProvider && (
               <p className="text-xs text-muted-foreground">
                 Owner (Self) is already assigned as a provider for this event.
@@ -207,7 +231,7 @@ export default function AssignServiceDialog({
           {/* Rate */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label>Rate (₹) <span className="text-destructive">*</span></Label>
+              <Label>Rate ({currency}) <span className="text-destructive">*</span></Label>
               <Input
                 type="number"
                 min="0"
@@ -223,13 +247,13 @@ export default function AssignServiceDialog({
                 if (masterRate && currentRate !== masterRate) {
                   return (
                     <p className="text-[11px] text-muted-foreground">
-                      Master rate: {formatMoney(masterRate, "INR")} · Event-specific override
+                      Master rate: {formatMoney(masterRate, currency)} · Event-specific override
                     </p>
                   );
                 }
                 return (
                   <p className="text-[11px] text-muted-foreground">
-                    Loaded from master: {formatMoney(masterRate, "INR")}
+                    Loaded from master: {formatMoney(masterRate, currency)}
                   </p>
                 );
               })()}
@@ -294,7 +318,7 @@ export default function AssignServiceDialog({
                 </p>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label>Payment Amount (₹) <span className="text-destructive">*</span></Label>
+                    <Label>Payment Amount <span className="text-destructive">*</span></Label>
                     <Input
                       type="number"
                       min="0.01"

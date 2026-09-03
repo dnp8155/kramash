@@ -71,6 +71,13 @@ export const ENTITY_INVALIDATION_KEYS = {
     ["event"],
     ["dashboard-assignments"]
   ],
+  EventServiceAssignment: [
+    ["event"],
+    ["financial"]
+  ],
+  ServiceProvider: [
+    ["event"]
+  ],
   ExpenseCategory: [
     ["financial"]
   ],

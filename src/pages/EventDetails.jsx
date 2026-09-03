@@ -16,8 +16,11 @@ import EventFinancialsTab from "@/components/events/EventFinancialsTab";
 import AssignTeamDialog from "@/components/team/AssignTeamDialog";
 import EditTeamAssignmentDialog from "@/components/team/EditTeamAssignmentDialog";
 import AssignServiceDialog from "@/components/events/AssignServiceDialog";
+import EditServiceAssignmentDialog from "@/components/events/EditServiceAssignmentDialog";
+import RecordServicePaymentDialog from "@/components/events/RecordServicePaymentDialog";
 import RecordPaymentDialog from "@/components/financial/RecordPaymentDialog";
 import RecordExpenseDialog from "@/components/financial/RecordExpenseDialog";
+import { loadServiceProviders } from "@/lib/serviceProviderService";
 import { useToast } from "@/components/ui/use-toast";
 import { currentFY, fyRange, fyForDate, formatEventDate } from "@/lib/dates";
 import { formatMoney } from "@/utils/format";
@@ -48,6 +51,8 @@ export default function EventDetails() {
   const [teamPayAssignment, setTeamPayAssignment] = useState(null);
   const [showServiceAssign, setShowServiceAssign] = useState(false);
   const [editingAssignment, setEditingAssignment] = useState(null);
+  const [editingServiceAssignment, setEditingServiceAssignment] = useState(null);
+  const [servicePayAssignment, setServicePayAssignment] = useState(null);
   const [tab, setTab] = useState("Team");
   const queryClient = useQueryClient();
 
@@ -56,7 +61,7 @@ export default function EventDetails() {
     queryFn: async () => {
       const ev = await base44.entities.Event.get(id);
       if (!ev || ev.workspace_id !== workspaceId) return { notFound: true };
-      const [clList, membs, rles, asgns, tx, cats, blocks, svcs, dayAsgns, svcAsgns] = await Promise.all([
+      const [clList, membs, rles, asgns, tx, cats, blocks, svcs, dayAsgns, svcAsgns, svcProviders] = await Promise.all([
         ev.client_id ? base44.entities.Client.get(ev.client_id).catch(() => null) : Promise.resolve(null),
         base44.entities.TeamMember.filter({ workspace_id: workspaceId }, "name", 500),
         base44.entities.TeamRole.filter({ workspace_id: workspaceId }, "name", 200),
@@ -66,7 +71,8 @@ export default function EventDetails() {
         base44.entities.TeamBlockDate.filter({ workspace_id: workspaceId }, "-start_date", 500),
         base44.entities.Service.filter({ workspace_id: workspaceId }, "name", 500),
         base44.entities.EventDayAssignment.filter({ workspace_id: workspaceId }, "date", 1000),
-        base44.entities.EventServiceAssignment.filter({ workspace_id: workspaceId, event_id: ev.id }, "-created_date", 500)
+        base44.entities.EventServiceAssignment.filter({ workspace_id: workspaceId, event_id: ev.id }, "-created_date", 500),
+        loadServiceProviders(workspaceId)
       ]);
       const [quotes, invs] = await Promise.all([
         base44.entities.Quotation.filter({ workspace_id: workspaceId, event_id: ev.id }, "-quotation_date", 200).catch(() => []),
@@ -96,6 +102,7 @@ export default function EventDetails() {
         services: svcs || [],
         dayAssignments: dayAsgns || [],
         serviceAssignments: svcAsgns || [],
+        serviceProviders: svcProviders || [],
         eventsById: evMap,
         quotations: quotes || [],
         invoices: invs || []
@@ -114,6 +121,7 @@ export default function EventDetails() {
   const services = data?.services || [];
   const dayAssignments = data?.dayAssignments || [];
   const serviceAssignments = data?.serviceAssignments || [];
+  const serviceProviders = data?.serviceProviders || [];
   const eventsById = data?.eventsById || {};
   const quotations = data?.quotations || [];
   const invoices = data?.invoices || [];
@@ -261,13 +269,12 @@ export default function EventDetails() {
   const eventTransactions = transactions.filter((t) => t.status === "ACTIVE");
 
   const removeServiceAssignment = async (a) => {
-    // Check if this assignment has associated payments
-    const hasPayments = transactions.some(
-      (t) => t.status === "ACTIVE" && t.event_id === event.id &&
-      t.notes?.includes(a.service_name_snapshot || "")
+    // Check if this assignment has associated payments (linked via service_assignment_id)
+    const assignmentPayments = transactions.filter(
+      (t) => t.status === "ACTIVE" && t.service_assignment_id === a.id
     );
-    const msg = hasPayments
-      ? `This service has associated payment records. Removing it will NOT delete the payment history. Continue?`
+    const msg = assignmentPayments.length > 0
+      ? `This service has ${assignmentPayments.length} payment record(s). Removing it will NOT delete the payment history. Continue?`
       : `Remove ${a.service_name_snapshot || "this service"} from the ${term.workItemSingular.toLowerCase()}?`;
     if (!confirm(msg)) return;
     try {
@@ -276,6 +283,17 @@ export default function EventDetails() {
       load();
     } catch (e) {
       toast({ title: "Failed to remove service", description: e?.message, variant: "destructive" });
+    }
+  };
+
+  const shareServiceAssignment = async (a) => {
+    const providerName = a.provider_name_snapshot || "No provider";
+    const text = `${a.service_name_snapshot || "Service"} — Provider: ${providerName} · Rate: ${formatMoney(a.agreed_rate, currency)}${a.is_addon ? " (Add-on)" : ""}`;
+    if (navigator.share) {
+      try { await navigator.share({ text }); } catch (e) { /* cancelled */ }
+    } else {
+      navigator.clipboard?.writeText(text);
+      toast({ title: "Copied to clipboard" });
     }
   };
 
@@ -445,9 +463,14 @@ export default function EventDetails() {
           services={services}
           serviceAssignments={serviceAssignments}
           currency={currency}
+          transactions={transactions}
+          membersById={membersById}
           onAddService={() => setShowServiceAssign(true)}
           onRemoveService={(a) => removeServiceAssignment(a)}
-          membersById={membersById}
+          onEditService={(a) => setEditingServiceAssignment(a)}
+          onAddPayment={(a) => setServicePayAssignment(a)}
+          onShareService={(a) => shareServiceAssignment(a)}
+          onRefresh={load}
         />
       )}
 
@@ -616,9 +639,36 @@ export default function EventDetails() {
         onSaved={load}
         event={event}
         workspaceId={workspaceId}
+        currency={currency}
         services={services}
         members={members.filter((m) => m.status === "active")}
+        providers={serviceProviders}
         existingAssignments={serviceAssignments}
+      />
+
+      <EditServiceAssignmentDialog
+        open={!!editingServiceAssignment}
+        onClose={() => setEditingServiceAssignment(null)}
+        onSaved={load}
+        assignment={editingServiceAssignment}
+        event={event}
+        workspaceId={workspaceId}
+        currency={currency}
+        services={services}
+        members={members}
+        providers={serviceProviders}
+      />
+
+      <RecordServicePaymentDialog
+        open={!!servicePayAssignment}
+        onClose={() => setServicePayAssignment(null)}
+        onSaved={load}
+        assignment={servicePayAssignment}
+        event={event}
+        workspaceId={workspaceId}
+        currency={currency}
+        transactions={transactions}
+        membersById={membersById}
       />
 
       <EditTeamAssignmentDialog

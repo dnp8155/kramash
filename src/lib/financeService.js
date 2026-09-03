@@ -114,6 +114,19 @@ export function assignmentPaid(transactions, assignmentId) {
     .reduce((s, t) => s + (Number(t.amount) || 0), 0);
 }
 
+// Total paid for a specific service assignment (from linked transactions).
+export function serviceAssignmentPaid(transactions, serviceAssignmentId) {
+  if (!serviceAssignmentId) return 0;
+  return (transactions || [])
+    .filter(
+      (t) =>
+        t.service_assignment_id === serviceAssignmentId &&
+        t.transaction_type === "BUSINESS_EXPENSE" &&
+        t.status === "ACTIVE"
+    )
+    .reduce((s, t) => s + (Number(t.amount) || 0), 0);
+}
+
 // All team payments for a member across assignments.
 export function memberPaidTotal(transactions, memberId) {
   return (transactions || [])

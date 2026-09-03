@@ -19,6 +19,7 @@ export default async function (req) {
       amount, payment_method, transaction_date,
       reference_number, notes, financial_year_id
     } = body;
+    // service_assignment_id is destructured above and used below for service payments.
 
     if (!workspace_id) return Response.json({ error: "workspace_id required" }, { status: 400 });
     if (!event_id) return Response.json({ error: "event_id required" }, { status: 400 });
@@ -94,6 +95,7 @@ export default async function (req) {
       transaction_type: transactionType,
       team_member_id: payloadMemberId || undefined,
       team_assignment_id: teamAssignmentId || undefined,
+      service_assignment_id: (kind === "service" ? service_assignment_id : undefined) || undefined,
       expense_category_name_snapshot: expenseCategoryName || undefined,
       amount: amt,
       payment_method: payment_method || "Cash",

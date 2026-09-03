@@ -35,6 +35,10 @@
       "type": "string",
       "title": "Team Assignment ID"
     },
+    "service_assignment_id": {
+      "type": "string",
+      "title": "Service Assignment ID"
+    },
     "expense_category_id": {
       "type": "string",
       "title": "Expense Category ID"
