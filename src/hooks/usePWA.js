@@ -78,6 +78,7 @@ export function useServiceWorkerUpdate() {
 
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
+    if (import.meta.env.DEV) return; // Don't register SW in dev — stale caches break HMR
 
     let reg;
     navigator.serviceWorker.register(APP_CONFIG.swPath).catch(() => {});
