@@ -118,7 +118,7 @@ export default function CalendarEventDetailPanel({
                         {m.name}
                         {m.is_self && <span className="text-[9px] font-semibold">SELF</span>}
                         {!m.is_self && side && (
-                          <span className="text-[9px] text-muted-foreground border-l border-current/20 pl-0.5">{side}</span>
+                          <span className="text-[9px] text-muted-foreground border-l border-foreground/20 pl-0.5">{side}</span>
                         )}
                       </span>
                     );

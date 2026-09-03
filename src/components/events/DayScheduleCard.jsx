@@ -252,10 +252,10 @@ export default function DayScheduleCard({
                   <span>{m.name}</span>
                   {isSelf && <span className="text-[10px] font-semibold text-warning">SELF</span>}
                   {!isSelf && side && (
-                    <span className="text-[10px] text-muted-foreground border-l border-current/20 pl-1 ml-0.5">{side}</span>
+                    <span className="text-[10px] text-muted-foreground border-l border-foreground/20 pl-1 ml-0.5">{side}</span>
                   )}
                   {!isSelf && !side && role && (
-                    <span className="text-[10px] text-muted-foreground border-l border-current/20 pl-1 ml-0.5">{role}</span>
+                    <span className="text-[10px] text-muted-foreground border-l border-foreground/20 pl-1 ml-0.5">{role}</span>
                   )}
                 </span>
               );
