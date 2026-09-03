@@ -98,6 +98,21 @@ export function formatAssignedDates(assignment, event) {
   return formatEventDate(start, end);
 }
 
+// Whether a team assignment covers a specific date.
+// Prefers working_dates (non-consecutive selected dates), then the per-member
+// booking_start_date / booking_end_date range, then the event's own dates.
+export function isAssignedToDate(assignment, date, event) {
+  if (!assignment || !date) return false;
+  const wd = Array.isArray(assignment.working_dates) ? assignment.working_dates.filter(Boolean) : [];
+  if (wd.length > 0) return wd.includes(date);
+  const bs = assignment.booking_start_date;
+  const be = assignment.booking_end_date;
+  if (bs && be) return date >= bs && date <= be;
+  if (bs) return date === bs;
+  const ed = Array.isArray(event?.event_dates) ? event.event_dates : (event?.start_date ? [event.start_date] : []);
+  return ed.includes(date);
+}
+
 export function isToday(dateStr) {
   return dateStr === todayISO();
 }

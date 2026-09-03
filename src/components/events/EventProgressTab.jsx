@@ -18,6 +18,7 @@ export default function EventProgressTab({
   workspaceId,
   members,
   services,
+  eventAssignments,
   dayAssignments,
   otherDayAssignments,
   blockDates,
@@ -90,6 +91,7 @@ export default function EventProgressTab({
                 workspaceId={workspaceId}
                 members={members}
                 services={services}
+                eventAssignments={(eventAssignments || []).filter((a) => a.event_id === event.id && a.assignment_status !== "removed")}
                 dayAssignments={dayAssignments.filter((a) => a.event_id === event.id)}
                 otherDayAssignments={otherDayAssignments}
                 blockDates={blockDates}

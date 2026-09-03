@@ -482,6 +482,7 @@ export default function EventDetails() {
           workspaceId={workspaceId}
           members={members}
           services={services}
+          eventAssignments={eventAssignments}
           dayAssignments={dayAssignments}
           otherDayAssignments={dayAssignments.filter((a) => a.event_id !== event.id)}
           blockDates={blockDates}

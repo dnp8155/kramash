@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { cn } from "@/lib/utils";
-import ChipPicker from "@/components/common/ChipPicker";
+import { isAssignedToDate } from "@/lib/dates";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Calendar, Users, Briefcase, Loader2, AlertTriangle, Check } from "lucide-react";
@@ -29,6 +29,7 @@ function fmtDate(d) {
 export default function DayScheduleCard({
   event, date, workspaceId,
   members = [], services = [],
+  eventAssignments = [],
   dayAssignments = [],
   otherDayAssignments = [],
   blockDates = [],
@@ -40,8 +41,8 @@ export default function DayScheduleCard({
   const [dirty, setDirty] = useState(false);
   const [error, setError] = useState("");
 
-  // local editable state
-  const [teamIds, setTeamIds] = useState([]);
+  // local editable state (team is derived from the Team tab; services persist on
+  // the per-day schedule record and are shown read-only, date-filtered).
   const [serviceIds, setServiceIds] = useState([]);
   const [notes, setNotes] = useState("");
   const [status, setStatus] = useState("planned");
@@ -51,14 +52,12 @@ export default function DayScheduleCard({
     const existing = dayAssignments.find((a) => a.date === date);
     if (existing) {
       setRecord(existing);
-      setTeamIds(existing.team_member_ids || []);
       setServiceIds(existing.service_ids || []);
       setNotes(existing.notes || "");
       setStatus(existing.status || "planned");
       setVenueOverride(existing.venue_override || "");
     } else {
       setRecord(null);
-      setTeamIds([]);
       setServiceIds([]);
       setNotes("");
       setStatus("planned");
@@ -68,6 +67,24 @@ export default function DayScheduleCard({
     setError("");
     setLoading(false);
   }, [date, dayAssignments]);
+
+  // Team members actually assigned to THIS date — pulled from the Team tab's
+  // date-mapped assignments (working_dates / booking range / event dates).
+  const dayTeamMembers = useMemo(() => {
+    const memberMap = {};
+    members.forEach((m) => { memberMap[m.id] = m; });
+    return eventAssignments
+      .filter((a) => isAssignedToDate(a, date, event))
+      .map((a) => memberMap[a.team_member_id])
+      .filter(Boolean);
+  }, [eventAssignments, members, date, event]);
+
+  // Services scheduled for THIS date — from the per-day schedule record.
+  const dayServices = useMemo(() => {
+    const serviceMap = {};
+    services.forEach((s) => { serviceMap[s.id] = s; });
+    return (serviceIds || []).map((id) => serviceMap[id]).filter(Boolean);
+  }, [serviceIds, services]);
 
   // conflict detection: team member booked elsewhere on this date or blocked
   const conflictsByMember = useMemo(() => {
@@ -92,21 +109,6 @@ export default function DayScheduleCard({
     return map;
   }, [otherDayAssignments, blockDates, date, event.id]);
 
-  const teamOptions = useMemo(
-    () => members.filter((m) => m.status === "active").map((m) => ({
-      value: m.id,
-      label: m.name,
-      conflict: !!conflictsByMember[m.id]
-    })),
-    [members, conflictsByMember]
-  );
-  const serviceOptions = useMemo(
-    () => services.filter((s) => s.status === "active").map((s) => ({
-      value: s.id, label: s.name
-    })),
-    [services]
-  );
-
   const markDirty = () => setDirty(true);
 
   const handleSave = async () => {
@@ -117,7 +119,7 @@ export default function DayScheduleCard({
         workspace_id: workspaceId,
         event_id: event.id,
         date,
-        team_member_ids: teamIds,
+        team_member_ids: dayTeamMembers.map((m) => m.id),
         service_ids: serviceIds,
         notes: notes.trim(),
         status,
@@ -148,7 +150,8 @@ export default function DayScheduleCard({
     );
   }
 
-  const hasConflicts = teamIds.some((id) => conflictsByMember[id]);
+  const dayTeamIds = dayTeamMembers.map((m) => m.id);
+  const hasConflicts = dayTeamIds.some((id) => conflictsByMember[id]);
 
   return (
     <div className="rounded-lg border border-border bg-card p-4 space-y-4">
@@ -161,7 +164,7 @@ export default function DayScheduleCard({
           <div>
             <div className="text-sm font-semibold text-foreground">{fmtDate(date)}</div>
             <div className="text-xs text-muted-foreground">
-              {teamIds.length} team · {serviceIds.length} service{serviceIds.length !== 1 ? "s" : ""}
+              {dayTeamMembers.length} team · {dayServices.length} service{dayServices.length !== 1 ? "s" : ""}
             </div>
           </div>
         </div>
@@ -178,7 +181,7 @@ export default function DayScheduleCard({
         <div className="flex items-start gap-2 p-2.5 rounded-md bg-warning/10 border border-warning/30">
           <AlertTriangle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
           <div className="text-xs text-warning">
-            {teamIds.filter((id) => conflictsByMember[id]).map((id) => {
+            {dayTeamIds.filter((id) => conflictsByMember[id]).map((id) => {
               const m = members.find((x) => x.id === id);
               return m?.name || "Unknown";
             }).join(", ")} {"has scheduling conflicts on this day."}
@@ -186,34 +189,51 @@ export default function DayScheduleCard({
         </div>
       )}
 
-      {/* Team */}
+      {/* Team — read-only, date-filtered from the Team tab assignments */}
       <div className="space-y-1.5">
         <Label className="flex items-center gap-1.5 text-xs">
           <Users className="w-3.5 h-3.5" /> Team for this day
         </Label>
-        <ChipPicker
-          options={teamOptions}
-          value={teamIds}
-          onChange={(v) => { setTeamIds(v); markDirty(); }}
-          multiple
-          size="sm"
-          emptyText="No active team members. Add them from the Team page."
-        />
+        {dayTeamMembers.length > 0 ? (
+          <div className="flex flex-wrap gap-2">
+            {dayTeamMembers.map((m) => (
+              <span
+                key={m.id}
+                className={cn(
+                  "inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium",
+                  conflictsByMember[m.id]
+                    ? "bg-warning/10 text-warning border-warning/30"
+                    : "bg-primary/10 text-primary border-primary/20"
+                )}
+              >
+                {m.name}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <p className="text-xs text-muted-foreground italic">No team assigned for this day.</p>
+        )}
       </div>
 
-      {/* Services */}
+      {/* Services — read-only, date-filtered from the per-day schedule */}
       <div className="space-y-1.5">
         <Label className="flex items-center gap-1.5 text-xs">
           <Briefcase className="w-3.5 h-3.5" /> Services for this day
         </Label>
-        <ChipPicker
-          options={serviceOptions}
-          value={serviceIds}
-          onChange={(v) => { setServiceIds(v); markDirty(); }}
-          multiple
-          size="sm"
-          emptyText="No active services. Add them from the Services page."
-        />
+        {dayServices.length > 0 ? (
+          <div className="flex flex-wrap gap-2">
+            {dayServices.map((s) => (
+              <span
+                key={s.id}
+                className="inline-flex items-center rounded-full border bg-muted text-foreground border-border px-2.5 py-1 text-xs font-medium"
+              >
+                {s.name}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <p className="text-xs text-muted-foreground italic">No services added for this day.</p>
+        )}
       </div>
 
       {/* Status quick toggle */}
