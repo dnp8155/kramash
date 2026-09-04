@@ -389,14 +389,54 @@ export async function createFromQuotation(workspaceId, quotation, quotationItems
     return existing[0];
   }
   const invoiceNumber = await generateInvoiceNumber(workspaceId);
-  const items = (quotationItems || []).map((it) => ({
-    item_type: "line_item",
-    name: it.name || "",
-    description: it.description || "",
-    deliverables: it.description || "",
-    quantity: Math.max(0, Number(it.quantity) || 1),
-    unit_rate: round2(Math.max(0, Number(it.unit_rate) || 0))
-  }));
+  // BUSINESS RULE: Photography / Event Management → package/lump-sum invoice.
+  // Internal team/role items never become client-facing invoice line items.
+  const isPackageCategory = ["PHOTOGRAPHY", "EVENT_MANAGEMENT"].includes(quotation.category);
+  let items;
+  if (isPackageCategory) {
+    const nonAddonItems = (quotationItems || []).filter((it) => !it.is_addon);
+    const addonItems = (quotationItems || []).filter((it) => !!it.is_addon);
+    const packageTotal = round2(nonAddonItems.reduce((s, it) => {
+      const lt = Number(it.line_total) || (Number(it.quantity || 0) * Number(it.unit_rate || 0));
+      return s + (lt || 0);
+    }, 0));
+    const includedNames = nonAddonItems
+      .filter((it) => !["team", "role"].includes(it.item_type))
+      .map((it) => it.name)
+      .filter(Boolean);
+    const packageName = quotation.project_title
+      || (quotation.category === "PHOTOGRAPHY" ? "Photography Package" : "Event Package");
+    items = [];
+    if (nonAddonItems.length > 0) {
+      items.push({
+        item_type: "package",
+        name: packageName,
+        description: quotation.project_summary || includedNames.join("\n"),
+        deliverables: includedNames.join("\n"),
+        quantity: 1,
+        unit_rate: packageTotal
+      });
+    }
+    for (const addon of addonItems) {
+      items.push({
+        item_type: "line_item",
+        name: `${addon.name || "Add-on"} (Add-on)`,
+        description: addon.description || "",
+        deliverables: addon.description || "",
+        quantity: Math.max(1, Number(addon.quantity) || 1),
+        unit_rate: round2(Math.max(0, Number(addon.unit_rate) || 0))
+      });
+    }
+  } else {
+    items = (quotationItems || []).map((it) => ({
+      item_type: "line_item",
+      name: it.name || "",
+      description: it.description || "",
+      deliverables: it.description || "",
+      quantity: Math.max(0, Number(it.quantity) || 1),
+      unit_rate: round2(Math.max(0, Number(it.unit_rate) || 0))
+    }));
+  }
   const data = {
     invoice_number: invoiceNumber,
     quotation_id: quotation.id || "",

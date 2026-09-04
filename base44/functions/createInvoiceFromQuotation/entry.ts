@@ -119,15 +119,65 @@ export default async function(req) {
     let milestoneId = "";
 
     if (mode === "full") {
-      // Full invoice — import all quotation items
-      invoiceItems = (quotationItems || []).map((it) => ({
-        item_type: "line_item",
-        name: it.name || "",
-        description: it.description || "",
-        deliverables: it.description || "",
-        quantity: Math.max(1, Number(it.quantity) || 1),
-        unit_rate: round2(Math.max(0, Number(it.unit_rate) || 0))
-      }));
+      // BUSINESS RULE: For Photography / Event Management, the client-facing
+      // invoice must be PACKAGE / LUMP-SUM based. Internal team/role items
+      // (manpower, internal rates) must NEVER appear as invoice line items.
+      // Only the consolidated package + client-facing add-ons are billable.
+      const isPackageCategory = ["PHOTOGRAPHY", "EVENT_MANAGEMENT"].includes(q.category);
+
+      if (isPackageCategory) {
+        const nonAddonItems = (quotationItems || []).filter((it) => !it.is_addon);
+        const addonItems = (quotationItems || []).filter((it) => !!it.is_addon);
+
+        // Package total = sum of all non-add-on line totals (the lump-sum price)
+        const packageTotal = round2(nonAddonItems.reduce((s, it) => {
+          const lt = Number(it.line_total) || (Number(it.quantity || 0) * Number(it.unit_rate || 0));
+          return s + (lt || 0);
+        }, 0));
+
+        // Build included-scope deliverables from non-team, non-role items only
+        const includedNames = nonAddonItems
+          .filter((it) => !["team", "role"].includes(it.item_type))
+          .map((it) => it.name)
+          .filter(Boolean);
+        const packageDeliverables = includedNames.join("\n");
+        const packageDesc = q.project_summary || (includedNames.length > 0 ? includedNames.join("\n") : "");
+        const packageName = q.project_title
+          || (q.category === "PHOTOGRAPHY" ? "Photography Package" : "Event Package");
+
+        invoiceItems = [];
+        if (nonAddonItems.length > 0) {
+          invoiceItems.push({
+            item_type: "package",
+            name: packageName,
+            description: packageDesc,
+            deliverables: packageDeliverables,
+            quantity: 1,
+            unit_rate: packageTotal
+          });
+        }
+        // Add-ons are client-facing commercial items — shown separately
+        for (const addon of addonItems) {
+          invoiceItems.push({
+            item_type: "line_item",
+            name: `${addon.name || "Add-on"} (Add-on)`,
+            description: addon.description || "",
+            deliverables: addon.description || "",
+            quantity: Math.max(1, Number(addon.quantity) || 1),
+            unit_rate: round2(Math.max(0, Number(addon.unit_rate) || 0))
+          });
+        }
+      } else {
+        // Architecture / OTHER — itemized presentation is commercially appropriate
+        invoiceItems = (quotationItems || []).map((it) => ({
+          item_type: "line_item",
+          name: it.name || "",
+          description: it.description || "",
+          deliverables: it.description || "",
+          quantity: Math.max(1, Number(it.quantity) || 1),
+          unit_rate: round2(Math.max(0, Number(it.unit_rate) || 0))
+        }));
+      }
       milestoneTag = "Full Payment";
     } else if (mode === "milestone") {
       // Milestone invoice — single line item for the milestone amount

@@ -101,6 +101,7 @@ export default async function(req) {
     const showItemized = inv.show_itemized_rates !== false;
     const publicItems = (items || []).map((it, i) => {
       const item = {
+        item_type: it.item_type || "line_item",
         name: it.name || "",
         description: it.description || "",
         deliverables: it.deliverables || "",
