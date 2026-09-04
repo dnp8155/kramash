@@ -130,7 +130,7 @@ export function validateMilestones(schedule, grandTotal) {
   const fixedSum = schedule
     .filter((m) => m.type === "fixed")
     .reduce((s, m) => s + (Number(m.value) || 0), 0);
-  if (fixedSum > total) return `Fixed milestones total ${round2(fixedSum)} — exceeds quotation total of ${round2(total)}.`;
+  if (fixedSum > grandTotal) return `Fixed milestones total ${round2(fixedSum)} — exceeds quotation total of ${round2(grandTotal)}.`;
   return "";
 }
 
