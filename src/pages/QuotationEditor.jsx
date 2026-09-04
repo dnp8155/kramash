@@ -39,6 +39,7 @@ import { Section, Field } from "@/components/quotation/QuotationParts";
 import { QUOTATION_TEMPLATES, renderTemplate } from "@/constants/quotationTemplates";
 import QuotationTemplatePreview from "@/components/quotation/QuotationTemplatePreview";
 import QuotationTemplateSettings from "@/components/quotation/QuotationTemplateSettings";
+import PublicLinkPanel from "@/components/quotation/PublicLinkPanel";
 import { Textarea } from "@/components/ui/textarea";
 import ClientForm from "@/components/clients/ClientForm";
 
@@ -731,6 +732,16 @@ export default function QuotationEditor() {
         existingQuotation={existingQuotation}
         hasEvent={!!event}
       />
+
+      {/* Client Project Portal — public link control + view tracking */}
+      {existingQuotation && (
+        <PublicLinkPanel
+          quotation={existingQuotation}
+          onUpdated={(updated) => {
+            setExistingQuotation((q) => ({ ...q, ...updated }));
+          }}
+        />
+      )}
 
       <PdfPreviewModal
         url={preview.url}

@@ -48,6 +48,7 @@ import AdminWorkspaces from '@/pages/admin/AdminWorkspaces';
 import AdminWorkspaceDetails from '@/pages/admin/AdminWorkspaceDetails';
 import AdminPlans from '@/pages/admin/AdminPlans';
 import ClientQuotationView from '@/pages/ClientQuotationView';
+import ClientProjectPortal from '@/pages/ClientProjectPortal';
 import EventTracking from '@/pages/EventTracking';
 // Add page imports here
 
@@ -85,8 +86,11 @@ const AuthenticatedApp = () => {
       {/* Public landing page */}
       <Route path="/" element={<Landing />} />
 
-      {/* Public client-facing quotation view + online signing */}
+      {/* Public client-facing quotation view + online signing (URL 2) */}
       <Route path="/q/:id" element={<ClientQuotationView />} />
+
+      {/* Public client-facing project portal (URL 1) */}
+      <Route path="/portal/:token" element={<ClientProjectPortal />} />
 
       {/* Public client-facing event tracking page */}
       <Route path="/track/:id" element={<EventTracking />} />
