@@ -186,7 +186,7 @@ export default function Sidebar({ mobile = false, onClose, collapsed = false, on
       <div className="flex items-center gap-3 px-3 py-3">
         <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center text-foreground font-semibold text-sm shrink-0 overflow-hidden border border-border">
           {user?.data?.profile_image || user?.profile_image
-            ? <img src={user.data?.profile_image || user.profile_image} alt="Profile" className="w-full h-full object-cover" />
+            ? <Image src={user.data?.profile_image || user.profile_image} alt="Profile" fittingType="fill" className="w-full h-full" />
             : (user?.full_name || user?.email || "K").charAt(0).toUpperCase()}
         </div>
         <div className="flex-1 min-w-0">
