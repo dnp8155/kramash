@@ -9,7 +9,8 @@ import { Section, Field, Row } from "@/components/quotation/QuotationParts";
 export default function QuotationPricingPanel({
   discountType, setDiscountType, discountValue, setDiscountValue,
   gstApplicable, setGstApplicable, gstMode, setGstMode,
-  gstWorkspaceEnabled, workspaceGstin, totals, currency, readOnly
+  gstWorkspaceEnabled, workspaceGstin, totals, currency, readOnly,
+  subtotals
 }) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -25,6 +26,10 @@ export default function QuotationPricingPanel({
             <Input type="number" min="0" value={discountValue} onChange={(e) => setDiscountValue(Number(e.target.value))} disabled={readOnly} />
           </Field>
         </div>
+
+        {discountType === "fixed" && Number(discountValue) > totals.subtotal && (
+          <p className="text-xs text-warning mt-1">Fixed discount exceeds subtotal — it will be clamped to {formatMoney(totals.subtotal, currency)}.</p>
+        )}
 
         {gstWorkspaceEnabled && (
           <div className="mt-3 pt-3 border-t border-border space-y-3">
@@ -53,6 +58,18 @@ export default function QuotationPricingPanel({
 
       <Section title="Totals">
         <div className="space-y-1.5">
+          {subtotals && subtotals.team > 0 && (
+            <Row label="Team Subtotal" value={formatMoney(subtotals.team, currency)} />
+          )}
+          {subtotals && subtotals.service > 0 && (
+            <Row label="Service Subtotal" value={formatMoney(subtotals.service, currency)} />
+          )}
+          {subtotals && subtotals.custom > 0 && (
+            <Row label="Custom Items Subtotal" value={formatMoney(subtotals.custom, currency)} />
+          )}
+          {subtotals && (subtotals.team > 0 || subtotals.service > 0 || subtotals.custom > 0) && (
+            <div className="border-t border-border/60 my-1" />
+          )}
           <Row label="Subtotal" value={formatMoney(totals.subtotal, currency)} />
           {totals.discountAmount > 0 && (
             <Row label={`Discount (${discountType === "percent" ? discountValue + "%" : "Fixed"})`} value={"-" + formatMoney(totals.discountAmount, currency)} />

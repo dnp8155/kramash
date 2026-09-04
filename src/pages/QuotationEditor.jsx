@@ -11,27 +11,32 @@ import Select from "@/components/common/Select";
 import LoadingState from "@/components/common/LoadingState";
 import EmptyState from "@/components/common/EmptyState";
 import { formatMoney } from "@/utils/format";
-import { computeTotals } from "@/lib/quotationCalc";
+import { computeTotals, subtotalsByType, includedDates } from "@/lib/quotationCalc";
 import {
-  loadServices, loadQuotation,
+  loadServices, loadQuotation, loadTeamMembers, loadRoles,
   generateQuotationNumber, createQuotation, updateQuotation,
   duplicateQuotation, deleteQuotation, acceptQuotation,
-  verifyQuotationRefs, buildClientSnapshot, buildBusinessSnapshot, buildEventSnapshot
+  verifyQuotationRefs, buildClientSnapshot, buildBusinessSnapshot, buildEventSnapshot,
+  buildBankDetailsSnapshot, buildSocialLinksSnapshot, parseSnapshot,
+  deserializePackageStructure
 } from "@/lib/quotationService";
 import { createFromQuotation } from "@/lib/invoiceService";
 import { generateQuotationPdf, generateJobSheetPdf } from "@/lib/quotationPdf";
-import { DEFAULT_QUOTATION_TERMS, QUOTATION_STATUS_META } from "@/constants/quotationConfig";
-import { loadRoles } from "@/lib/teamService";
-import { ArrowLeft, AlertTriangle, FileText, Plus, Receipt } from "lucide-react";
+import { DEFAULT_QUOTATION_TERMS, DEFAULT_FOOTER_MESSAGE, QUOTATION_STATUS_META } from "@/constants/quotationConfig";
+import { ArrowLeft, AlertTriangle, FileText, Plus, Receipt, Package } from "lucide-react";
 import PdfPreviewModal from "@/components/common/PdfPreviewModal";
 import { cn } from "@/lib/utils";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
-import QuotationItemsEditor from "@/components/quotation/QuotationItemsEditor";
 import QuotationPricingPanel from "@/components/quotation/QuotationPricingPanel";
 import QuotationActions from "@/components/quotation/QuotationActions";
+import QuotationCategoryContext from "@/components/quotation/QuotationCategoryContext";
+import QuotationDateEngine from "@/components/quotation/QuotationDateEngine";
+import QuotationDayBuilder from "@/components/quotation/QuotationDayBuilder";
+import QuotationPackageDialog from "@/components/quotation/QuotationPackageDialog";
+import QuotationMilestonesEditor from "@/components/quotation/QuotationMilestonesEditor";
+import QuotationPresentationSection from "@/components/quotation/QuotationPresentationSection";
 import { Section, Field } from "@/components/quotation/QuotationParts";
 import { QUOTATION_TEMPLATES, renderTemplate } from "@/constants/quotationTemplates";
-import { CURRENCY_SYMBOLS } from "@/constants/financeConfig";
 import QuotationTemplatePreview from "@/components/quotation/QuotationTemplatePreview";
 import QuotationTemplateSettings from "@/components/quotation/QuotationTemplateSettings";
 import { Textarea } from "@/components/ui/textarea";
@@ -59,7 +64,13 @@ export default function QuotationEditor() {
   const [generating, setGenerating] = useState(false);
   const [preview, setPreview] = useState({ url: "", filename: "", open: false, loading: false });
   const [error, setError] = useState("");
+  const [showPackageDialog, setShowPackageDialog] = useState(false);
+  const [showTemplatePreview, setShowTemplatePreview] = useState(false);
+  const [templatePreviewHtml, setTemplatePreviewHtml] = useState("");
+  const [showClientForm, setShowClientForm] = useState(false);
+  const [customClientMode, setCustomClientMode] = useState(false);
 
+  // Quotation meta
   const [quotationNumber, setQuotationNumber] = useState("");
   const [quotationDate, setQuotationDate] = useState(today());
   const [validUntil, setValidUntil] = useState("");
@@ -67,29 +78,50 @@ export default function QuotationEditor() {
   const [eventId, setEventId] = useState("");
   const [status, setStatus] = useState("draft");
   const [items, setItems] = useState([]);
+
+  // Category & context
+  const [category, setCategory] = useState("PHOTOGRAPHY");
+  const [contextType, setContextType] = useState("");
+
+  // Date engine
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [excludedDates, setExcludedDates] = useState([]);
+
+  // Pricing
   const [discountType, setDiscountType] = useState("percent");
   const [discountValue, setDiscountValue] = useState(0);
   const [gstApplicable, setGstApplicable] = useState(false);
   const [gstMode, setGstMode] = useState("cgst_sgst");
+
+  // Presentation
+  const [showPricing, setShowPricing] = useState(true);
+  const [bankDetails, setBankDetails] = useState({});
+  const [socialLinks, setSocialLinks] = useState({});
+  const [footerMessage, setFooterMessage] = useState(DEFAULT_FOOTER_MESSAGE);
+  const [specialNotes, setSpecialNotes] = useState("");
+
+  // Payment milestones
+  const [milestones, setMilestones] = useState([]);
+
+  // Terms & notes
   const [terms, setTerms] = useState(DEFAULT_QUOTATION_TERMS);
   const [notes, setNotes] = useState("");
   const [accessPassword, setAccessPassword] = useState("");
 
-  const [clients, setClients] = useState([]);
-  const [events, setEvents] = useState([]);
-  const [services, setServices] = useState([]);
-  const [roles, setRoles] = useState([]);
-  const [existingQuotation, setExistingQuotation] = useState(null);
-
-  const [addServiceId, setAddServiceId] = useState("");
-  const [addRoleId, setAddRoleId] = useState("");
+  // Template
   const [templateId, setTemplateId] = useState("gold_premium");
   const [templateConfig, setTemplateConfig] = useState({});
   const [projectTitle, setProjectTitle] = useState("");
   const [projectSummary, setProjectSummary] = useState("");
-  const [showTemplatePreview, setShowTemplatePreview] = useState(false);
-  const [templatePreviewHtml, setTemplatePreviewHtml] = useState("");
-  const [showClientForm, setShowClientForm] = useState(false);
+
+  // Data
+  const [clients, setClients] = useState([]);
+  const [events, setEvents] = useState([]);
+  const [services, setServices] = useState([]);
+  const [teamMembers, setTeamMembers] = useState([]);
+  const [roles, setRoles] = useState([]);
+  const [existingQuotation, setExistingQuotation] = useState(null);
 
   const isFinalized = status === "finalized" || status === "accepted";
   const readOnly = isFinalized;
@@ -99,33 +131,35 @@ export default function QuotationEditor() {
     setLoading(true);
     setError("");
     try {
-      const [cl, ev, sv, rl] = await Promise.all([
+      const [cl, ev, sv, tm, rl] = await Promise.all([
         base44.entities.Client.filter({ workspace_id: workspaceId }, "name", 500),
         base44.entities.Event.filter({ workspace_id: workspaceId }, "-start_date", 500),
         loadServices(workspaceId, { includeInactive: true }),
+        loadTeamMembers(workspaceId),
         loadRoles(workspaceId)
       ]);
       setClients(cl || []);
       setEvents(ev || []);
       setServices(sv || []);
+      setTeamMembers(tm || []);
       setRoles(rl || []);
 
       if (isNew) {
         const num = await generateQuotationNumber(workspaceId);
         setQuotationNumber(num);
         setGstApplicable(gstWorkspaceEnabled);
-        // Pre-fill from estimator if provided.
         const estimateItems = location.state?.estimateItems;
         if (Array.isArray(estimateItems) && estimateItems.length) {
           setItems(estimateItems.map((it) => ({ ...it, id: undefined })));
         }
-        // Pre-select event from query param (e.g. from EventDetails "Create Quotation").
         const qpEventId = new URLSearchParams(location.search).get("event_id");
         if (qpEventId) {
           const qpEvent = (ev || []).find((e) => e.id === qpEventId);
           if (qpEvent) {
             setEventId(qpEvent.id);
             if (qpEvent.client_id) setClientId(qpEvent.client_id);
+            if (qpEvent.start_date) setStartDate(qpEvent.start_date);
+            if (qpEvent.end_date) setEndDate(qpEvent.end_date);
           }
         }
       } else {
@@ -140,17 +174,28 @@ export default function QuotationEditor() {
         setEventId(q.event_id || "");
         setStatus(q.status || "draft");
         setItems(result.items || []);
+        setCategory(q.category || "PHOTOGRAPHY");
+        setContextType(q.context_type || "");
+        setStartDate(q.start_date || "");
+        setEndDate(q.end_date || "");
+        setExcludedDates(q.excluded_dates || []);
+        setShowPricing(q.show_pricing !== false);
         setDiscountType(q.discount_type || "percent");
         setDiscountValue(q.discount_value || 0);
         setGstApplicable(!!q.gst_applicable);
         setGstMode(q.gst_mode || "cgst_sgst");
         setTerms(q.terms_and_conditions || "");
+        setSpecialNotes(q.special_notes || "");
         setNotes(q.notes || "");
+        setFooterMessage(q.footer_message || DEFAULT_FOOTER_MESSAGE);
         setTemplateId(q.template_id || "gold_premium");
         try { setTemplateConfig(JSON.parse(q.template_config || "{}")); } catch { setTemplateConfig({}); }
         setProjectTitle(q.project_title || "");
         setProjectSummary(q.project_summary || "");
         setAccessPassword(q.client_access_password || "");
+        try { setMilestones(JSON.parse(q.payment_schedule_json || "[]")); } catch { setMilestones([]); }
+        setBankDetails(parseSnapshot(q.bank_details_snapshot) || {});
+        setSocialLinks(parseSnapshot(q.social_links_snapshot) || {});
       }
     } catch (e) {
       setError(e?.message || "Failed to load quotation.");
@@ -166,17 +211,17 @@ export default function QuotationEditor() {
     [items, discountType, discountValue, gstApplicable, gstMode]
   );
 
+  const subtotals = useMemo(() => subtotalsByType(items), [items]);
+
   const client = clients.find((c) => c.id === clientId) || null;
   const event = events.find((e) => e.id === eventId) || null;
-
-  // Filter events by selected client.
   const availableEvents = clientId
     ? events.filter((e) => !e.client_id || e.client_id === clientId)
     : events;
 
   const onClientChange = (val) => {
     setClientId(val);
-    // Clear event if it doesn't belong to the chosen client.
+    setCustomClientMode(false);
     if (eventId) {
       const ev = events.find((e) => e.id === eventId);
       if (ev && ev.client_id && ev.client_id !== val) setEventId("");
@@ -188,67 +233,9 @@ export default function QuotationEditor() {
     if (val) {
       const ev = events.find((e) => e.id === val);
       if (ev?.client_id && !clientId) setClientId(ev.client_id);
+      if (ev?.start_date && !startDate) setStartDate(ev.start_date);
+      if (ev?.end_date && !endDate) setEndDate(ev.end_date);
     }
-  };
-
-  // ---- Items ----
-  const addService = () => {
-    const s = services.find((x) => x.id === addServiceId);
-    if (!s) return;
-    setItems((prev) => [...prev, {
-      item_type: "service",
-      reference_id: s.id,
-      name: s.name,
-      description: s.description || "",
-      quantity: 1,
-      days: s.rate_type === "Per Day" ? 1 : 1,
-      unit_rate: s.default_rate || 0,
-      rate_type: s.rate_type || "Fixed",
-      gst_rate: s.gst_rate || 0,
-      sac_code: s.sac_code || ""
-    }]);
-    setAddServiceId("");
-  };
-
-  const addRole = () => {
-    const r = roles.find((x) => x.id === addRoleId);
-    if (!r) return;
-    setItems((prev) => [...prev, {
-      item_type: "role",
-      reference_id: r.id,
-      name: r.name,
-      description: "",
-      quantity: 1,
-      days: r.rate_type === "Per Day" ? 1 : 1,
-      unit_rate: r.default_rate || 0,
-      rate_type: r.rate_type || "Per Event",
-      gst_rate: 0,
-      sac_code: ""
-    }]);
-    setAddRoleId("");
-  };
-
-  const addCustom = () => {
-    setItems((prev) => [...prev, {
-      item_type: "custom",
-      reference_id: "",
-      name: "",
-      description: "",
-      quantity: 1,
-      days: 1,
-      unit_rate: 0,
-      rate_type: "Fixed",
-      gst_rate: 0,
-      sac_code: ""
-    }]);
-  };
-
-  const updateItem = (idx, field, value) => {
-    setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, [field]: value } : it)));
-  };
-
-  const removeItem = (idx) => {
-    setItems((prev) => prev.filter((_, i) => i !== idx));
   };
 
   // ---- Save ----
@@ -258,12 +245,21 @@ export default function QuotationEditor() {
     event_id: eventId,
     quotation_date: quotationDate,
     valid_until: validUntil,
+    category,
+    context_type: contextType,
+    start_date: startDate,
+    end_date: endDate,
+    excluded_dates: excludedDates,
+    show_pricing: showPricing,
     discount_type: discountType,
     discount_value: Number(discountValue) || 0,
     gst_applicable: gstApplicable,
     gst_mode: gstMode,
     terms_and_conditions: terms,
+    special_notes: specialNotes,
     notes,
+    payment_schedule_json: JSON.stringify(milestones.filter((m) => m.name || m.value)),
+    footer_message: footerMessage,
     template_id: templateId,
     template_config: JSON.stringify(templateConfig),
     project_title: projectTitle,
@@ -292,16 +288,18 @@ export default function QuotationEditor() {
       if (!refCheck.ok) { setError(refCheck.error); setSaving(false); return; }
       const data = { ...buildData(), status: "draft" };
       if (isNew) {
-        const q = await createQuotation(workspaceId, data, items);
-        queryClient.removeQueries({ queryKey: ["quotations"] });
-        queryClient.removeQueries({ queryKey: ["event"] });
+        const q = await createQuotation(workspaceId, data, items, {
+          bank_details_snapshot: buildBankDetailsSnapshot(bankDetails),
+          social_links_snapshot: buildSocialLinksSnapshot(socialLinks)
+        });
         invalidateEntities(queryClient, ["Quotation", "QuotationItem", "Event"]);
         toast({ title: "Quotation saved as draft" });
         navigate(`/quotation/${q.id}`, { replace: true });
       } else {
-        await updateQuotation(workspaceId, id, data, items);
-        queryClient.removeQueries({ queryKey: ["quotations"] });
-        queryClient.removeQueries({ queryKey: ["event"] });
+        await updateQuotation(workspaceId, id, data, items, {
+          bank_details_snapshot: buildBankDetailsSnapshot(bankDetails),
+          social_links_snapshot: buildSocialLinksSnapshot(socialLinks)
+        });
         invalidateEntities(queryClient, ["Quotation", "QuotationItem", "Event"]);
         toast({ title: "Quotation updated" });
         load();
@@ -317,7 +315,7 @@ export default function QuotationEditor() {
     const v = validate();
     if (v) { setError(v); return; }
     if (gstApplicable && gstWorkspaceEnabled && !workspace.gstin) {
-      setError("GST is enabled on this quotation but your workspace GSTIN is missing. Add it in Preferences or disable GST on this quotation.");
+      setError("GST is enabled but your workspace GSTIN is missing. Add it in Preferences or disable GST.");
       return;
     }
     setError("");
@@ -329,7 +327,9 @@ export default function QuotationEditor() {
       const snapshots = {
         client_snapshot: buildClientSnapshot(refCheck.client || client),
         business_snapshot: buildBusinessSnapshot(workspace),
-        event_snapshot: buildEventSnapshot(refCheck.event || event)
+        event_snapshot: buildEventSnapshot(refCheck.event || event),
+        bank_details_snapshot: buildBankDetailsSnapshot(bankDetails),
+        social_links_snapshot: buildSocialLinksSnapshot(socialLinks)
       };
       let q;
       if (isNew) {
@@ -338,7 +338,6 @@ export default function QuotationEditor() {
         q = await updateQuotation(workspaceId, id, data, items, snapshots);
       }
 
-      // Auto-create invoice from the finalized quotation (skip if one already exists)
       let inv = null;
       let invoiceError = false;
       try {
@@ -348,28 +347,15 @@ export default function QuotationEditor() {
         if (!existingInvs || existingInvs.length === 0) {
           inv = await createFromQuotation(workspaceId, q, items);
         }
-      } catch (e) {
-        invoiceError = true;
-      }
+      } catch (e) { invoiceError = true; }
 
-      queryClient.removeQueries({ queryKey: ["quotations"] });
-      queryClient.removeQueries({ queryKey: ["event"] });
-      queryClient.removeQueries({ queryKey: ["invoices"] });
       invalidateEntities(queryClient, ["Quotation", "QuotationItem", "Event", "Invoice", "InvoiceItem"]);
+      if (inv) toast({ title: "Quotation finalized & invoice created", description: inv.invoice_number });
+      else if (invoiceError) toast({ title: "Quotation finalized", description: "Invoice could not be created automatically.", variant: "destructive" });
+      else toast({ title: "Quotation finalized" });
 
-      if (inv) {
-        toast({ title: "Quotation finalized & invoice created", description: inv.invoice_number });
-      } else if (invoiceError) {
-        toast({ title: "Quotation finalized", description: "Invoice could not be created automatically.", variant: "destructive" });
-      } else {
-        toast({ title: "Quotation finalized" });
-      }
-
-      if (isNew) {
-        navigate(`/quotation/${q.id}`, { replace: true });
-      } else {
-        load();
-      }
+      if (isNew) navigate(`/quotation/${q.id}`, { replace: true });
+      else load();
     } catch (e) {
       setError(e?.message || "Failed to finalize quotation.");
     } finally {
@@ -387,11 +373,10 @@ export default function QuotationEditor() {
       const proceed = window.confirm(
         ev
           ? `This ${wl} currently has a contract value of ${formatMoney(prev, currency)}.\n\nUpdate it to the accepted quotation total of ${formatMoney(existingQuotation.grand_total, currency)}?`
-          : `Mark this quotation as Accepted? (No ${wl} linked, so contract value will not be updated.)`
+          : `Mark this quotation as Accepted?`
       );
       if (!proceed) { setAccepting(false); return; }
       const { eventUpdated } = await acceptQuotation(workspaceId, id, { updateContractValue: !!ev });
-      // Accepting can update the event's contract value → refresh events, dashboard, financial too.
       invalidateEntities(queryClient, ["Quotation", "QuotationItem", "Event", "FinancialTransaction"]);
       toast({ title: eventUpdated ? "Quotation accepted — contract value updated" : "Quotation accepted" });
       load();
@@ -431,36 +416,10 @@ export default function QuotationEditor() {
     if (!existingQuotation) return;
     setGenerating(true);
     try {
-      await generateQuotationPdf({
-        quotation: existingQuotation,
-        items,
-        workspace,
-        client,
-        event,
-        currency
-      });
+      await generateQuotationPdf({ quotation: existingQuotation, items, workspace, client, event, currency });
       toast({ title: "PDF downloaded" });
     } catch (e) {
       toast({ title: "PDF generation failed", description: e?.message, variant: "destructive" });
-    } finally {
-      setGenerating(false);
-    }
-  };
-
-  const downloadJobSheet = async () => {
-    if (!event) { toast({ title: `Select a ${term.workItemSingular.toLowerCase()} to generate a job sheet` }); return; }
-    setGenerating(true);
-    try {
-      const [asgns, members] = await Promise.all([
-        base44.entities.EventTeamAssignment.filter({ workspace_id: workspaceId, event_id: event.id }, "created_date", 200),
-        base44.entities.TeamMember.filter({ workspace_id: workspaceId }, "name", 200)
-      ]);
-      await generateJobSheetPdf({
-        event, assignments: asgns || [], members: members || [], roles, workspace, currency
-      });
-      toast({ title: "Job sheet downloaded" });
-    } catch (e) {
-      toast({ title: "Job sheet failed", description: e?.message, variant: "destructive" });
     } finally {
       setGenerating(false);
     }
@@ -471,9 +430,7 @@ export default function QuotationEditor() {
     setGenerating(true);
     setPreview({ url: "", filename: "", open: true, loading: true });
     try {
-      const result = await generateQuotationPdf({
-        quotation: existingQuotation, items, workspace, client, event, currency, returnBlob: true
-      });
+      const result = await generateQuotationPdf({ quotation: existingQuotation, items, workspace, client, event, currency, returnBlob: true });
       setPreview({ url: result.url, filename: result.filename, open: true, loading: false });
     } catch (e) {
       toast({ title: "Preview failed", description: e?.message, variant: "destructive" });
@@ -483,39 +440,24 @@ export default function QuotationEditor() {
     }
   };
 
-  const previewJobSheet = async () => {
-    if (!event) { toast({ title: `Select a ${term.workItemSingular.toLowerCase()} to generate a job sheet` }); return; }
-    setGenerating(true);
-    setPreview({ url: "", filename: "", open: true, loading: true });
-    try {
-      const [asgns, members] = await Promise.all([
-        base44.entities.EventTeamAssignment.filter({ workspace_id: workspaceId, event_id: event.id }, "created_date", 200),
-        base44.entities.TeamMember.filter({ workspace_id: workspaceId }, "name", 200)
-      ]);
-      const result = await generateJobSheetPdf({
-        event, assignments: asgns || [], members: members || [], roles, workspace, currency, returnBlob: true
-      });
-      setPreview({ url: result.url, filename: result.filename, open: true, loading: false });
-    } catch (e) {
-      toast({ title: "Job sheet preview failed", description: e?.message, variant: "destructive" });
-      setPreview({ url: "", filename: "", open: false, loading: false });
-    } finally {
-      setGenerating(false);
-    }
-  };
-
   const previewTemplate = () => {
     const html = renderTemplate(templateId, {
-      workspace,
-      quotation: { ...existingQuotation, ...buildData(), ...totals, project_title: projectTitle, project_summary: projectSummary },
-      client,
-      event,
-      items,
-      currency,
-      templateConfig
+      workspace, quotation: { ...existingQuotation, ...buildData(), ...totals, project_title: projectTitle, project_summary: projectSummary },
+      client, event, items, currency, templateConfig
     });
     setTemplatePreviewHtml(html);
     setShowTemplatePreview(true);
+  };
+
+  // ---- Package apply ----
+  const applyPackage = (pkg) => {
+    const incDates = includedDates(startDate, endDate, excludedDates);
+    const newItems = deserializePackageStructure(pkg.structure_json, incDates);
+    setItems(newItems);
+    if (pkg.terms_and_conditions && !terms) setTerms(pkg.terms_and_conditions);
+    if (pkg.footer_message && !footerMessage) setFooterMessage(pkg.footer_message);
+    if (pkg.category) setCategory(pkg.category);
+    toast({ title: "Package applied", description: pkg.name });
   };
 
   if (loading) return <LoadingState label="Loading quotation…" />;
@@ -532,6 +474,7 @@ export default function QuotationEditor() {
 
   return (
     <div className="p-4 sm:p-6 space-y-4 max-w-[1100px] mx-auto">
+      {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <button onClick={() => navigate("/quotation")} className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1">
           <ArrowLeft className="w-4 h-4" /> Quotations
@@ -541,20 +484,20 @@ export default function QuotationEditor() {
             {QUOTATION_STATUS_META[status]?.label || status}
           </span>
           <span className="text-sm font-medium text-muted-foreground">{quotationNumber}</span>
+          {!readOnly && (
+            <Button size="sm" variant="outline" onClick={() => setShowPackageDialog(true)}>
+              <Package className="w-3.5 h-3.5" /> Packages
+            </Button>
+          )}
           {status === "accepted" && existingQuotation && (
-            <Button
-              size="sm"
-              onClick={async () => {
-                try {
-                  const inv = await createFromQuotation(workspaceId, existingQuotation, items);
-                  invalidateEntities(queryClient, ["Invoice", "InvoiceItem"]);
-                  toast({ title: "Invoice created", description: inv.invoice_number });
-                  navigate(`/invoices/${inv.id}`);
-                } catch (e) {
-                  setError(e?.message || "Failed to create invoice.");
-                }
-              }}
-            >
+            <Button size="sm" onClick={async () => {
+              try {
+                const inv = await createFromQuotation(workspaceId, existingQuotation, items);
+                invalidateEntities(queryClient, ["Invoice", "InvoiceItem"]);
+                toast({ title: "Invoice created", description: inv.invoice_number });
+                navigate(`/invoices/${inv.id}`);
+              } catch (e) { setError(e?.message || "Failed to create invoice."); }
+            }}>
               <Receipt className="w-3.5 h-3.5" /> Create Invoice
             </Button>
           )}
@@ -568,7 +511,7 @@ export default function QuotationEditor() {
         </div>
       )}
 
-      {/* Quotation meta + client/event */}
+      {/* Quotation meta */}
       <Section title="Quotation">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Field label="Quotation No">
@@ -605,7 +548,7 @@ export default function QuotationEditor() {
             </Select>
           </Field>
           <Field label="Project Title">
-            <Input value={projectTitle} onChange={(e) => setProjectTitle(e.target.value)} disabled={readOnly} placeholder="e.g. Website Development" />
+            <Input value={projectTitle} onChange={(e) => setProjectTitle(e.target.value)} disabled={readOnly} placeholder="e.g. Wedding Coverage" />
           </Field>
           <div className="sm:col-span-2">
             <Field label="Project Summary">
@@ -615,24 +558,49 @@ export default function QuotationEditor() {
         </div>
       </Section>
 
-      {/* Items */}
-      <QuotationItemsEditor
-        items={items}
-        updateItem={updateItem}
-        removeItem={removeItem}
-        addService={addService}
-        addRole={addRole}
-        addCustom={addCustom}
-        addServiceId={addServiceId}
-        setAddServiceId={setAddServiceId}
-        addRoleId={addRoleId}
-        setAddRoleId={setAddRoleId}
-        services={services}
-        roles={roles}
-        gstApplicable={gstApplicable}
+      {/* Category & Context */}
+      <QuotationCategoryContext
+        category={category}
+        setCategory={setCategory}
+        contextType={contextType}
+        setContextType={setContextType}
         readOnly={readOnly}
-        currency={currency}
       />
+
+      {/* Date Engine */}
+      <QuotationDateEngine
+        startDate={startDate}
+        setStartDate={setStartDate}
+        endDate={endDate}
+        setEndDate={setEndDate}
+        excludedDates={excludedDates}
+        setExcludedDates={setExcludedDates}
+        readOnly={readOnly}
+      />
+
+      {/* Day/Phase Builder */}
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-sm font-semibold">Day / Phase Builder</h3>
+          {!readOnly && (
+            <Button size="sm" variant="outline" onClick={() => setShowPackageDialog(true)}>
+              <Package className="w-3.5 h-3.5" /> Apply Package
+            </Button>
+          )}
+        </div>
+        <QuotationDayBuilder
+          items={items}
+          setItems={setItems}
+          startDate={startDate}
+          endDate={endDate}
+          excludedDates={excludedDates}
+          teamMembers={teamMembers}
+          roles={roles}
+          services={services}
+          currency={currency}
+          readOnly={readOnly}
+        />
+      </div>
 
       {/* Pricing + GST */}
       <QuotationPricingPanel
@@ -647,7 +615,33 @@ export default function QuotationEditor() {
         gstWorkspaceEnabled={gstWorkspaceEnabled}
         workspaceGstin={workspace?.gstin}
         totals={totals}
+        subtotals={subtotals}
         currency={currency}
+        readOnly={readOnly}
+      />
+
+      {/* Payment Milestones */}
+      <QuotationMilestonesEditor
+        schedule={milestones}
+        setSchedule={setMilestones}
+        grandTotal={totals.grandTotal}
+        currency={currency}
+        readOnly={readOnly}
+      />
+
+      {/* Presentation Settings */}
+      <QuotationPresentationSection
+        showPricing={showPricing}
+        setShowPricing={setShowPricing}
+        bankDetails={bankDetails}
+        setBankDetails={setBankDetails}
+        socialLinks={socialLinks}
+        setSocialLinks={setSocialLinks}
+        footerMessage={footerMessage}
+        setFooterMessage={setFooterMessage}
+        specialNotes={specialNotes}
+        setSpecialNotes={setSpecialNotes}
+        workspace={workspace}
         readOnly={readOnly}
       />
 
@@ -670,22 +664,13 @@ export default function QuotationEditor() {
           />
         </Field>
         <Field label="Client Access Password (optional)">
-          <Input
-            value={accessPassword}
-            onChange={(e) => setAccessPassword(e.target.value)}
-            disabled={readOnly}
-            placeholder="Leave blank for public link"
-          />
+          <Input value={accessPassword} onChange={(e) => setAccessPassword(e.target.value)} disabled={readOnly} placeholder="Leave blank for public link" />
           <p className="text-xs text-muted-foreground mt-1">If set, the client must enter their email + this password to view and sign the quotation online.</p>
         </Field>
       </Section>
 
       {/* Template Settings */}
-      <QuotationTemplateSettings
-        templateConfig={templateConfig}
-        onChange={setTemplateConfig}
-        readOnly={readOnly}
-      />
+      <QuotationTemplateSettings templateConfig={templateConfig} onChange={setTemplateConfig} readOnly={readOnly} />
 
       {/* Actions */}
       <QuotationActions
@@ -701,9 +686,7 @@ export default function QuotationEditor() {
         finalize={finalize}
         accept={accept}
         downloadPdf={downloadPdf}
-        downloadJobSheet={downloadJobSheet}
         previewPdf={previewPdf}
-        previewJobSheet={previewJobSheet}
         previewTemplate={previewTemplate}
         onDuplicate={onDuplicate}
         onDelete={onDelete}
@@ -727,12 +710,20 @@ export default function QuotationEditor() {
         clientName={client?.name}
       />
 
+      <QuotationPackageDialog
+        open={showPackageDialog}
+        onClose={() => setShowPackageDialog(false)}
+        workspaceId={workspaceId}
+        items={items}
+        onApplyPackage={applyPackage}
+        readOnly={readOnly}
+      />
+
       <ClientForm
         open={showClientForm}
         onClose={() => setShowClientForm(false)}
         workspaceId={workspaceId}
         onSaved={async (savedClient) => {
-          // Reload clients list and auto-select the newly created client.
           const list = await base44.entities.Client.filter({ workspace_id: workspaceId }, "name", 500);
           setClients(list || []);
           setClientId(savedClient.id);

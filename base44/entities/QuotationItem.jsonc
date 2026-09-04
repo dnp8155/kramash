@@ -16,12 +16,40 @@
       "enum": [
         "service",
         "role",
+        "team",
         "custom"
-      ]
+      ],
+      "default": "custom"
     },
     "reference_id": {
       "type": "string",
-      "title": "Reference ID"
+      "title": "Reference ID (service_id, role_id, or team_member_id)"
+    },
+    "team_member_id": {
+      "type": "string",
+      "title": "Team Member ID (for team-type items)"
+    },
+    "team_member_name_snapshot": {
+      "type": "string",
+      "title": "Team Member Name Snapshot"
+    },
+    "member_type": {
+      "type": "string",
+      "title": "Member Type / Side (bride_side, groom_side, common, other)"
+    },
+    "day_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Day Date (which day/phase this item belongs to)"
+    },
+    "phase_title": {
+      "type": "string",
+      "title": "Function / Phase Title (e.g. Haldi, Sangeet, Site Measurement)"
+    },
+    "is_addon": {
+      "type": "boolean",
+      "title": "Is Add-on (last-minute service)",
+      "default": false
     },
     "name": {
       "type": "string",

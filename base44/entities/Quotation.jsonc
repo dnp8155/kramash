@@ -36,8 +36,49 @@
         "draft",
         "finalized",
         "accepted",
-        "rejected"
+        "rejected",
+        "expired",
+        "cancelled"
       ]
+    },
+    "category": {
+      "type": "string",
+      "title": "Quotation Category",
+      "default": "PHOTOGRAPHY",
+      "enum": [
+        "PHOTOGRAPHY",
+        "EVENT_MANAGEMENT",
+        "ARCHITECTURE",
+        "OTHER"
+      ]
+    },
+    "context_type": {
+      "type": "string",
+      "title": "Context Type (e.g. bride_side, groom_side, common, residential, commercial)"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Project/Event Start Date"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Project/Event End Date"
+    },
+    "excluded_dates": {
+      "type": "array",
+      "title": "Excluded Dates (not part of quotation scope)",
+      "items": {
+        "type": "string",
+        "format": "date"
+      },
+      "default": []
+    },
+    "show_pricing": {
+      "type": "boolean",
+      "title": "Show Qty, Rate & Amount to Client",
+      "default": true
     },
     "template_id": {
       "type": "string",
@@ -124,13 +165,33 @@
       "title": "Grand Total",
       "default": 0
     },
+    "payment_schedule_json": {
+      "type": "string",
+      "title": "Payment Milestones (JSON)"
+    },
     "terms_and_conditions": {
       "type": "string",
       "title": "Terms & Conditions"
     },
+    "special_notes": {
+      "type": "string",
+      "title": "Special Notes (scope-specific: travel, accommodation, revisions, etc.)"
+    },
     "notes": {
       "type": "string",
-      "title": "Notes"
+      "title": "Notes (internal)"
+    },
+    "bank_details_snapshot": {
+      "type": "string",
+      "title": "Bank & UPI Details Snapshot (JSON)"
+    },
+    "social_links_snapshot": {
+      "type": "string",
+      "title": "Social Links Snapshot (JSON)"
+    },
+    "footer_message": {
+      "type": "string",
+      "title": "Footer / Thank You Message"
     },
     "client_snapshot": {
       "type": "string",

@@ -1,6 +1,5 @@
-// Phase 6 pure calculation helpers for estimator + quotation.
-// Shared by the Rate Estimator and the Quotation editor so totals stay consistent.
-// All money values are rounded to 2 decimals to avoid floating-point drift.
+// Quotation calculation helpers: line totals, subtotals by item type,
+// discount, GST, and grand total. Shared by the estimator and quotation editor.
 
 export function round2(n) {
   const v = Number(n) || 0;
@@ -28,6 +27,18 @@ export function subtotalOf(items) {
   return round2((items || []).reduce((s, it) => s + lineTotal(it), 0));
 }
 
+// Subtotals grouped by item_type (team, service, custom, role).
+export function subtotalsByType(items) {
+  const groups = { team: 0, service: 0, custom: 0, role: 0 };
+  for (const it of items || []) {
+    const lt = lineTotal(it);
+    const t = it.item_type || "custom";
+    if (groups[t] !== undefined) groups[t] = round2(groups[t] + lt);
+    else groups.custom = round2(groups.custom + lt);
+  }
+  return groups;
+}
+
 // Discount amount from type/value, clamped to subtotal.
 export function discountAmount(subtotal, type, value) {
   const v = Math.max(0, Number(value) || 0);
@@ -49,8 +60,6 @@ export function computeTotals(items, opts = {}) {
   let gstTotal = 0;
 
   if (opts.gstApplicable) {
-    // Apply discount proportionally across items so GST base stays correct
-    // even when items carry different GST rates.
     const factor = subtotal > 0 ? taxable / subtotal : 0;
     const mode = opts.gstMode || "cgst_sgst";
     for (const it of items || []) {
@@ -96,4 +105,71 @@ export function applyMarkupToItems(items, markupPct) {
     ...it,
     unit_rate: round2((Number(it.unit_rate) || 0) * factor)
   }));
+}
+
+// ---- Payment Milestone helpers ----
+
+// Calculate milestone amounts from a schedule and a grand total.
+// Each milestone: { name, type: "percent"|"fixed", value, due_condition }
+export function calculateMilestones(schedule, grandTotal) {
+  const total = Math.max(0, Number(grandTotal) || 0);
+  return (schedule || []).map((m) => {
+    const v = Math.max(0, Number(m.value) || 0);
+    const amount = m.type === "fixed" ? round2(v) : round2((total * v) / 100);
+    return { ...m, calculated_amount: amount };
+  });
+}
+
+// Validate that percentage-based milestones don't exceed 100%.
+export function validateMilestones(schedule, grandTotal) {
+  if (!schedule || schedule.length === 0) return "";
+  const pctSum = schedule
+    .filter((m) => m.type === "percent")
+    .reduce((s, m) => s + (Number(m.value) || 0), 0);
+  if (pctSum > 100) return `Percentage milestones total ${pctSum}% — cannot exceed 100%.`;
+  const fixedSum = schedule
+    .filter((m) => m.type === "fixed")
+    .reduce((s, m) => s + (Number(m.value) || 0), 0);
+  if (fixedSum > total) return `Fixed milestones total ${round2(fixedSum)} — exceeds quotation total of ${round2(total)}.`;
+  return "";
+}
+
+// ---- Date Engine helpers ----
+
+// Generate all dates in a range (inclusive), returned as YYYY-MM-DD strings.
+export function datesInRange(startDate, endDate) {
+  if (!startDate || !endDate) return [];
+  const result = [];
+  const start = new Date(startDate + "T00:00:00");
+  const end = new Date(endDate + "T00:00:00");
+  if (isNaN(start) || isNaN(end) || start > end) return [];
+  const cur = new Date(start);
+  while (cur <= end) {
+    result.push(cur.toISOString().slice(0, 10));
+    cur.setDate(cur.getDate() + 1);
+  }
+  return result;
+}
+
+// Included dates = all dates in range minus excluded dates.
+export function includedDates(startDate, endDate, excludedDates = []) {
+  const all = datesInRange(startDate, endDate);
+  const excl = new Set(excludedDates || []);
+  return all.filter((d) => !excl.has(d));
+}
+
+// Format a date as "20 Feb" for chip display.
+export function formatDateChip(dateStr) {
+  if (!dateStr) return "";
+  const d = new Date(dateStr + "T00:00:00");
+  if (isNaN(d)) return dateStr;
+  return d.toLocaleDateString("en-IN", { day: "2-digit", month: "short" });
+}
+
+// Format a date as "20 Feb 2026" for full display.
+export function formatDateFull(dateStr) {
+  if (!dateStr) return "";
+  const d = new Date(dateStr + "T00:00:00");
+  if (isNaN(d)) return dateStr;
+  return d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 }

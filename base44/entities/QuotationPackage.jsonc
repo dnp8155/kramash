@@ -1,0 +1,68 @@
+{
+  "name": "QuotationPackage",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "title": "Workspace ID"
+    },
+    "name": {
+      "type": "string",
+      "title": "Package Name"
+    },
+    "description": {
+      "type": "string",
+      "title": "Description"
+    },
+    "category": {
+      "type": "string",
+      "title": "Category",
+      "default": "PHOTOGRAPHY",
+      "enum": [
+        "PHOTOGRAPHY",
+        "EVENT_MANAGEMENT",
+        "ARCHITECTURE",
+        "OTHER"
+      ]
+    },
+    "structure_json": {
+      "type": "string",
+      "title": "Package Structure (JSON: days with team, services, custom items, terms)"
+    },
+    "terms_and_conditions": {
+      "type": "string",
+      "title": "Default Terms & Conditions"
+    },
+    "footer_message": {
+      "type": "string",
+      "title": "Default Footer Message"
+    },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "default": "active",
+      "enum": [
+        "active",
+        "inactive"
+      ]
+    }
+  },
+  "required": [
+    "workspace_id",
+    "name"
+  ],
+  "rls": {
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}
