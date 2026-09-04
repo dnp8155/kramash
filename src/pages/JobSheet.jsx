@@ -2,14 +2,15 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useWorkspace } from "@/lib/WorkspaceContext";
-import { assembleJobSheetData, getOrCreateJobSheet, updateJobSheetConfig, parseJSON } from "@/lib/jobSheetService";
+import { assembleJobSheetData, getOrCreateJobSheet, updateJobSheetConfig, parseJSON, generatePublicToken, togglePublicLink } from "@/lib/jobSheetService";
+import { generateJobSheetPdf } from "@/lib/jobSheetPdf";
 import JobSheetSettings from "@/components/jobsheet/JobSheetSettings";
 import JobSheetDocument from "@/components/jobsheet/JobSheetDocument";
 import Button from "@/components/common/Button";
 import DetailSkeleton from "@/components/common/DetailSkeleton";
 import DetailErrorState from "@/components/common/DetailErrorState";
 import { useToast } from "@/components/ui/use-toast";
-import { ArrowLeft, Settings, Printer, ClipboardList } from "lucide-react";
+import { ArrowLeft, Settings, Printer, ClipboardList, FileDown, Share2 } from "lucide-react";
 
 export default function JobSheet() {
   const { id } = useParams();
@@ -18,6 +19,7 @@ export default function JobSheet() {
   const { toast } = useToast();
   const [showSettings, setShowSettings] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const [config, setConfig] = useState(null);
 
   const { data, isLoading, error } = useQuery({
@@ -59,6 +61,47 @@ export default function JobSheet() {
       toast({ title: "Failed to save", description: e?.message, variant: "destructive" });
     }
     setSaving(false);
+  };
+
+  const handleDownloadPdf = async () => {
+    if (!config || !data) return;
+    const eventData = {
+      event: data.event,
+      client: data.client,
+      quotationItems: data.quotationItems,
+      teamAssignments: data.teamAssignments,
+      dayAssignments: data.dayAssignments,
+      membersById: data.membersById,
+      eventDates: data.eventDates
+    };
+    setDownloading(true);
+    try {
+      await generateJobSheetPdf({ data: eventData, config, workspace });
+    } catch (e) {
+      toast({ title: "Failed to generate PDF", description: e?.message, variant: "destructive" });
+    }
+    setDownloading(false);
+  };
+
+  const handleShare = async () => {
+    if (!config) return;
+    try {
+      let token = config.public_token;
+      if (!config.public_link_enabled) {
+        token = token || generatePublicToken();
+        await togglePublicLink(config.id, true, token);
+        setConfig(prev => prev ? { ...prev, public_link_enabled: true, public_token: token } : prev);
+      }
+      const url = `${window.location.origin}/job-sheet/${token}`;
+      if (navigator.share) {
+        await navigator.share({ title: "Job Sheet", url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        toast({ title: "Link copied!", description: "Share it with your crew." });
+      }
+    } catch (e) {
+      toast({ title: "Failed to share", variant: "destructive" });
+    }
   };
 
   const handlePrint = () => {
@@ -130,6 +173,12 @@ export default function JobSheet() {
             onClick={() => setShowSettings(s => !s)}
           >
             <Settings className="w-3.5 h-3.5" /> {showSettings ? "Hide Settings" : "Settings"}
+          </Button>
+          <Button size="sm" variant="outline" onClick={handleDownloadPdf} disabled={downloading}>
+            <FileDown className="w-3.5 h-3.5" /> {downloading ? "Generating..." : "PDF"}
+          </Button>
+          <Button size="sm" variant="primary" onClick={handleShare}>
+            <Share2 className="w-3.5 h-3.5" /> Share
           </Button>
           <Button size="sm" variant="outline" onClick={handlePrint}>
             <Printer className="w-3.5 h-3.5" /> Print

@@ -53,6 +53,30 @@
         "active",
         "archived"
       ]
+    },
+    "public_token": {
+      "type": "string",
+      "title": "Public Share Token (secure random token for crew URL)"
+    },
+    "public_link_enabled": {
+      "type": "boolean",
+      "title": "Public Link Enabled (admin master control)",
+      "default": false
+    },
+    "portal_view_count": {
+      "type": "number",
+      "title": "Portal View Count",
+      "default": 0
+    },
+    "portal_first_viewed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Portal First Viewed At"
+    },
+    "portal_latest_viewed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Portal Latest Viewed At"
     }
   },
   "required": [

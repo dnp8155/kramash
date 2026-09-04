@@ -51,6 +51,7 @@ import ClientQuotationView from '@/pages/ClientQuotationView';
 import ClientProjectPortal from '@/pages/ClientProjectPortal';
 import EventTracking from '@/pages/EventTracking';
 import JobSheet from '@/pages/JobSheet';
+import PublicJobSheet from '@/pages/PublicJobSheet';
 // Add page imports here
 
 const AuthenticatedApp = () => {
@@ -95,6 +96,9 @@ const AuthenticatedApp = () => {
 
       {/* Public client-facing event tracking page */}
       <Route path="/track/:id" element={<EventTracking />} />
+
+      {/* Public crew-facing job sheet */}
+      <Route path="/job-sheet/:token" element={<PublicJobSheet />} />
 
       {/* Public legal pages */}
       <Route path="/terms" element={<TermsOfService />} />

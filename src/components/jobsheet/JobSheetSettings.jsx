@@ -1,9 +1,13 @@
+import { useState } from "react";
 import Toggle from "@/components/common/Toggle";
 import Button from "@/components/common/Button";
 import Card from "@/components/common/Card";
-import { Save, Users, Phone, Wrench, Package, Clock, MapPin, FileText } from "lucide-react";
+import { generatePublicToken } from "@/lib/jobSheetService";
+import { Save, Users, Phone, Wrench, Package, Clock, MapPin, FileText, Link, Copy } from "lucide-react";
 
 export default function JobSheetSettings({ config, onChange, eventDates, onSave, saving }) {
+  const [copied, setCopied] = useState(false);
+
   if (!config) return null;
 
   const dateConfigs = config.date_configs || {};
@@ -16,6 +20,13 @@ export default function JobSheetSettings({ config, onChange, eventDates, onSave,
         [date]: { ...current, [field]: value }
       }
     });
+  };
+
+  const handleCopy = () => {
+    if (!config.public_token) return;
+    navigator.clipboard?.writeText(`${window.location.origin}/job-sheet/${config.public_token}`);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
@@ -147,6 +158,46 @@ export default function JobSheetSettings({ config, onChange, eventDates, onSave,
           onChange={e => onChange({ internal_notes: e.target.value })}
           placeholder="Internal notes for crew and site supervisors..."
         />
+      </div>
+
+      {/* Public Link */}
+      <div className="border-t border-border/60" />
+      <div>
+        <div className="flex items-center gap-2 mb-2">
+          <Link className="w-4 h-4 text-muted-foreground" />
+          <label className="text-sm font-medium text-foreground">Public Crew Link</label>
+        </div>
+        <ToggleRow
+          icon={Link}
+          label="Enable Public Link"
+          description="ON: Crew can access the job sheet via a secure URL. OFF: Link is inaccessible."
+          checked={!!config.public_link_enabled}
+          onChange={v => {
+            const token = v && !config.public_token ? generatePublicToken() : config.public_token;
+            onChange({ public_link_enabled: v, public_token: token });
+          }}
+        />
+        {config.public_link_enabled && config.public_token && (
+          <div className="mt-3 space-y-2">
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                readOnly
+                className="flex-1 bg-muted/40 border border-border rounded-lg px-3 h-9 text-xs text-muted-foreground truncate"
+                value={`${window.location.origin}/job-sheet/${config.public_token}`}
+              />
+              <Button size="sm" variant="outline" onClick={handleCopy}>
+                <Copy className="w-3.5 h-3.5" /> {copied ? "Copied!" : "Copy"}
+              </Button>
+            </div>
+            {(config.portal_view_count > 0 || config.portal_latest_viewed_at) && (
+              <div className="text-xs text-muted-foreground space-y-0.5">
+                {config.portal_view_count > 0 && <div>Views: {config.portal_view_count}</div>}
+                {config.portal_latest_viewed_at && <div>Last viewed: {new Date(config.portal_latest_viewed_at).toLocaleString()}</div>}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </Card>
   );

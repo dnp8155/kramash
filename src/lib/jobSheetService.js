@@ -129,7 +129,26 @@ export async function updateJobSheetConfig(id, config) {
     equipment_list: JSON.stringify(config.equipment_list || []),
     deliverables: JSON.stringify(config.deliverables || []),
     date_configs: JSON.stringify(config.date_configs || {}),
-    internal_notes: config.internal_notes || ""
+    internal_notes: config.internal_notes || "",
+    public_link_enabled: !!config.public_link_enabled,
+    public_token: config.public_token || ""
+  });
+}
+
+export function generatePublicToken() {
+  const chars = "0123456789abcdef";
+  let token = "";
+  for (let i = 0; i < 48; i++) {
+    token += chars[Math.floor(Math.random() * 16)];
+  }
+  return token;
+}
+
+export async function togglePublicLink(id, enabled, existingToken) {
+  const token = enabled ? (existingToken || generatePublicToken()) : (existingToken || "");
+  return await base44.entities.JobSheet.update(id, {
+    public_link_enabled: enabled,
+    public_token: token
   });
 }
 
