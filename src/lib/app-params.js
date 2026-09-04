@@ -39,9 +39,8 @@ const getAppParams = () => {
 		storage.removeItem('base44_access_token');
 		storage.removeItem('token');
 	}
-	// Clean up stale or broken app_base_url saved previously in localStorage (e.g., kramashah2025.base44.app)
-	const storedBaseUrl = storage.getItem('base44_app_base_url');
-	if (storedBaseUrl && (storedBaseUrl.includes('kramashah2025') || storedBaseUrl.includes('base44.app'))) {
+	// If running on localhost/custom domain, clear any stored remote app_base_url that causes external redirects
+	if (!isNode && (storage.getItem('base44_app_base_url')?.includes('base44.app') || storage.getItem('base44_app_base_url')?.includes('kramashah2025'))) {
 		storage.removeItem('base44_app_base_url');
 	}
 	return {
@@ -49,7 +48,7 @@ const getAppParams = () => {
 		token: getAppParamValue("access_token", { removeFromUrl: true }),
 		fromUrl: getAppParamValue("from_url", { defaultValue: window.location.href }),
 		functionsVersion: getAppParamValue("functions_version", { defaultValue: import.meta.env.BASE44_FUNCTIONS_VERSION || import.meta.env.VITE_BASE44_FUNCTIONS_VERSION }),
-		appBaseUrl: getAppParamValue("app_base_url", { defaultValue: import.meta.env.BASE44_APP_BASE_URL || '' }),
+		appBaseUrl: getAppParamValue("app_base_url", { defaultValue: (!isNode && window?.location?.origin) ? window.location.origin : (import.meta.env.BASE44_APP_BASE_URL || import.meta.env.VITE_BASE44_APP_BASE_URL || '') }),
 	}
 }
 

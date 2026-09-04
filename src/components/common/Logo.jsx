@@ -1,20 +1,26 @@
-import { Image } from "@/components/ui/image";
+import { useState } from "react";
 
 export const LOGO_URL =
   "https://media.base44.com/images/public/6a8c4677eeb41482e947f9c6/99658306b_ChatGPTImageAug29202608_10_43PM.png";
 
 export default function Logo({ size = 36, className = "" }) {
+  const [imgSrc, setImgSrc] = useState(LOGO_URL);
+
   return (
     <div
       style={{ width: size, height: size }}
-      className={`shrink-0 flex items-center justify-center ${className}`}
+      className={`shrink-0 flex items-center justify-center overflow-hidden rounded-lg ${className}`}
     >
-      <Image
-        src={LOGO_URL}
+      <img
+        src={imgSrc}
         alt="Kramasha"
-        fittingType="fit"
-        className="max-w-full max-h-full"
+        className="w-full h-full object-contain"
         draggable={false}
+        onError={() => {
+          if (imgSrc !== "/icon.svg") {
+            setImgSrc("/icon.svg");
+          }
+        }}
       />
     </div>
   );

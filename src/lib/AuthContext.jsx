@@ -139,6 +139,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const navigateToLogin = () => {
+    // Redirect to local login route instead of remote Base44 URL
     window.location.href = '/login';
   };
 
