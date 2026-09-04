@@ -12,16 +12,30 @@ export default function SignaturePad({ onChange, disabled }) {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ratio = window.devicePixelRatio || 1;
-    const rect = canvas.getBoundingClientRect();
-    canvas.width = rect.width * ratio;
-    canvas.height = rect.height * ratio;
-    const ctx = canvas.getContext("2d");
-    ctx.scale(ratio, ratio);
-    ctx.lineWidth = 2;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.strokeStyle = "hsl(var(--foreground))";
+
+    const initCanvas = () => {
+      const ratio = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width === 0) return;
+      // Preserve existing drawing across resize/orientation changes
+      const oldData = canvas.toDataURL("image/png");
+      canvas.width = rect.width * ratio;
+      canvas.height = rect.height * ratio;
+      const ctx = canvas.getContext("2d");
+      ctx.scale(ratio, ratio);
+      ctx.lineWidth = 2;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.strokeStyle = "hsl(var(--foreground))";
+      const img = new Image();
+      img.onload = () => ctx.drawImage(img, 0, 0, rect.width, rect.height);
+      img.src = oldData;
+    };
+
+    initCanvas();
+    const ro = new ResizeObserver(initCanvas);
+    ro.observe(canvas);
+    return () => ro.disconnect();
   }, []);
 
   const pos = (e) => {

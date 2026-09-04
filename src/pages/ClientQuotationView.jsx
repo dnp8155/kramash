@@ -169,7 +169,7 @@ export default function ClientQuotationView() {
   // ---- Loading ----
   if (loading && !authRequired) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted/30">
+      <div className="min-h-dvh flex items-center justify-center bg-muted/30">
         <div className="flex items-center gap-2 text-muted-foreground">
           <Loader2 className="w-5 h-5 animate-spin" /> Loading quotation…
         </div>
@@ -180,7 +180,7 @@ export default function ClientQuotationView() {
   // ---- Auth gate ----
   if (authRequired && !data) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
+      <div className="min-h-dvh flex items-center justify-center bg-muted/30 p-4">
         <div className="max-w-md w-full bg-card border border-border rounded-xl p-8">
           <div className="flex items-center gap-2 mb-1">
             <Lock className="w-5 h-5 text-primary" />
@@ -211,7 +211,7 @@ export default function ClientQuotationView() {
   // ---- Error ----
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
+      <div className="min-h-dvh flex items-center justify-center bg-muted/30 p-4">
         <div className="max-w-md w-full bg-card border border-border rounded-xl p-8 text-center">
           <FileText className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
           <h1 className="text-lg font-semibold text-foreground">Quotation unavailable</h1>
@@ -231,7 +231,7 @@ export default function ClientQuotationView() {
   const expired = q.expired || (q.valid_until && new Date(q.valid_until + "T00:00:00") < new Date());
 
   return (
-    <div className="min-h-screen bg-muted/30">
+    <div className="min-h-dvh bg-muted/30">
       {/* Action bar */}
       <QuotationActionBar
         validUntil={q.valid_until}

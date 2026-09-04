@@ -429,7 +429,7 @@ export default function EventDetails() {
 
       {/* Tabs */}
       <div className="border-b border-border">
-        <div className="flex items-center gap-6 overflow-x-auto">
+        <div className="flex items-center gap-4 sm:gap-6 overflow-x-auto scrollbar-thin">
           {tabs.map((t) => (
             <button
               key={t}

@@ -80,7 +80,7 @@ export default function PublicJobSheet() {
   return (
     <div className="min-h-dvh bg-muted/30 safe-area-top safe-area-bottom">
       {/* Header */}
-      <div className="bg-primary text-primary-foreground px-4 py-5 sticky top-0 z-10">
+      <div className="bg-primary text-primary-foreground px-4 py-5 sticky top-0 z-10 safe-area-top">
         <div className="flex items-center gap-2 mb-1">
           <FileText className="w-4 h-4 opacity-80" />
           <span className="text-xs font-medium uppercase tracking-wide opacity-80">Operational Job Sheet</span>

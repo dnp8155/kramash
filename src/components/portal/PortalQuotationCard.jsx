@@ -84,22 +84,22 @@ export default function PortalQuotationCard({
 
   if (card_state === "pending") {
     return (
-      <div className="bg-amber-50 border border-amber-300/60 rounded-xl p-5">
+      <div className="bg-warning/5 border border-warning/30 rounded-xl p-5">
         <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
-            <FileText className="w-5 h-5 text-amber-700" />
+          <div className="w-10 h-10 rounded-full bg-warning/15 flex items-center justify-center shrink-0">
+            <FileText className="w-5 h-5 text-warning" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="font-semibold text-foreground">Quotation {quotation_number}</span>
-              <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
+              <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-warning/15 text-warning">
                 Awaiting review & signature
               </span>
             </div>
-            <p className="text-sm text-amber-800 mt-1 font-medium">{money(grand_total, currency)}</p>
+            <p className="text-sm text-warning mt-1 font-medium">{money(grand_total, currency)}</p>
             <button
               onClick={onReviewSign}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-amber-600 text-white text-sm font-medium hover:bg-amber-700 transition-all mt-3"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-warning text-warning-foreground text-sm font-medium hover:opacity-90 transition-all mt-3"
             >
               <FileText className="w-4 h-4" /> Review & Sign Quotation
             </button>

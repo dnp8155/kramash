@@ -113,7 +113,7 @@ export default function ClientProjectPortal() {
   // ---- Loading ----
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted/30">
+      <div className="min-h-dvh flex items-center justify-center bg-muted/30">
         <div className="flex items-center gap-2 text-muted-foreground">
           <Loader2 className="w-5 h-5 animate-spin" /> Loading project…
         </div>
@@ -157,9 +157,9 @@ export default function ClientProjectPortal() {
   const subType = [categoryLabel(project.category), contextLabel(project.context_type)].filter(Boolean).join(" · ");
 
   return (
-    <div className="min-h-screen bg-muted/30 pb-12">
+    <div className="min-h-dvh bg-muted/30 pb-12">
       {/* Top bar */}
-      <div className="bg-card border-b border-border">
+      <div className="bg-card border-b border-border safe-area-top">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             {business_logo ? (

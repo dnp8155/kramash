@@ -11,47 +11,74 @@ function dateShort(d) {
   catch { return d; }
 }
 
-// Itemized mode — full table with qty, rate, amount
+// Itemized mode — table on desktop, stacked cards on mobile
 function ItemizedTable({ items, currency }) {
+  if (items.length === 0) {
+    return <div className="px-4 py-6 text-center text-muted-foreground text-sm">No items</div>;
+  }
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm min-w-[560px]">
-        <thead className="bg-muted/40 text-left text-xs text-muted-foreground">
-          <tr>
-            <th className="px-4 py-2.5 font-medium w-8">#</th>
-            <th className="px-3 py-2.5 font-medium">Description</th>
-            <th className="px-3 py-2.5 font-medium text-right">Qty</th>
-            <th className="px-3 py-2.5 font-medium text-right">Rate</th>
-            <th className="px-4 py-2.5 font-medium text-right">Amount</th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((it, i) => (
-            <tr key={i} className="border-t border-border">
-              <td className="px-4 py-3 text-muted-foreground">{i + 1}</td>
-              <td className="px-3 py-3">
-                <div className="font-medium text-foreground">{it.name}</div>
-                {it.description && <div className="text-xs text-muted-foreground mt-0.5">{it.description}</div>}
-                {it.phase_title && (
-                  <div className="text-xs text-muted-foreground mt-0.5 italic">{it.phase_title}{it.day_date ? ` · ${dateShort(it.day_date)}` : ""}</div>
-                )}
-                {it.team_member_name_snapshot && (
-                  <div className="text-xs text-muted-foreground mt-0.5">— {it.team_member_name_snapshot}{it.member_type ? ` (${it.member_type})` : ""}</div>
-                )}
-              </td>
-              <td className="px-3 py-3 text-right text-muted-foreground whitespace-nowrap">
-                {it.quantity}{it.rate_type === "Per Day" && it.days ? ` × ${it.days}d` : ""}
-              </td>
-              <td className="px-3 py-3 text-right text-muted-foreground whitespace-nowrap">{money(it.unit_rate, currency)}</td>
-              <td className="px-4 py-3 text-right font-medium text-foreground whitespace-nowrap">{money(it.line_total, currency)}</td>
+    <>
+      {/* Desktop: table */}
+      <div className="hidden sm:block">
+        <table className="w-full text-sm">
+          <thead className="bg-muted/40 text-left text-xs text-muted-foreground">
+            <tr>
+              <th className="px-4 py-2.5 font-medium w-8">#</th>
+              <th className="px-3 py-2.5 font-medium">Description</th>
+              <th className="px-3 py-2.5 font-medium text-right">Qty</th>
+              <th className="px-3 py-2.5 font-medium text-right">Rate</th>
+              <th className="px-4 py-2.5 font-medium text-right">Amount</th>
             </tr>
-          ))}
-          {items.length === 0 && (
-            <tr><td colSpan={5} className="px-4 py-6 text-center text-muted-foreground">No items</td></tr>
-          )}
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody>
+            {items.map((it, i) => (
+              <tr key={i} className="border-t border-border">
+                <td className="px-4 py-3 text-muted-foreground">{i + 1}</td>
+                <td className="px-3 py-3">
+                  <div className="font-medium text-foreground">{it.name}</div>
+                  {it.description && <div className="text-xs text-muted-foreground mt-0.5">{it.description}</div>}
+                  {it.phase_title && (
+                    <div className="text-xs text-muted-foreground mt-0.5 italic">{it.phase_title}{it.day_date ? ` · ${dateShort(it.day_date)}` : ""}</div>
+                  )}
+                  {it.team_member_name_snapshot && (
+                    <div className="text-xs text-muted-foreground mt-0.5">— {it.team_member_name_snapshot}{it.member_type ? ` (${it.member_type})` : ""}</div>
+                  )}
+                </td>
+                <td className="px-3 py-3 text-right text-muted-foreground whitespace-nowrap">
+                  {it.quantity}{it.rate_type === "Per Day" && it.days ? ` × ${it.days}d` : ""}
+                </td>
+                <td className="px-3 py-3 text-right text-muted-foreground whitespace-nowrap">{money(it.unit_rate, currency)}</td>
+                <td className="px-4 py-3 text-right font-medium text-foreground whitespace-nowrap">{money(it.line_total, currency)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Mobile: stacked cards */}
+      <div className="sm:hidden divide-y divide-border">
+        {items.map((it, i) => (
+          <div key={i} className="px-4 py-3">
+            <div className="flex items-start justify-between gap-2 mb-1">
+              <div className="text-xs text-muted-foreground">{i + 1}</div>
+              <div className="text-sm font-semibold text-foreground ml-auto text-right whitespace-nowrap">{money(it.line_total, currency)}</div>
+            </div>
+            <div className="font-medium text-foreground">{it.name}</div>
+            {it.description && <div className="text-xs text-muted-foreground mt-0.5">{it.description}</div>}
+            {it.phase_title && (
+              <div className="text-xs text-muted-foreground mt-0.5 italic">{it.phase_title}{it.day_date ? ` · ${dateShort(it.day_date)}` : ""}</div>
+            )}
+            {it.team_member_name_snapshot && (
+              <div className="text-xs text-muted-foreground mt-0.5">— {it.team_member_name_snapshot}{it.member_type ? ` (${it.member_type})` : ""}</div>
+            )}
+            <div className="flex items-center gap-4 mt-1.5 text-xs text-muted-foreground">
+              <span>Qty: <span className="font-medium text-foreground">{it.quantity}{it.rate_type === "Per Day" && it.days ? ` × ${it.days}d` : ""}</span></span>
+              <span>Rate: <span className="font-medium text-foreground">{money(it.unit_rate, currency)}</span></span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
   );
 }
 

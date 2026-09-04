@@ -27,19 +27,21 @@ export default function QuotationMilestones({ milestones, grandTotal, currency }
       <h2 className="text-sm font-semibold text-foreground mb-3">Payment Milestones</h2>
       <div className="space-y-2">
         {rows.map((m, i) => (
-          <div key={i} className="flex items-center justify-between gap-3 py-1.5 border-b border-border last:border-0">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+          <div key={i} className="flex items-start justify-between gap-2 py-2 border-b border-border last:border-0">
+            <div className="flex items-start gap-2 min-w-0">
+              <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded shrink-0">
                 {m.amount > 0 && grandTotal > 0 ? Math.round((m.amount / grandTotal) * 100) : ""}%
               </span>
-              <span className="text-sm text-foreground">{m.name}</span>
-              {m.due_date && (
-                <span className="text-xs text-muted-foreground flex items-center gap-1">
-                  <CalendarClock className="w-3 h-3" /> {dateShort(m.due_date)}
-                </span>
-              )}
+              <div className="min-w-0">
+                <span className="text-sm text-foreground block truncate">{m.name}</span>
+                {m.due_date && (
+                  <span className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                    <CalendarClock className="w-3 h-3" /> {dateShort(m.due_date)}
+                  </span>
+                )}
+              </div>
             </div>
-            <span className="text-sm font-medium text-foreground whitespace-nowrap">{money(m.amount, currency)}</span>
+            <span className="text-sm font-medium text-foreground whitespace-nowrap shrink-0">{money(m.amount, currency)}</span>
           </div>
         ))}
       </div>
