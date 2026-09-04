@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link2, Copy, Eye, EyeOff, Loader2, Check, ExternalLink } from "lucide-react";
+import { Link2, Copy, Eye, EyeOff, Loader2, Check, ExternalLink, FileText } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
@@ -129,7 +129,42 @@ export default function PublicLinkPanel({ quotation, onUpdated }) {
               {copied ? "Copied" : "Copy"}
             </button>
             <a
-              href={portalUrl}
+              href={`${portalUrl}?preview=1`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-border text-xs font-medium hover:bg-muted transition-all shrink-0"
+            >
+              <ExternalLink className="w-3.5 h-3.5" /> Open
+            </a>
+          </div>
+        </div>
+      )}
+
+      {/* Quotation Signing Link (URL 2) */}
+      {isFinalized && quotationUrl && (
+        <div className="space-y-2 pt-2 border-t border-border">
+          <div className="flex items-center gap-1.5">
+            <FileText className="w-3.5 h-3.5 text-muted-foreground" />
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Quotation Signing Link</span>
+          </div>
+          <p className="text-xs text-muted-foreground">Share this link with the client to review and sign the quotation online.</p>
+          <div className="flex items-center gap-2">
+            <div className="flex-1 min-w-0">
+              <input
+                readOnly
+                value={quotationUrl}
+                className="w-full bg-muted/50 border border-border rounded-lg px-3 py-1.5 text-xs text-muted-foreground truncate"
+              />
+            </div>
+            <button
+              onClick={copyQuotationLink}
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-border text-xs font-medium hover:bg-muted transition-all shrink-0"
+            >
+              {copiedQuote ? <Check className="w-3.5 h-3.5 text-success" /> : <Copy className="w-3.5 h-3.5" />}
+              {copiedQuote ? "Copied" : "Copy"}
+            </button>
+            <a
+              href={`${quotationUrl}?preview=1`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-border text-xs font-medium hover:bg-muted transition-all shrink-0"

@@ -52,6 +52,7 @@ function contextLabel(ctx) {
 export default function ClientProjectPortal() {
   const { token } = useParams();
   const navigate = useNavigate();
+  const isPreview = new URLSearchParams(window.location.search).has("preview");
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -65,7 +66,7 @@ export default function ClientProjectPortal() {
       setError("");
       setUnavailable(false);
       try {
-        const res = await base44.functions.invoke("getPortalData", { public_token: token });
+        const res = await base44.functions.invoke("getPortalData", { public_token: token, skip_tracking: isPreview });
         if (res.data.unavailable) {
           setUnavailable(true);
           setData(null);
@@ -82,14 +83,17 @@ export default function ClientProjectPortal() {
   }, [token]);
 
   const goToQuotation = () => {
-    if (data?.quotation?.public_token) navigate(`/q/${data.quotation.public_token}`);
+    if (data?.quotation?.public_token) {
+      const qToken = data.quotation.public_token;
+      navigate(isPreview ? `/q/${qToken}?preview=1` : `/q/${qToken}`);
+    }
   };
 
   const downloadPdf = async () => {
     if (!data?.quotation?.public_token) return;
     setDownloading(true);
     try {
-      const res = await base44.functions.invoke("clientViewQuotation", { public_token: data.quotation.public_token });
+      const res = await base44.functions.invoke("clientViewQuotation", { public_token: data.quotation.public_token, skip_tracking: true });
       if (res.data.requires_auth) {
         navigate(`/q/${data.quotation.public_token}`);
         return;

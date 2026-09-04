@@ -249,7 +249,7 @@ export default function EventTracking() {
         {/* Quotation CTA */}
         {quotation && (
           <a
-            href={`${window.location.origin}/q/${quotation.id}`}
+            href={`${window.location.origin}/q/${quotation.public_token || quotation.id}`}
             className="block group"
           >
             <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-white p-5 sm:p-6 shadow-lg transition-transform group-hover:scale-[1.01]">

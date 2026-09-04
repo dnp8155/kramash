@@ -50,6 +50,7 @@ export default function ClientQuotationView() {
   const { token } = useParams();
   const { toast } = useToast();
   const signRef = useRef(null);
+  const isPreview = new URLSearchParams(window.location.search).has("preview");
 
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -73,6 +74,7 @@ export default function ClientQuotationView() {
       const payload = { public_token: token };
       if (creds?.email) payload.email = creds.email;
       if (creds?.password) payload.password = creds.password;
+      if (isPreview) payload.skip_tracking = true;
       const res = await base44.functions.invoke("clientViewQuotation", payload);
       if (res.data.requires_auth) {
         setAuthRequired(true);

@@ -66,6 +66,7 @@ export default async function(req) {
     // Quotation (only the latest finalized/accepted one)
     const quotation = quotations && quotations.length > 0 ? {
       id: quotations[0].id,
+      public_token: quotations[0].public_token || "",
       quotation_number: quotations[0].quotation_number,
       status: quotations[0].status,
       grand_total: Number(quotations[0].grand_total) || 0

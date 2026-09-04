@@ -9,6 +9,7 @@ export default async function(req) {
     const base44 = createClientFromRequest(req);
     const body = await req.json().catch(() => ({}));
     const token = body.public_token || body.token;
+    const skipTracking = !!body.skip_tracking;
     if (!token) return Response.json({ error: "Token required" }, { status: 400 });
 
     // Find quotation by public_token (service role — public, no auth)
@@ -25,17 +26,19 @@ export default async function(req) {
       return Response.json({ unavailable: true, message: "This project link is currently unavailable." });
     }
 
-    // Record view tracking (non-blocking via waitUntil)
-    const now = new Date().toISOString();
-    const viewCount = (Number(q.portal_view_count) || 0) + 1;
-    const firstViewed = q.portal_first_viewed_at || now;
-    waitUntil(
-      base44.asServiceRole.entities.Quotation.update(q.id, {
-        portal_view_count: viewCount,
-        portal_first_viewed_at: firstViewed,
-        portal_latest_viewed_at: now
-      }).catch(() => {})
-    );
+    // Record view tracking (non-blocking via waitUntil) — skip for admin previews
+    if (!skipTracking) {
+      const now = new Date().toISOString();
+      const viewCount = (Number(q.portal_view_count) || 0) + 1;
+      const firstViewed = q.portal_first_viewed_at || now;
+      waitUntil(
+        base44.asServiceRole.entities.Quotation.update(q.id, {
+          portal_view_count: viewCount,
+          portal_first_viewed_at: firstViewed,
+          portal_latest_viewed_at: now
+        }).catch(() => {})
+      );
+    }
 
     // Parse snapshots
     let event = null, client = null, business = null, milestones = [];

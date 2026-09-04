@@ -1,14 +1,18 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
+import { waitUntil } from 'base44:runtime';
 
 // Public, client-facing quotation view (URL 2). No auth — anyone with the token
 // can view a finalized/accepted quotation. Drafts and rejected quotations are hidden.
 // Supports lookup by public_token (preferred) or quotation_id (fallback).
+// Records view tracking (first/latest viewed timestamp + view count) unless
+// skip_tracking is true (admin preview / internal PDF fetch).
 export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
     const body = await req.json().catch(() => ({}));
     const token = body.public_token || body.token;
     const quotationId = body.quotation_id || body.id;
+    const skipTracking = !!body.skip_tracking;
 
     let q = null;
 
@@ -48,6 +52,20 @@ export default async function(req) {
       if (clientEmail && (!email || email.trim().toLowerCase() !== clientEmail)) {
         return Response.json({ error: "Incorrect email or password" }, { status: 401 });
       }
+    }
+
+    // Record view tracking (non-blocking) — only for actual client views, not admin previews
+    if (!skipTracking) {
+      const now = new Date().toISOString();
+      const viewCount = (Number(q.portal_view_count) || 0) + 1;
+      const firstViewed = q.portal_first_viewed_at || now;
+      waitUntil(
+        base44.asServiceRole.entities.Quotation.update(q.id, {
+          portal_view_count: viewCount,
+          portal_first_viewed_at: firstViewed,
+          portal_latest_viewed_at: now
+        }).catch(() => {})
+      );
     }
 
     const items = await base44.asServiceRole.entities.QuotationItem.filter(
