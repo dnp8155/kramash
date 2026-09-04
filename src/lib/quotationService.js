@@ -4,6 +4,16 @@
 import { base44 } from "@/api/base44Client";
 import { round2, lineTotal, computeTotals } from "@/lib/quotationCalc";
 
+// ---- Public token generation ----
+
+// Generate a 48-character hex token using Web Crypto API.
+// Used for public quotation/portal URLs (URL 1 & URL 2).
+export function generatePublicToken() {
+  const arr = new Uint8Array(24);
+  crypto.getRandomValues(arr);
+  return Array.from(arr).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
 // ---- Services ----
 
 export async function loadServices(workspaceId, { includeInactive = false } = {}) {
@@ -286,7 +296,8 @@ export async function createQuotation(workspaceId, data, items, opts = {}) {
     project_summary: data.project_summary || "",
     client_snapshot: opts.client_snapshot || "",
     business_snapshot: opts.business_snapshot || "",
-    event_snapshot: opts.event_snapshot || ""
+    event_snapshot: opts.event_snapshot || "",
+    public_token: data.public_token || ""
   };
   const q = await base44.entities.Quotation.create(payload);
   const itemPayloads = (items || []).map((it, i) => toItemPayload(it, workspaceId, q.id, i));
@@ -333,6 +344,7 @@ export async function updateQuotation(workspaceId, quotationId, data, items, opt
   if (opts.event_snapshot !== undefined) payload.event_snapshot = opts.event_snapshot;
   if (opts.bank_details_snapshot !== undefined) payload.bank_details_snapshot = opts.bank_details_snapshot;
   if (opts.social_links_snapshot !== undefined) payload.social_links_snapshot = opts.social_links_snapshot;
+  if (data.public_token) payload.public_token = data.public_token;
 
   const q = await base44.entities.Quotation.update(quotationId, payload);
 

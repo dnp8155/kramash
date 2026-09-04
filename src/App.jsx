@@ -87,7 +87,7 @@ const AuthenticatedApp = () => {
       <Route path="/" element={<Landing />} />
 
       {/* Public client-facing quotation view + online signing (URL 2) */}
-      <Route path="/q/:id" element={<ClientQuotationView />} />
+      <Route path="/q/:token" element={<ClientQuotationView />} />
 
       {/* Public client-facing project portal (URL 1) */}
       <Route path="/portal/:token" element={<ClientProjectPortal />} />

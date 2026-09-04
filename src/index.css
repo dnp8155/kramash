@@ -235,3 +235,27 @@
     margin: 12mm;
   }
 }
+
+/* ---- Quotation Print (URL 2) ---- */
+@media print {
+  body.printing-quotation * {
+    visibility: hidden;
+  }
+  body.printing-quotation .print-area,
+  body.printing-quotation .print-area * {
+    visibility: visible;
+  }
+  body.printing-quotation .print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100% !important;
+    max-width: none !important;
+  }
+  body.printing-quotation .no-print {
+    display: none !important;
+  }
+  body.printing-quotation {
+    background: white !important;
+  }
+}

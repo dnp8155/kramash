@@ -199,13 +199,22 @@ export async function generateQuotationPdf({
   y = cy + 4;
 
   // ---- Items table ----
-  const cols = [
-    { label: "#", x: M, w: 8, align: "left" },
-    { label: "Description", x: M + 8, w: contentW - 8 - 22 - 24 - 26, align: "left" },
-    { label: "Qty", x: pageW - M - 22 - 24 - 26, w: 22, align: "center" },
-    { label: "Rate", x: pageW - M - 24 - 26, w: 24, align: "right" },
-    { label: "Amount", x: pageW - M - 26, w: 26, align: "right" }
-  ];
+  const showPricing = quotation.show_pricing !== false;
+  let cols;
+  if (showPricing) {
+    cols = [
+      { label: "#", x: M, w: 8, align: "left" },
+      { label: "Description", x: M + 8, w: contentW - 8 - 22 - 24 - 26, align: "left" },
+      { label: "Qty", x: pageW - M - 22 - 24 - 26, w: 22, align: "center" },
+      { label: "Rate", x: pageW - M - 24 - 26, w: 24, align: "right" },
+      { label: "Amount", x: pageW - M - 26, w: 26, align: "right" }
+    ];
+  } else {
+    cols = [
+      { label: "#", x: M, w: 8, align: "left" },
+      { label: "Description", x: M + 8, w: contentW - 8, align: "left" }
+    ];
+  }
 
   function drawTableHeader() {
     doc.setFillColor(...PRIMARY);
@@ -219,13 +228,6 @@ export async function generateQuotationPdf({
     y += 8;
   }
 
-  function rowHeightFor(desc) {
-    // estimate wrapped lines for description column
-    const descW = cols[1].w - 3;
-    const lines = doc.splitTextToSize(desc || "", descW);
-    return Math.max(8, lines.length * 4.5 + 3.5);
-  }
-
   drawTableHeader();
 
   doc.setFont("helvetica", "normal");
@@ -233,14 +235,16 @@ export async function generateQuotationPdf({
   let idx = 1;
   for (const it of items || []) {
     const descW = cols[1].w - 3;
-    const descLines = doc.splitTextToSize(it.name + (it.description ? " — " + it.description : ""), descW);
+    let descText = it.name || "";
+    if (it.description) descText += " — " + it.description;
+    if (it.team_member_name_snapshot) descText += " (" + it.team_member_name_snapshot + ")";
+    const descLines = doc.splitTextToSize(descText, descW);
     const rh = Math.max(8, descLines.length * 4.5 + 3.5);
     if (y + rh > pageH - M - 10) {
       doc.addPage();
       y = M;
       drawTableHeader();
     }
-    // zebra
     if (idx % 2 === 0) {
       doc.setFillColor(...LIGHT);
       doc.rect(M, y, contentW, rh, "F");
@@ -248,16 +252,17 @@ export async function generateQuotationPdf({
     doc.setTextColor(0, 0, 0);
     doc.text(String(idx), cols[0].x + 1.5, y + 5);
     doc.text(descLines, cols[1].x + 1.5, y + 5);
-    const qtyStr = it.rate_type === "Per Day"
-      ? `${Number(it.quantity) || 0} × ${Number(it.days) || 1}d`
-      : `${Number(it.quantity) || 0}`;
-    doc.text(qtyStr, cols[2].x + cols[2].w / 2, y + 5, { align: "center" });
-    doc.text(money(it.unit_rate, currency), cols[3].x + cols[3].w - 1.5, y + 5, { align: "right" });
-    doc.text(money(it.line_total, currency), cols[4].x + cols[4].w - 1.5, y + 5, { align: "right" });
+    if (showPricing) {
+      const qtyStr = it.rate_type === "Per Day"
+        ? `${Number(it.quantity) || 0} × ${Number(it.days) || 1}d`
+        : `${Number(it.quantity) || 0}`;
+      doc.text(qtyStr, cols[2].x + cols[2].w / 2, y + 5, { align: "center" });
+      doc.text(money(it.unit_rate, currency), cols[3].x + cols[3].w - 1.5, y + 5, { align: "right" });
+      doc.text(money(it.line_total, currency), cols[4].x + cols[4].w - 1.5, y + 5, { align: "right" });
+    }
     y += rh;
     idx++;
   }
-  // closing line
   doc.setDrawColor(...BORDER);
   doc.line(M, y, pageW - M, y);
   y += 5;
@@ -299,6 +304,94 @@ export async function generateQuotationPdf({
     }
   }
   totalRow("Grand Total", quotation.grand_total, { bold: true });
+
+  // ---- Milestones ----
+  let milestones = [];
+  try { milestones = quotation.milestones || (quotation.payment_schedule_json ? JSON.parse(quotation.payment_schedule_json) : []); } catch (e) {}
+  if (milestones && milestones.length > 0) {
+    if (y > pageH - M - 20) { doc.addPage(); y = M; }
+    y += 4;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.setTextColor(...MUTED);
+    doc.text("PAYMENT MILESTONES", M, y);
+    y += 5;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(0, 0, 0);
+    for (const m of milestones) {
+      if (!m.name) continue;
+      if (y > pageH - M - 8) { doc.addPage(); y = M; }
+      const amt = m.type === "percent"
+        ? Math.round((Number(m.value || 0) / 100) * (quotation.grand_total || 0) * 100) / 100
+        : Math.round(Number(m.value || 0) * 100) / 100;
+      const pct = quotation.grand_total > 0 ? Math.round((amt / quotation.grand_total) * 100) : "";
+      const label = (pct ? pct + "% — " : "") + m.name;
+      doc.text(label, M, y);
+      doc.text(money(amt, currency), pageW - M, y, { align: "right" });
+      y += 5;
+    }
+  }
+
+  // ---- Bank / UPI details ----
+  let bank = null;
+  try { bank = quotation.bank_details || (quotation.bank_details_snapshot ? JSON.parse(quotation.bank_details_snapshot) : null); } catch (e) {}
+  if (bank) {
+    const bankFields = [
+      { l: "Account Name", v: bank.account_name || bank.name },
+      { l: "Bank Name", v: bank.bank_name || bank.bank },
+      { l: "Account Number", v: bank.account_number },
+      { l: "IFSC", v: bank.ifsc },
+      { l: "UPI ID", v: bank.upi_id || bank.upi }
+    ].filter((f) => f.v);
+    if (bankFields.length > 0) {
+      if (y > pageH - M - 20) { doc.addPage(); y = M; }
+      y += 4;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8.5);
+      doc.setTextColor(...MUTED);
+      doc.text("BANK / UPI DETAILS", M, y);
+      y += 5;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(0, 0, 0);
+      for (const f of bankFields) {
+        if (y > pageH - M - 5) { doc.addPage(); y = M; }
+        doc.text(f.l + ":", M, y);
+        doc.text(String(f.v), M + 35, y);
+        y += 5;
+      }
+    }
+  }
+
+  // ---- Social links ----
+  let social = null;
+  try { social = quotation.social_links || (quotation.social_links_snapshot ? JSON.parse(quotation.social_links_snapshot) : null); } catch (e) {}
+  if (social) {
+    const socialItems = [
+      { l: "Instagram", v: social.instagram },
+      { l: "Website", v: social.website },
+      { l: "YouTube", v: social.youtube }
+    ].filter((s) => s.v);
+    if (socialItems.length > 0) {
+      if (y > pageH - M - 15) { doc.addPage(); y = M; }
+      y += 4;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8.5);
+      doc.setTextColor(...MUTED);
+      doc.text("CONNECT WITH US", M, y);
+      y += 5;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(0, 0, 0);
+      for (const s of socialItems) {
+        if (y > pageH - M - 5) { doc.addPage(); y = M; }
+        doc.text(s.l + ":", M, y);
+        doc.text(String(s.v), M + 25, y);
+        y += 5;
+      }
+    }
+  }
 
   // ---- GST business block (if applicable) ----
   if (quotation.gst_applicable && biz.gstin) {

@@ -82,18 +82,16 @@ export default function ClientProjectPortal() {
   }, [token]);
 
   const goToQuotation = () => {
-    if (data?.quotation?.id) navigate(`/q/${data.quotation.id}`);
+    if (data?.quotation?.public_token) navigate(`/q/${data.quotation.public_token}`);
   };
 
   const downloadPdf = async () => {
-    if (!data?.quotation?.id) return;
+    if (!data?.quotation?.public_token) return;
     setDownloading(true);
     try {
-      // Fetch full quotation data via the public endpoint
-      const res = await base44.functions.invoke("clientViewQuotation", { quotation_id: data.quotation.id });
+      const res = await base44.functions.invoke("clientViewQuotation", { public_token: data.quotation.public_token });
       if (res.data.requires_auth) {
-        // Has access password — redirect to URL 2
-        navigate(`/q/${data.quotation.id}`);
+        navigate(`/q/${data.quotation.public_token}`);
         return;
       }
       await generateQuotationPdf({
@@ -102,8 +100,7 @@ export default function ClientProjectPortal() {
         currency: res.data.quotation.currency || data.currency
       });
     } catch (e) {
-      // Fallback: redirect to URL 2
-      navigate(`/q/${data.quotation.id}`);
+      navigate(`/q/${data.quotation.public_token}`);
     } finally {
       setDownloading(false);
     }

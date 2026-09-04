@@ -18,7 +18,7 @@ import {
   duplicateQuotation, deleteQuotation, acceptQuotation,
   verifyQuotationRefs, buildClientSnapshot, buildBusinessSnapshot, buildEventSnapshot,
   buildBankDetailsSnapshot, buildSocialLinksSnapshot, parseSnapshot,
-  deserializePackageStructure
+  deserializePackageStructure, generatePublicToken
 } from "@/lib/quotationService";
 import { createFromQuotation } from "@/lib/invoiceService";
 import { generateQuotationPdf, generateJobSheetPdf } from "@/lib/quotationPdf";
@@ -325,6 +325,10 @@ export default function QuotationEditor() {
       const refCheck = await verifyQuotationRefs(workspaceId, clientId, eventId);
       if (!refCheck.ok) { setError(refCheck.error); setFinalizing(false); return; }
       const data = { ...buildData(), status: "finalized" };
+      // Ensure finalized quotations have a public_token for URL 2 (e-sign page)
+      if (!existingQuotation?.public_token) {
+        data.public_token = generatePublicToken();
+      }
       const snapshots = {
         client_snapshot: buildClientSnapshot(refCheck.client || client),
         business_snapshot: buildBusinessSnapshot(workspace),

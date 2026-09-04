@@ -20,6 +20,8 @@ export default function PublicLinkPanel({ quotation, onUpdated }) {
   const latestViewed = quotation?.portal_latest_viewed_at;
 
   const portalUrl = token ? `${window.location.origin}/portal/${token}` : "";
+  const quotationUrl = token ? `${window.location.origin}/q/${token}` : "";
+  const isFinalized = quotation?.status === "finalized" || quotation?.status === "accepted";
 
   const toggle = async () => {
     setToggling(true);
@@ -61,6 +63,14 @@ export default function PublicLinkPanel({ quotation, onUpdated }) {
     navigator.clipboard.writeText(portalUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const [copiedQuote, setCopiedQuote] = useState(false);
+  const copyQuotationLink = () => {
+    if (!quotationUrl) return;
+    navigator.clipboard.writeText(quotationUrl);
+    setCopiedQuote(true);
+    setTimeout(() => setCopiedQuote(false), 2000);
   };
 
   return (

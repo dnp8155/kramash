@@ -139,6 +139,7 @@ export default async function(req) {
       },
       quotation: {
         id: q.id,
+        public_token: q.public_token || "",
         quotation_number: q.quotation_number,
         status: q.status,
         grand_total: grandTotal,
