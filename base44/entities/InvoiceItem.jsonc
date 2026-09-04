@@ -21,11 +21,15 @@
     },
     "name": {
       "type": "string",
-      "title": "Name"
+      "title": "Name / Description"
     },
     "description": {
       "type": "string",
       "title": "Description"
+    },
+    "deliverables": {
+      "type": "string",
+      "title": "Deliverables (newline-separated list)"
     },
     "quantity": {
       "type": "number",

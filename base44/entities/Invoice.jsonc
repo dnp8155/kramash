@@ -32,17 +32,61 @@
       "format": "date",
       "title": "Due Date"
     },
+    "due_date_type": {
+      "type": "string",
+      "title": "Due Date Type",
+      "default": "due_on_receipt",
+      "enum": [
+        "due_on_receipt",
+        "net_15",
+        "net_30",
+        "custom"
+      ]
+    },
+    "invoice_type": {
+      "type": "string",
+      "title": "Invoice Type",
+      "default": "manual",
+      "enum": [
+        "full",
+        "milestone",
+        "manual"
+      ]
+    },
+    "milestone_id": {
+      "type": "string",
+      "title": "Payment Milestone ID (for milestone-type invoices)"
+    },
+    "milestone_tag": {
+      "type": "string",
+      "title": "Milestone Tag",
+      "default": "Full Payment",
+      "enum": [
+        "Advance",
+        "Event Day",
+        "Final Handover",
+        "Full Payment",
+        "Custom"
+      ]
+    },
     "status": {
       "type": "string",
       "title": "Status",
       "default": "draft",
       "enum": [
         "draft",
+        "due",
         "sent",
         "paid",
         "partial",
+        "overdue",
         "cancelled"
       ]
+    },
+    "show_itemized_rates": {
+      "type": "boolean",
+      "title": "Show Itemized Rates on PDF & Public Link",
+      "default": true
     },
     "subtotal": {
       "type": "number",
@@ -77,6 +121,11 @@
       "type": "boolean",
       "title": "GST Applicable",
       "default": false
+    },
+    "gst_rate": {
+      "type": "number",
+      "title": "GST Rate (%)",
+      "default": 0
     },
     "gst_mode": {
       "type": "string",
@@ -122,6 +171,10 @@
       "title": "Balance Due",
       "default": 0
     },
+    "amount_in_words": {
+      "type": "string",
+      "title": "Total Amount in Words"
+    },
     "payment_schedule_json": {
       "type": "string",
       "title": "Payment Schedule (JSON)"
@@ -138,13 +191,53 @@
       "type": "string",
       "title": "Event Snapshot (JSON)"
     },
+    "bank_details_snapshot": {
+      "type": "string",
+      "title": "Bank & UPI Details Snapshot (JSON)"
+    },
+    "social_links_snapshot": {
+      "type": "string",
+      "title": "Social Links Snapshot (JSON)"
+    },
+    "authorized_signatory": {
+      "type": "string",
+      "title": "Authorized Signatory Name"
+    },
     "notes": {
       "type": "string",
-      "title": "Notes"
+      "title": "Internal Notes (never shown to client)"
+    },
+    "payment_terms": {
+      "type": "string",
+      "title": "Payment Terms (client-visible)"
     },
     "terms_and_conditions": {
       "type": "string",
-      "title": "Terms & Conditions"
+      "title": "Terms & Conditions (client-visible)"
+    },
+    "public_token": {
+      "type": "string",
+      "title": "Public Invoice Token (secure random token for public URL)"
+    },
+    "public_link_enabled": {
+      "type": "boolean",
+      "title": "Public Link Enabled (admin master control)",
+      "default": false
+    },
+    "portal_view_count": {
+      "type": "number",
+      "title": "Portal View Count",
+      "default": 0
+    },
+    "portal_first_viewed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Portal First Viewed At"
+    },
+    "portal_latest_viewed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Portal Latest Viewed At"
     }
   },
   "required": [

@@ -1,4 +1,4 @@
-import { Save, CheckCircle2, FileDown, Copy, Trash2, Users, Eye, FileText, RefreshCw } from "lucide-react";
+import { Save, CheckCircle2, FileDown, Copy, Trash2, Users, Eye, FileText, RefreshCw, FilePlus } from "lucide-react";
 import Button from "@/components/common/Button";
 
 export default function QuotationActions({
@@ -6,7 +6,7 @@ export default function QuotationActions({
   saving, finalizing, accepting, generating, syncing,
   saveDraft, finalize, accept, downloadPdf, downloadJobSheet,
   previewPdf, previewJobSheet, previewTemplate,
-  onDuplicate, onDelete, existingQuotation, hasEvent, onSync
+  onDuplicate, onDelete, existingQuotation, hasEvent, onSync, onCreateInvoice
 }) {
   return (
     <div className="flex flex-wrap gap-2">
@@ -39,6 +39,11 @@ export default function QuotationActions({
             <FileDown className="w-4 h-4" /> Download PDF
           </Button>
         </>
+      )}
+      {isFinalized && status === "accepted" && onCreateInvoice && (
+        <Button variant="primary" onClick={onCreateInvoice}>
+          <FilePlus className="w-4 h-4" /> Create Invoice
+        </Button>
       )}
       <Button variant="outline" onClick={previewTemplate}>
         <FileText className="w-4 h-4" /> Preview Template

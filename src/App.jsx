@@ -52,6 +52,7 @@ import ClientProjectPortal from '@/pages/ClientProjectPortal';
 import EventTracking from '@/pages/EventTracking';
 import JobSheet from '@/pages/JobSheet';
 import PublicJobSheet from '@/pages/PublicJobSheet';
+import PublicInvoice from '@/pages/PublicInvoice';
 // Add page imports here
 
 const AuthenticatedApp = () => {
@@ -99,6 +100,9 @@ const AuthenticatedApp = () => {
 
       {/* Public crew-facing job sheet */}
       <Route path="/job-sheet/:token" element={<PublicJobSheet />} />
+
+      {/* Public client-facing invoice */}
+      <Route path="/invoice/:token" element={<PublicInvoice />} />
 
       {/* Public legal pages */}
       <Route path="/terms" element={<TermsOfService />} />

@@ -43,6 +43,10 @@
       "type": "string",
       "title": "Payment Milestone ID (for CLIENT_RECEIPT linked to a specific milestone due)"
     },
+    "invoice_id": {
+      "type": "string",
+      "title": "Invoice ID (for CLIENT_RECEIPT linked to a specific invoice)"
+    },
     "expense_category_id": {
       "type": "string",
       "title": "Expense Category ID"

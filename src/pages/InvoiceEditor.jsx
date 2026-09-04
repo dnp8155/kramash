@@ -12,11 +12,14 @@ import LoadingState from "@/components/common/LoadingState";
 import EmptyState from "@/components/common/EmptyState";
 import { formatMoney } from "@/utils/format";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
-import { AlertTriangle, ArrowLeft, Plus, Eye } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Plus, Eye, Send, Wallet } from "lucide-react";
 import InvoiceClientCard from "@/components/invoice/InvoiceClientCard";
 import InvoiceProductsSection from "@/components/invoice/InvoiceProductsSection";
 import InvoiceFinancials from "@/components/invoice/InvoiceFinancials";
 import InvoicePrintView from "@/components/invoice/InvoicePrintView";
+import RecordInvoicePaymentDialog from "@/components/invoice/RecordInvoicePaymentDialog";
+import InvoicePublicLinkPanel from "@/components/invoice/InvoicePublicLinkPanel";
+import Toggle from "@/components/common/Toggle";
 import {
   generateInvoiceNumber, loadInvoice,
   createInvoice, updateInvoice, deleteInvoice,
@@ -63,13 +66,21 @@ export default function InvoiceEditor() {
   const [discountValue, setDiscountValue] = useState(0);
   const [gstApplicable, setGstApplicable] = useState(false);
   const [gstRate, setGstRate] = useState(workspace?.default_gst_rate || 18);
+  const [gstMode, setGstMode] = useState("cgst_sgst");
   const [notes, setNotes] = useState("");
+  const [paymentTerms, setPaymentTerms] = useState("");
+  const [dueDateType, setDueDateType] = useState("due_on_receipt");
+  const [milestoneTag, setMilestoneTag] = useState("Full Payment");
+  const [showItemizedRates, setShowItemizedRates] = useState(true);
+  const [authorizedSignatory, setAuthorizedSignatory] = useState("");
 
   const [clients, setClients] = useState([]);
   const [events, setEvents] = useState([]);
   const [existingInvoice, setExistingInvoice] = useState(null);
   const [showClientForm, setShowClientForm] = useState(false);
   const [showPrintView, setShowPrintView] = useState(false);
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [publicLinkData, setPublicLinkData] = useState(null);
 
   const readOnly = status === "paid" || status === "cancelled";
 
@@ -131,7 +142,19 @@ export default function InvoiceEditor() {
         setDiscountType(inv.discount_type || "percent");
         setDiscountValue(inv.discount_value || 0);
         setGstApplicable(!!inv.gst_applicable);
+        setGstRate(Number(inv.gst_rate) || (workspace?.default_gst_rate || 18));
+        setGstMode(inv.gst_mode || "cgst_sgst");
         setNotes(inv.notes || "");
+        setPaymentTerms(inv.payment_terms || "");
+        setDueDateType(inv.due_date_type || "due_on_receipt");
+        setMilestoneTag(inv.milestone_tag || "Full Payment");
+        setShowItemizedRates(inv.show_itemized_rates !== false);
+        setAuthorizedSignatory(inv.authorized_signatory || "");
+        setPublicLinkData({
+          public_link_enabled: !!inv.public_link_enabled,
+          public_token: inv.public_token || "",
+          portal_view_count: Number(inv.portal_view_count) || 0
+        });
       }
     } catch (e) {
       setError(e?.message || "Failed to load invoice.");
@@ -143,8 +166,8 @@ export default function InvoiceEditor() {
   useEffect(() => { load(); }, [load]);
 
   const totals = useMemo(
-    () => computeInvoiceTotals(items, { discountType, discountValue, gstApplicable, gstRate }),
-    [items, discountType, discountValue, gstApplicable, gstRate]
+    () => computeInvoiceTotals(items, { discountType, discountValue, gstApplicable, gstRate, gstMode }),
+    [items, discountType, discountValue, gstApplicable, gstRate, gstMode]
   );
 
   const client = clients.find((c) => c.id === clientId) || null;
@@ -176,11 +199,18 @@ export default function InvoiceEditor() {
     event_id: eventId,
     invoice_date: invoiceDate,
     due_date: dueDate,
+    due_date_type: dueDateType,
+    milestone_tag: milestoneTag,
+    show_itemized_rates: showItemizedRates,
     discount_type: discountType,
     discount_value: Number(discountValue) || 0,
     gst_applicable: gstApplicable,
-    gst_mode: "cgst_sgst",
-    notes
+    gst_rate: Number(gstRate) || 0,
+    gst_mode: gstMode,
+    notes,
+    payment_terms: paymentTerms,
+    terms_and_conditions: paymentTerms,
+    authorized_signatory: authorizedSignatory
   });
 
   const validate = () => {
@@ -321,13 +351,52 @@ export default function InvoiceEditor() {
             />
           </div>
           <div>
+            <label className="block text-xs font-medium text-muted-foreground mb-1">Due Date Type</label>
+            <Select
+              value={dueDateType}
+              onChange={(e) => {
+                setDueDateType(e.target.value);
+                if (e.target.value === "due_on_receipt") setDueDate(invoiceDate);
+                else if (e.target.value === "net_15") {
+                  const d = new Date(invoiceDate + "T00:00:00"); d.setDate(d.getDate() + 15);
+                  setDueDate(d.toISOString().slice(0, 10));
+                } else if (e.target.value === "net_30") {
+                  const d = new Date(invoiceDate + "T00:00:00"); d.setDate(d.getDate() + 30);
+                  setDueDate(d.toISOString().slice(0, 10));
+                }
+              }}
+              disabled={readOnly}
+              className="w-full"
+            >
+              <option value="due_on_receipt">Due on Receipt</option>
+              <option value="net_15">Net 15 Days</option>
+              <option value="net_30">Net 30 Days</option>
+              <option value="custom">Custom Date</option>
+            </Select>
+          </div>
+          <div>
             <label className="block text-xs font-medium text-muted-foreground mb-1">Due Date</label>
             <Input
               type="date"
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
-              disabled={readOnly}
+              disabled={readOnly || dueDateType !== "custom"}
             />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-muted-foreground mb-1">Milestone Tag</label>
+            <Select
+              value={milestoneTag}
+              onChange={(e) => setMilestoneTag(e.target.value)}
+              disabled={readOnly}
+              className="w-full"
+            >
+              <option value="Full Payment">Full Payment</option>
+              <option value="Advance">Advance</option>
+              <option value="Event Day">Event Day</option>
+              <option value="Final Handover">Final Handover</option>
+              <option value="Custom">Custom</option>
+            </Select>
           </div>
         </div>
 
@@ -390,14 +459,39 @@ export default function InvoiceEditor() {
         setGstApplicable={setGstApplicable}
         gstRate={gstRate}
         setGstRate={setGstRate}
+        gstMode={gstMode}
         totals={totals}
         currency={currency}
         readOnly={readOnly}
       />
 
-      {/* Notes */}
+      {/* Pricing Display Toggle */}
       <div className="bg-card border border-border rounded-lg p-4">
-        <label className="block text-xs font-medium text-muted-foreground mb-1.5">Notes</label>
+        <div className="flex items-center justify-between">
+          <div>
+            <label className="text-sm font-semibold text-foreground">Show Itemized Rates</label>
+            <p className="text-xs text-muted-foreground mt-0.5">When off, PDF and public link show package/scope description only — no qty, rate, or line amounts.</p>
+          </div>
+          <Toggle checked={showItemizedRates} onChange={setShowItemizedRates} disabled={readOnly} />
+        </div>
+      </div>
+
+      {/* Payment Terms (client-visible) */}
+      <div className="bg-card border border-border rounded-lg p-4">
+        <label className="block text-xs font-medium text-muted-foreground mb-1.5">Payment Terms (client-visible)</label>
+        <textarea
+          value={paymentTerms}
+          onChange={(e) => setPaymentTerms(e.target.value)}
+          disabled={readOnly}
+          rows={3}
+          placeholder="Payment terms shown to client on PDF and public link"
+          className="w-full bg-card border border-border rounded-md p-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
+        />
+      </div>
+
+      {/* Internal Notes (never shown to client) */}
+      <div className="bg-card border border-border rounded-lg p-4">
+        <label className="block text-xs font-medium text-muted-foreground mb-1.5">Internal Notes (never shown to client)</label>
         <textarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
@@ -408,28 +502,63 @@ export default function InvoiceEditor() {
         />
       </div>
 
+      {/* Authorized Signatory */}
+      <div className="bg-card border border-border rounded-lg p-4">
+        <label className="block text-xs font-medium text-muted-foreground mb-1.5">Authorized Signatory</label>
+        <Input
+          value={authorizedSignatory}
+          onChange={(e) => setAuthorizedSignatory(e.target.value)}
+          disabled={readOnly}
+          placeholder="Name of authorized signatory"
+        />
+      </div>
+
+      {/* Public Link Panel */}
+      {!isNew && existingInvoice && (
+        <InvoicePublicLinkPanel
+          invoice={{ ...existingInvoice, ...publicLinkData }}
+          onUpdate={(data) => {
+            setPublicLinkData(data);
+            setExistingInvoice({ ...existingInvoice, ...data });
+          }}
+        />
+      )}
+
       {/* Status actions for existing invoices */}
       {!isNew && existingInvoice && (
         <div className="flex items-center justify-end gap-2 flex-wrap">
           {status === "draft" && (
-            <Button variant="outline" onClick={sendInvoice} disabled={readOnly}>Mark as Sent</Button>
-          )}
-          {status === "sent" && (
-            <Button
-              variant="success"
-              onClick={async () => {
-                await base44.entities.Invoice.update(id, { status: "paid" });
+            <Button variant="dark" onClick={async () => {
+              try {
+                await base44.entities.Invoice.update(id, { status: "due" });
                 invalidateEntities(queryClient, ["Invoice", "InvoiceItem"]);
-                toast({ title: "Invoice marked as paid" });
-                setStatus("paid");
+                toast({ title: "Invoice issued" });
+                setStatus("due");
                 load();
-              }}
-            >
-              Mark as Paid
+              } catch (e) { setError(e?.message || "Failed to issue invoice."); }
+            }}>
+              <Send className="w-4 h-4" /> Issue Invoice
             </Button>
+          )}
+          {(status === "due" || status === "sent" || status === "partial" || status === "overdue") && (
+            <Button variant="success" onClick={() => setShowPaymentDialog(true)}>
+              <Wallet className="w-4 h-4" /> Record Payment
+            </Button>
+          )}
+          {status === "draft" && (
+            <Button variant="outline" onClick={sendInvoice} disabled={readOnly}>Mark as Sent</Button>
           )}
           <Button variant="destructive" onClick={onDelete}>Delete</Button>
         </div>
+      )}
+
+      {showPaymentDialog && (
+        <RecordInvoicePaymentDialog
+          open={showPaymentDialog}
+          onClose={() => setShowPaymentDialog(false)}
+          invoice={{ ...existingInvoice, invoice_number: invoiceNumber, grand_total: totals.grandTotal, amount_paid: existingInvoice?.amount_paid || 0 }}
+          onRecorded={() => load()}
+        />
       )}
 
       <ClientForm
