@@ -23,7 +23,7 @@ import {
 import { createFromQuotation } from "@/lib/invoiceService";
 import { generateQuotationPdf, generateJobSheetPdf } from "@/lib/quotationPdf";
 import { DEFAULT_QUOTATION_TERMS, DEFAULT_FOOTER_MESSAGE, QUOTATION_STATUS_META } from "@/constants/quotationConfig";
-import { ArrowLeft, AlertTriangle, FileText, Plus, Receipt, Package } from "lucide-react";
+import { ArrowLeft, AlertTriangle, FileText, Plus, Receipt, Package, Users } from "lucide-react";
 import PdfPreviewModal from "@/components/common/PdfPreviewModal";
 import { cn } from "@/lib/utils";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
@@ -440,6 +440,42 @@ export default function QuotationEditor() {
     }
   };
 
+  const downloadJobSheet = async () => {
+    if (!event) { toast({ title: `Select a ${term.workItemSingular.toLowerCase()} to generate a job sheet` }); return; }
+    setGenerating(true);
+    try {
+      const [asgns, members] = await Promise.all([
+        base44.entities.EventTeamAssignment.filter({ workspace_id: workspaceId, event_id: event.id }, "created_date", 200),
+        base44.entities.TeamMember.filter({ workspace_id: workspaceId }, "name", 200)
+      ]);
+      await generateJobSheetPdf({ event, assignments: asgns || [], members: members || [], roles, workspace, currency });
+      toast({ title: "Job sheet downloaded" });
+    } catch (e) {
+      toast({ title: "Job sheet failed", description: e?.message, variant: "destructive" });
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const previewJobSheet = async () => {
+    if (!event) { toast({ title: `Select a ${term.workItemSingular.toLowerCase()} to generate a job sheet` }); return; }
+    setGenerating(true);
+    setPreview({ url: "", filename: "", open: true, loading: true });
+    try {
+      const [asgns, members] = await Promise.all([
+        base44.entities.EventTeamAssignment.filter({ workspace_id: workspaceId, event_id: event.id }, "created_date", 200),
+        base44.entities.TeamMember.filter({ workspace_id: workspaceId }, "name", 200)
+      ]);
+      const result = await generateJobSheetPdf({ event, assignments: asgns || [], members: members || [], roles, workspace, currency, returnBlob: true });
+      setPreview({ url: result.url, filename: result.filename, open: true, loading: false });
+    } catch (e) {
+      toast({ title: "Job sheet preview failed", description: e?.message, variant: "destructive" });
+      setPreview({ url: "", filename: "", open: false, loading: false });
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   const previewTemplate = () => {
     const html = renderTemplate(templateId, {
       workspace, quotation: { ...existingQuotation, ...buildData(), ...totals, project_title: projectTitle, project_summary: projectSummary },
@@ -686,7 +722,9 @@ export default function QuotationEditor() {
         finalize={finalize}
         accept={accept}
         downloadPdf={downloadPdf}
+        downloadJobSheet={downloadJobSheet}
         previewPdf={previewPdf}
+        previewJobSheet={previewJobSheet}
         previewTemplate={previewTemplate}
         onDuplicate={onDuplicate}
         onDelete={onDelete}
