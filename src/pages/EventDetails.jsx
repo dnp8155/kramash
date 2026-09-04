@@ -33,7 +33,7 @@ import {
 } from "@/lib/financeService";
 import {
   ArrowLeft, Pencil, Wallet, FileText, MapPin, Calendar, Phone, Plus,
-  CalendarPlus, Share2, Receipt, StickyNote, Trash2
+  CalendarPlus, Share2, Receipt, StickyNote, Trash2, ClipboardList
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
@@ -419,6 +419,9 @@ export default function EventDetails() {
             <Share2 className="w-3.5 h-3.5" /> Remind {formatMoney(fin.pending, currency)} due
           </Button>
         )}
+        <Button size="sm" variant="outline" onClick={() => navigate(`/events/${event.id}/job-sheet`)}>
+          <ClipboardList className="w-3.5 h-3.5" /> Job Sheet
+        </Button>
         <Button size="sm" variant="primary" onClick={() => navigate(`/quotation/new?event_id=${event.id}`)}>
           <FileText className="w-3.5 h-3.5" /> Create Quotation
         </Button>

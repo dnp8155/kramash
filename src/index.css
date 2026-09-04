@@ -236,6 +236,25 @@
   }
 }
 
+/* ---- Job Sheet Print ---- */
+@media print {
+  body.printing-jobsheet .no-print {
+    display: none !important;
+  }
+  body.printing-jobsheet .print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100% !important;
+    max-width: none !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  body.printing-jobsheet {
+    background: white !important;
+  }
+}
+
 /* ---- Quotation Print (URL 2) ---- */
 @media print {
   body.printing-quotation * {

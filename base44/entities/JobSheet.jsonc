@@ -1,0 +1,76 @@
+{
+  "name": "JobSheet",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "title": "Workspace ID"
+    },
+    "event_id": {
+      "type": "string",
+      "title": "Event ID"
+    },
+    "quotation_id": {
+      "type": "string",
+      "title": "Source Quotation ID"
+    },
+    "show_team_names": {
+      "type": "boolean",
+      "title": "Show Team Names (vs Roles Only)",
+      "default": false
+    },
+    "include_crew_contacts": {
+      "type": "boolean",
+      "title": "Include Crew Contact Directory",
+      "default": false
+    },
+    "include_equipment": {
+      "type": "boolean",
+      "title": "Include Equipment / Kit Checklist",
+      "default": false
+    },
+    "equipment_list": {
+      "type": "string",
+      "title": "Equipment List (JSON array of strings)"
+    },
+    "deliverables": {
+      "type": "string",
+      "title": "Deliverables Checklist (JSON array of strings)"
+    },
+    "date_configs": {
+      "type": "string",
+      "title": "Per-date Config (JSON: {date: {reporting_time, phase_title, venue_override}})"
+    },
+    "internal_notes": {
+      "type": "string",
+      "title": "Internal Execution Notes"
+    },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "default": "active",
+      "enum": [
+        "active",
+        "archived"
+      ]
+    }
+  },
+  "required": [
+    "workspace_id",
+    "event_id"
+  ],
+  "rls": {
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

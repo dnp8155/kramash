@@ -50,6 +50,7 @@ import AdminPlans from '@/pages/admin/AdminPlans';
 import ClientQuotationView from '@/pages/ClientQuotationView';
 import ClientProjectPortal from '@/pages/ClientProjectPortal';
 import EventTracking from '@/pages/EventTracking';
+import JobSheet from '@/pages/JobSheet';
 // Add page imports here
 
 const AuthenticatedApp = () => {
@@ -114,6 +115,7 @@ const AuthenticatedApp = () => {
           <Route path="/events/new" element={<EventEditor />} />
           <Route path="/events/:id" element={<EventDetails />} />
           <Route path="/events/:id/edit" element={<EventEditor />} />
+          <Route path="/events/:id/job-sheet" element={<JobSheet />} />
           <Route path="/clients" element={<Clients />} />
           <Route path="/clients/:id" element={<ClientDetails />} />
           <Route path="/team" element={<Team />} />
