@@ -431,7 +431,7 @@ export async function generateQuotationPdf({
     }
   }
 
-  if (quotation.notes) {
+  if (quotation.special_notes) {
     if (y > pageH - M - 15) { doc.addPage(); y = M; }
     y += 6;
     doc.setFont("helvetica", "bold");
@@ -442,7 +442,7 @@ export async function generateQuotationPdf({
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8.5);
     doc.setTextColor(60, 70, 85);
-    const noteLines = doc.splitTextToSize(quotation.notes, contentW);
+    const noteLines = doc.splitTextToSize(quotation.special_notes, contentW);
     for (const line of noteLines) {
       if (y > pageH - M - 5) { doc.addPage(); y = M; }
       doc.text(line, M, y);

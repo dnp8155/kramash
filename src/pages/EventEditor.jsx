@@ -21,6 +21,7 @@ import QuickClientForm from "@/components/clients/QuickClientForm";
 import { EVENT_STATUS, EVENT_STATUS_ORDER } from "@/constants/statusConfig";
 import { CURRENCY_SYMBOLS } from "@/constants/financeConfig";
 import { getEventTypes } from "@/lib/eventTypeService";
+import { fyForDate } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import {
   ArrowLeft, Plus, Users, Briefcase, Save, Loader2, AlertCircle,
@@ -189,6 +190,7 @@ export default function EventEditor() {
     setError("");
     try {
       const dates = (form.event_dates || []).slice().sort();
+      const fyLabel = form.start_date ? fyForDate(form.start_date) : "";
       const payload = {
         workspace_id: workspaceId,
         client_id: form.client_id,
@@ -197,6 +199,7 @@ export default function EventEditor() {
         start_date: form.start_date,
         end_date: form.end_date || form.start_date,
         event_dates: dates,
+        financial_year: form.financial_year || fyLabel || "",
         team_member_ids: form.team_member_ids || [],
         service_ids: form.service_ids || [],
         venue: form.venue.trim(),

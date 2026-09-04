@@ -121,7 +121,6 @@ export default async function(req) {
         show_pricing: q.show_pricing !== false,
         terms_and_conditions: q.terms_and_conditions || "",
         special_notes: q.special_notes || "",
-        notes: q.notes || "",
         footer_message: q.footer_message || "",
         client_snapshot: q.client_snapshot || "",
         business_snapshot: q.business_snapshot || "",
