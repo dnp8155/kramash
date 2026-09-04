@@ -39,6 +39,10 @@
       "type": "string",
       "title": "Service Assignment ID"
     },
+    "milestone_id": {
+      "type": "string",
+      "title": "Payment Milestone ID (for CLIENT_RECEIPT linked to a specific milestone due)"
+    },
     "expense_category_id": {
       "type": "string",
       "title": "Expense Category ID"

@@ -21,6 +21,7 @@ import {
   deserializePackageStructure, generatePublicToken
 } from "@/lib/quotationService";
 import { createFromQuotation } from "@/lib/invoiceService";
+import { syncAcceptedQuotation } from "@/lib/milestoneService";
 import { generateQuotationPdf, generateJobSheetPdf } from "@/lib/quotationPdf";
 import { DEFAULT_QUOTATION_TERMS, DEFAULT_FOOTER_MESSAGE, QUOTATION_STATUS_META } from "@/constants/quotationConfig";
 import { ArrowLeft, AlertTriangle, FileText, Plus, Receipt, Package } from "lucide-react";
@@ -381,9 +382,17 @@ export default function QuotationEditor() {
           : `Mark this quotation as Accepted?`
       );
       if (!proceed) { setAccepting(false); return; }
-      const { eventUpdated } = await acceptQuotation(workspaceId, id, { updateContractValue: !!ev });
-      invalidateEntities(queryClient, ["Quotation", "QuotationItem", "Event", "FinancialTransaction"]);
-      toast({ title: eventUpdated ? "Quotation accepted — contract value updated" : "Quotation accepted" });
+      const { eventUpdated, syncResult } = await acceptQuotation(workspaceId, id, { updateContractValue: !!ev });
+      invalidateEntities(queryClient, ["Quotation", "QuotationItem", "Event", "FinancialTransaction", "PaymentMilestone", "EventTeamAssignment", "EventServiceAssignment"]);
+      const syncOk = syncResult?.ok;
+      const eventCreated = syncResult?.event?.created;
+      toast({
+        title: eventUpdated ? "Quotation accepted — contract value updated" : "Quotation accepted",
+        description: syncOk
+          ? `${eventCreated ? "Event created" : "Event linked"} • ${syncResult.team_synced?.length || 0} team • ${syncResult.service_synced?.length || 0} services • ${syncResult.milestones_synced?.length || 0} milestones`
+          : "Sync pending — click Sync to create event & milestones",
+        variant: syncOk ? "default" : "destructive"
+      });
       load();
     } catch (e) {
       setError(e?.message || "Failed to accept quotation.");
@@ -391,6 +400,38 @@ export default function QuotationEditor() {
       setAccepting(false);
     }
   };
+
+  // ---- Sync accepted quotation to Event + Financials ----
+  const [syncing, setSyncing] = useState(false);
+
+  const syncQuotation = async () => {
+    if (!existingQuotation || existingQuotation.status !== "accepted") return;
+    setSyncing(true);
+    try {
+      const result = await syncAcceptedQuotation(workspaceId, id);
+      if (result?.ok) {
+        invalidateEntities(queryClient, ["Quotation", "Event", "EventTeamAssignment", "EventServiceAssignment", "PaymentMilestone", "FinancialTransaction"]);
+        toast({
+          title: "Sync complete",
+          description: `${result.event?.created ? "Event created" : "Event linked"} • ${result.team_synced?.length || 0} team • ${result.service_synced?.length || 0} services • ${result.milestones_synced?.length || 0} milestones • 0 payments`
+        });
+        load();
+      } else {
+        toast({ title: "Sync failed", description: result?.error || "Unknown error", variant: "destructive" });
+      }
+    } catch (e) {
+      toast({ title: "Sync failed", description: e?.message, variant: "destructive" });
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  // Auto-sync: if quotation is accepted with sync_pending, trigger sync on load
+  useEffect(() => {
+    if (existingQuotation?.status === "accepted" && existingQuotation.sync_pending && !syncing) {
+      syncQuotation();
+    }
+  }, [existingQuotation?.id, existingQuotation?.sync_pending]);
 
   const onDuplicate = async () => {
     if (!existingQuotation) return;
@@ -723,6 +764,7 @@ export default function QuotationEditor() {
         finalizing={finalizing}
         accepting={accepting}
         generating={generating}
+        syncing={syncing}
         saveDraft={saveDraft}
         finalize={finalize}
         accept={accept}
@@ -735,6 +777,7 @@ export default function QuotationEditor() {
         onDelete={onDelete}
         existingQuotation={existingQuotation}
         hasEvent={!!event}
+        onSync={syncQuotation}
       />
 
       {/* Client Project Portal — public link control + view tracking */}

@@ -424,8 +424,11 @@ export async function finalizeQuotation(workspaceId, quotationId, data, items, s
   });
 }
 
-export async function acceptQuotation(workspaceId, quotationId, { updateContractValue = true } = {}) {
-  const q = await base44.entities.Quotation.update(quotationId, { status: "accepted" });
+export async function acceptQuotation(workspaceId, quotationId, { updateContractValue = true, sync = true } = {}) {
+  const q = await base44.entities.Quotation.update(quotationId, {
+    status: "accepted",
+    sync_pending: sync
+  });
   let eventUpdated = false;
   let previousContractValue = null;
   if (updateContractValue && q.event_id) {
@@ -438,7 +441,17 @@ export async function acceptQuotation(workspaceId, quotationId, { updateContract
       }
     } catch (e) { /* non-fatal */ }
   }
-  return { quotation: q, eventUpdated, previousContractValue };
+  // Trigger the full Event + Team + Service + Milestone sync
+  let syncResult = null;
+  if (sync) {
+    try {
+      syncResult = await base44.functions.invoke("syncQuotationAcceptance", {
+        workspace_id: workspaceId,
+        quotation_id: quotationId
+      });
+    } catch (e) { /* non-fatal — admin can retry sync from UI */ }
+  }
+  return { quotation: q, eventUpdated, previousContractValue, syncResult };
 }
 
 export async function setStatus(workspaceId, quotationId, status) {

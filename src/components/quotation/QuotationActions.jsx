@@ -1,12 +1,12 @@
-import { Save, CheckCircle2, FileDown, Copy, Trash2, Users, Eye, FileText } from "lucide-react";
+import { Save, CheckCircle2, FileDown, Copy, Trash2, Users, Eye, FileText, RefreshCw } from "lucide-react";
 import Button from "@/components/common/Button";
 
 export default function QuotationActions({
   isNew, readOnly, isFinalized, status,
-  saving, finalizing, accepting, generating,
+  saving, finalizing, accepting, generating, syncing,
   saveDraft, finalize, accept, downloadPdf, downloadJobSheet,
   previewPdf, previewJobSheet, previewTemplate,
-  onDuplicate, onDelete, existingQuotation, hasEvent
+  onDuplicate, onDelete, existingQuotation, hasEvent, onSync
 }) {
   return (
     <div className="flex flex-wrap gap-2">
@@ -23,6 +23,11 @@ export default function QuotationActions({
       {isFinalized && status !== "accepted" && (
         <Button variant="success" onClick={accept} disabled={accepting}>
           {accepting ? "Accepting…" : <><CheckCircle2 className="w-4 h-4" /> Mark Accepted</>}
+        </Button>
+      )}
+      {status === "accepted" && existingQuotation?.sync_pending && (
+        <Button variant="primary" onClick={onSync} disabled={syncing}>
+          {syncing ? "Syncing…" : <><RefreshCw className="w-4 h-4" /> Sync to Event</>}
         </Button>
       )}
       {isFinalized && (

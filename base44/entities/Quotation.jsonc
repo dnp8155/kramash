@@ -250,6 +250,16 @@
       "type": "number",
       "title": "Portal View Count",
       "default": 0
+    },
+    "sync_pending": {
+      "type": "boolean",
+      "title": "Sync Pending (accepted quotation needs Event+Financial sync)",
+      "default": false
+    },
+    "sync_completed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Sync Completed At"
     }
   },
   "required": [

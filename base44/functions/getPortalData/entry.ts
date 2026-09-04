@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 import { waitUntil } from 'base44:runtime';
+import { round2, filterTeamItems, filterServiceItems, calculateMilestoneAmount } from '../../shared/quotationHelpers.ts';
 
 // Public, unauthenticated endpoint: returns the Client Project Portal (URL 1) data.
 // Looked up by a secure random public_token — never exposes internal IDs.
@@ -77,9 +78,7 @@ export default async function(req) {
     let remaining = totalReceived;
     for (const m of milestones) {
       if (!m.name) continue;
-      const amount = m.type === "percent"
-        ? round2((Number(m.value || 0) / 100) * grandTotal)
-        : round2(Number(m.value || 0));
+      const amount = calculateMilestoneAmount(m, grandTotal);
       if (amount > 0 && remaining >= amount) {
         milestoneStates.push({ name: m.name, amount, due_date: m.due_date || "", paid: true });
         remaining = round2(remaining - amount);
@@ -108,8 +107,7 @@ export default async function(req) {
 
     // Build team section — roles first, names second
     const hideTeamNames = !!q.hide_team_names;
-    const teamItems = (items || []).filter((it) => it.item_type === "team");
-    const team = teamItems.map((it) => ({
+    const team = filterTeamItems(items).map((it) => ({
       role: it.name || "",
       name: hideTeamNames ? "" : (it.team_member_name_snapshot || ""),
       quantity: Math.max(1, Number(it.quantity) || 1),
@@ -118,8 +116,7 @@ export default async function(req) {
     }));
 
     // Build service section
-    const serviceItems = (items || []).filter((it) => it.item_type === "service");
-    const services = serviceItems.map((it) => ({
+    const services = filterServiceItems(items).map((it) => ({
       name: it.name || "",
       description: it.description || ""
     }));
@@ -174,7 +171,4 @@ export default async function(req) {
     return Response.json({ error: error.message }, { status: 500 });
   }
 }
-
-function round2(n) {
-  return Math.round((Number(n) || 0) * 100) / 100;
-}
+// round2, filterTeamItems, filterServiceItems, calculateMilestoneAmount imported from shared/quotationHelpers.ts

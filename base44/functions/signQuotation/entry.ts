@@ -71,7 +71,8 @@ export default async function(req) {
       status: "accepted",
       client_signature: signature,
       signed_by_name: signed_by_name.trim(),
-      signed_at: new Date().toISOString()
+      signed_at: new Date().toISOString(),
+      sync_pending: true
     });
 
     return Response.json({
