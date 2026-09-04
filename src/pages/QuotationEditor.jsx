@@ -23,7 +23,7 @@ import {
 import { createFromQuotation } from "@/lib/invoiceService";
 import { generateQuotationPdf, generateJobSheetPdf } from "@/lib/quotationPdf";
 import { DEFAULT_QUOTATION_TERMS, DEFAULT_FOOTER_MESSAGE, QUOTATION_STATUS_META } from "@/constants/quotationConfig";
-import { ArrowLeft, AlertTriangle, FileText, Plus, Receipt, Package, Users } from "lucide-react";
+import { ArrowLeft, AlertTriangle, FileText, Plus, Receipt, Package } from "lucide-react";
 import PdfPreviewModal from "@/components/common/PdfPreviewModal";
 import { cn } from "@/lib/utils";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
