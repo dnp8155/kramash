@@ -78,17 +78,17 @@ export const AuthProvider = ({ children }) => {
         setAuthChecked(true);
         setIsLoadingPublicSettings(false);
         setIsLoadingAuth(false);
-        }
-        } catch (error) {
-        console.error('Unexpected error:', error);
-        setAuthError({
+      }
+    } catch (error) {
+      console.error('Unexpected error:', error);
+      setAuthError({
         type: 'unknown',
         message: error.message || 'An unexpected error occurred'
-        });
-        setAuthChecked(true);
-        setIsLoadingPublicSettings(false);
-        setIsLoadingAuth(false);
-        }
+      });
+      setAuthChecked(true);
+      setIsLoadingPublicSettings(false);
+      setIsLoadingAuth(false);
+    }
   };
 
   const checkUserAuth = async () => {
