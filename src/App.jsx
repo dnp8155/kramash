@@ -25,6 +25,9 @@ import Register from "@/pages/Register";
 import ForgotPassword from "@/pages/ForgotPassword";
 import ResetPassword from "@/pages/ResetPassword";
 import Onboarding from "@/pages/Onboarding";
+import EventDetail from "@/pages/EventDetail";
+import Clients from "@/pages/Clients";
+import ClientDetail from "@/pages/ClientDetail";
 
 // Guards an area behind authentication. No app data renders until the auth
 // check completes, so there is no flash of sensitive content.
@@ -85,6 +88,9 @@ function App() {
                 <Route element={<AppLayout />}>
                   <Route path="/" element={<ErrorBoundary><Dashboard /></ErrorBoundary>} />
                   <Route path="/events" element={<ErrorBoundary><Events /></ErrorBoundary>} />
+                  <Route path="/events/:id" element={<ErrorBoundary><EventDetail /></ErrorBoundary>} />
+                  <Route path="/clients" element={<ErrorBoundary><Clients /></ErrorBoundary>} />
+                  <Route path="/clients/:id" element={<ErrorBoundary><ClientDetail /></ErrorBoundary>} />
                   <Route path="/team" element={<ErrorBoundary><Team /></ErrorBoundary>} />
                   <Route path="/financial" element={<ErrorBoundary><Financial /></ErrorBoundary>} />
                   <Route path="/rate-estimator" element={<ErrorBoundary><RateEstimator /></ErrorBoundary>} />

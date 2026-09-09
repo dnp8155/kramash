@@ -2,6 +2,7 @@ import {
   LayoutDashboard,
   CalendarDays,
   Users,
+  User,
   Wallet,
   Calculator,
   FileText,
@@ -13,6 +14,7 @@ import {
 export const navItems = [
   { label: "Dashboard", path: "/", icon: LayoutDashboard },
   { label: "Events", path: "/events", icon: CalendarDays },
+  { label: "Clients", path: "/clients", icon: User },
   { label: "Team", path: "/team", icon: Users },
   { label: "Financial", path: "/financial", icon: Wallet },
   { label: "Rate Estimator", path: "/rate-estimator", icon: Calculator },

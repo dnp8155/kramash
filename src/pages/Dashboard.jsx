@@ -1,22 +1,39 @@
-import { CalendarDays, Users, Wallet, TrendingUp, ArrowUpRight, Clock } from "lucide-react";
+import {
+  CalendarDays,
+  Users,
+  Wallet,
+  TrendingUp,
+  ArrowUpRight,
+  Clock,
+} from "lucide-react";
 import PageHeader from "@/components/common/PageHeader";
 import StatCard from "@/components/common/StatCard";
 import Card, { CardHeader, CardTitle, CardBody } from "@/components/common/Card";
 import StatusBadge from "@/components/common/StatusBadge";
 import Button from "@/components/common/Button";
-import { mockEvents } from "@/data/mockEvents";
+import LoadingState from "@/components/common/LoadingState";
+import { useEvents } from "@/hooks/useEvents";
 import { mockPayments } from "@/data/mockPayments";
 import { mockTeam } from "@/data/mockTeam";
-import { formatCurrency, formatDate } from "@/utils/format";
+import { formatCurrency } from "@/utils/format";
+import { isUpcoming } from "@/utils/dates";
 import { Link } from "react-router-dom";
 
 export default function Dashboard() {
+  const { events, loading } = useEvents();
+
+  // Revenue, team and pending payments remain on mock data until the
+  // Financial (Phase 5) and Team (Phase 4) modules are built.
   const totalRevenue = mockPayments
     .filter((p) => p.status === "Received")
     .reduce((s, p) => s + p.amount, 0);
-  const upcoming = [...mockEvents]
-    .filter((e) => ["Confirmed", "In Progress", "Pending"].includes(e.status))
-    .sort((a, b) => new Date(a.date) - new Date(b.date))
+  const activeEvents = events.filter((e) => e.status !== "Cancelled").length;
+  const upcoming = events
+    .filter(
+      (e) =>
+        isUpcoming(e.start_date) && !["Cancelled", "Completed"].includes(e.status)
+    )
+    .sort((a, b) => (a.start_date || "").localeCompare(b.start_date || ""))
     .slice(0, 4);
 
   return (
@@ -25,47 +42,96 @@ export default function Dashboard() {
         title="Dashboard"
         description="Welcome back — here's what's happening across your studio."
         actions={
-          <Button>
-            <CalendarDays className="h-4 w-4" /> New Event
-          </Button>
+          <Link to="/events">
+            <Button>
+              <CalendarDays className="h-4 w-4" /> New Event
+            </Button>
+          </Link>
         }
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Total Revenue" value={totalRevenue} isCurrency icon={Wallet} accent="success" trend="↑ 18% vs last month" />
-        <StatCard label="Active Events" value={mockEvents.filter((e) => e.status !== "Cancelled").length} icon={CalendarDays} accent="primary" trend="3 starting this week" />
-        <StatCard label="Team Members" value={mockTeam.length} icon={Users} accent="info" trend="1 on leave" />
-        <StatCard label="Pending Payments" value={mockPayments.filter((p) => p.status === "Pending").length} icon={Clock} accent="warning" trend="₹60,000 awaiting" />
+        <StatCard
+          label="Total Revenue"
+          value={totalRevenue}
+          isCurrency
+          icon={Wallet}
+          accent="success"
+          trend="↑ 18% vs last month"
+        />
+        <StatCard
+          label="Active Events"
+          value={activeEvents}
+          icon={CalendarDays}
+          accent="primary"
+          trend={`${upcoming.length} upcoming`}
+        />
+        <StatCard
+          label="Team Members"
+          value={mockTeam.length}
+          icon={Users}
+          accent="info"
+          trend="1 on leave"
+        />
+        <StatCard
+          label="Pending Payments"
+          value={mockPayments.filter((p) => p.status === "Pending").length}
+          icon={Clock}
+          accent="warning"
+          trend="₹60,000 awaiting"
+        />
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader className="flex items-center justify-between">
             <CardTitle>Upcoming Events</CardTitle>
-            <Link to="/events" className="text-sm font-medium text-primary hover:underline">
+            <Link
+              to="/events"
+              className="text-sm font-medium text-primary hover:underline"
+            >
               View all
             </Link>
           </CardHeader>
           <CardBody className="p-0">
-            <div className="divide-y divide-border">
-              {upcoming.map((event) => (
-                <div key={event.id} className="flex items-center gap-4 px-5 py-3.5">
-                  <div className="flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-lg bg-accent text-center">
-                    <span className="text-[10px] font-semibold uppercase text-muted-foreground">
-                      {new Date(event.date).toLocaleDateString("en-IN", { month: "short" })}
-                    </span>
-                    <span className="text-base font-bold text-foreground">
-                      {new Date(event.date).getDate()}
-                    </span>
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-foreground">{event.title}</p>
-                    <p className="truncate text-xs text-muted-foreground">{event.client} · {event.location}</p>
-                  </div>
-                  <StatusBadge status={event.status} />
-                </div>
-              ))}
-            </div>
+            {loading ? (
+              <LoadingState label="Loading events…" />
+            ) : upcoming.length === 0 ? (
+              <div className="px-5 py-10 text-center text-sm text-muted-foreground">
+                No upcoming events.
+              </div>
+            ) : (
+              <div className="divide-y divide-border">
+                {upcoming.map((event) => (
+                  <Link
+                    to={`/events/${event.id}`}
+                    key={event.id}
+                    className="flex items-center gap-4 px-5 py-3.5 hover:bg-muted/50"
+                  >
+                    <div className="flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-lg bg-accent text-center">
+                      <span className="text-[10px] font-semibold uppercase text-muted-foreground">
+                        {new Date(event.start_date + "T00:00:00").toLocaleDateString(
+                          "en-IN",
+                          { month: "short" }
+                        )}
+                      </span>
+                      <span className="text-base font-bold text-foreground">
+                        {new Date(event.start_date + "T00:00:00").getDate()}
+                      </span>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-foreground">
+                        {event.title}
+                      </p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {event.venue || "—"}
+                      </p>
+                    </div>
+                    <StatusBadge status={event.status} />
+                  </Link>
+                ))}
+              </div>
+            )}
           </CardBody>
         </Card>
 

@@ -1,0 +1,114 @@
+{
+  "name": "Event",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "description": "Workspace this event belongs to"
+    },
+    "client_id": {
+      "type": "string",
+      "description": "Client this event is for (normalized reference)"
+    },
+    "title": {
+      "type": "string",
+      "description": "Event title / name"
+    },
+    "event_type": {
+      "type": "string",
+      "description": "Type of event (Wedding, Corporate, etc.)"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Event start date (date-only, YYYY-MM-DD)"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Event end date (date-only, YYYY-MM-DD). May be null for single-day events."
+    },
+    "venue": {
+      "type": "string",
+      "description": "Venue name"
+    },
+    "venue_address": {
+      "type": "string",
+      "description": "Full venue address"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Confirmed",
+        "In Progress",
+        "Pending",
+        "Completed",
+        "Cancelled"
+      ],
+      "default": "Pending"
+    },
+    "description": {
+      "type": "string",
+      "description": "Event description / brief"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Internal notes"
+    }
+  },
+  "required": [
+    "workspace_id",
+    "client_id",
+    "title",
+    "start_date"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.workspace_id": {
+            "$in": "{{user.data.workspace_ids}}"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "data.workspace_id": {
+        "$in": "{{user.data.workspace_ids}}"
+      }
+    },
+    "update": {
+      "$or": [
+        {
+          "data.workspace_id": {
+            "$in": "{{user.data.workspace_ids}}"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.workspace_id": {
+            "$in": "{{user.data.workspace_ids}}"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
