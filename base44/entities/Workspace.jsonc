@@ -1,0 +1,147 @@
+{
+  "name": "Workspace",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Business / workspace name"
+    },
+    "business_type": {
+      "type": "string",
+      "description": "Type of creative business"
+    },
+    "owner_user_id": {
+      "type": "string",
+      "description": "User id of the workspace owner"
+    },
+    "email": {
+      "type": "string",
+      "description": "Business contact email"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Business contact phone"
+    },
+    "logo": {
+      "type": "string",
+      "description": "URL of the workspace logo"
+    },
+    "address": {
+      "type": "string",
+      "description": "Street address"
+    },
+    "city": {
+      "type": "string"
+    },
+    "state": {
+      "type": "string"
+    },
+    "country": {
+      "type": "string"
+    },
+    "currency": {
+      "type": "string",
+      "default": "INR"
+    },
+    "timezone": {
+      "type": "string",
+      "default": "Asia/Kolkata"
+    },
+    "plan_type": {
+      "type": "string",
+      "enum": [
+        "free",
+        "pro",
+        "studio"
+      ],
+      "default": "free"
+    },
+    "plan_status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "suspended",
+        "cancelled",
+        "trial"
+      ],
+      "default": "active"
+    },
+    "member_user_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "User ids that belong to this workspace (denormalized for access control)"
+    },
+    "gst_enabled": {
+      "type": "boolean",
+      "default": false
+    },
+    "gstin": {
+      "type": "string",
+      "description": "GST Identification Number"
+    },
+    "gst_business_name": {
+      "type": "string",
+      "description": "Registered legal business name for GST"
+    },
+    "gst_billing_address": {
+      "type": "string"
+    },
+    "gst_state": {
+      "type": "string"
+    },
+    "default_gst_rate": {
+      "type": "number",
+      "description": "Default GST rate percentage (e.g. 18)"
+    }
+  },
+  "required": [
+    "name",
+    "owner_user_id"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.owner_user_id": "{{user.id}}"
+        },
+        {
+          "data.member_user_ids": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "data.owner_user_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "data.owner_user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.owner_user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
