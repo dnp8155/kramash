@@ -6,9 +6,31 @@
       "type": "string",
       "description": "Business / workspace name"
     },
+    "business_category": {
+      "type": "string",
+      "enum": [
+        "PHOTOGRAPHY",
+        "EVENT_MANAGEMENT",
+        "ARCHITECTURE",
+        "OTHER"
+      ],
+      "description": "Primary business category \u2014 drives UI terminology and preset suggestions"
+    },
     "business_type": {
       "type": "string",
-      "description": "Type of creative business"
+      "description": "Legacy free-text business type (retained for compatibility). For OTHER category, prefer custom_business_type."
+    },
+    "custom_business_type": {
+      "type": "string",
+      "description": "Custom industry name when business_category is OTHER (e.g. Interior Design, Consulting)"
+    },
+    "custom_work_label_singular": {
+      "type": "string",
+      "description": "Optional custom singular label for work items (e.g. Job, Assignment). Overrides the category default."
+    },
+    "custom_work_label_plural": {
+      "type": "string",
+      "description": "Optional custom plural label for work items (e.g. Jobs, Assignments). Overrides the category default."
     },
     "owner_user_id": {
       "type": "string",

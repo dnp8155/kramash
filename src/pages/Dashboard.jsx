@@ -15,6 +15,7 @@ import LoadingState from "@/components/common/LoadingState";
 import { useEvents } from "@/hooks/useEvents";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { useFinancialTransactions } from "@/hooks/useFinancialTransactions";
+import { useBusinessTerminology } from "@/lib/BusinessTerminology";
 import { computeWorkspaceSummary } from "@/utils/finance";
 import { formatCurrency } from "@/utils/format";
 import { isUpcoming } from "@/utils/dates";
@@ -24,6 +25,7 @@ export default function Dashboard() {
   const { events, loading } = useEvents();
   const { members } = useTeamMembers();
   const { transactions } = useFinancialTransactions();
+  const t = useBusinessTerminology();
 
   const summary = computeWorkspaceSummary(transactions);
   const totalRevenue = summary.received;
@@ -69,7 +71,7 @@ export default function Dashboard() {
         actions={
           <Link to="/events">
             <Button>
-              <CalendarDays className="h-4 w-4" /> New Event
+              <CalendarDays className="h-4 w-4" /> {t.createWorkItemLabel}
             </Button>
           </Link>
         }
@@ -85,7 +87,7 @@ export default function Dashboard() {
           trend="Client payments received"
         />
         <StatCard
-          label="Active Events"
+          label={t.activeWorkLabel}
           value={activeEvents}
           icon={CalendarDays}
           accent="primary"
@@ -104,14 +106,14 @@ export default function Dashboard() {
           isCurrency
           icon={Clock}
           accent="warning"
-          trend={`${pendingEvents.length} event${pendingEvents.length === 1 ? "" : "s"} awaiting`}
+          trend={`${pendingEvents.length} ${pendingEvents.length === 1 ? t.workItemSingular.toLowerCase() : t.workItemPlural.toLowerCase()} awaiting`}
         />
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader className="flex items-center justify-between">
-            <CardTitle>Upcoming Events</CardTitle>
+            <CardTitle>{t.upcomingWorkLabel}</CardTitle>
             <Link
               to="/events"
               className="text-sm font-medium text-primary hover:underline"
@@ -124,7 +126,7 @@ export default function Dashboard() {
               <LoadingState label="Loading events…" />
             ) : upcoming.length === 0 ? (
               <div className="px-5 py-10 text-center text-sm text-muted-foreground">
-                No upcoming events.
+                No upcoming {t.workItemPlural.toLowerCase()}.
               </div>
             ) : (
               <div className="divide-y divide-border">

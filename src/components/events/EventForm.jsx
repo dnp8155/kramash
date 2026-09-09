@@ -6,6 +6,7 @@ import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
 import ClientForm from "@/components/clients/ClientForm";
 import { eventStatuses, eventTypes } from "@/constants/events";
+import { useBusinessTerminology } from "@/lib/BusinessTerminology";
 import { toast } from "@/components/ui/use-toast";
 
 const empty = {
@@ -32,6 +33,7 @@ export default function EventForm({
   const [form, setForm] = useState(empty);
   const [saving, setSaving] = useState(false);
   const [clientModalOpen, setClientModalOpen] = useState(false);
+  const t = useBusinessTerminology();
 
   useEffect(() => {
     if (open) {
@@ -52,7 +54,7 @@ export default function EventForm({
 
   const handleSave = async () => {
     if (!form.title.trim()) {
-      toast({ title: "Event title is required", variant: "destructive" });
+      toast({ title: `${t.workItemSingular} title is required`, variant: "destructive" });
       return;
     }
     if (!form.client_id) {
@@ -103,7 +105,7 @@ export default function EventForm({
       <Modal
         open={open}
         onClose={onClose}
-        title={event ? "Edit Event" : "New Event"}
+        title={event ? t.editWorkItemLabel : t.createWorkItemLabel}
         size="lg"
         footer={
           <>
@@ -112,18 +114,18 @@ export default function EventForm({
             </Button>
             <Button onClick={handleSave} disabled={saving}>
               {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-              {event ? "Save Changes" : "Create Event"}
+              {event ? "Save Changes" : `Create ${t.workItemSingular}`}
             </Button>
           </>
         }
       >
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Input
-            label="Event Title"
+            label={`${t.workItemSingular} Title`}
             name="title"
             value={form.title}
             onChange={(e) => set("title", e.target.value)}
-            placeholder="e.g. Sharma Wedding"
+            placeholder={`e.g. ${t.workItemSingular === "Event" ? "Sharma Wedding" : "Residential Villa"}`}
             className="sm:col-span-2"
           />
           <div className="sm:col-span-2">
@@ -175,14 +177,14 @@ export default function EventForm({
             ))}
           </Select>
           <Input
-            label="Start Date"
+            label={t.startDateLabel}
             name="start_date"
             type="date"
             value={form.start_date}
             onChange={(e) => set("start_date", e.target.value)}
           />
           <Input
-            label="End Date"
+            label={t.endDateLabel}
             name="end_date"
             type="date"
             value={form.end_date}
@@ -190,15 +192,15 @@ export default function EventForm({
             onChange={(e) => set("end_date", e.target.value)}
           />
           <Input
-            label="Venue"
+            label={t.locationLabel}
             name="venue"
             value={form.venue}
             onChange={(e) => set("venue", e.target.value)}
-            placeholder="Venue name"
+            placeholder={`${t.locationLabel} name`}
             className="sm:col-span-2"
           />
           <Input
-            label="Venue Address"
+            label={t.locationAddressLabel}
             name="venue_address"
             value={form.venue_address}
             onChange={(e) => set("venue_address", e.target.value)}
@@ -212,7 +214,7 @@ export default function EventForm({
               value={form.description}
               onChange={(e) => set("description", e.target.value)}
               rows={3}
-              placeholder="Brief about the event…"
+              placeholder={`Brief about the ${t.workItemSingular.toLowerCase()}…`}
               className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30"
             />
           </div>

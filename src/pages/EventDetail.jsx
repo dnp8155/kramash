@@ -37,6 +37,7 @@ import { useTeamRoles } from "@/hooks/useTeamRoles";
 import { useEventTeamAssignments } from "@/hooks/useEventTeamAssignments";
 import { useFinancialTransactions } from "@/hooks/useFinancialTransactions";
 import { useExpenseCategories } from "@/hooks/useExpenseCategories";
+import { useBusinessTerminology } from "@/lib/BusinessTerminology";
 import { computeEventFinancials } from "@/utils/finance";
 import { formatDate, formatCurrency, initials } from "@/utils/format";
 import { toast } from "@/components/ui/use-toast";
@@ -51,6 +52,7 @@ export default function EventDetail() {
   const { assignments, createAssignment, removeAssignment } =
     useEventTeamAssignments();
   const { categories } = useExpenseCategories();
+  const t = useBusinessTerminology();
   const {
     transactions,
     createTransaction,
@@ -128,7 +130,7 @@ export default function EventDetail() {
       <div className="flex flex-col gap-6">
         <BackLink />
         <Card>
-          <LoadingState label="Loading event…" />
+          <LoadingState label={`Loading ${t.workItemSingular.toLowerCase()}…`} />
         </Card>
       </div>
     );
@@ -140,8 +142,8 @@ export default function EventDetail() {
         <BackLink />
         <Card>
           <EmptyState
-            title="Event not found"
-            description="This event may have been removed or you don't have access to it."
+            title={`${t.workItemSingular} not found`}
+            description={`This ${t.workItemSingular.toLowerCase()} may have been removed or you don't have access to it.`}
             icon={CalendarDays}
           />
         </Card>
@@ -156,7 +158,7 @@ export default function EventDetail() {
   const handleSave = async (data) => {
     const updated = await updateEvent(event.id, data);
     setEvent(updated);
-    toast({ title: "Event updated" });
+    toast({ title: `${t.workItemSingular} updated` });
   };
 
   const handleEditContractValue = async (value) => {
@@ -206,7 +208,7 @@ export default function EventDetail() {
         description={`${event.event_type} · ${dateLabel}`}
         actions={
           <Button onClick={() => setEditOpen(true)}>
-            <Pencil className="h-4 w-4" /> Edit Event
+            <Pencil className="h-4 w-4" /> {t.editWorkItemLabel}
           </Button>
         }
       />
@@ -214,7 +216,7 @@ export default function EventDetail() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader className="flex items-center justify-between">
-            <CardTitle>Event Details</CardTitle>
+            <CardTitle>{t.workItemDetailsLabel}</CardTitle>
             <StatusBadge status={event.status} />
           </CardHeader>
           <CardBody className="flex flex-col gap-4 text-sm">
@@ -301,8 +303,8 @@ export default function EventDetail() {
           <CardBody className="p-0">
             {eventAssignments.length === 0 ? (
               <EmptyState
-                title="No team assigned to this event yet"
-                description="Assign photographers, cinematographers, and crew to this event."
+                title={`No team assigned to this ${t.workItemSingular.toLowerCase()} yet`}
+                description={`Assign team members to this ${t.workItemSingular.toLowerCase()}.`}
                 icon={Users}
                 action={
                   <Button onClick={() => setAssignOpen(true)}>
@@ -396,7 +398,7 @@ export default function EventDetail() {
               {transactions.length === 0 ? (
                 <EmptyState
                   title="No payments recorded"
-                  description="Record client payments, team payments, and expenses for this event."
+                  description={`Record client payments, team payments, and expenses for this ${t.workItemSingular.toLowerCase()}.`}
                   icon={Wallet}
                 />
               ) : (
@@ -428,7 +430,7 @@ export default function EventDetail() {
         </CardHeader>
         <CardBody className="flex flex-wrap gap-3">
           <Button onClick={() => setEditOpen(true)}>
-            <Pencil className="h-4 w-4" /> Edit Event
+            <Pencil className="h-4 w-4" /> {t.editWorkItemLabel}
           </Button>
           <Button variant="outline" onClick={() => setAssignOpen(true)}>
             <UserPlus className="h-4 w-4" /> Add Team
@@ -502,12 +504,13 @@ export default function EventDetail() {
 }
 
 function BackLink() {
+  const t = useBusinessTerminology();
   return (
     <Link
       to="/events"
       className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
     >
-      <ArrowLeft className="h-4 w-4" /> Back to Events
+      <ArrowLeft className="h-4 w-4" /> Back to {t.workItemPlural}
     </Link>
   );
 }

@@ -44,9 +44,11 @@ export function sanitizeFilename(str) {
 }
 
 // ─── Events Export ───
-export function exportEventsCSV(events, clients, fyLabel) {
+// Accepts an optional terminology object (t) for dynamic labels/filenames.
+export function exportEventsCSV(events, clients, fyLabel, t) {
   const clientMap = Object.fromEntries(clients.map((c) => [c.id, c]));
-  const headers = ["Event Name", "Client", "Start Date", "End Date", "Venue", "Type", "Status"];
+  const workLabel = t?.workItemSingular || "Event";
+  const headers = [`${workLabel} Name`, "Client", "Start Date", "End Date", t?.locationLabel || "Venue", "Type", "Status"];
   const rows = events.map((e) => [
     e.title || "",
     clientMap[e.client_id]?.name || "",
@@ -58,7 +60,8 @@ export function exportEventsCSV(events, clients, fyLabel) {
   ]);
   const csv = toCSV([headers, ...rows]);
   const fyPart = fyLabel && fyLabel !== "all" ? `_FY-${sanitizeFilename(fyLabel)}` : "";
-  downloadCSV(csv, `Kramashah_Events${fyPart}.csv`);
+  const filenamePart = t?.exportFilename || "Events";
+  downloadCSV(csv, `Kramashah_${filenamePart}${fyPart}.csv`);
 }
 
 // ─── Clients Export ───
@@ -102,7 +105,7 @@ export function exportTeamCSV(members, roles) {
 }
 
 // ─── Financial Transactions Export ───
-export function exportFinancialCSV(transactions, events, clients, members, categories, fyLabel) {
+export function exportFinancialCSV(transactions, events, clients, members, categories, fyLabel, t) {
   const eventMap = Object.fromEntries(events.map((e) => [e.id, e]));
   const clientMap = Object.fromEntries(clients.map((c) => [c.id, c]));
   const memberMap = Object.fromEntries(members.map((m) => [m.id, m]));
@@ -114,9 +117,10 @@ export function exportFinancialCSV(transactions, events, clients, members, categ
     BUSINESS_EXPENSE: "Business Expense",
   };
 
+  const workLabel = t?.workItemSingular || "Event";
   const headers = [
     "Date",
-    "Event",
+    workLabel,
     "Transaction Type",
     "Party / Description",
     "Amount",

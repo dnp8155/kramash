@@ -20,6 +20,7 @@ import Quotation from "@/pages/Quotation";
 import QuotationEditor from "@/pages/QuotationEditor";
 import QuotationDetail from "@/pages/QuotationDetail";
 import { PlanProvider } from "@/lib/PlanContext";
+import { BusinessTerminologyProvider } from "@/lib/BusinessTerminology";
 import AdminGuard from "@/components/admin/AdminGuard";
 import AdminLayout from "@/components/admin/AdminLayout";
 import AdminDashboard from "@/pages/admin/AdminDashboard";
@@ -54,9 +55,11 @@ const AuthenticatedApp = () => (
   <AuthReady>
     <WorkspaceProvider>
       <WorkspaceGate>
-        <PlanProvider>
-          <Outlet />
-        </PlanProvider>
+        <BusinessTerminologyProvider>
+          <PlanProvider>
+            <Outlet />
+          </PlanProvider>
+        </BusinessTerminologyProvider>
       </WorkspaceGate>
     </WorkspaceProvider>
   </AuthReady>

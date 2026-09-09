@@ -6,11 +6,13 @@ import MobileNavigation from "./MobileNavigation";
 import OfflineBanner from "@/components/common/OfflineBanner";
 import { navItems } from "@/constants/navigation";
 import { usePlan } from "@/lib/PlanContext";
+import { useBusinessTerminology } from "@/lib/BusinessTerminology";
 
 export default function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
   const { isSuspended } = usePlan();
+  const t = useBusinessTerminology();
 
   useEffect(() => {
     setSidebarOpen(false);
@@ -19,7 +21,9 @@ export default function AppLayout() {
   const current = navItems.find((n) =>
     n.path === "/" ? location.pathname === "/" : location.pathname.startsWith(n.path)
   );
-  const headerTitle = current?.label || "Dashboard";
+  const headerTitle = current
+    ? (current.labelKey && t[current.labelKey] ? t[current.labelKey] : current.label)
+    : "Dashboard";
 
   return (
     <div className="min-h-screen bg-background">

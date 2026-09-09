@@ -3,6 +3,7 @@ import { navItems } from "@/constants/navigation";
 import { useWorkspace } from "@/lib/WorkspaceContext";
 import { usePlan } from "@/lib/PlanContext";
 import { useAuth } from "@/lib/AuthContext";
+import { useBusinessTerminology } from "@/lib/BusinessTerminology";
 import { Camera, X, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -10,8 +11,14 @@ export default function Sidebar({ open, onClose }) {
   const { currentWorkspace } = useWorkspace();
   const { planName, isPro } = usePlan();
   const { user } = useAuth();
+  const t = useBusinessTerminology();
   const isAdmin = user?.role === "admin";
   const planLabel = `${planName} Plan`;
+
+  const resolveLabel = (item) => {
+    if (item.labelKey && t[item.labelKey]) return t[item.labelKey];
+    return item.label;
+  };
 
   return (
     <>
@@ -41,7 +48,7 @@ export default function Sidebar({ open, onClose }) {
               <p className="max-w-[150px] truncate text-base font-bold tracking-tight text-foreground">
                 {currentWorkspace?.name || "Kramashah"}
               </p>
-              <p className="text-[11px] text-muted-foreground">Production Suite</p>
+              <p className="text-[11px] text-muted-foreground">{t.sidebarSubtitle}</p>
             </div>
           </div>
           <button
@@ -77,7 +84,7 @@ export default function Sidebar({ open, onClose }) {
                     }
                   >
                     <Icon className="h-[18px] w-[18px] shrink-0" />
-                    <span className="truncate">{item.label}</span>
+                    <span className="truncate">{resolveLabel(item)}</span>
                   </NavLink>
                 </li>
               );

@@ -34,6 +34,7 @@ import { transactionTypeLabels, paymentMethods } from "@/constants/finance";
 import { formatCurrency } from "@/utils/format";
 import { toast } from "@/components/ui/use-toast";
 import { exportFinancialCSV } from "@/utils/exports";
+import { useBusinessTerminology } from "@/lib/BusinessTerminology";
 import TransactionActivityTable from "@/components/finance/TransactionActivityTable";
 import RecordClientPaymentModal from "@/components/finance/RecordClientPaymentModal";
 import RecordTeamPaymentModal from "@/components/finance/RecordTeamPaymentModal";
@@ -55,6 +56,7 @@ export default function Financial() {
   const { members } = useTeamMembers();
   const { categories } = useExpenseCategories();
   const { assignments } = useEventTeamAssignments();
+  const t = useBusinessTerminology();
 
   const [fy, setFy] = useState(currentFinancialYear()?.label || "all");
   const [typeFilter, setTypeFilter] = useState("all");

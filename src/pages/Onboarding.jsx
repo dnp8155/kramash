@@ -11,21 +11,16 @@ import {
   Building2,
   MapPin,
   Receipt,
+  PartyPopper,
+  Ruler,
+  Briefcase,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { BUSINESS_CATEGORIES, CATEGORY_LABELS } from "@/lib/BusinessTerminology";
+import { seedWorkspacePresets } from "@/utils/presetSeeding";
 
-const BUSINESS_TYPES = [
-  "Photography",
-  "Cinematic Videography",
-  "Wedding Films",
-  "Event Management",
-  "Production House",
-  "Studio",
-  "Freelancer",
-  "Other",
-];
 const CURRENCIES = [
   { v: "INR", l: "INR (₹)" },
   { v: "USD", l: "USD ($)" },
@@ -44,9 +39,37 @@ const COUNTRIES = ["India", "United States", "United Kingdom", "United Arab Emir
 const GST_RATES = [0, 5, 12, 18, 28];
 
 const STEPS = [
-  { key: "business", label: "Business", icon: Building2 },
+  { key: "category", label: "Category", icon: Building2 },
+  { key: "business", label: "Business", icon: Briefcase },
   { key: "location", label: "Location", icon: MapPin },
   { key: "gst", label: "GST", icon: Receipt },
+];
+
+const CATEGORY_OPTIONS = [
+  {
+    value: BUSINESS_CATEGORIES.PHOTOGRAPHY,
+    label: "Photography",
+    description: "Photographers, videographers, wedding films",
+    icon: Camera,
+  },
+  {
+    value: BUSINESS_CATEGORIES.EVENT_MANAGEMENT,
+    label: "Event Management",
+    description: "Event planners, decorators, production houses",
+    icon: PartyPopper,
+  },
+  {
+    value: BUSINESS_CATEGORIES.ARCHITECTURE,
+    label: "Architecture",
+    description: "Architects, interior designers, contractors",
+    icon: Ruler,
+  },
+  {
+    value: BUSINESS_CATEGORIES.OTHER,
+    label: "Other Service Business",
+    description: "Consulting, agencies, freelance, custom",
+    icon: Briefcase,
+  },
 ];
 
 const fieldClass =
@@ -60,8 +83,9 @@ export default function Onboarding() {
   const [error, setError] = useState("");
 
   const [form, setForm] = useState({
+    business_category: "",
+    custom_business_type: "",
     name: "",
-    business_type: "Photography",
     email: user?.email || "",
     phone: "",
     address: "",
@@ -81,9 +105,14 @@ export default function Onboarding() {
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
   const canNext = () => {
-    if (step === 0) return form.name.trim() && form.business_type;
-    if (step === 1) return form.city.trim() && form.country;
-    if (step === 2) return !form.gst_enabled || (form.gstin.trim() && form.gst_business_name.trim());
+    if (step === 0) return !!form.business_category;
+    if (step === 1) {
+      if (!form.name.trim()) return false;
+      if (form.business_category === BUSINESS_CATEGORIES.OTHER && !form.custom_business_type.trim()) return false;
+      return true;
+    }
+    if (step === 2) return form.city.trim() && form.country;
+    if (step === 3) return !form.gst_enabled || (form.gstin.trim() && form.gst_business_name.trim());
     return true;
   };
 
@@ -93,7 +122,11 @@ export default function Onboarding() {
     try {
       const ws = await base44.entities.Workspace.create({
         name: form.name.trim(),
-        business_type: form.business_type,
+        business_category: form.business_category,
+        custom_business_type: form.business_category === BUSINESS_CATEGORIES.OTHER ? form.custom_business_type.trim() : "",
+        business_type: form.business_category === BUSINESS_CATEGORIES.OTHER
+          ? form.custom_business_type.trim()
+          : CATEGORY_LABELS[form.business_category],
         owner_user_id: user.id,
         email: form.email.trim(),
         phone: form.phone.trim(),
@@ -126,6 +159,12 @@ export default function Onboarding() {
         await base44.functions.invoke("initializeFreePlan", { workspace_id: ws.id });
       } catch {
         /* non-blocking — PlanContext defaults to Free if no subscription exists */
+      }
+      // Seed industry-specific presets (team roles, services, expense categories)
+      try {
+        await seedWorkspacePresets(ws.id, form.business_category);
+      } catch {
+        /* non-blocking — user can configure manually */
       }
       const updateData = { active_workspace_id: ws.id, workspace_ids: [ws.id] };
       if (form.phone.trim()) updateData.phone = form.phone.trim();
@@ -211,23 +250,76 @@ export default function Onboarding() {
             <div className="mb-5 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">{error}</div>
           )}
 
+          {/* Step 0: Business Category Selection */}
           {step === 0 && (
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-lg font-semibold text-foreground">What type of business do you run?</h2>
+                <p className="text-sm text-muted-foreground">This sets up your workspace terminology and starter presets.</p>
+              </div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {CATEGORY_OPTIONS.map((opt) => {
+                  const Icon = opt.icon;
+                  const selected = form.business_category === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => set("business_category", opt.value)}
+                      className={`flex flex-col items-start gap-2 rounded-xl border p-4 text-left transition-all ${
+                        selected
+                          ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                          : "border-border bg-card hover:border-primary/40 hover:bg-muted/30"
+                      }`}
+                    >
+                      <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${selected ? "bg-primary text-primary-foreground" : "bg-accent text-accent-foreground"}`}>
+                        <Icon className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">{opt.label}</p>
+                        <p className="text-xs text-muted-foreground">{opt.description}</p>
+                      </div>
+                      {selected && (
+                        <div className="absolute top-3 right-3">
+                          <Check className="h-4 w-4 text-primary" />
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Step 1: Business Details */}
+          {step === 1 && (
             <div className="space-y-4">
               <div>
                 <h2 className="text-lg font-semibold text-foreground">Tell us about your business</h2>
                 <p className="text-sm text-muted-foreground">This becomes your workspace name in Kramashah.</p>
               </div>
+              {form.business_category === BUSINESS_CATEGORIES.OTHER && (
+                <div className="space-y-2">
+                  <Label htmlFor="custom_business_type">Business Type / Industry Name</Label>
+                  <Input
+                    id="custom_business_type"
+                    value={form.custom_business_type}
+                    onChange={(e) => set("custom_business_type", e.target.value)}
+                    placeholder="e.g. Interior Design, Consulting, Production House"
+                    autoFocus
+                  />
+                  <p className="text-xs text-muted-foreground">Required for Other Service Business.</p>
+                </div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="name">Business / Workspace Name</Label>
-                <Input id="name" value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="Krishna Shah Photography" autoFocus />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="business_type">Business Type</Label>
-                <select id="business_type" value={form.business_type} onChange={(e) => set("business_type", e.target.value)} className={fieldClass}>
-                  {BUSINESS_TYPES.map((t) => (
-                    <option key={t} value={t}>{t}</option>
-                  ))}
-                </select>
+                <Input
+                  id="name"
+                  value={form.name}
+                  onChange={(e) => set("name", e.target.value)}
+                  placeholder="Krishna Shah Photography"
+                  autoFocus={form.business_category !== BUSINESS_CATEGORIES.OTHER}
+                />
               </div>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
@@ -242,7 +334,8 @@ export default function Onboarding() {
             </div>
           )}
 
-          {step === 1 && (
+          {/* Step 2: Location */}
+          {step === 2 && (
             <div className="space-y-4">
               <div>
                 <h2 className="text-lg font-semibold text-foreground">Location & preferences</h2>
@@ -285,7 +378,8 @@ export default function Onboarding() {
             </div>
           )}
 
-          {step === 2 && (
+          {/* Step 3: GST */}
+          {step === 3 && (
             <div className="space-y-4">
               <div>
                 <h2 className="text-lg font-semibold text-foreground">GST registration</h2>
@@ -354,7 +448,7 @@ export default function Onboarding() {
             ) : (
               <span />
             )}
-            {step < 2 ? (
+            {step < 3 ? (
               <Button onClick={() => setStep((s) => s + 1)} disabled={!canNext()}>
                 Continue <ArrowRight className="h-4 w-4" />
               </Button>

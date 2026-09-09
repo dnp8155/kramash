@@ -18,11 +18,13 @@ import { eventStatuses, eventTypes, eventPeriods } from "@/constants/events";
 import { isToday, isThisWeek, isUpcoming, isPast } from "@/utils/dates";
 import { toast } from "@/components/ui/use-toast";
 import { exportEventsCSV } from "@/utils/exports";
+import { useBusinessTerminology } from "@/lib/BusinessTerminology";
 
 export default function Events() {
   const { events, loading, error, refetch, createEvent, updateEvent } = useEvents();
   const { clients, createClient } = useClients();
   const { canCreateResource, usage, getLimit } = usePlan();
+  const t = useBusinessTerminology();
   const eventsLimit = getLimit("max_events");
   const eventsLimitReached = !canCreateResource("events");
   const [search, setSearch] = useState("");
@@ -83,15 +85,15 @@ export default function Events() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Events"
-        description="Manage your upcoming and past productions."
+        title={t.workItemPlural}
+        description={`Manage your upcoming and past ${t.workItemPlural.toLowerCase()}.`}
         actions={
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => { exportEventsCSV(filtered, clients, "all"); toast({ title: "Events exported" }); }}>
+            <Button variant="outline" onClick={() => { exportEventsCSV(filtered, clients, "all", t); toast({ title: `${t.workItemPlural} exported` }); }}>
               <Download className="h-4 w-4" /> Export
             </Button>
             <Button onClick={openNew} disabled={eventsLimitReached}>
-              <Plus className="h-4 w-4" /> New Event
+              <Plus className="h-4 w-4" /> {t.createWorkItemLabel}
             </Button>
           </div>
         }
@@ -110,7 +112,7 @@ export default function Events() {
           <SearchInput
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search events, clients, venues…"
+            placeholder={t.searchPlaceholder}
             className="flex-1 min-w-[200px]"
           />
           <FilterControl
@@ -136,7 +138,7 @@ export default function Events() {
 
       {loading ? (
         <Card>
-          <LoadingState label="Loading events…" />
+          <LoadingState label={`Loading ${t.workItemPlural.toLowerCase()}…`} />
         </Card>
       ) : error ? (
         <Card>
@@ -145,12 +147,12 @@ export default function Events() {
       ) : filtered.length === 0 ? (
         <Card>
           <EmptyState
-            title="No events yet"
-            description="Create your first event to get started."
+            title={`No ${t.workItemPlural.toLowerCase()} yet`}
+            description={`Create your first ${t.workItemSingular.toLowerCase()} to get started.`}
             icon={CalendarDays}
             action={
               <Button onClick={openNew}>
-                <Plus className="h-4 w-4" /> New Event
+                <Plus className="h-4 w-4" /> {t.createWorkItemLabel}
               </Button>
             }
           />
