@@ -162,10 +162,11 @@ export default function Financial() {
         title="Financial"
         description={`Track payments, dues, and revenue across ${t.workItemPlural.toLowerCase()}.`}
         actions={
-          <div className="flex items-center gap-3">
-            <FinancialYearSelector className="w-40" />
+          <div className="flex flex-wrap items-center gap-2">
+            <FinancialYearSelector className="w-full sm:w-40" />
             <Button
               variant="outline"
+              className="w-full sm:w-auto"
               onClick={() => {
                 exportFinancialCSV(filtered, events, clients, members, categories, exportFYLabel, t);
                 toast({ title: "Financial activity exported" });

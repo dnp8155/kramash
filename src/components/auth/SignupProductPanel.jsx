@@ -29,7 +29,7 @@ const TRUST_POINTS = [
 
 export default function SignupProductPanel() {
   return (
-    <div className="flex h-full min-h-screen flex-col justify-center bg-foreground px-8 py-12 xl:px-14">
+    <div className="flex h-full min-h-dvh flex-col justify-center bg-foreground px-8 py-12 xl:px-14">
       <div className="mx-auto w-full max-w-md">
         {/* Eyebrow */}
         <p className="text-xs font-semibold uppercase tracking-wider text-background/50">

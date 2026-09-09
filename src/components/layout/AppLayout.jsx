@@ -26,7 +26,7 @@ export default function AppLayout() {
     : "Dashboard";
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh bg-background">
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div className="lg:pl-64">
@@ -39,7 +39,7 @@ export default function AppLayout() {
             </p>
           </div>
         )}
-        <main className="ks-scrollbar min-h-[calc(100vh-4rem)] overflow-y-auto px-4 py-6 pb-24 sm:px-6 lg:pb-8">
+        <main className="ks-scrollbar min-h-[calc(100dvh-4rem)] overflow-y-auto px-4 py-6 pb-24 sm:px-6 lg:pb-8">
           <div className="mx-auto w-full max-w-7xl">
             <Outlet />
           </div>

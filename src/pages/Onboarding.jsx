@@ -191,7 +191,7 @@ export default function Onboarding() {
 
   if (step === "success") {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+      <div className="flex min-h-dvh items-center justify-center bg-background px-4">
         <div className="w-full max-w-md text-center">
           <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-success/15 text-success">
             <Check className="h-8 w-8" />
@@ -211,7 +211,7 @@ export default function Onboarding() {
   const StepIcon = STEPS[step]?.icon;
 
   return (
-    <div className="min-h-screen bg-background px-4 py-8">
+    <div className="min-h-dvh bg-background px-4 py-8">
       <div className="mx-auto w-full max-w-xl">
         {/* Brand */}
         <div className="mb-8 flex items-center gap-2.5">

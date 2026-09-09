@@ -12,7 +12,10 @@ export default function MobileNavigation() {
   };
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-around border-t border-border bg-background/90 backdrop-blur-md lg:hidden">
+    <nav
+      className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-around border-t border-border bg-background/95 pb-safe-bottom backdrop-blur-md lg:hidden"
+      aria-label="Primary navigation"
+    >
       {navItems.slice(0, 5).map((item) => {
         const Icon = item.icon;
         const label = resolveLabel(item);
@@ -23,13 +26,13 @@ export default function MobileNavigation() {
             end={item.path === "/dashboard"}
             className={({ isActive }) =>
               cn(
-                "flex flex-1 flex-col items-center gap-0.5 py-2.5 text-[10px] font-medium transition-colors",
+                "flex min-w-0 flex-1 flex-col items-center gap-0.5 py-2 text-[10px] font-medium transition-colors",
                 isActive ? "text-primary" : "text-muted-foreground"
               )
             }
           >
-            <Icon className="h-5 w-5" />
-            <span className="truncate px-1">{label.split(" ")[0]}</span>
+            <Icon className="h-5 w-5 shrink-0" />
+            <span className="max-w-full truncate px-0.5">{label.split(" ")[0]}</span>
           </NavLink>
         );
       })}

@@ -89,7 +89,7 @@ export default function Login() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col lg:flex-row bg-background">
+    <div className="flex min-h-dvh flex-col lg:flex-row bg-background">
       {/* Left: Login content */}
       <div className="flex flex-1 flex-col justify-center px-6 py-10 lg:px-20 lg:py-0">
         <div className="mx-auto w-full max-w-[420px] pb-6">
@@ -224,7 +224,7 @@ export default function Login() {
       {/* Right: Product visual */}
       <div className="relative hidden lg:block lg:w-[48%] xl:w-[50%]">
         <div className="absolute inset-0 bg-gradient-to-br from-muted/20 via-muted/30 to-muted/20" />
-        <div className="relative flex h-full min-h-screen items-center justify-center p-12 pl-8">
+        <div className="relative flex h-full min-h-dvh items-center justify-center p-12 pl-8">
           <div className="w-full max-w-xl">
             <LoginProductVisual />
           </div>

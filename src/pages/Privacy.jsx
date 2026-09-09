@@ -41,7 +41,7 @@ const SECTIONS = [
 
 export default function Privacy() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-dvh bg-white">
       <div className="mx-auto max-w-3xl px-6 py-12">
         <AuthLogo />
         <div className="mt-10">

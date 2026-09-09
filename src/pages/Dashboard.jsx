@@ -98,10 +98,10 @@ export default function Dashboard() {
         title="Dashboard"
         description="Welcome back — here's what's happening across your workspace."
         actions={
-          <div className="flex items-center gap-3">
-            <FinancialYearSelector className="w-40" showLabel={false} />
-            <Link to="/events">
-              <Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <FinancialYearSelector className="w-full sm:w-40" showLabel={false} />
+            <Link to="/events" className="w-full sm:w-auto">
+              <Button className="w-full sm:w-auto">
                 <CalendarDays className="h-4 w-4" /> {t.createWorkItemLabel}
               </Button>
             </Link>

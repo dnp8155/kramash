@@ -35,23 +35,23 @@ export default function Modal({ open, onClose, title, children, footer, size = "
         aria-modal="true"
         aria-label={title}
         className={cn(
-          "relative z-10 flex max-h-[92vh] w-full flex-col rounded-t-2xl bg-card shadow-xl sm:rounded-2xl",
+          "relative z-10 flex max-h-[92dvh] w-[calc(100%-1rem)] flex-col rounded-t-2xl bg-card shadow-xl sm:w-full sm:rounded-2xl",
           sizes[size]
         )}
       >
-        <div className="flex items-center justify-between border-b border-border px-5 py-4">
-          <h2 className="text-lg font-semibold text-foreground">{title}</h2>
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border px-5 py-4">
+          <h2 className="min-w-0 flex-1 truncate text-lg font-semibold text-foreground">{title}</h2>
           <button
             onClick={onClose}
-            className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="shrink-0 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             aria-label="Close"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
-        <div className="ks-scrollbar overflow-y-auto px-5 py-5">{children}</div>
+        <div className="ks-scrollbar min-h-0 flex-1 overflow-y-auto px-5 py-5">{children}</div>
         {footer && (
-          <div className="flex items-center justify-end gap-3 border-t border-border px-5 py-4">
+          <div className="flex shrink-0 flex-wrap items-center justify-end gap-3 border-t border-border px-5 py-4 pb-safe-bottom">
             {footer}
           </div>
         )}

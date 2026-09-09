@@ -398,9 +398,9 @@ export default function EventDetail() {
         </Card>
 
         <Card className="lg:col-span-3">
-          <CardHeader className="flex items-center justify-between">
+          <CardHeader className="flex flex-wrap items-center justify-between gap-2">
             <CardTitle>Team</CardTitle>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="text-sm text-muted-foreground">
                 Team cost: {formatCurrency(fin.teamAgreed)}
               </span>
@@ -426,76 +426,84 @@ export default function EventDetail() {
                 {eventAssignments.map((a) => {
                   const member = members.find((m) => m.id === a.team_member_id);
                   const ap = paidByAssignment[a.id];
+                  const isSelf = member && isSelfMember(member.name, ownerName);
                   return (
-                    <div
-                      key={a.id}
-                      className="flex flex-wrap items-center gap-3 px-5 py-3.5"
-                    >
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
-                        {member ? initials(member.name) : "?"}
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold text-foreground">
-                          {member ? member.name : "Unknown member"}
-                          {member && isSelfMember(member.name, ownerName) && (
-                            <SelfBadge className="ml-1.5" />
-                          )}
-                        </p>
-                        <p className="truncate text-xs text-muted-foreground">
-                          {a.role_name_snapshot || "—"}
-                          {a.rate_type ? ` · ${a.rate_type}` : ""}
-                          {a.category_type ? ` · ${a.category_type}` : ""}
-                        </p>
+                    <div key={a.id} className="px-4 py-3.5 sm:px-5">
+                      {/* Row 1: Avatar + Name + Remaining + Status */}
+                      <div className="flex items-center gap-3">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                          {member ? initials(member.name) : "?"}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-semibold text-foreground">
+                            {member ? member.name : "Unknown member"}
+                            {isSelf && <SelfBadge className="ml-1.5" />}
+                          </p>
+                          <p className="truncate text-xs text-muted-foreground">
+                            {a.role_name_snapshot || "—"}
+                            {a.rate_type ? ` · ${a.rate_type}` : ""}
+                            {a.category_type ? ` · ${a.category_type}` : ""}
+                          </p>
+                        </div>
+                        <div className="hidden text-right sm:block">
+                          <p className="text-xs text-muted-foreground">
+                            Agreed {formatCurrency(a.agreed_rate)}
+                          </p>
+                          <p className="text-xs font-medium text-foreground">
+                            Paid {formatCurrency(ap?.paid || 0)}
+                          </p>
+                        </div>
+                        <div className="shrink-0 text-right">
+                          <p className="text-xs text-muted-foreground">Remaining</p>
+                          <p
+                            className={`text-xs font-semibold ${
+                              (ap?.remaining || 0) > 0 ? "text-warning" : "text-foreground"
+                            }`}
+                          >
+                            {formatCurrency(ap?.remaining || 0)}
+                          </p>
+                        </div>
+                        <StatusBadge status={ap?.status || "Unpaid"} />
                       </div>
-                      <div className="hidden text-right sm:block">
-                        <p className="text-xs text-muted-foreground">
-                          Agreed {formatCurrency(a.agreed_rate)}
-                        </p>
-                        <p className="text-xs font-medium text-foreground">
-                          Paid {formatCurrency(ap?.paid || 0)}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-xs text-muted-foreground">Remaining</p>
-                        <p
-                          className={`text-xs font-semibold ${
-                            (ap?.remaining || 0) > 0 ? "text-warning" : "text-foreground"
-                          }`}
-                        >
-                          {formatCurrency(ap?.remaining || 0)}
-                        </p>
-                      </div>
-                      <StatusBadge status={ap?.status || "Unpaid"} />
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleOpenEditTeam(a)}
-                        title="Edit assignment"
-                      >
-                        <Pencil className="h-3.5 w-3.5" /> Edit
-                      </Button>
-                      {!(member && isSelfMember(member.name, ownerName)) && (
+                      {/* Row 2: Actions (wraps on small screens) */}
+                      <div className="mt-2.5 flex items-center gap-2 pl-12 sm:pl-12">
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => openPayFor(a.id)}
+                          onClick={() => handleOpenEditTeam(a)}
+                          title="Edit assignment"
                         >
-                          <Wallet className="h-3.5 w-3.5" /> Pay
+                          <Pencil className="h-3.5 w-3.5" /> Edit
                         </Button>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleRemove(a.id)}
-                        disabled={removingId === a.id}
-                        title="Remove from event"
-                      >
-                        {removingId === a.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Trash2 className="h-4 w-4 text-muted-foreground" />
+                        {!isSelf && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => openPayFor(a.id)}
+                          >
+                            <Wallet className="h-3.5 w-3.5" /> Pay
+                          </Button>
                         )}
-                      </Button>
+                        {isSelf && (
+                          <span className="text-xs text-muted-foreground">
+                            Owner share — no payment required
+                          </span>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleRemove(a.id)}
+                          disabled={removingId === a.id}
+                          title="Remove from event"
+                          className="ml-auto"
+                        >
+                          {removingId === a.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </Button>
+                      </div>
                     </div>
                   );
                 })}
@@ -506,9 +514,9 @@ export default function EventDetail() {
 
         {/* Services Assignments */}
         <Card className="lg:col-span-3">
-          <CardHeader className="flex items-center justify-between">
+          <CardHeader className="flex flex-wrap items-center justify-between gap-2">
             <CardTitle>Services</CardTitle>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2">
               {addonTotal > 0 && (
                 <span className="text-sm text-muted-foreground">
                   Add-ons: {formatCurrency(addonTotal)} · Adjusted: {formatCurrency(adjustedContractValue)}

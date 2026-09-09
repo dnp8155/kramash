@@ -12,7 +12,7 @@ export default function AdminLayout() {
   const navigate = useNavigate();
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="flex min-h-dvh flex-col bg-background">
       {/* Top bar */}
       <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-border bg-card px-4">
         <div className="flex items-center gap-2.5">
@@ -32,7 +32,7 @@ export default function AdminLayout() {
         </button>
       </header>
 
-      <div className="flex flex-1">
+      <div className="flex flex-1 flex-col sm:flex-row">
         {/* Sidebar */}
         <aside className="hidden w-56 shrink-0 border-r border-border bg-card sm:flex sm:flex-col">
           <nav className="flex flex-col gap-1 p-3">
@@ -61,7 +61,7 @@ export default function AdminLayout() {
         </aside>
 
         {/* Mobile nav */}
-        <div className="flex gap-1 border-b border-border bg-card px-3 py-2 sm:hidden">
+        <div className="flex gap-1 overflow-x-auto border-b border-border bg-card px-3 py-2 sm:hidden">
           {adminNav.map((item) => {
             const Icon = item.icon;
             return (

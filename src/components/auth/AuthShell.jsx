@@ -6,7 +6,7 @@ import AuthProductPanel from "./AuthProductPanel";
 export default function AuthShell({ children, showProduct = true, panel }) {
   if (!showProduct) {
     return (
-      <div className="flex min-h-screen flex-col bg-white">
+      <div className="flex min-h-dvh flex-col bg-white">
         <div className="flex flex-1 items-center justify-center px-4 py-12">
           <div className="w-full max-w-[420px]">{children}</div>
         </div>
@@ -15,7 +15,7 @@ export default function AuthShell({ children, showProduct = true, panel }) {
   }
 
   return (
-    <div className="flex min-h-screen flex-col lg:flex-row">
+    <div className="flex min-h-dvh flex-col lg:flex-row">
       {/* Left: Auth panel */}
       <div className="flex flex-1 items-center justify-center bg-white px-6 pt-12 pb-20 lg:px-12">
         <div className="w-full max-w-[420px]">{children}</div>
