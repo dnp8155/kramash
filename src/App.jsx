@@ -35,6 +35,8 @@ import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import ForgotPassword from "@/pages/ForgotPassword";
 import ResetPassword from "@/pages/ResetPassword";
+import Terms from "@/pages/Terms";
+import Privacy from "@/pages/Privacy";
 import Onboarding from "@/pages/Onboarding";
 import EventDetail from "@/pages/EventDetail";
 import Clients from "@/pages/Clients";
@@ -98,6 +100,8 @@ function App() {
 
               {/* Public landing page */}
               <Route path="/" element={<Landing />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/privacy" element={<Privacy />} />
 
               {/* Onboarding (authenticated, no app shell) */}
               <Route path="/onboarding" element={<OnboardingRoute />} />

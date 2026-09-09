@@ -16,7 +16,7 @@ import { useAuth } from "@/lib/AuthContext";
 
 function getPasswordStrength(pwd) {
   if (!pwd) return null;
-  if (pwd.length < 6) return { label: "Too short", bars: 0, color: "text-muted-foreground", barColor: "bg-border" };
+  if (pwd.length < 8) return { label: "Too short", bars: 0, color: "text-muted-foreground", barColor: "bg-border" };
   let score = 0;
   if (pwd.length >= 8) score++;
   if (/[A-Z]/.test(pwd) && /[a-z]/.test(pwd)) score++;
@@ -55,6 +55,16 @@ export default function Register() {
 
   useEffect(() => {
     document.title = "Create Account — Kramashah";
+    let meta = document.querySelector('meta[name="robots"]');
+    if (!meta) {
+      meta = document.createElement("meta");
+      meta.setAttribute("name", "robots");
+      document.head.appendChild(meta);
+    }
+    meta.setAttribute("content", "noindex, follow");
+    return () => {
+      meta.setAttribute("content", "index, follow");
+    };
   }, []);
 
   useEffect(() => {
@@ -83,8 +93,8 @@ export default function Register() {
       setError("Enter a valid email address.");
       return;
     }
-    if (password.length < 6) {
-      setError("Use at least 6 characters for your password.");
+    if (password.length < 8) {
+      setError("Use at least 8 characters for your password.");
       return;
     }
     if (password !== confirmPassword) {
@@ -331,7 +341,7 @@ export default function Register() {
               id="password"
               type={showPassword ? "text" : "password"}
               autoComplete="new-password"
-              placeholder="At least 6 characters"
+              placeholder="At least 8 characters"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               onKeyDown={(e) => {
@@ -410,13 +420,29 @@ export default function Register() {
             checked={termsAccepted}
             onCheckedChange={setTermsAccepted}
             className="mt-0.5"
+            aria-label="I agree to the Terms of Service and Privacy Policy"
           />
-          <Label
-            htmlFor="terms"
-            className="text-xs leading-relaxed text-muted-foreground font-normal cursor-pointer"
-          >
-            I agree to the Terms of Service and Privacy Policy.
-          </Label>
+          <span className="text-xs leading-relaxed text-muted-foreground font-normal">
+            I agree to the{" "}
+            <a
+              href="/terms"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-primary hover:underline"
+            >
+              Terms of Service
+            </a>
+            {" "}and{" "}
+            <a
+              href="/privacy"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-primary hover:underline"
+            >
+              Privacy Policy
+            </a>
+            .
+          </span>
         </div>
 
         <Button type="submit" className="h-12 w-full font-medium" disabled={loading}>
