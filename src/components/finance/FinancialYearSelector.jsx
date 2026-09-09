@@ -5,7 +5,7 @@ import { useFinancialYear } from "@/lib/FinancialYearContext";
 // records via FinancialYearContext. Changing the selection updates the
 // workspace's active/default FY (workspace-level, shared across all members).
 export default function FinancialYearSelector({ className, showLabel = true }) {
-  const { financialYears, activeFYId, selectActiveFY, loading } =
+  const { financialYears, selectedFYId, selectFY, loading } =
     useFinancialYear();
 
   if (loading) {
@@ -16,13 +16,13 @@ export default function FinancialYearSelector({ className, showLabel = true }) {
   return (
     <Select
       label={showLabel ? "Financial Year" : undefined}
-      value={activeFYId || ""}
-      onChange={(e) => selectActiveFY(e.target.value)}
+      value={selectedFYId || ""}
+      onChange={(e) => selectFY(e.target.value)}
       className={className}
     >
       {financialYears.map((fy) => (
         <option key={fy.id} value={fy.id}>
-          {fy.name} {fy.is_active ? "✓" : ""}
+          {fy.name} {fy.id === selectedFYId ? "✓" : ""}
         </option>
       ))}
     </Select>

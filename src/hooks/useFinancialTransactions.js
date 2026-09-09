@@ -8,7 +8,7 @@ import { findFYForDate } from "@/utils/finance";
 // Pass `eventId` to load only the transactions for a single event (server-side
 // filtered); omit it to load the whole workspace ledger.
 // Automatically assigns financial_year_id on create/update based on date.
-export function useFinancialTransactions({ eventId, teamMemberId } = {}) {
+export function useFinancialTransactions({ eventId, teamMemberId, financialYearId } = {}) {
   const { workspaceId } = useWorkspace();
   const { financialYears } = useFinancialYear();
   const [transactions, setTransactions] = useState([]);
@@ -27,6 +27,7 @@ export function useFinancialTransactions({ eventId, teamMemberId } = {}) {
       const query = { workspace_id: workspaceId };
       if (eventId) query.event_id = eventId;
       if (teamMemberId) query.team_member_id = teamMemberId;
+      if (financialYearId) query.financial_year_id = financialYearId;
       const list = await base44.entities.FinancialTransaction.filter(
         query,
         "-transaction_date",
@@ -39,7 +40,7 @@ export function useFinancialTransactions({ eventId, teamMemberId } = {}) {
     } finally {
       setLoading(false);
     }
-  }, [workspaceId, eventId, teamMemberId]);
+  }, [workspaceId, eventId, teamMemberId, financialYearId]);
 
   useEffect(() => {
     load();
@@ -65,10 +66,13 @@ export function useFinancialTransactions({ eventId, teamMemberId } = {}) {
         financial_year_id: fy.id,
         status: data.status || "ACTIVE",
       });
-      setTransactions((prev) => [t, ...prev]);
+      // Only add to local state if it matches the current server-side filter
+      if (!financialYearId || fy.id === financialYearId) {
+        setTransactions((prev) => [t, ...prev]);
+      }
       return t;
     },
-    [workspaceId, financialYears]
+    [workspaceId, financialYears, financialYearId]
   );
 
   const updateTransaction = useCallback(

@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { formatDate, formatCurrency } from "@/utils/format";
 import { transactionTypeLabels } from "@/constants/finance";
-import { isMoneyIn, isMoneyOut } from "@/utils/finance";
+import { isMoneyIn, isMoneyOut, resolveTransactionFYId } from "@/utils/finance";
 import StatusBadge from "@/components/common/StatusBadge";
 import EmptyState from "@/components/common/EmptyState";
 import Button from "@/components/common/Button";
@@ -33,11 +33,13 @@ export default function TransactionActivityTable({
   clients = [],
   members = [],
   categories = [],
+  financialYears = [],
   onEdit,
   onVoid,
   onUnvoid,
 }) {
   const eventMap = Object.fromEntries(events.map((e) => [e.id, e]));
+  const fyMap = Object.fromEntries(financialYears.map((fy) => [fy.id, fy]));
   const ctx = { clients, members, categories };
 
   if (transactions.length === 0) {
@@ -56,6 +58,7 @@ export default function TransactionActivityTable({
         <thead>
           <tr className="border-b border-border bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
             <th className="px-5 py-3 font-semibold">Date</th>
+            <th className="px-5 py-3 font-semibold">FY</th>
             <th className="px-5 py-3 font-semibold">Event</th>
             <th className="px-5 py-3 font-semibold">Type</th>
             <th className="px-5 py-3 font-semibold">Party</th>
@@ -78,6 +81,9 @@ export default function TransactionActivityTable({
               >
                 <td className="whitespace-nowrap px-5 py-3 text-muted-foreground">
                   {formatDate(t.transaction_date)}
+                </td>
+                <td className="whitespace-nowrap px-5 py-3 text-xs text-muted-foreground">
+                  {fyMap[resolveTransactionFYId(t, financialYears)]?.name || "—"}
                 </td>
                 <td className="px-5 py-3 text-foreground">{ev?.title || "—"}</td>
                 <td className="px-5 py-3">

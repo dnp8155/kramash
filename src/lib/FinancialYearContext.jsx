@@ -1,24 +1,33 @@
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { useWorkspace } from "@/lib/WorkspaceContext";
-import { getCurrentFinancialYear, findFYForDate, checkFYOverlap } from "@/utils/finance";
+import { checkFYOverlap } from "@/utils/finance";
 
 // Workspace-level Financial Year context.
-// Provides the active/default FY, all FYs, and methods to manage them.
-// The active FY is persisted on the FinancialYear entity (is_active=true),
-// so it survives refresh, logout/login, and is shared across workspace members.
+// Provides:
+//   - activeFY / activeFYId   → the workspace's official default FY (shared across all members)
+//   - selectedFY / selectedFYId → the FY the current user is viewing (personal preference, stored on user.data)
+//   - selectFY                 → changes the user's personal viewing FY
+//   - setWorkspaceActiveFY     → changes the workspace's official default FY
+//
+// The active FY is persisted on the FinancialYear entity (is_active=true), so it
+// survives refresh, logout/login, and is shared across workspace members.
+// The user's viewing preference is stored on user.data.viewing_fy_id and defaults
+// to the workspace's active FY when not set.
 const FinancialYearContext = createContext(null);
 
 export const FinancialYearProvider = ({ children }) => {
   const { workspaceId } = useWorkspace();
   const [financialYears, setFinancialYears] = useState([]);
   const [activeFY, setActiveFY] = useState(null);
+  const [viewingFYId, setViewingFYId] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
     if (!workspaceId) {
       setFinancialYears([]);
       setActiveFY(null);
+      setViewingFYId(null);
       setLoading(false);
       return;
     }
@@ -47,9 +56,23 @@ export const FinancialYearProvider = ({ children }) => {
       setFinancialYears(fys || []);
       const active = (fys || []).find((fy) => fy.is_active) || (fys || [])[0] || null;
       setActiveFY(active);
+
+      // Load the user's personal viewing FY preference (stored on user.data)
+      try {
+        const user = await base44.auth.me();
+        const uid = user?.data?.viewing_fy_id;
+        if (uid && (fys || []).some((fy) => fy.id === uid)) {
+          setViewingFYId(uid);
+        } else {
+          setViewingFYId(null);
+        }
+      } catch {
+        setViewingFYId(null);
+      }
     } catch {
       setFinancialYears([]);
       setActiveFY(null);
+      setViewingFYId(null);
     } finally {
       setLoading(false);
     }
@@ -59,9 +82,26 @@ export const FinancialYearProvider = ({ children }) => {
     load();
   }, [load]);
 
-  // Changes the workspace's active/default FY. Persists at workspace level
-  // (is_active on the FY entity) so all workspace members see the same active FY.
-  const selectActiveFY = useCallback(
+  // The FY the current user is viewing — their personal preference if set and
+  // valid, otherwise the workspace's official active FY.
+  const selectedFY = viewingFYId
+    ? financialYears.find((fy) => fy.id === viewingFYId) || activeFY
+    : activeFY;
+
+  // Per-user: changes the user's personal viewing FY (stored on user.data).
+  const selectFY = useCallback(async (fyId) => {
+    setViewingFYId(fyId);
+    try {
+      await base44.auth.updateMe({ viewing_fy_id: fyId });
+    } catch {
+      /* non-blocking — in-memory fallback still works for the session */
+    }
+  }, []);
+
+  // Workspace-level: changes the workspace's official active/default FY.
+  // Persists at workspace level (is_active on the FY entity) so all workspace
+  // members see the same active FY.
+  const setWorkspaceActiveFY = useCallback(
     async (fyId) => {
       const current = financialYears.find((fy) => fy.is_active);
       if (current?.id === fyId) return;
@@ -83,16 +123,13 @@ export const FinancialYearProvider = ({ children }) => {
   // Creates a new FY with validation: no duplicates, no overlaps, start < end.
   const createFY = useCallback(
     async (data) => {
-      // Validate start < end
       if (data.start_date >= data.end_date) {
         throw new Error("Start date must be before end date.");
       }
-      // Check for duplicate (same start_date)
       const duplicate = financialYears.find((fy) => fy.start_date === data.start_date);
       if (duplicate) {
         throw new Error("This Financial Year already exists.");
       }
-      // Check for overlapping periods
       if (checkFYOverlap(data.start_date, data.end_date, financialYears)) {
         throw new Error("This Financial Year overlaps with an existing one.");
       }
@@ -137,7 +174,6 @@ export const FinancialYearProvider = ({ children }) => {
           "This Financial Year contains financial records and cannot be deleted."
         );
       }
-      // Don't allow deleting the active FY if it's the only one
       const target = financialYears.find((fy) => fy.id === fyId);
       if (target?.is_active && financialYears.length === 1) {
         throw new Error("Cannot delete the only Financial Year.");
@@ -154,8 +190,11 @@ export const FinancialYearProvider = ({ children }) => {
         financialYears,
         activeFY,
         activeFYId: activeFY?.id || null,
+        selectedFY,
+        selectedFYId: selectedFY?.id || null,
         loading,
-        selectActiveFY,
+        selectFY,
+        setWorkspaceActiveFY,
         createFY,
         closeFY,
         reopenFY,

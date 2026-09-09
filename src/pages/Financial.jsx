@@ -58,7 +58,7 @@ export default function Financial() {
   const { members } = useTeamMembers();
   const { categories } = useExpenseCategories();
   const { assignments } = useEventTeamAssignments();
-  const { financialYears, activeFY, activeFYId } = useFinancialYear();
+  const { financialYears, selectedFY, selectedFYId } = useFinancialYear();
   const t = useBusinessTerminology();
 
   const [typeFilter, setTypeFilter] = useState("all");
@@ -71,13 +71,15 @@ export default function Financial() {
   const [expenseOpen, setExpenseOpen] = useState(false);
   const [editing, setEditing] = useState(null);
 
-  // Summary always uses the active FY (not affected by showAllYears toggle).
+  // Summary uses the selected FY, or all transactions when "All Years" is toggled.
   const summary = useMemo(
     () =>
       computeWorkspaceSummary(
-        filterTransactionsByFY(transactions, activeFYId, financialYears)
+        showAllYears
+          ? transactions
+          : filterTransactionsByFY(transactions, selectedFYId, financialYears)
       ),
-    [transactions, activeFYId, financialYears]
+    [transactions, selectedFYId, financialYears, showAllYears]
   );
 
   // All-time client pending across events (outstanding dues to follow up).
@@ -100,8 +102,8 @@ export default function Financial() {
     const q = search.trim().toLowerCase();
     return transactions.filter((t) => {
       // FY filter: use active FY unless showAllYears is toggled
-      if (!showAllYears && activeFYId) {
-        if (resolveTransactionFYId(t, financialYears) !== activeFYId) return false;
+      if (!showAllYears && selectedFYId) {
+        if (resolveTransactionFYId(t, financialYears) !== selectedFYId) return false;
       }
       if (typeFilter !== "all" && t.transaction_type !== typeFilter) return false;
       if (methodFilter !== "all" && t.payment_method !== methodFilter) return false;
@@ -118,7 +120,7 @@ export default function Financial() {
       }
       return true;
     });
-  }, [transactions, activeFYId, financialYears, showAllYears, typeFilter, methodFilter, search, events, clients, members, categories]);
+  }, [transactions, selectedFYId, financialYears, showAllYears, typeFilter, methodFilter, search, events, clients, members, categories]);
 
   const handleCreate = async (data) => {
     try {
@@ -151,7 +153,7 @@ export default function Financial() {
   };
 
   const profitPositive = summary.profit >= 0;
-  const fyLabel = activeFY?.name || "All Years";
+  const fyLabel = showAllYears ? "All Years" : (selectedFY?.name || "All Years");
   const exportFYLabel = showAllYears ? "all" : fyLabel;
 
   return (
@@ -279,9 +281,9 @@ export default function Financial() {
         <CardHeader>
           <CardTitle>
             Payment Activity
-            {!showAllYears && activeFY && (
+            {!showAllYears && selectedFY && (
               <span className="ml-2 text-sm font-normal text-muted-foreground">
-                · {activeFY.name}
+                · {selectedFY.name}
               </span>
             )}
           </CardTitle>
@@ -298,6 +300,7 @@ export default function Financial() {
               clients={clients}
               members={members}
               categories={categories}
+              financialYears={financialYears}
               onEdit={(t) => setEditing(t)}
               onVoid={handleVoid}
               onUnvoid={handleUnvoid}

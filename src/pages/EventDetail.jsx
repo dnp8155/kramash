@@ -36,6 +36,7 @@ import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { useTeamRoles } from "@/hooks/useTeamRoles";
 import { useEventTeamAssignments } from "@/hooks/useEventTeamAssignments";
 import { useFinancialTransactions } from "@/hooks/useFinancialTransactions";
+import { useFinancialYear } from "@/lib/FinancialYearContext";
 import { useExpenseCategories } from "@/hooks/useExpenseCategories";
 import { useBusinessTerminology } from "@/lib/BusinessTerminology";
 import { computeEventFinancials } from "@/utils/finance";
@@ -53,6 +54,7 @@ export default function EventDetail() {
     useEventTeamAssignments();
   const { categories } = useExpenseCategories();
   const t = useBusinessTerminology();
+  const { financialYears } = useFinancialYear();
   const {
     transactions,
     createTransaction,
@@ -408,6 +410,7 @@ export default function EventDetail() {
                   clients={clients}
                   members={members}
                   categories={categories}
+                  financialYears={financialYears}
                   onEdit={(t) => setEditing(t)}
                   onVoid={async (t) => {
                     await voidTransaction(t.id);

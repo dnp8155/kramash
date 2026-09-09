@@ -28,12 +28,12 @@ export default function Dashboard() {
   const { events, loading } = useEvents();
   const { members } = useTeamMembers();
   const { transactions } = useFinancialTransactions();
-  const { financialYears, activeFY, activeFYId } = useFinancialYear();
+  const { financialYears, selectedFY, selectedFYId } = useFinancialYear();
   const t = useBusinessTerminology();
 
   const fyTransactions = useMemo(
-    () => filterTransactionsByFY(transactions, activeFYId, financialYears),
-    [transactions, activeFYId, financialYears]
+    () => filterTransactionsByFY(transactions, selectedFYId, financialYears),
+    [transactions, selectedFYId, financialYears]
   );
   const summary = computeWorkspaceSummary(fyTransactions);
   const totalRevenue = summary.received;
@@ -111,7 +111,7 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
-          label={`Total Revenue${activeFY ? ` · ${activeFY.name}` : ""}`}
+          label={`Total Revenue${selectedFY ? ` · ${selectedFY.name}` : ""}`}
           value={totalRevenue}
           isCurrency
           icon={Wallet}

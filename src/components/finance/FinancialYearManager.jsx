@@ -109,7 +109,7 @@ function CreateFYModal({ open, onClose }) {
   );
 }
 
-function FYCard({ fy, summary, isActive, onActivate, onClose, onReopen, onDelete }) {
+function FYCard({ fy, summary, isActive, isViewing, onActivate, onClose, onReopen, onDelete }) {
   const profitPositive = summary.profit >= 0;
   return (
     <div
@@ -127,7 +127,12 @@ function FYCard({ fy, summary, isActive, onActivate, onClose, onReopen, onDelete
         <div className="flex items-center gap-2">
           {isActive && (
             <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
-              Active
+              Workspace Default
+            </span>
+          )}
+          {isViewing && !isActive && (
+            <span className="rounded-full bg-info/10 px-2 py-0.5 text-[10px] font-medium text-info">
+              Viewing
             </span>
           )}
           <StatusBadge status={fyStatusMap[fy.status] || "Active"} />
@@ -166,7 +171,7 @@ function FYCard({ fy, summary, isActive, onActivate, onClose, onReopen, onDelete
             variant="outline"
             onClick={() => onActivate(fy.id)}
           >
-            <Check className="h-3.5 w-3.5" /> Set Active
+            <Check className="h-3.5 w-3.5" /> Set as Default
           </Button>
         )}
         {fy.status === "open" ? (
@@ -206,7 +211,8 @@ export default function FinancialYearManager({ transactions }) {
   const {
     financialYears,
     activeFYId,
-    selectActiveFY,
+    selectedFYId,
+    setWorkspaceActiveFY,
     closeFY,
     reopenFY,
     deleteFY,
@@ -226,7 +232,7 @@ export default function FinancialYearManager({ transactions }) {
 
   const handleActivate = async (fyId) => {
     try {
-      await selectActiveFY(fyId);
+      await setWorkspaceActiveFY(fyId);
       toast({ title: "Financial Year activated" });
     } catch (e) {
       toast({ title: "Failed to activate", description: e.message, variant: "destructive" });
@@ -320,6 +326,7 @@ export default function FinancialYearManager({ transactions }) {
               fy={fy}
               summary={summary}
               isActive={fy.id === activeFYId}
+              isViewing={fy.id === selectedFYId}
               onActivate={handleActivate}
               onClose={handleClose}
               onReopen={handleReopen}
