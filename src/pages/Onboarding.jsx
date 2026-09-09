@@ -187,7 +187,7 @@ export default function Onboarding() {
     }
   };
 
-  const enterApp = () => navigate("/", { replace: true });
+  const enterApp = () => navigate("/dashboard", { replace: true });
 
   if (step === "success") {
     return (

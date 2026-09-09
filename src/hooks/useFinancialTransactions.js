@@ -54,6 +54,11 @@ export function useFinancialTransactions({ eventId, teamMemberId } = {}) {
           "No Financial Year is available for this transaction date. Please create the applicable Financial Year first."
         );
       }
+      if (fy.status === "closed") {
+        throw new Error(
+          `Financial Year ${fy.name} is closed. Reopen it to add new transactions.`
+        );
+      }
       const t = await base44.entities.FinancialTransaction.create({
         ...data,
         workspace_id: workspaceId,
@@ -75,6 +80,11 @@ export function useFinancialTransactions({ eventId, teamMemberId } = {}) {
         if (!fy) {
           throw new Error(
             "No Financial Year is available for this transaction date. Please create the applicable Financial Year first."
+          );
+        }
+        if (fy.status === "closed") {
+          throw new Error(
+            `Financial Year ${fy.name} is closed. Reopen it to modify transactions.`
           );
         }
         updateData.financial_year_id = fy.id;

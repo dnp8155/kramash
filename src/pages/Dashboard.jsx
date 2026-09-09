@@ -4,7 +4,7 @@ import {
   Users,
   Wallet,
   TrendingUp,
-  ArrowUpRight,
+  Receipt,
   Clock,
 } from "lucide-react";
 import PageHeader from "@/components/common/PageHeader";
@@ -69,6 +69,27 @@ export default function Dashboard() {
     )
     .sort((a, b) => (a.start_date || "").localeCompare(b.start_date || ""))
     .slice(0, 4);
+
+  // Recent activity from real transactions (most recent first — hook already
+  // sorts by -transaction_date).
+  const recentActivity = useMemo(() => {
+    return transactions
+      .filter((t) => t.status === "ACTIVE")
+      .slice(0, 5)
+      .map((t) => {
+        const ev = events.find((e) => e.id === t.event_id);
+        const isReceipt = t.transaction_type === "CLIENT_RECEIPT";
+        const isTeam = t.transaction_type === "TEAM_PAYMENT";
+        const Icon = isReceipt ? TrendingUp : isTeam ? Users : Receipt;
+        const tone = isReceipt ? "text-success" : "text-destructive";
+        const text = isReceipt
+          ? `Payment received · ${ev?.title || "General"}`
+          : isTeam
+          ? `Team payment · ${ev?.title || "General"}`
+          : `Expense · ${ev?.title || "General"}`;
+        return { Icon, tone, text, amount: t.amount, date: t.transaction_date };
+      });
+  }, [transactions, events]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -175,25 +196,28 @@ export default function Dashboard() {
             <CardTitle>Recent Activity</CardTitle>
           </CardHeader>
           <CardBody className="space-y-4">
-            {[
-              { icon: TrendingUp, text: "Payment received from Mehta Enterprises", sub: "2 hours ago", tone: "text-success" },
-              { icon: CalendarDays, text: "Sharma Wedding marked as Confirmed", sub: "Yesterday", tone: "text-primary" },
-              { icon: Users, text: "Rohan Das invited to the team", sub: "2 days ago", tone: "text-info" },
-              { icon: ArrowUpRight, text: "Quotation sent to IIT Bombay", sub: "3 days ago", tone: "text-warning" },
-            ].map((act, i) => {
-              const Icon = act.icon;
-              return (
-                <div key={i} className="flex gap-3">
-                  <div className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted ${act.tone}`}>
-                    <Icon className="h-4 w-4" />
+            {recentActivity.length === 0 ? (
+              <div className="py-6 text-center text-sm text-muted-foreground">
+                No recent transactions yet.
+              </div>
+            ) : (
+              recentActivity.map((act, i) => {
+                const Icon = act.Icon;
+                return (
+                  <div key={i} className="flex gap-3">
+                    <div className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted ${act.tone}`}>
+                      <Icon className="h-4 w-4" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm text-foreground">{act.text}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {act.date} · {formatCurrency(act.amount)}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm text-foreground">{act.text}</p>
-                    <p className="text-xs text-muted-foreground">{act.sub}</p>
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </CardBody>
         </Card>
       </div>
