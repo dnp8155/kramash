@@ -3,6 +3,7 @@ import { Outlet, useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import TopHeader from "./TopHeader";
 import MobileNavigation from "./MobileNavigation";
+import OfflineBanner from "@/components/common/OfflineBanner";
 import { navItems } from "@/constants/navigation";
 import { usePlan } from "@/lib/PlanContext";
 
@@ -26,6 +27,7 @@ export default function AppLayout() {
 
       <div className="lg:pl-64">
         <TopHeader onMenuClick={() => setSidebarOpen(true)} title={headerTitle} />
+        <OfflineBanner />
         {isSuspended && (
           <div className="border-b border-destructive/20 bg-destructive/10 px-4 py-2.5 text-center">
             <p className="text-sm font-medium text-destructive">

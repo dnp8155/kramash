@@ -29,6 +29,7 @@ import RecordClientPaymentModal from "@/components/finance/RecordClientPaymentMo
 import RecordTeamPaymentModal from "@/components/finance/RecordTeamPaymentModal";
 import RecordExpenseModal from "@/components/finance/RecordExpenseModal";
 import EditTransactionModal from "@/components/finance/EditTransactionModal";
+import EventReminders from "@/components/events/EventReminders";
 import { useEvents } from "@/hooks/useEvents";
 import { useClients } from "@/hooks/useClients";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
@@ -379,6 +380,7 @@ export default function EventDetail() {
         </Card>
 
         <div className="lg:col-span-3 flex flex-col gap-6">
+          <EventReminders event={event} />
           <EventFinancialSummary
             fin={fin}
             onEditContractValue={handleEditContractValue}
@@ -437,9 +439,11 @@ export default function EventDetail() {
           <Button variant="outline" onClick={() => setExpenseOpen(true)}>
             <FileText className="h-4 w-4" /> Add Expense
           </Button>
-          <Button variant="outline" disabled title="Available in Phase 6">
-            <FileText className="h-4 w-4" /> Create Quotation
-          </Button>
+          <Link to="/quotation/new">
+            <Button variant="outline">
+              <FileText className="h-4 w-4" /> Create Quotation
+            </Button>
+          </Link>
         </CardBody>
       </Card>
 

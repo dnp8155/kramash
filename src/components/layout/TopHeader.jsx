@@ -1,4 +1,5 @@
-import { Menu, Bell, Search, Sun, Moon, LogOut, User as UserIcon, Settings } from "lucide-react";
+import { Menu, Search, Sun, Moon, LogOut, User as UserIcon, Settings } from "lucide-react";
+import NotificationBell from "@/components/common/NotificationBell";
 import { useTheme } from "@/lib/ThemeProvider";
 import { useAuth } from "@/lib/AuthContext";
 import { useWorkspace } from "@/lib/WorkspaceContext";
@@ -58,13 +59,7 @@ export default function TopHeader({ onMenuClick, title }) {
         >
           {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
         </button>
-        <button
-          className="relative rounded-md p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          aria-label="Notifications"
-        >
-          <Bell className="h-5 w-5" />
-          <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-destructive" />
-        </button>
+        <NotificationBell />
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

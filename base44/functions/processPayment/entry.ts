@@ -59,7 +59,12 @@ export default async function(req: Request): Promise<Response> {
     try { body = await req.json(); } catch { body = {}; }
     const action = body.action;
 
-    // ─── Check gateway configuration ───
+    // ─── check: Return gateway configuration status (no auth required beyond login) ───
+    if (action === 'check') {
+      return Response.json({ configured: stripeEnabled() });
+    }
+
+    // ─── Check gateway configuration for payment actions ───
     if (!stripeEnabled()) {
       return Response.json(
         {

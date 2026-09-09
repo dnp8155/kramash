@@ -35,6 +35,11 @@ export default async function(req: Request): Promise<Response> {
     const token = secrets.get('TWILIO_AUTH_TOKEN');
     const verifySid = secrets.get('TWILIO_VERIFY_SERVICE_SID');
 
+    // check: Return provider configuration status (no phone required).
+    if (action === 'check') {
+      return Response.json({ configured: !!(sid && token && verifySid) });
+    }
+
     if (!sid || !token || !verifySid) {
       return Response.json(
         {

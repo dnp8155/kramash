@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { Check, Sparkles, Crown, Loader2, TrendingUp } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
+import { Check, Sparkles, Crown, Loader2, TrendingUp, CreditCard } from "lucide-react";
 import PageHeader from "@/components/common/PageHeader";
 import Card, { CardBody, CardHeader, CardTitle } from "@/components/common/Card";
 import Button from "@/components/common/Button";
@@ -38,6 +39,83 @@ export default function Plan() {
   const { plans, pricings, loading: plansLoading } = usePlans();
   const [upgradeModal, setUpgradeModal] = useState(null); // pricing object or null
   const [requesting, setRequesting] = useState(false);
+  const [paying, setPaying] = useState(null); // pricing_id being processed
+  const [verifying, setVerifying] = useState(false);
+  const [gatewayAvailable, setGatewayAvailable] = useState(null); // null=unknown, true/false
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Check gateway availability on mount.
+  useEffect(() => {
+    (async () => {
+      try {
+        const result = await base44.functions.invoke("processPayment", { action: "check" });
+        setGatewayAvailable(!!result?.configured);
+      } catch (e) {
+        setGatewayAvailable(false);
+      }
+    })();
+  }, []);
+
+  // Handle payment return URL params (?payment=success&session_id=xxx&payment_id=xxx).
+  useEffect(() => {
+    const paymentStatus = searchParams.get("payment");
+    if (!paymentStatus) return;
+    const sessionId = searchParams.get("session_id");
+    const paymentId = searchParams.get("payment_id");
+
+    if (paymentStatus === "success" && (sessionId || paymentId)) {
+      setVerifying(true);
+      (async () => {
+        try {
+          const result = await base44.functions.invoke("processPayment", {
+            action: "verify",
+            session_id: sessionId,
+            payment_id: paymentId,
+          });
+          if (result.status === "success") {
+            toast({ title: "Payment successful!", description: "Your Kramashah Pro plan is now active." });
+            refresh();
+          } else if (result.status === "already_active") {
+            toast({ title: "Already active", description: "Your Pro plan was already activated." });
+          } else if (result.status === "not_paid") {
+            toast({ title: "Payment not completed", description: "No subscription was activated.", variant: "destructive" });
+          } else if (result.status === "duplicate") {
+            toast({ title: "Already processed", description: "This payment was already verified." });
+          }
+        } catch (e) {
+          toast({ title: "Payment verification failed", description: e?.message, variant: "destructive" });
+        } finally {
+          setVerifying(false);
+          setSearchParams({}, { replace: true });
+        }
+      })();
+    } else if (paymentStatus === "cancelled") {
+      toast({ title: "Payment cancelled", description: "Your plan remains unchanged." });
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, refresh, setSearchParams]);
+
+  const handlePayOnline = async (pricing) => {
+    if (!pricing?.id) return;
+    setPaying(pricing.id);
+    try {
+      const result = await base44.functions.invoke("processPayment", {
+        action: "create_checkout",
+        pricing_id: pricing.id,
+        workspace_id: workspaceId,
+      });
+      if (result.checkout_url) {
+        // Redirect to Stripe Checkout.
+        window.location.href = result.checkout_url;
+      }
+    } catch (e) {
+      // 503 = gateway not configured.
+      toast({ title: "Online payment unavailable", description: "Please use the Request Upgrade option instead.", variant: "destructive" });
+      setGatewayAvailable(false);
+    } finally {
+      setPaying(null);
+    }
+  };
 
   const proPlan = plans.find((p) => p.code === "PRO");
   const freePlan = plans.find((p) => p.code === "FREE");
@@ -64,6 +142,7 @@ export default function Plan() {
   };
 
   if (loading || plansLoading) return <LoadingState label="Loading your plan…" />;
+  if (verifying) return <LoadingState label="Verifying payment…" />;
 
   const usageItems = [
     { key: "events", label: "Events", limitKey: "max_events", current: usage.events },
@@ -161,7 +240,21 @@ export default function Plan() {
                       <span className="text-sm text-muted-foreground">/ {cycleLabel(p.billing_cycle)}</span>
                     </div>
                   </div>
-                  <Button className="w-full mt-auto" onClick={() => setUpgradeModal(p)}>
+                  {gatewayAvailable && (
+                    <Button
+                      className="w-full"
+                      onClick={() => handlePayOnline(p)}
+                      disabled={paying === p.id}
+                    >
+                      {paying === p.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
+                      {paying === p.id ? "Preparing payment…" : "Pay Online"}
+                    </Button>
+                  )}
+                  <Button
+                    variant={gatewayAvailable ? "outline" : "primary"}
+                    className="w-full mt-auto"
+                    onClick={() => setUpgradeModal(p)}
+                  >
                     Request Upgrade
                   </Button>
                 </CardBody>
@@ -169,7 +262,11 @@ export default function Plan() {
             ))}
           </div>
           <p className="mt-3 text-xs text-muted-foreground">
-            Online payment is coming soon. For now, your upgrade request will be reviewed by the Kramashah team.
+            {gatewayAvailable
+              ? "Pay online to instantly activate Pro, or request an upgrade from the Kramashah team."
+              : gatewayAvailable === false
+              ? "Online payment is not configured yet. Your upgrade request will be reviewed by the Kramashah team."
+              : "Checking payment availability…"}
           </p>
         </div>
       )}

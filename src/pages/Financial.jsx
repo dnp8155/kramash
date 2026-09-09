@@ -33,6 +33,7 @@ import {
 import { transactionTypeLabels, paymentMethods } from "@/constants/finance";
 import { formatCurrency } from "@/utils/format";
 import { toast } from "@/components/ui/use-toast";
+import { exportFinancialCSV } from "@/utils/exports";
 import TransactionActivityTable from "@/components/finance/TransactionActivityTable";
 import RecordClientPaymentModal from "@/components/finance/RecordClientPaymentModal";
 import RecordTeamPaymentModal from "@/components/finance/RecordTeamPaymentModal";
@@ -140,7 +141,7 @@ export default function Financial() {
         title="Financial"
         description="Track payments, dues, and revenue across events."
         actions={
-          <Button variant="outline" onClick={() => toast({ title: "Export coming soon" })}>
+          <Button variant="outline" onClick={() => { exportFinancialCSV(filtered, events, clients, members, categories, fy); toast({ title: "Financial activity exported" }); }}>
             <Download className="h-4 w-4" /> Export
           </Button>
         }

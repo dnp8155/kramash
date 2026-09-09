@@ -399,10 +399,10 @@ export default function Preferences() {
             <CardTitle>Notifications</CardTitle>
           </CardHeader>
           <CardBody className="divide-y divide-border">
-            <Toggle checked={notif.email} onChange={(v) => setNotif({ ...notif, email: v })} label="Email notifications" description="Receive updates via email" />
-            <Toggle checked={notif.push} onChange={(v) => setNotif({ ...notif, push: v })} label="Push notifications" description="On mobile devices" />
-            <Toggle checked={notif.paymentAlerts} onChange={(v) => setNotif({ ...notif, paymentAlerts: v })} label="Payment alerts" description="When payments are received" />
-            <Toggle checked={notif.eventReminders} onChange={(v) => setNotif({ ...notif, eventReminders: v })} label="Event reminders" description="Before upcoming events" />
+            <Toggle checked={notif.paymentAlerts} onChange={(v) => setNotif({ ...notif, paymentAlerts: v })} label="Payment alerts" description="In-app notification when payments are recorded" />
+            <Toggle checked={notif.eventReminders} onChange={(v) => setNotif({ ...notif, eventReminders: v })} label="Event reminders" description="In-app reminders before upcoming events" />
+            <Toggle checked={false} onChange={() => {}} label="Push notifications" description="Not available in Beta — requires push provider configuration" />
+            <Toggle checked={false} onChange={() => {}} label="Email notifications" description="Not available in Beta — requires email service configuration" />
           </CardBody>
         </Card>
 

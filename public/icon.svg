@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#4f46e5"/>
+  <g transform="translate(256, 256)">
+    <!-- Aperture/camera motif -->
+    <circle r="120" fill="none" stroke="white" stroke-width="20"/>
+    <circle r="50" fill="white"/>
+    <!-- Aperture blades -->
+    <line x1="0" y1="-120" x2="0" y2="-50" stroke="#4f46e5" stroke-width="16"/>
+    <line x1="104" y1="-60" x2="43" y2="-25" stroke="#4f46e5" stroke-width="16"/>
+    <line x1="104" y1="60" x2="43" y2="25" stroke="#4f46e5" stroke-width="16"/>
+    <line x1="0" y1="120" x2="0" y2="50" stroke="#4f46e5" stroke-width="16"/>
+    <line x1="-104" y1="60" x2="-43" y2="25" stroke="#4f46e5" stroke-width="16"/>
+    <line x1="-104" y1="-60" x2="-43" y2="-25" stroke="#4f46e5" stroke-width="16"/>
+  </g>
+</svg>

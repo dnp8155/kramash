@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Plus, CalendarDays } from "lucide-react";
+import { Plus, CalendarDays, Download } from "lucide-react";
 import PageHeader from "@/components/common/PageHeader";
 import Card, { CardBody } from "@/components/common/Card";
 import SearchInput from "@/components/common/SearchInput";
@@ -17,6 +17,7 @@ import PlanLimitReached from "@/components/common/PlanLimitReached";
 import { eventStatuses, eventTypes, eventPeriods } from "@/constants/events";
 import { isToday, isThisWeek, isUpcoming, isPast } from "@/utils/dates";
 import { toast } from "@/components/ui/use-toast";
+import { exportEventsCSV } from "@/utils/exports";
 
 export default function Events() {
   const { events, loading, error, refetch, createEvent, updateEvent } = useEvents();
@@ -85,9 +86,14 @@ export default function Events() {
         title="Events"
         description="Manage your upcoming and past productions."
         actions={
-          <Button onClick={openNew} disabled={eventsLimitReached}>
-            <Plus className="h-4 w-4" /> New Event
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => { exportEventsCSV(filtered, clients, "all"); toast({ title: "Events exported" }); }}>
+              <Download className="h-4 w-4" /> Export
+            </Button>
+            <Button onClick={openNew} disabled={eventsLimitReached}>
+              <Plus className="h-4 w-4" /> New Event
+            </Button>
+          </div>
         }
       />
 

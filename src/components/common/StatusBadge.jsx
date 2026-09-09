@@ -23,6 +23,19 @@ const statusStyles = {
   Accepted: "bg-success/10 text-success border-success/20",
   Rejected: "bg-destructive/10 text-destructive border-destructive/20",
   Expired: "bg-muted text-muted-foreground border-border",
+  // Subscription / payment statuses (uppercase)
+  ACTIVE: "bg-success/10 text-success border-success/20",
+  EXPIRED: "bg-muted text-muted-foreground border-border",
+  SUSPENDED: "bg-warning/10 text-warning border-warning/20",
+  CANCELLED: "bg-destructive/10 text-destructive border-destructive/20",
+  CREATED: "bg-info/10 text-info border-info/20",
+  SUCCESS: "bg-success/10 text-success border-success/20",
+  FAILED: "bg-destructive/10 text-destructive border-destructive/20",
+  REFUNDED: "bg-muted text-muted-foreground border-border",
+  PENDING: "bg-warning/10 text-warning border-warning/20",
+  SENT: "bg-success/10 text-success border-success/20",
+  DISMISSED: "bg-muted text-muted-foreground border-border",
+  NONE: "bg-muted text-muted-foreground border-border",
   default: "bg-muted text-muted-foreground border-border",
 };
 

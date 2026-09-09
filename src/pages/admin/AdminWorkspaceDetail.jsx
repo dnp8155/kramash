@@ -24,6 +24,7 @@ export default function AdminWorkspaceDetail() {
   const [owner, setOwner] = useState(null);
   const [subscription, setSubscription] = useState(null);
   const [usage, setUsage] = useState(null);
+  const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showAssign, setShowAssign] = useState(false);
@@ -50,6 +51,13 @@ export default function AdminWorkspaceDetail() {
         10
       );
       setSubscription(getCurrentSubscription(subs, id));
+      // Fetch payment history
+      const pays = await base44.entities.SubscriptionPayment.filter(
+        { workspace_id: id },
+        "-created_date",
+        20
+      );
+      setPayments(pays || []);
       // Fetch usage
       const u = await fetchWorkspaceUsage(id);
       setUsage(u);
@@ -254,6 +262,46 @@ export default function AdminWorkspaceDetail() {
           )}
         </CardBody>
       </Card>
+
+      {/* Payment History */}
+      {payments.length > 0 && (
+        <Card>
+          <CardHeader><CardTitle>Payment History</CardTitle></CardHeader>
+          <CardBody className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
+                    <th className="px-5 py-3 font-semibold">Date</th>
+                    <th className="px-5 py-3 font-semibold">Billing Cycle</th>
+                    <th className="px-5 py-3 font-semibold">Amount</th>
+                    <th className="px-5 py-3 font-semibold">Gateway</th>
+                    <th className="px-5 py-3 font-semibold">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {payments.map((p) => (
+                    <tr key={p.id}>
+                      <td className="px-5 py-3 text-foreground">{formatDate(p.created_date)}</td>
+                      <td className="px-5 py-3 text-muted-foreground">
+                        {p.billing_cycle_snapshot === "MONTHLY" ? "Monthly"
+                          : p.billing_cycle_snapshot === "SIX_MONTHS" ? "6 Months"
+                          : p.billing_cycle_snapshot === "ANNUAL" ? "Annual"
+                          : p.billing_cycle_snapshot || "—"}
+                      </td>
+                      <td className="px-5 py-3 text-foreground">{formatCurrency(p.amount)}</td>
+                      <td className="px-5 py-3 text-muted-foreground">{p.gateway || "—"}</td>
+                      <td className="px-5 py-3">
+                        <StatusBadge status={p.status} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardBody>
+        </Card>
+      )}
 
       {/* Assign/Renew Modal */}
       <AssignPlanModal

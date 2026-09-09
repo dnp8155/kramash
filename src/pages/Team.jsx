@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Plus, Users } from "lucide-react";
+import { Plus, Users, Download } from "lucide-react";
 import PageHeader from "@/components/common/PageHeader";
 import Card, { CardBody } from "@/components/common/Card";
 import SearchInput from "@/components/common/SearchInput";
@@ -18,6 +18,7 @@ import { useEvents } from "@/hooks/useEvents";
 import { usePlan } from "@/lib/PlanContext";
 import PlanLimitReached from "@/components/common/PlanLimitReached";
 import { toast } from "@/components/ui/use-toast";
+import { exportTeamCSV } from "@/utils/exports";
 
 export default function Team() {
   const { members, loading, error, refetch, createMember } = useTeamMembers();
@@ -72,9 +73,14 @@ export default function Team() {
         title="Team"
         description="Manage your crew, photographers, and editors."
         actions={
-          <Button onClick={() => setModalOpen(true)} disabled={teamLimitReached}>
-            <Plus className="h-4 w-4" /> Add Member
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => { exportTeamCSV(filtered, roles); toast({ title: "Team exported" }); }}>
+              <Download className="h-4 w-4" /> Export
+            </Button>
+            <Button onClick={() => setModalOpen(true)} disabled={teamLimitReached}>
+              <Plus className="h-4 w-4" /> Add Member
+            </Button>
+          </div>
         }
       />
 

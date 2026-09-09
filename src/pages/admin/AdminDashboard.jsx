@@ -8,6 +8,7 @@ import ErrorState from "@/components/common/ErrorState";
 import { useAdminData } from "@/hooks/useAdminData";
 import { getCurrentSubscription, getEffectivePlanCode, isSubscriptionActive } from "@/utils/plan";
 import { formatDate } from "@/utils/format";
+import IntegrationStatus from "@/components/admin/IntegrationStatus";
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -72,6 +73,8 @@ export default function AdminDashboard() {
           );
         })}
       </div>
+
+      <IntegrationStatus />
 
       <Card>
         <CardHeader className="flex items-center justify-between">

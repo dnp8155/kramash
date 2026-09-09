@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Plus, Users } from "lucide-react";
+import { Plus, Users, Download } from "lucide-react";
 import PageHeader from "@/components/common/PageHeader";
 import Card, { CardBody } from "@/components/common/Card";
 import SearchInput from "@/components/common/SearchInput";
@@ -10,10 +10,13 @@ import ErrorState from "@/components/common/ErrorState";
 import ClientCard from "@/components/clients/ClientCard";
 import ClientForm from "@/components/clients/ClientForm";
 import { useClients } from "@/hooks/useClients";
+import { useEvents } from "@/hooks/useEvents";
+import { exportClientsCSV } from "@/utils/exports";
 import { toast } from "@/components/ui/use-toast";
 
 export default function Clients() {
   const { clients, loading, error, refetch, createClient } = useClients();
+  const { events } = useEvents();
   const [search, setSearch] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -38,9 +41,14 @@ export default function Clients() {
         title="Clients"
         description="Manage your clients and their event history."
         actions={
-          <Button onClick={() => setModalOpen(true)}>
-            <Plus className="h-4 w-4" /> Add Client
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => { exportClientsCSV(clients, events); toast({ title: "Clients exported" }); }}>
+              <Download className="h-4 w-4" /> Export
+            </Button>
+            <Button onClick={() => setModalOpen(true)}>
+              <Plus className="h-4 w-4" /> Add Client
+            </Button>
+          </div>
         }
       />
 
