@@ -7,7 +7,7 @@ import Select from "@/components/common/Select";
 import { rateTypes } from "@/constants/team";
 import { getMemberConflicts, todayStr } from "@/utils/team";
 import { dateRange } from "@/utils/dates";
-import { formatDate } from "@/utils/format";
+import { formatDate, formatCurrency } from "@/utils/format";
 import { paymentMethods } from "@/constants/finance";
 import { toast } from "@/components/ui/use-toast";
 
@@ -23,14 +23,19 @@ export default function AssignTeamModal({
   events,
   existingMemberIds = [],
   onAssign,
+  onUpdate,
   onRecordPayment,
+  editingAssignment = null,
+  paymentSummary = null,
 }) {
+  const isEditing = !!editingAssignment;
   const [memberId, setMemberId] = useState("");
   const [roleId, setRoleId] = useState("");
   const [categoryType, setCategoryType] = useState("");
   const [workingDates, setWorkingDates] = useState([]);
   const [agreedRate, setAgreedRate] = useState("");
   const [rateType, setRateType] = useState("Per Event");
+  const [rateTouched, setRateTouched] = useState(false);
   const [overrideConflict, setOverrideConflict] = useState(false);
   const [recordPayment, setRecordPayment] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState("");
@@ -50,28 +55,45 @@ export default function AssignTeamModal({
   );
 
   useEffect(() => {
-    if (open) {
+    if (!open) return;
+    if (isEditing && editingAssignment) {
+      // Prefill from existing assignment — do NOT reset.
+      setMemberId(editingAssignment.team_member_id || "");
+      setRoleId(editingAssignment.role_id || "");
+      setCategoryType(editingAssignment.category_type || "");
+      setWorkingDates(editingAssignment.working_dates || (event?.start_date ? [event.start_date] : []));
+      setAgreedRate(editingAssignment.agreed_rate != null ? String(editingAssignment.agreed_rate) : "");
+      setRateType(editingAssignment.rate_type || "Per Event");
+      setRateTouched(false);
+      setOverrideConflict(false);
+      setRecordPayment(false);
+      setPaymentAmount("");
+      setPaymentDate(todayStr());
+      setPaymentMethod("Cash");
+    } else {
       setMemberId("");
       setRoleId("");
       setCategoryType("");
-      // Default to event start date
       setWorkingDates(event?.start_date ? [event.start_date] : []);
       setAgreedRate("");
       setRateType("Per Event");
+      setRateTouched(false);
       setOverrideConflict(false);
       setRecordPayment(false);
       setPaymentAmount("");
       setPaymentDate(todayStr());
       setPaymentMethod("Cash");
     }
-  }, [open, event?.id, event?.start_date]);
+  }, [open, isEditing, editingAssignment, event?.id, event?.start_date]);
 
   const selectableMembers = useMemo(
     () =>
       members.filter(
-        (m) => m.status === "Active" && !existingMemberIds.includes(m.id)
+        (m) =>
+          m.status === "Active" &&
+          (!existingMemberIds.includes(m.id) || (isEditing && editingAssignment?.team_member_id === m.id))
       ),
-    [members, existingMemberIds]
+    [members, existingMemberIds, isEditing, editingAssignment]
   );
 
   const conflicts = useMemo(() => {
@@ -87,6 +109,12 @@ export default function AssignTeamModal({
     return dailyRate || "";
   };
 
+  const getDailyRate = (mid, rid) => {
+    const member = members.find((m) => m.id === mid);
+    const role = roles.find((r) => r.id === rid);
+    return role?.default_rate ?? member?.default_rate ?? "";
+  };
+
   const handleMemberChange = (id) => {
     setMemberId(id);
     const member = members.find((m) => m.id === id);
@@ -95,7 +123,9 @@ export default function AssignTeamModal({
     const dailyRate = role?.default_rate ?? member?.default_rate ?? "";
     setRoleId(member?.role_id || "");
     setRateType(newRateType);
-    setAgreedRate(calculateRate(newRateType, workingDates, dailyRate));
+    if (!rateTouched) {
+      setAgreedRate(calculateRate(newRateType, workingDates, dailyRate));
+    }
     setOverrideConflict(false);
   };
 
@@ -104,21 +134,25 @@ export default function AssignTeamModal({
       const next = prev.includes(date)
         ? prev.filter((d) => d !== date)
         : [...prev, date].sort();
-      // Recalculate rate when working dates change
-      const member = members.find((m) => m.id === memberId);
-      const role = roles.find((r) => r.id === roleId);
-      const dailyRate = role?.default_rate ?? member?.default_rate ?? "";
-      setAgreedRate(calculateRate(rateType, next, dailyRate));
+      // Recalculate rate when working dates change — but only if the user
+      // hasn't manually edited the rate field.
+      if (!rateTouched) {
+        setAgreedRate(calculateRate(rateType, next, getDailyRate(memberId, roleId)));
+      }
       return next;
     });
   };
 
   const handleRateTypeChange = (type) => {
     setRateType(type);
-    const member = members.find((m) => m.id === memberId);
-    const role = roles.find((r) => r.id === roleId);
-    const dailyRate = role?.default_rate ?? member?.default_rate ?? "";
-    setAgreedRate(calculateRate(type, workingDates, dailyRate));
+    if (!rateTouched) {
+      setAgreedRate(calculateRate(type, workingDates, getDailyRate(memberId, roleId)));
+    }
+  };
+
+  const handleRateChange = (e) => {
+    setAgreedRate(e.target.value);
+    setRateTouched(true);
   };
 
   const handleSave = async () => {
@@ -134,7 +168,7 @@ export default function AssignTeamModal({
       toast({ title: "Select at least one working date", variant: "destructive" });
       return;
     }
-    if (conflicts.length > 0 && !overrideConflict) {
+    if (!isEditing && conflicts.length > 0 && !overrideConflict) {
       toast({
         title: "Booking conflict",
         description: "Acknowledge the conflict to assign anyway.",
@@ -144,7 +178,7 @@ export default function AssignTeamModal({
     }
     const role = roles.find((r) => r.id === roleId);
 
-    // Validate payment fields if Record Payment is ON
+    // Validate payment fields if Record Payment is ON (add mode only)
     const amt = Number(paymentAmount);
     if (recordPayment && (!paymentAmount || Number.isNaN(amt) || amt <= 0)) {
       toast({ title: "Enter a valid payment amount", variant: "destructive" });
@@ -157,7 +191,7 @@ export default function AssignTeamModal({
 
     setSaving(true);
     try {
-      const assignment = await onAssign({
+      const payload = {
         team_member_id: memberId,
         role_id: roleId,
         role_name_snapshot: role?.name || "",
@@ -165,28 +199,46 @@ export default function AssignTeamModal({
         rate_type: rateType,
         working_dates: workingDates,
         category_type: categoryType || null,
-      });
+      };
 
-      // Create payment transaction if Record Payment is ON.
-      // financial_year_id is auto-assigned by createTransaction from the
-      // payment date — NOT from the UI-selected FY.
-      if (recordPayment && onRecordPayment && assignment) {
-        await onRecordPayment({
-          transaction_type: "TEAM_PAYMENT",
-          event_id: event.id,
-          team_member_id: memberId,
-          team_assignment_id: assignment.id,
-          amount: amt,
-          payment_method: paymentMethod,
-          transaction_date: paymentDate,
-        });
-        toast({ title: "Team member assigned and payment recorded" });
+      if (isEditing) {
+        // Update the existing assignment — payments are NOT affected.
+        // They remain linked via team_assignment_id.
+        await onUpdate(editingAssignment.id, payload);
+        toast({ title: "Team assignment updated" });
       } else {
-        toast({ title: "Team member assigned" });
+        const assignment = await onAssign({
+          ...payload,
+          event_id: event.id,
+        });
+
+        // Create payment transaction if Record Payment is ON (add mode only).
+        if (recordPayment && onRecordPayment && assignment) {
+          try {
+            await onRecordPayment({
+              transaction_type: "TEAM_PAYMENT",
+              event_id: event.id,
+              team_member_id: memberId,
+              team_assignment_id: assignment.id,
+              amount: amt,
+              payment_method: paymentMethod,
+              transaction_date: paymentDate,
+            });
+            toast({ title: "Team member assigned and payment recorded" });
+          } catch (paymentErr) {
+            toast({
+              title: "Team member assigned — payment failed",
+              description: paymentErr?.message,
+              variant: "destructive",
+            });
+          }
+        } else {
+          toast({ title: "Team member assigned" });
+        }
       }
       onClose();
     } catch (e) {
-      toast({ title: "Assignment failed", description: e?.message, variant: "destructive" });
+      toast({ title: isEditing ? "Update failed" : "Assignment failed", description: e?.message, variant: "destructive" });
     } finally {
       setSaving(false);
     }
@@ -196,7 +248,7 @@ export default function AssignTeamModal({
     <Modal
       open={open}
       onClose={onClose}
-      title="Assign Team Member"
+      title={isEditing ? "Edit Team Assignment" : "Assign Team Member"}
       size="md"
       footer={
         <>
@@ -205,16 +257,25 @@ export default function AssignTeamModal({
           </Button>
           <Button onClick={handleSave} disabled={saving}>
             {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-            Assign
+            {isEditing ? "Save Changes" : "Assign"}
           </Button>
         </>
       }
     >
       <div className="grid grid-cols-1 gap-4">
+        {isEditing && (
+          <p className="rounded-lg border border-info/30 bg-info/5 px-3 py-2 text-xs text-muted-foreground">
+            This edits the event-specific assignment. The team member's master
+            profile and default rate are not changed. Existing payments remain
+            intact.
+          </p>
+        )}
+
         <Select
           label="Team Member"
           value={memberId}
           onChange={(e) => handleMemberChange(e.target.value)}
+          disabled={isEditing}
         >
           <option value="">Select a member…</option>
           {selectableMembers.map((m) => (
@@ -224,7 +285,12 @@ export default function AssignTeamModal({
             </option>
           ))}
         </Select>
-        {selectableMembers.length === 0 && (
+        {isEditing && (
+          <p className="-mt-2 text-xs text-muted-foreground">
+            Member cannot be changed in edit mode. Remove and re-assign to swap.
+          </p>
+        )}
+        {!isEditing && selectableMembers.length === 0 && (
           <p className="-mt-2 text-xs text-muted-foreground">
             All active team members are already assigned to this event.
           </p>
@@ -297,7 +363,7 @@ export default function AssignTeamModal({
             type="number"
             min="0"
             value={agreedRate}
-            onChange={(e) => setAgreedRate(e.target.value)}
+            onChange={handleRateChange}
             placeholder="0"
           />
           <Select
@@ -313,8 +379,33 @@ export default function AssignTeamModal({
           </Select>
         </div>
 
-        {/* Record Payment toggle */}
-        {onRecordPayment && (
+        {/* Payment summary in edit mode */}
+        {isEditing && paymentSummary && (
+          <div className="rounded-lg border border-border bg-muted/40 p-3">
+            <p className="text-xs font-semibold text-foreground">Payment Summary</p>
+            <div className="mt-2 grid grid-cols-3 gap-2 text-xs">
+              <div>
+                <p className="text-muted-foreground">Total Paid</p>
+                <p className="font-semibold text-foreground">{formatCurrency(paymentSummary.paid || 0)}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Remaining</p>
+                <p className="font-semibold text-foreground">{formatCurrency(paymentSummary.remaining || 0)}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Status</p>
+                <p className="font-semibold text-foreground">{paymentSummary.status || "—"}</p>
+              </div>
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Payments are not affected by editing this assignment. Use the Pay
+              button on the event page to record new payments.
+            </p>
+          </div>
+        )}
+
+        {/* Record Payment toggle (add mode only) */}
+        {!isEditing && onRecordPayment && (
           <div className="rounded-lg border border-border p-3">
             <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-foreground">
               <input

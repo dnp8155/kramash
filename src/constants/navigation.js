@@ -9,6 +9,7 @@ import {
   Settings,
   RefreshCw,
   CreditCard,
+  LifeBuoy,
 } from "lucide-react";
 
 // Base navigation items. The workItems label is resolved dynamically
@@ -25,6 +26,7 @@ export const navItems = [
   { label: "Preferences", path: "/preferences", icon: Settings, labelKey: null },
   { label: "App & Updates", path: "/app-updates", icon: RefreshCw, labelKey: null },
   { label: "Your Plan", path: "/plan", icon: CreditCard, labelKey: null },
+  { label: "Help & Support", path: "/help-support", icon: LifeBuoy, labelKey: null },
 ];
 
 export const workspaceName = "Kramashah";

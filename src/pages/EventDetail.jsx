@@ -57,7 +57,7 @@ export default function EventDetail() {
   const { clients, createClient } = useClients();
   const { members } = useTeamMembers();
   const { roles } = useTeamRoles();
-  const { assignments, createAssignment, removeAssignment } =
+  const { assignments, createAssignment, updateAssignment, removeAssignment } =
     useEventTeamAssignments();
   const { categories } = useExpenseCategories();
   const { services } = useServices();
@@ -82,6 +82,7 @@ export default function EventDetail() {
   const [notFound, setNotFound] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [assignOpen, setAssignOpen] = useState(false);
+  const [editingAssignment, setEditingAssignment] = useState(null);
   const [removingId, setRemovingId] = useState(null);
   const [clientPayOpen, setClientPayOpen] = useState(false);
   const [teamPayOpen, setTeamPayOpen] = useState(false);
@@ -207,6 +208,25 @@ export default function EventDetail() {
 
   const handleAssign = async (data) => {
     return await createAssignment({ ...data, event_id: event.id });
+  };
+
+  const handleUpdateAssignment = async (id, data) => {
+    return await updateAssignment(id, data);
+  };
+
+  const handleOpenEditTeam = (assignment) => {
+    setEditingAssignment(assignment);
+    setAssignOpen(true);
+  };
+
+  const handleCloseTeamModal = () => {
+    setAssignOpen(false);
+    setEditingAssignment(null);
+  };
+
+  const handleOpenAssignTeam = () => {
+    setEditingAssignment(null);
+    setAssignOpen(true);
   };
 
   const handleCreateServiceAssignment = async (data) => {
@@ -380,7 +400,7 @@ export default function EventDetail() {
               <span className="text-sm text-muted-foreground">
                 Team cost: {formatCurrency(fin.teamAgreed)}
               </span>
-              <Button size="sm" onClick={() => setAssignOpen(true)}>
+              <Button size="sm" onClick={handleOpenAssignTeam}>
                 <UserPlus className="h-4 w-4" /> Assign Team
               </Button>
             </div>
@@ -392,7 +412,7 @@ export default function EventDetail() {
                 description={`Assign team members to this ${t.workItemSingular.toLowerCase()}.`}
                 icon={Users}
                 action={
-                  <Button onClick={() => setAssignOpen(true)}>
+                  <Button onClick={handleOpenAssignTeam}>
                     <UserPlus className="h-4 w-4" /> Assign Team
                   </Button>
                 }
@@ -439,6 +459,14 @@ export default function EventDetail() {
                         </p>
                       </div>
                       <StatusBadge status={ap?.status || "Unpaid"} />
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleOpenEditTeam(a)}
+                        title="Edit assignment"
+                      >
+                        <Pencil className="h-3.5 w-3.5" /> Edit
+                      </Button>
                       <Button
                         size="sm"
                         variant="outline"
@@ -593,7 +621,7 @@ export default function EventDetail() {
 
       <AssignTeamModal
         open={assignOpen}
-        onClose={() => setAssignOpen(false)}
+        onClose={handleCloseTeamModal}
         event={event}
         members={members}
         roles={roles}
@@ -601,7 +629,10 @@ export default function EventDetail() {
         events={events}
         existingMemberIds={existingMemberIds}
         onAssign={handleAssign}
+        onUpdate={handleUpdateAssignment}
         onRecordPayment={handleCreateTxn}
+        editingAssignment={editingAssignment}
+        paymentSummary={editingAssignment ? paidByAssignment[editingAssignment.id] : null}
       />
 
       <AssignServiceModal

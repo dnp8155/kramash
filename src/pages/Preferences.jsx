@@ -15,6 +15,7 @@ import EmptyState from "@/components/common/EmptyState";
 import TeamRoleForm from "@/components/team/TeamRoleForm";
 import ExpenseCategoryManager from "@/components/finance/ExpenseCategoryManager";
 import ServiceManager from "@/components/services/ServiceManager";
+import EventTypeManager from "@/components/settings/EventTypeManager";
 import { formatCurrency } from "@/utils/format";
 import { Image } from "@/components/ui/image";
 import { BUSINESS_CATEGORIES, CATEGORY_LABELS } from "@/lib/BusinessTerminology";
@@ -95,6 +96,8 @@ export default function Preferences() {
         gst_state: currentWorkspace.gst_state || "",
         default_gst_rate: currentWorkspace.default_gst_rate ?? 18,
         default_quotation_terms: currentWorkspace.default_quotation_terms || "",
+        event_types: currentWorkspace.event_types || [],
+        event_statuses: currentWorkspace.event_statuses || [],
       });
     }
   }, [currentWorkspace?.id]);
@@ -158,6 +161,8 @@ export default function Preferences() {
         gst_state: form.gst_enabled ? form.gst_state.trim() : "",
         default_gst_rate: form.gst_enabled ? Number(form.default_gst_rate) : null,
         default_quotation_terms: form.default_quotation_terms || "",
+        event_types: form.event_types || [],
+        event_statuses: form.event_statuses || [],
       });
       await refresh();
       toast({ title: "Changes saved", description: "Your workspace has been updated." });
@@ -374,6 +379,13 @@ export default function Preferences() {
             )}
           </CardBody>
         </Card>
+
+        {/* Event Types & Statuses */}
+        <EventTypeManager
+          eventTypes={form.event_types}
+          eventStatuses={form.event_statuses}
+          onChange={(data) => setForm((f) => ({ ...f, ...data }))}
+        />
 
         {/* Service Rates */}
         <ServiceManager />

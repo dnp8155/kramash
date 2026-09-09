@@ -32,6 +32,7 @@ import AdminPlans from "@/pages/admin/AdminPlans";
 import Preferences from "@/pages/Preferences";
 import AppUpdates from "@/pages/AppUpdates";
 import Plan from "@/pages/Plan";
+import HelpSupport from "@/pages/HelpSupport";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import ForgotPassword from "@/pages/ForgotPassword";
@@ -128,6 +129,7 @@ function App() {
                   <Route path="/preferences" element={<ErrorBoundary><Preferences /></ErrorBoundary>} />
                   <Route path="/app-updates" element={<ErrorBoundary><AppUpdates /></ErrorBoundary>} />
                   <Route path="/plan" element={<ErrorBoundary><Plan /></ErrorBoundary>} />
+                  <Route path="/help-support" element={<ErrorBoundary><HelpSupport /></ErrorBoundary>} />
                 </Route>
               </Route>
 

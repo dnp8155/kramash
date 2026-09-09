@@ -14,17 +14,25 @@ import { useEvents } from "@/hooks/useEvents";
 import { useClients } from "@/hooks/useClients";
 import { usePlan } from "@/lib/PlanContext";
 import PlanLimitReached from "@/components/common/PlanLimitReached";
-import { eventStatuses, eventTypes, eventPeriods } from "@/constants/events";
+import { defaultEventStatuses, defaultEventTypes, eventPeriods } from "@/constants/events";
 import { isToday, isThisWeek, isUpcoming, isPast } from "@/utils/dates";
 import { toast } from "@/components/ui/use-toast";
 import { exportEventsCSV } from "@/utils/exports";
 import { useBusinessTerminology } from "@/lib/BusinessTerminology";
+import { useWorkspace } from "@/lib/WorkspaceContext";
 
 export default function Events() {
   const { events, loading, error, refetch, createEvent, updateEvent } = useEvents();
   const { clients, createClient } = useClients();
   const { canCreateResource, usage, getLimit } = usePlan();
   const t = useBusinessTerminology();
+  const { currentWorkspace } = useWorkspace();
+  const eventTypes = currentWorkspace?.event_types?.length
+    ? currentWorkspace.event_types
+    : defaultEventTypes;
+  const eventStatuses = currentWorkspace?.event_statuses?.length
+    ? currentWorkspace.event_statuses
+    : defaultEventStatuses;
   const eventsLimit = getLimit("max_events");
   const eventsLimitReached = !canCreateResource("events");
   const [search, setSearch] = useState("");

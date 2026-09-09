@@ -15,7 +15,7 @@ import { toast } from "@/components/ui/use-toast";
 export default function ServiceManager() {
   const { currentWorkspace } = useWorkspace();
   const { services, loading, createService, updateService } = useServices();
-  const { canCreateResource, usage, getLimit } = usePlan();
+  const { canCreateResource, usage, getLimit, refresh: refreshPlan } = usePlan();
   const servicesLimit = getLimit("max_services");
   const servicesLimitReached = !canCreateResource("services");
   const [modalOpen, setModalOpen] = useState(false);
@@ -29,6 +29,9 @@ export default function ServiceManager() {
     } else {
       try {
         await createService(data);
+        // Refresh plan usage so the frontend limit check stays in sync
+        // with the actual service count in the database.
+        refreshPlan();
       } catch (e) {
         toast({ title: "Cannot add service", description: e?.message, variant: "destructive" });
         throw e;

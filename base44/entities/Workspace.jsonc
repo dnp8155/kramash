@@ -117,6 +117,20 @@
       "type": "number",
       "description": "Default GST rate percentage (e.g. 18)"
     },
+    "event_types": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Workspace-configured event/project types (e.g. Wedding, Corporate, Architecture). Drives the EventForm type dropdown. Null/empty falls back to category defaults."
+    },
+    "event_statuses": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Workspace-configured event/project statuses (e.g. Confirmed, In Progress, Completed). Drives the EventForm status dropdown. Null/empty falls back to defaults. Status is NEVER auto-derived from payments or dates."
+    },
     "default_quotation_terms": {
       "type": "string",
       "description": "Default terms and conditions preloaded into new quotations"

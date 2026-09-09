@@ -5,8 +5,9 @@ import Button from "@/components/common/Button";
 import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
 import ClientForm from "@/components/clients/ClientForm";
-import { eventStatuses, eventTypes } from "@/constants/events";
+import { defaultEventTypes, defaultEventStatuses } from "@/constants/events";
 import { useBusinessTerminology } from "@/lib/BusinessTerminology";
+import { useWorkspace } from "@/lib/WorkspaceContext";
 import { toast } from "@/components/ui/use-toast";
 
 const empty = {
@@ -34,6 +35,13 @@ export default function EventForm({
   const [saving, setSaving] = useState(false);
   const [clientModalOpen, setClientModalOpen] = useState(false);
   const t = useBusinessTerminology();
+  const { currentWorkspace } = useWorkspace();
+  const eventTypes = currentWorkspace?.event_types?.length
+    ? currentWorkspace.event_types
+    : defaultEventTypes;
+  const eventStatuses = currentWorkspace?.event_statuses?.length
+    ? currentWorkspace.event_statuses
+    : defaultEventStatuses;
 
   useEffect(() => {
     if (open) {
