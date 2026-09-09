@@ -123,6 +123,12 @@ export default function EventFinancialSummary({
             value={fin.contractValue}
             onSave={onEditContractValue}
           />
+          {fin.addonTotal > 0 && (
+            <>
+              <Row label="Add-ons" value={formatCurrency(fin.addonTotal)} accent="text-warning" />
+              <Row label="Adjusted Contract Value" value={formatCurrency(fin.adjustedContractValue)} />
+            </>
+          )}
           <Row label="Client Received" value={formatCurrency(fin.received)} accent="text-success" />
           <Row
             label="Client Pending"

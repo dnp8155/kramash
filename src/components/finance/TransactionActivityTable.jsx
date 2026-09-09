@@ -5,6 +5,7 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   Wallet,
+  Share2,
 } from "lucide-react";
 import { formatDate, formatCurrency } from "@/utils/format";
 import { transactionTypeLabels } from "@/constants/finance";
@@ -14,7 +15,15 @@ import EmptyState from "@/components/common/EmptyState";
 import Button from "@/components/common/Button";
 
 // Resolves the "party" (who money went to/from) for a transaction.
-function partyLabel(t, { clients, members, categories }) {
+// When a transaction is linked to a service assignment, shows the service +
+// provider instead of the generic party.
+function partyLabel(t, { clients, members, categories, serviceAssignments }) {
+  if (t.service_assignment_id) {
+    const sa = serviceAssignments?.find((s) => s.id === t.service_assignment_id);
+    if (sa) {
+      return `${sa.service_name_snapshot || "Service"}${sa.provider_name_snapshot ? ` · ${sa.provider_name_snapshot}` : ""}`;
+    }
+  }
   if (t.transaction_type === "CLIENT_RECEIPT") {
     return clients.find((c) => c.id === t.client_id)?.name || "—";
   }
@@ -34,13 +43,15 @@ export default function TransactionActivityTable({
   members = [],
   categories = [],
   financialYears = [],
+  serviceAssignments = [],
   onEdit,
   onVoid,
   onUnvoid,
+  onShareInvoice,
 }) {
   const eventMap = Object.fromEntries(events.map((e) => [e.id, e]));
   const fyMap = Object.fromEntries(financialYears.map((fy) => [fy.id, fy]));
-  const ctx = { clients, members, categories };
+  const ctx = { clients, members, categories, serviceAssignments };
 
   if (transactions.length === 0) {
     return (
@@ -127,6 +138,16 @@ export default function TransactionActivityTable({
                     >
                       <Pencil className="h-4 w-4 text-muted-foreground" />
                     </Button>
+                    {onShareInvoice && !voided && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onShareInvoice(t)}
+                        title="Share Invoice"
+                      >
+                        <Share2 className="h-4 w-4 text-muted-foreground" />
+                      </Button>
+                    )}
                     {voided ? (
                       <Button
                         variant="ghost"

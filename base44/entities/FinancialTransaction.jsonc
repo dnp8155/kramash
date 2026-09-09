@@ -29,11 +29,15 @@
     },
     "team_member_id": {
       "type": "string",
-      "description": "Team member reference for TEAM_PAYMENT"
+      "description": "Team member reference for TEAM_PAYMENT or BUSINESS_EXPENSE (service provider)"
     },
     "team_assignment_id": {
       "type": "string",
       "description": "Event team assignment reference for TEAM_PAYMENT (links payment to event + member + agreed rate)"
+    },
+    "service_assignment_id": {
+      "type": "string",
+      "description": "Event service assignment reference for service payments (links payment to event + service + provider)"
     },
     "expense_category_id": {
       "type": "string",

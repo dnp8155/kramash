@@ -49,6 +49,12 @@ export function useEventServiceAssignments() {
     [workspaceId]
   );
 
+  const updateServiceAssignment = useCallback(async (id, data) => {
+    const a = await base44.entities.EventServiceAssignment.update(id, data);
+    setServiceAssignments((prev) => prev.map((x) => (x.id === id ? a : x)));
+    return a;
+  }, []);
+
   // Soft-delete: marks as Removed so associated payment records retain their link.
   const removeServiceAssignment = useCallback(async (id) => {
     const a = await base44.entities.EventServiceAssignment.update(id, {
@@ -63,6 +69,7 @@ export function useEventServiceAssignments() {
     error,
     refetch: load,
     createServiceAssignment,
+    updateServiceAssignment,
     removeServiceAssignment,
   };
 }

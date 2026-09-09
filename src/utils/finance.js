@@ -106,9 +106,15 @@ export function deriveTeamStatus(paid, agreed) {
 
 // Computes the full financial picture for a single event from its transactions
 // and assignments. Nothing is stored — everything is derived.
-export function computeEventFinancials({ transactions = [], event, assignments = [] }) {
+export function computeEventFinancials({ transactions = [], event, assignments = [], serviceAssignments = [] }) {
   const eventTxns = transactions.filter((t) => t.event_id === event?.id);
-  const contractValue = Number(event?.contract_value) || 0;
+  const baseContractValue = Number(event?.contract_value) || 0;
+
+  // Add-on total from service assignments — added on top of base contract value
+  const addonTotal = (serviceAssignments || [])
+    .filter((sa) => sa.assignment_status === "Assigned" && sa.is_addon)
+    .reduce((s, sa) => s + (Number(sa.rate) || 0), 0);
+  const contractValue = baseContractValue + addonTotal;
 
   const received = sumByType(eventTxns, CLIENT_RECEIPT);
   const teamPaid = sumByType(eventTxns, TEAM_PAYMENT);
@@ -140,7 +146,9 @@ export function computeEventFinancials({ transactions = [], event, assignments =
     });
 
   return {
-    contractValue,
+    contractValue: baseContractValue,
+    adjustedContractValue: contractValue,
+    addonTotal,
     received,
     clientPending,
     clientOverpaid,
@@ -152,6 +160,34 @@ export function computeEventFinancials({ transactions = [], event, assignments =
     profit,
     assignmentPayments,
   };
+}
+
+// --- Service payment summary -----------------------------------------------
+
+// Service payment status derived from paid vs rate.
+export function deriveServiceStatus(paid, rate) {
+  const p = Number(paid) || 0;
+  const r = Number(rate) || 0;
+  if (r <= 0) return p > 0 ? "Paid" : "No Rate";
+  if (p <= 0) return "Pending";
+  if (p < r) return "Partially Paid";
+  if (p === r) return "Paid";
+  return "Overpaid";
+}
+
+// Computes payment summary for a single service assignment from transactions.
+// Returns { rate, totalPaid, remaining, overpaid, status, payments }.
+// payments are sorted newest-first. Nothing is stored — everything is derived.
+export function computeServicePaymentSummary(serviceAssignment, transactions = []) {
+  const rate = Number(serviceAssignment?.rate) || 0;
+  const payments = transactions
+    .filter((t) => t.status === "ACTIVE" && t.service_assignment_id === serviceAssignment?.id)
+    .sort((a, b) => (b.transaction_date || "").localeCompare(a.transaction_date || ""));
+  const totalPaid = payments.reduce((s, t) => s + (Number(t.amount) || 0), 0);
+  const remaining = Math.max(0, rate - totalPaid);
+  const overpaid = Math.max(0, totalPaid - rate);
+  const status = deriveServiceStatus(totalPaid, rate);
+  return { rate, totalPaid, remaining, overpaid, status, payments };
 }
 
 // --- Global workspace summary ----------------------------------------------

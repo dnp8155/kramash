@@ -25,6 +25,9 @@ import EmptyState from "@/components/common/EmptyState";
 import EventForm from "@/components/events/EventForm";
 import AssignTeamModal from "@/components/team/AssignTeamModal";
 import AssignServiceModal from "@/components/team/AssignServiceModal";
+import ServiceAssignmentCard from "@/components/team/ServiceAssignmentCard";
+import ServicePaymentModal from "@/components/finance/ServicePaymentModal";
+import InvoicePreview from "@/components/finance/InvoicePreview";
 import { useEventServiceAssignments } from "@/hooks/useEventServiceAssignments";
 import { useServices } from "@/hooks/useServices";
 import EventFinancialSummary from "@/components/finance/EventFinancialSummary";
@@ -61,6 +64,7 @@ export default function EventDetail() {
   const {
     serviceAssignments,
     createServiceAssignment,
+    updateServiceAssignment,
     removeServiceAssignment,
   } = useEventServiceAssignments();
   const t = useBusinessTerminology();
@@ -85,6 +89,10 @@ export default function EventDetail() {
   const [expenseOpen, setExpenseOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [serviceAssignOpen, setServiceAssignOpen] = useState(false);
+  const [editingServiceAssignment, setEditingServiceAssignment] = useState(null);
+  const [servicePaymentAssignment, setServicePaymentAssignment] = useState(null);
+  const [invoiceTransaction, setInvoiceTransaction] = useState(null);
+  const [removingServiceId, setRemovingServiceId] = useState(null);
 
   useEffect(() => {
     let active = true;
@@ -142,8 +150,9 @@ export default function EventDetail() {
         transactions,
         event,
         assignments: eventAssignments,
+        serviceAssignments: eventServiceAssignments,
       }),
-    [transactions, event, eventAssignments]
+    [transactions, event, eventAssignments, eventServiceAssignments]
   );
 
   const paidByAssignment = useMemo(
@@ -205,12 +214,47 @@ export default function EventDetail() {
   };
 
   const handleRemoveServiceAssignment = async (assignmentId) => {
+    setRemovingServiceId(assignmentId);
     try {
       await removeServiceAssignment(assignmentId);
       toast({ title: "Service removed" });
     } catch (e) {
       toast({ title: "Remove failed", description: e?.message, variant: "destructive" });
+    } finally {
+      setRemovingServiceId(null);
     }
+  };
+
+  const handleUpdateServiceAssignment = async (id, data) => {
+    return await updateServiceAssignment(id, data);
+  };
+
+  const handleOpenEditService = (assignment) => {
+    setEditingServiceAssignment(assignment);
+    setServiceAssignOpen(true);
+  };
+
+  const handleCloseServiceModal = () => {
+    setServiceAssignOpen(false);
+    setEditingServiceAssignment(null);
+  };
+
+  const handleOpenAddService = () => {
+    setEditingServiceAssignment(null);
+    setServiceAssignOpen(true);
+  };
+
+  const handleDeletePayment = async (transactionId) => {
+    try {
+      await voidTransaction(transactionId);
+      toast({ title: "Payment voided" });
+    } catch (e) {
+      toast({ title: "Delete failed", description: e?.message, variant: "destructive" });
+    }
+  };
+
+  const handleShareInvoice = (transaction) => {
+    setInvoiceTransaction(transaction);
   };
 
   const handleRemove = async (assignmentId) => {
@@ -433,7 +477,7 @@ export default function EventDetail() {
                   Add-ons: {formatCurrency(addonTotal)} · Adjusted: {formatCurrency(adjustedContractValue)}
                 </span>
               )}
-              <Button size="sm" onClick={() => setServiceAssignOpen(true)}>
+              <Button size="sm" onClick={handleOpenAddService}>
                 <Plus className="h-4 w-4" /> Add Service
               </Button>
             </div>
@@ -444,33 +488,23 @@ export default function EventDetail() {
                 No services assigned yet.
               </div>
             ) : (
-              <div className="flex flex-wrap gap-2 p-4">
+              <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2">
                 {eventServiceAssignments.map((sa) => (
-                  <span
+                  <ServiceAssignmentCard
                     key={sa.id}
-                    className={`inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm ${
-                      sa.is_addon
-                        ? "border-warning/30 bg-warning/10 text-foreground"
-                        : "border-border bg-muted/40 text-foreground"
-                    }`}
-                  >
-                    {sa.service_name_snapshot || "Service"}
-                    <span className="text-xs font-medium text-muted-foreground">
-                      {formatCurrency(sa.rate)}
-                    </span>
-                    {sa.is_addon && (
-                      <span className="rounded bg-warning/20 px-1.5 py-0.5 text-[10px] font-semibold text-warning">
-                        ADD-ON
-                      </span>
-                    )}
-                    <button
-                      onClick={() => handleRemoveServiceAssignment(sa.id)}
-                      className="text-muted-foreground hover:text-destructive"
-                      title="Remove service"
-                    >
-                      ×
-                    </button>
-                  </span>
+                    assignment={sa}
+                    event={event}
+                    client={client}
+                    members={members}
+                    transactions={transactions}
+                    onEdit={handleOpenEditService}
+                    onAddPayment={(assignment) => setServicePaymentAssignment(assignment)}
+                    onRemove={handleRemoveServiceAssignment}
+                    onEditPayment={(p) => setEditing(p)}
+                    onDeletePayment={handleDeletePayment}
+                    onShareInvoice={handleShareInvoice}
+                    removingId={removingServiceId}
+                  />
                 ))}
               </div>
             )}
@@ -505,6 +539,7 @@ export default function EventDetail() {
                   members={members}
                   categories={categories}
                   financialYears={financialYears}
+                  serviceAssignments={eventServiceAssignments}
                   onEdit={(t) => setEditing(t)}
                   onVoid={async (t) => {
                     await voidTransaction(t.id);
@@ -514,6 +549,7 @@ export default function EventDetail() {
                     await unvoidTransaction(t.id);
                     toast({ title: "Transaction restored" });
                   }}
+                  onShareInvoice={(t) => setInvoiceTransaction(t)}
                 />
               )}
             </CardBody>
@@ -570,13 +606,35 @@ export default function EventDetail() {
 
       <AssignServiceModal
         open={serviceAssignOpen}
-        onClose={() => setServiceAssignOpen(false)}
+        onClose={handleCloseServiceModal}
         event={event}
+        client={client}
         members={members}
         services={services}
         existingServiceIds={existingServiceIds}
+        editingAssignment={editingServiceAssignment}
         onAssign={handleCreateServiceAssignment}
+        onUpdate={handleUpdateServiceAssignment}
         onRecordPayment={handleCreateTxn}
+      />
+
+      <ServicePaymentModal
+        open={!!servicePaymentAssignment}
+        onClose={() => setServicePaymentAssignment(null)}
+        event={event}
+        assignment={servicePaymentAssignment}
+        transactions={transactions}
+        onSubmit={handleCreateTxn}
+      />
+
+      <InvoicePreview
+        open={!!invoiceTransaction}
+        onClose={() => setInvoiceTransaction(null)}
+        transaction={invoiceTransaction}
+        event={event}
+        client={client}
+        members={members}
+        serviceAssignments={eventServiceAssignments}
       />
 
       <RecordClientPaymentModal

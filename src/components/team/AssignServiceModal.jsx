@@ -6,19 +6,27 @@ import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
 import { todayStr } from "@/utils/team";
 import { paymentMethods } from "@/constants/finance";
+import { formatCurrency } from "@/utils/format";
 import { toast } from "@/components/ui/use-toast";
 
-// Assign Service modal — creates an EventServiceAssignment.
+// Assign/Edit Service modal — creates or updates an EventServiceAssignment.
 // Rate auto-populates from the master Service.default_rate but is editable
 // (event-specific override — does NOT modify the master service).
+//
+// Provider can be "Client" (the event's client) or any active Team Member.
+// When provider is "Client", payments are CLIENT_RECEIPT (money in).
+// When provider is a Team Member, payments are BUSINESS_EXPENSE (money out).
 export default function AssignServiceModal({
   open,
   onClose,
   event,
+  client,
   members,
   services,
   existingServiceIds = [],
+  editingAssignment = null,
   onAssign,
+  onUpdate,
   onRecordPayment,
 }) {
   const [providerId, setProviderId] = useState("");
@@ -31,8 +39,20 @@ export default function AssignServiceModal({
   const [paymentMethod, setPaymentMethod] = useState("Cash");
   const [saving, setSaving] = useState(false);
 
+  const isEditing = !!editingAssignment;
+
   useEffect(() => {
-    if (open) {
+    if (!open) return;
+    if (isEditing && editingAssignment) {
+      setProviderId(editingAssignment.provider_id || "");
+      setServiceId(editingAssignment.service_id || "");
+      setRate(editingAssignment.rate != null ? String(editingAssignment.rate) : "");
+      setIsAddon(!!editingAssignment.is_addon);
+      setRecordPayment(false);
+      setPaymentAmount("");
+      setPaymentDate(todayStr());
+      setPaymentMethod("Cash");
+    } else {
       setProviderId("");
       setServiceId("");
       setRate("");
@@ -42,25 +62,29 @@ export default function AssignServiceModal({
       setPaymentDate(todayStr());
       setPaymentMethod("Cash");
     }
-  }, [open, event?.id]);
+  }, [open, editingAssignment, event?.id]);
 
   const activeMembers = useMemo(
     () => members.filter((m) => m.status === "Active"),
     [members]
   );
 
-  const availableServices = useMemo(
-    () =>
-      services.filter(
-        (s) => s.status === "active" && !existingServiceIds.includes(s.id)
-      ),
-    [services, existingServiceIds]
-  );
+  const availableServices = useMemo(() => {
+    if (isEditing) {
+      // In edit mode, show all active services (including the currently assigned one)
+      return services.filter((s) => s.status === "active");
+    }
+    return services.filter(
+      (s) => s.status === "active" && !existingServiceIds.includes(s.id)
+    );
+  }, [services, existingServiceIds, isEditing]);
 
   const handleServiceChange = (id) => {
     setServiceId(id);
+    // Always auto-populate rate from the selected service's master default.
+    // The user can then override it — the master rate is never modified.
     const service = services.find((s) => s.id === id);
-    setRate(service?.default_rate ?? "");
+    setRate(service?.default_rate != null ? String(service.default_rate) : "");
   };
 
   const handleSave = async () => {
@@ -74,49 +98,75 @@ export default function AssignServiceModal({
       return;
     }
 
-    // Validate payment fields if Record Payment is ON
+    // Validate payment fields if Record Payment is ON (add mode only)
     const payAmt = Number(paymentAmount);
-    if (recordPayment && (!paymentAmount || Number.isNaN(payAmt) || payAmt <= 0)) {
-      toast({ title: "Enter a valid payment amount", variant: "destructive" });
-      return;
-    }
-    if (recordPayment && !paymentDate) {
-      toast({ title: "Select a payment date", variant: "destructive" });
-      return;
+    if (!isEditing && recordPayment) {
+      if (!paymentAmount || Number.isNaN(payAmt) || payAmt <= 0) {
+        toast({ title: "Enter a valid payment amount", variant: "destructive" });
+        return;
+      }
+      if (!paymentDate) {
+        toast({ title: "Select a payment date", variant: "destructive" });
+        return;
+      }
     }
 
     const service = services.find((s) => s.id === serviceId);
-    const provider = members.find((m) => m.id === providerId);
+    const provider = providerId === "client"
+      ? { name: client?.name || "Client" }
+      : members.find((m) => m.id === providerId);
 
     setSaving(true);
     try {
-      const assignment = await onAssign({
+      const payload = {
         service_id: serviceId,
         service_name_snapshot: service?.name || "",
         provider_id: providerId || null,
         provider_name_snapshot: provider?.name || "",
         rate: amt,
         is_addon: isAddon,
-      });
+      };
 
-      // Create payment transaction if Record Payment is ON.
-      // financial_year_id is auto-assigned by createTransaction from the
-      // payment date — NOT from the UI-selected FY.
+      if (isEditing) {
+        await onUpdate(editingAssignment.id, payload);
+        toast({ title: "Service updated" });
+        onClose();
+        return;
+      }
+
+      // Create the service assignment first
+      const assignment = await onAssign(payload);
+
+      // Then create payment if Record Payment is ON.
+      // If payment fails (e.g. no FY for the date), the assignment is already
+      // saved — show a specific error so the user knows the assignment succeeded.
       if (recordPayment && onRecordPayment && assignment) {
-        await onRecordPayment({
-          transaction_type: "BUSINESS_EXPENSE",
-          event_id: event.id,
-          amount: payAmt,
-          payment_method: paymentMethod,
-          transaction_date: paymentDate,
-        });
-        toast({ title: "Service assigned and payment recorded" });
+        const txnType = providerId === "client" ? "CLIENT_RECEIPT" : "BUSINESS_EXPENSE";
+        try {
+          await onRecordPayment({
+            transaction_type: txnType,
+            event_id: event.id,
+            service_assignment_id: assignment.id,
+            client_id: providerId === "client" ? event.client_id : null,
+            team_member_id: providerId !== "client" && providerId ? providerId : null,
+            amount: payAmt,
+            payment_method: paymentMethod,
+            transaction_date: paymentDate,
+          });
+          toast({ title: "Service assigned and payment recorded" });
+        } catch (paymentErr) {
+          toast({
+            title: "Service assigned — payment failed",
+            description: paymentErr?.message,
+            variant: "destructive",
+          });
+        }
       } else {
         toast({ title: "Service assigned" });
       }
       onClose();
     } catch (e) {
-      toast({ title: "Assignment failed", description: e?.message, variant: "destructive" });
+      toast({ title: isEditing ? "Update failed" : "Assignment failed", description: e?.message, variant: "destructive" });
     } finally {
       setSaving(false);
     }
@@ -126,7 +176,7 @@ export default function AssignServiceModal({
     <Modal
       open={open}
       onClose={onClose}
-      title="Assign Service"
+      title={isEditing ? "Edit Service" : "Assign Service"}
       size="md"
       footer={
         <>
@@ -135,7 +185,7 @@ export default function AssignServiceModal({
           </Button>
           <Button onClick={handleSave} disabled={saving}>
             {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-            Assign
+            {isEditing ? "Save Changes" : "Assign"}
           </Button>
         </>
       }
@@ -147,6 +197,9 @@ export default function AssignServiceModal({
           onChange={(e) => setProviderId(e.target.value)}
         >
           <option value="">Select a provider…</option>
+          {client && (
+            <option value="client">Client — {client.name}</option>
+          )}
           {activeMembers.map((m) => (
             <option key={m.id} value={m.id}>
               {m.name}
@@ -164,11 +217,11 @@ export default function AssignServiceModal({
           {availableServices.map((s) => (
             <option key={s.id} value={s.id}>
               {s.name}
-              {s.default_rate != null ? ` — ₹${s.default_rate}` : ""}
+              {s.default_rate != null ? ` — ${formatCurrency(s.default_rate)}` : ""}
             </option>
           ))}
         </Select>
-        {availableServices.length === 0 && (
+        {!isEditing && availableServices.length === 0 && (
           <p className="-mt-2 text-xs text-muted-foreground">
             No services available. Add services in Preferences.
           </p>
@@ -209,8 +262,8 @@ export default function AssignServiceModal({
           )}
         </div>
 
-        {/* Record Payment toggle */}
-        {onRecordPayment && (
+        {/* Record Payment toggle (add mode only) */}
+        {!isEditing && onRecordPayment && (
           <div className="rounded-lg border border-border p-3">
             <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-foreground">
               <input
