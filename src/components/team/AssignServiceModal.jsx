@@ -8,6 +8,9 @@ import { todayStr } from "@/utils/team";
 import { paymentMethods } from "@/constants/finance";
 import { formatCurrency } from "@/utils/format";
 import { toast } from "@/components/ui/use-toast";
+import SelfBadge from "@/components/common/SelfBadge";
+import { useWorkspace } from "@/lib/WorkspaceContext";
+import { isSelfMember } from "@/utils/selfDetection";
 
 // Assign/Edit Service modal — creates or updates an EventServiceAssignment.
 // Rate auto-populates from the master Service.default_rate but is editable
@@ -40,6 +43,10 @@ export default function AssignServiceModal({
   const [saving, setSaving] = useState(false);
 
   const isEditing = !!editingAssignment;
+  const { ownerName } = useWorkspace();
+  const selectedProvider = members.find((m) => m.id === providerId);
+  const isSelfProviderSelected =
+    !!providerId && providerId !== "client" && isSelfMember(selectedProvider?.name, ownerName);
 
   useEffect(() => {
     if (!open) return;
@@ -204,6 +211,7 @@ export default function AssignServiceModal({
             <option key={m.id} value={m.id}>
               {m.name}
               {m.profession ? ` — ${m.profession}` : ""}
+              {isSelfMember(m.name, ownerName) ? " — SELF" : ""}
             </option>
           ))}
         </Select>
@@ -244,6 +252,18 @@ export default function AssignServiceModal({
           </p>
         )}
 
+        {!isEditing && isSelfProviderSelected && (
+          <div className="rounded-lg border border-info/30 bg-info/5 p-3">
+            <p className="flex items-center gap-1.5 text-xs text-primary">
+              <SelfBadge /> Workspace owner — no payment required
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              This provider is the workspace owner (SELF). The service amount is
+              treated as the owner's internal profit share, not an external payable.
+            </p>
+          </div>
+        )}
+
         {/* Add-on toggle */}
         <div className="rounded-lg border border-border p-3">
           <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-foreground">
@@ -262,8 +282,8 @@ export default function AssignServiceModal({
           )}
         </div>
 
-        {/* Record Payment toggle (add mode only) */}
-        {!isEditing && onRecordPayment && (
+        {/* Record Payment toggle (add mode only) — hidden for SELF provider */}
+        {!isEditing && onRecordPayment && !isSelfProviderSelected && (
           <div className="rounded-lg border border-border p-3">
             <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-foreground">
               <input

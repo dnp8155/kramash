@@ -50,12 +50,16 @@ import { computeEventFinancials } from "@/utils/finance";
 import { formatDate, formatCurrency, initials } from "@/utils/format";
 import { toast } from "@/components/ui/use-toast";
 import { base44 } from "@/api/base44Client";
+import SelfBadge from "@/components/common/SelfBadge";
+import { useWorkspace } from "@/lib/WorkspaceContext";
+import { isSelfMember } from "@/utils/selfDetection";
 
 export default function EventDetail() {
   const { id } = useParams();
   const { events, updateEvent } = useEvents();
   const { clients, createClient } = useClients();
   const { members } = useTeamMembers();
+  const { ownerName } = useWorkspace();
   const { roles } = useTeamRoles();
   const { assignments, createAssignment, updateAssignment, removeAssignment } =
     useEventTeamAssignments();
@@ -433,6 +437,9 @@ export default function EventDetail() {
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-semibold text-foreground">
                           {member ? member.name : "Unknown member"}
+                          {member && isSelfMember(member.name, ownerName) && (
+                            <SelfBadge className="ml-1.5" />
+                          )}
                         </p>
                         <p className="truncate text-xs text-muted-foreground">
                           {a.role_name_snapshot || "—"}
@@ -467,13 +474,15 @@ export default function EventDetail() {
                       >
                         <Pencil className="h-3.5 w-3.5" /> Edit
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => openPayFor(a.id)}
-                      >
-                        <Wallet className="h-3.5 w-3.5" /> Pay
-                      </Button>
+                      {!(member && isSelfMember(member.name, ownerName)) && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => openPayFor(a.id)}
+                        >
+                          <Wallet className="h-3.5 w-3.5" /> Pay
+                        </Button>
+                      )}
                       <Button
                         variant="ghost"
                         size="icon"

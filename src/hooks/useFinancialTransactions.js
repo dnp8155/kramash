@@ -48,31 +48,24 @@ export function useFinancialTransactions({ eventId, teamMemberId, financialYearI
 
   const createTransaction = useCallback(
     async (data) => {
-      // Resolve FY from transaction date — never save without an FY
-      const fy = findFYForDate(data.transaction_date, financialYears);
-      if (!fy) {
-        throw new Error(
-          "No Financial Year is available for this transaction date. Please create the applicable Financial Year first."
-        );
-      }
-      if (fy.status === "closed") {
-        throw new Error(
-          `Financial Year ${fy.name} is closed. Reopen it to add new transactions.`
-        );
-      }
-      const t = await base44.entities.FinancialTransaction.create({
+      // Route through the recordTransaction backend function for:
+      //   - SELF validation (blocks payments to the workspace owner)
+      //   - Financial Year resolution (server-side, authoritative)
+      const res = await base44.functions.invoke("recordTransaction", {
         ...data,
         workspace_id: workspaceId,
-        financial_year_id: fy.id,
-        status: data.status || "ACTIVE",
       });
+      const result = res?.data || res;
+      if (result?.error) throw new Error(result.error);
+      if (!result?.success) throw new Error("Failed to create transaction");
+      const t = result.transaction;
       // Only add to local state if it matches the current server-side filter
-      if (!financialYearId || fy.id === financialYearId) {
+      if (t && (!financialYearId || t.financial_year_id === financialYearId)) {
         setTransactions((prev) => [t, ...prev]);
       }
       return t;
     },
-    [workspaceId, financialYears, financialYearId]
+    [workspaceId, financialYearId]
   );
 
   const updateTransaction = useCallback(

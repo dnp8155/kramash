@@ -2,9 +2,14 @@ import { Link } from "react-router-dom";
 import { Mail, Phone, ArrowRight, Pencil } from "lucide-react";
 import Card, { CardBody } from "@/components/common/Card";
 import StatusBadge from "@/components/common/StatusBadge";
+import SelfBadge from "@/components/common/SelfBadge";
 import { initials } from "@/utils/format";
+import { useWorkspace } from "@/lib/WorkspaceContext";
+import { isSelfMember } from "@/utils/selfDetection";
 
 export default function TeamMemberCard({ member, roleName, assignmentCount, onEdit }) {
+  const { ownerName } = useWorkspace();
+  const isSelf = isSelfMember(member.name, ownerName);
   return (
     <Card className="flex h-full flex-col transition-shadow hover:shadow-md">
       <CardBody className="flex flex-1 flex-col gap-3">
@@ -16,6 +21,7 @@ export default function TeamMemberCard({ member, roleName, assignmentCount, onEd
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold text-foreground hover:text-primary">
                 {member.name}
+                {isSelf && <SelfBadge className="ml-1.5" />}
               </p>
               <p className="truncate text-xs text-muted-foreground">
                 {roleName || member.profession || "—"}

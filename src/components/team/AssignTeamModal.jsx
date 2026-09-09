@@ -10,6 +10,9 @@ import { dateRange } from "@/utils/dates";
 import { formatDate, formatCurrency } from "@/utils/format";
 import { paymentMethods } from "@/constants/finance";
 import { toast } from "@/components/ui/use-toast";
+import SelfBadge from "@/components/common/SelfBadge";
+import { useWorkspace } from "@/lib/WorkspaceContext";
+import { isSelfMember } from "@/utils/selfDetection";
 
 const categoryTypes = ["Bride", "Groom", "Other"];
 
@@ -42,6 +45,10 @@ export default function AssignTeamModal({
   const [paymentDate, setPaymentDate] = useState(todayStr());
   const [paymentMethod, setPaymentMethod] = useState("Cash");
   const [saving, setSaving] = useState(false);
+
+  const { ownerName } = useWorkspace();
+  const selectedMember = members.find((m) => m.id === memberId);
+  const isSelf = isSelfMember(selectedMember?.name, ownerName);
 
   // Generate available dates from the event's date range
   const eventDates = useMemo(() => {
@@ -306,6 +313,11 @@ export default function AssignTeamModal({
             All active team members are already assigned to this event.
           </p>
         )}
+        {isSelf && (
+          <p className="-mt-2 flex items-center gap-1.5 text-xs text-primary">
+            <SelfBadge /> Workspace owner — no payment required
+          </p>
+        )}
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {/* Role is read-only — derived from the selected Team Member's
@@ -427,8 +439,8 @@ export default function AssignTeamModal({
           </div>
         )}
 
-        {/* Record Payment toggle (add mode only) */}
-        {!isEditing && onRecordPayment && (
+        {/* Record Payment toggle (add mode only) — hidden for SELF */}
+        {!isEditing && onRecordPayment && !isSelf && (
           <div className="rounded-lg border border-border p-3">
             <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-foreground">
               <input
@@ -468,6 +480,16 @@ export default function AssignTeamModal({
                 </Select>
               </div>
             )}
+          </div>
+        )}
+
+        {!isEditing && isSelf && (
+          <div className="rounded-lg border border-info/30 bg-info/5 p-3">
+            <p className="text-xs text-muted-foreground">
+              This team member is the workspace owner (SELF). No payment is
+              recorded — the assignment amount is treated as the owner's
+              internal profit share, not an external payable.
+            </p>
           </div>
         )}
 

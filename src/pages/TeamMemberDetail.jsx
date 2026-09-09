@@ -28,9 +28,13 @@ import { formatCurrency, formatDate, initials } from "@/utils/format";
 import { todayStr } from "@/utils/team";
 import { toast } from "@/components/ui/use-toast";
 import { base44 } from "@/api/base44Client";
+import SelfBadge from "@/components/common/SelfBadge";
+import { useWorkspace } from "@/lib/WorkspaceContext";
+import { isSelfMember } from "@/utils/selfDetection";
 
 export default function TeamMemberDetail() {
   const { id } = useParams();
+  const { ownerName } = useWorkspace();
   const { roles } = useTeamRoles();
   const { assignments } = useEventTeamAssignments();
   const { events } = useEvents();
@@ -146,6 +150,7 @@ export default function TeamMemberDetail() {
   const role = roles.find((r) => r.id === member.role_id);
   const displayRate = role?.default_rate ?? member.default_rate;
   const displayRateType = role?.rate_type ?? member.rate_type;
+  const isSelf = isSelfMember(member.name, ownerName);
 
   const handleSave = async (data) => {
     const updated = await base44.entities.TeamMember.update(member.id, data);
@@ -180,7 +185,12 @@ export default function TeamMemberDetail() {
       </Link>
 
       <PageHeader
-        title={member.name}
+        title={
+          <span className="flex items-center gap-2">
+            {member.name}
+            {isSelfMember(member.name, ownerName) && <SelfBadge />}
+          </span>
+        }
         description={roleName}
         actions={
           <div className="flex items-center gap-2">
@@ -267,6 +277,7 @@ export default function TeamMemberDetail() {
                     assignment={assignment}
                     event={event}
                     paid={paidByAssignment[assignment.id] || 0}
+                    isSelf={isSelf}
                     onPay={() => {
                       setPayAssignmentId(assignment.id);
                       setPayOpen(true);
@@ -295,6 +306,7 @@ export default function TeamMemberDetail() {
                     assignment={assignment}
                     event={event}
                     paid={paidByAssignment[assignment.id] || 0}
+                    isSelf={isSelf}
                     onPay={() => {
                       setPayAssignmentId(assignment.id);
                       setPayOpen(true);
@@ -329,7 +341,7 @@ export default function TeamMemberDetail() {
   );
 }
 
-function AssignmentRow({ assignment, event, paid = 0, onPay }) {
+function AssignmentRow({ assignment, event, paid = 0, onPay, isSelf = false }) {
   const agreed = Number(assignment.agreed_rate) || 0;
   const remaining = Math.max(0, agreed - paid);
   const status = deriveTeamStatus(paid, agreed);
@@ -357,9 +369,11 @@ function AssignmentRow({ assignment, event, paid = 0, onPay }) {
         </p>
       </div>
       <StatusBadge status={status} />
-      <Button size="sm" variant="outline" onClick={onPay}>
-        <Wallet className="h-3.5 w-3.5" /> Pay
-      </Button>
+      {!isSelf && (
+        <Button size="sm" variant="outline" onClick={onPay}>
+          <Wallet className="h-3.5 w-3.5" /> Pay
+        </Button>
+      )}
     </div>
   );
 }

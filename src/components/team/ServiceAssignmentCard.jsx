@@ -13,6 +13,9 @@ import StatusBadge from "@/components/common/StatusBadge";
 import { formatCurrency, formatDate } from "@/utils/format";
 import { computeServicePaymentSummary } from "@/utils/finance";
 import { transactionTypeLabels } from "@/constants/finance";
+import SelfBadge from "@/components/common/SelfBadge";
+import { useWorkspace } from "@/lib/WorkspaceContext";
+import { isSelfProvider } from "@/utils/selfDetection";
 
 // Full card for a single service assignment: shows provider, service, rate,
 // payment summary (total/remaining/status), actions (edit/add payment/remove),
@@ -37,6 +40,8 @@ export default function ServiceAssignmentCard({
 
   const summary = computeServicePaymentSummary(assignment, transactions);
   const isClientProvider = assignment.provider_id === "client";
+  const { ownerName } = useWorkspace();
+  const isSelf = isSelfProvider(assignment, members, ownerName);
 
   const handleRemoveClick = () => {
     if (!confirmDelete) {
@@ -79,6 +84,7 @@ export default function ServiceAssignmentCard({
           </div>
           <p className="mt-0.5 text-xs text-muted-foreground">
             Provider: {assignment.provider_name_snapshot || "—"}
+            {isSelf && <SelfBadge className="ml-1.5" />}
           </p>
         </div>
         <div className="text-right">
@@ -120,9 +126,16 @@ export default function ServiceAssignmentCard({
         <Button size="sm" variant="outline" onClick={() => onEdit(assignment)}>
           <Pencil className="h-3.5 w-3.5" /> Edit
         </Button>
-        <Button size="sm" variant="outline" onClick={() => onAddPayment(assignment)}>
-          <Plus className="h-3.5 w-3.5" /> Add Payment
-        </Button>
+        {!isSelf && (
+          <Button size="sm" variant="outline" onClick={() => onAddPayment(assignment)}>
+            <Plus className="h-3.5 w-3.5" /> Add Payment
+          </Button>
+        )}
+        {isSelf && (
+          <span className="text-xs text-muted-foreground">
+            Owner share — no payment required
+          </span>
+        )}
         <Button
           size="sm"
           variant="ghost"
