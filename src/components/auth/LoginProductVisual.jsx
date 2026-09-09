@@ -49,7 +49,7 @@ const PROJECTS = [
 
 export default function LoginProductVisual() {
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-2xl ring-1 ring-border/50">
+    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-xl">
       <div className="flex h-[480px]">
         {/* Sidebar */}
         <div className="hidden w-44 shrink-0 border-r border-border bg-muted/30 p-4 sm:block">
@@ -78,11 +78,6 @@ export default function LoginProductVisual() {
               </div>
             ))}
           </nav>
-          <div className="mt-8 rounded-lg border border-border bg-card p-3">
-            <p className="text-[10px] font-medium text-muted-foreground">This month</p>
-            <p className="mt-1 text-lg font-bold text-foreground">₹2.4L</p>
-            <p className="text-[10px] text-success">+12% vs last</p>
-          </div>
         </div>
 
         {/* Main content */}
