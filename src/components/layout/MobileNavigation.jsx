@@ -20,7 +20,7 @@ export default function MobileNavigation() {
           <NavLink
             key={item.path}
             to={item.path}
-            end={item.path === "/"}
+            end={item.path === "/dashboard"}
             className={({ isActive }) =>
               cn(
                 "flex flex-1 flex-col items-center gap-0.5 py-2.5 text-[10px] font-medium transition-colors",

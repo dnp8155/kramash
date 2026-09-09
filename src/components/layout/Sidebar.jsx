@@ -72,7 +72,7 @@ export default function Sidebar({ open, onClose }) {
                 <li key={item.path}>
                   <NavLink
                     to={item.path}
-                    end={item.path === "/"}
+                    end={item.path === "/dashboard"}
                     onClick={onClose}
                     className={({ isActive }) =>
                       cn(

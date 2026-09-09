@@ -15,7 +15,7 @@ import {
 // via useBusinessTerminology() in the Sidebar/MobileNavigation components.
 // The `labelKey` field indicates which terminology key to use.
 export const navItems = [
-  { label: "Dashboard", path: "/", icon: LayoutDashboard, labelKey: null },
+  { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard, labelKey: null },
   { label: "Events", path: "/events", icon: CalendarDays, labelKey: "workItemPlural" },
   { label: "Clients", path: "/clients", icon: User, labelKey: null },
   { label: "Team", path: "/team", icon: Users, labelKey: null },

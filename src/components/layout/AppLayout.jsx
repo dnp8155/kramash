@@ -19,7 +19,7 @@ export default function AppLayout() {
   }, [location.pathname]);
 
   const current = navItems.find((n) =>
-    n.path === "/" ? location.pathname === "/" : location.pathname.startsWith(n.path)
+    n.path === "/dashboard" ? location.pathname === "/dashboard" : location.pathname.startsWith(n.path)
   );
   const headerTitle = current
     ? (current.labelKey && t[current.labelKey] ? t[current.labelKey] : current.label)

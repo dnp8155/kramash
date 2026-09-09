@@ -12,6 +12,7 @@ import ErrorBoundary from "@/components/common/ErrorBoundary";
 import FullScreenSpinner from "@/components/FullScreenSpinner";
 import { WorkspaceProvider, WorkspaceGate, useWorkspace } from "@/lib/WorkspaceContext";
 import Dashboard from "@/pages/Dashboard";
+import Landing from "@/pages/Landing";
 import Events from "@/pages/Events";
 import Team from "@/pages/Team";
 import Financial from "@/pages/Financial";
@@ -69,7 +70,7 @@ const AuthenticatedApp = () => (
 const OnboardingGate = () => {
   const { loading, needsOnboarding } = useWorkspace();
   if (loading) return <FullScreenSpinner label="Loading your workspace..." />;
-  if (!needsOnboarding) return <Navigate to="/" replace />;
+  if (!needsOnboarding) return <Navigate to="/dashboard" replace />;
   return <Onboarding />;
 };
 
@@ -95,13 +96,16 @@ function App() {
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
 
+              {/* Public landing page */}
+              <Route path="/" element={<Landing />} />
+
               {/* Onboarding (authenticated, no app shell) */}
               <Route path="/onboarding" element={<OnboardingRoute />} />
 
               {/* Protected application */}
               <Route element={<AuthenticatedApp />}>
                 <Route element={<AppLayout />}>
-                  <Route path="/" element={<ErrorBoundary><Dashboard /></ErrorBoundary>} />
+                  <Route path="/dashboard" element={<ErrorBoundary><Dashboard /></ErrorBoundary>} />
                   <Route path="/events" element={<ErrorBoundary><Events /></ErrorBoundary>} />
                   <Route path="/events/:id" element={<ErrorBoundary><EventDetail /></ErrorBoundary>} />
                   <Route path="/clients" element={<ErrorBoundary><Clients /></ErrorBoundary>} />
