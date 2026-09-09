@@ -1,0 +1,103 @@
+{
+  "name": "EventReminder",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "description": "Workspace this reminder belongs to"
+    },
+    "event_id": {
+      "type": "string",
+      "description": "Event this reminder is for"
+    },
+    "reminder_type": {
+      "type": "string",
+      "enum": [
+        "24_HOURS",
+        "48_HOURS"
+      ],
+      "description": "How far before the event to send the reminder"
+    },
+    "scheduled_for": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Calculated date-time when the reminder should fire"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "PENDING",
+        "SENT",
+        "DISMISSED"
+      ],
+      "default": "PENDING",
+      "description": "Whether the reminder has been sent"
+    },
+    "channel": {
+      "type": "string",
+      "enum": [
+        "IN_APP",
+        "PUSH",
+        "EMAIL",
+        "SMS"
+      ],
+      "default": "IN_APP",
+      "description": "Delivery channel (only IN_APP is functional in Beta)"
+    }
+  },
+  "required": [
+    "workspace_id",
+    "event_id",
+    "reminder_type",
+    "scheduled_for"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.workspace_id": {
+            "$in": "{{user.data.workspace_ids}}"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "data.workspace_id": {
+        "$in": "{{user.data.workspace_ids}}"
+      }
+    },
+    "update": {
+      "$or": [
+        {
+          "data.workspace_id": {
+            "$in": "{{user.data.workspace_ids}}"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.workspace_id": {
+            "$in": "{{user.data.workspace_ids}}"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

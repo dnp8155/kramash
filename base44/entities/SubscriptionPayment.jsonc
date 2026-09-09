@@ -1,0 +1,114 @@
+{
+  "name": "SubscriptionPayment",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "description": "Workspace this payment belongs to"
+    },
+    "subscription_id": {
+      "type": "string",
+      "description": "WorkspaceSubscription activated or updated by this payment (null if payment failed before activation)"
+    },
+    "plan_id": {
+      "type": "string",
+      "description": "Plan purchased (PRO)"
+    },
+    "pricing_id": {
+      "type": "string",
+      "description": "PlanPricing option purchased"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Payment amount in the pricing currency (trusted from PlanPricing, never from client)"
+    },
+    "currency": {
+      "type": "string",
+      "default": "INR"
+    },
+    "billing_cycle_snapshot": {
+      "type": "string",
+      "description": "Snapshot of billing cycle (MONTHLY, SIX_MONTHS, ANNUAL)"
+    },
+    "gateway": {
+      "type": "string",
+      "enum": [
+        "STRIPE",
+        "RAZORPAY",
+        "MANUAL"
+      ],
+      "description": "Payment gateway used"
+    },
+    "gateway_order_id": {
+      "type": "string",
+      "description": "Order/checkout session ID from the gateway"
+    },
+    "gateway_payment_id": {
+      "type": "string",
+      "description": "Payment intent / charge ID from the gateway after payment"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "CREATED",
+        "SUCCESS",
+        "FAILED",
+        "REFUNDED"
+      ],
+      "default": "CREATED",
+      "description": "Payment lifecycle status"
+    },
+    "failure_reason": {
+      "type": "string",
+      "description": "Reason for failure if status is FAILED"
+    },
+    "initiated_by_user_id": {
+      "type": "string",
+      "description": "User who initiated the checkout"
+    },
+    "verified_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the payment was verified by the backend"
+    }
+  },
+  "required": [
+    "workspace_id",
+    "plan_id",
+    "pricing_id",
+    "amount",
+    "gateway",
+    "status"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.workspace_id": {
+            "$in": "{{user.data.workspace_ids}}"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

@@ -1,0 +1,102 @@
+{
+  "name": "Notification",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "description": "Workspace this notification belongs to"
+    },
+    "user_id": {
+      "type": "string",
+      "description": "User this notification is for (null = all workspace members)"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "EVENT_UPCOMING",
+        "PAYMENT_PENDING",
+        "SUBSCRIPTION_EXPIRING",
+        "SUBSCRIPTION_EXPIRED",
+        "TEAM_CONFLICT",
+        "SYSTEM"
+      ],
+      "description": "Notification type"
+    },
+    "title": {
+      "type": "string",
+      "description": "Notification title"
+    },
+    "message": {
+      "type": "string",
+      "description": "Notification body text"
+    },
+    "related_entity_type": {
+      "type": "string",
+      "description": "Type of related entity (e.g. Event, WorkspaceSubscription)"
+    },
+    "related_entity_id": {
+      "type": "string",
+      "description": "ID of related entity"
+    },
+    "read": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the user has read this notification"
+    }
+  },
+  "required": [
+    "workspace_id",
+    "type",
+    "title",
+    "message"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.workspace_id": {
+            "$in": "{{user.data.workspace_ids}}"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "data.workspace_id": {
+        "$in": "{{user.data.workspace_ids}}"
+      }
+    },
+    "update": {
+      "$or": [
+        {
+          "data.workspace_id": {
+            "$in": "{{user.data.workspace_ids}}"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.workspace_id": {
+            "$in": "{{user.data.workspace_ids}}"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
