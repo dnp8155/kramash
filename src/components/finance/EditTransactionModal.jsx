@@ -3,6 +3,7 @@ import { Loader2 } from "lucide-react";
 import Modal from "@/components/common/Modal";
 import Button from "@/components/common/Button";
 import TransactionFields from "./TransactionFields";
+import TransactionError from "./TransactionError";
 import { transactionTypeLabels } from "@/constants/finance";
 
 const fromTxn = (t) => ({
@@ -72,11 +73,7 @@ export default function EditTransactionModal({
       }
     >
       <div className="flex flex-col gap-4">
-        {form.error?.submit && (
-          <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive">
-            {form.error.submit}
-          </div>
-        )}
+        {form.error?.submit && <TransactionError message={form.error.submit} />}
         <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm">
           <p className="font-medium text-foreground">
             {transactionTypeLabels[transaction?.transaction_type] || "Transaction"}

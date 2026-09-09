@@ -22,6 +22,7 @@ import { computeWorkspaceSummary, filterTransactionsByFY } from "@/utils/finance
 import { formatCurrency } from "@/utils/format";
 import { isUpcoming } from "@/utils/dates";
 import { Link } from "react-router-dom";
+import FinancialYearSelector from "@/components/finance/FinancialYearSelector";
 
 export default function Dashboard() {
   const { events, loading } = useEvents();
@@ -97,11 +98,14 @@ export default function Dashboard() {
         title="Dashboard"
         description="Welcome back — here's what's happening across your workspace."
         actions={
-          <Link to="/events">
-            <Button>
-              <CalendarDays className="h-4 w-4" /> {t.createWorkItemLabel}
-            </Button>
-          </Link>
+          <div className="flex items-center gap-3">
+            <FinancialYearSelector className="w-40" showLabel={false} />
+            <Link to="/events">
+              <Button>
+                <CalendarDays className="h-4 w-4" /> {t.createWorkItemLabel}
+              </Button>
+            </Link>
+          </div>
         }
       />
 

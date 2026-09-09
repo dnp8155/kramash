@@ -4,6 +4,7 @@ import Modal from "@/components/common/Modal";
 import Button from "@/components/common/Button";
 import Select from "@/components/common/Select";
 import TransactionFields from "./TransactionFields";
+import TransactionError from "./TransactionError";
 import { todayStr } from "@/utils/team";
 
 const empty = (event) => ({
@@ -85,11 +86,7 @@ export default function RecordExpenseModal({
       }
     >
       <div className="flex flex-col gap-4">
-        {form.error?.submit && (
-          <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive">
-            {form.error.submit}
-          </div>
-        )}
+        {form.error?.submit && <TransactionError message={form.error.submit} />}
         {event ? (
           <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm">
             <p className="font-medium text-foreground">{event.title}</p>

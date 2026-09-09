@@ -4,6 +4,7 @@ import Modal from "@/components/common/Modal";
 import Button from "@/components/common/Button";
 import Select from "@/components/common/Select";
 import TransactionFields from "./TransactionFields";
+import TransactionError from "./TransactionError";
 import { todayStr } from "@/utils/team";
 import { formatCurrency } from "@/utils/format";
 
@@ -94,11 +95,7 @@ export default function RecordTeamPaymentModal({
       }
     >
       <div className="flex flex-col gap-4">
-        {form.error?.submit && (
-          <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive">
-            {form.error.submit}
-          </div>
-        )}
+        {form.error?.submit && <TransactionError message={form.error.submit} />}
         <Select
           label="Team Member"
           value={form.team_assignment_id}
