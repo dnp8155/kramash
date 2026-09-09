@@ -6,6 +6,7 @@ import EmptyState from "@/components/common/EmptyState";
 import StatusBadge from "@/components/common/StatusBadge";
 import { base44 } from "@/api/base44Client";
 import { useWorkspace } from "@/lib/WorkspaceContext";
+import { usePlan } from "@/lib/PlanContext";
 import { formatDate } from "@/utils/format";
 import { toast } from "@/components/ui/use-toast";
 
@@ -13,6 +14,7 @@ import { toast } from "@/components/ui/use-toast";
 // for an event. Only IN_APP channel is functional in Beta.
 export default function EventReminders({ event }) {
   const { workspaceId } = useWorkspace();
+  const { canUseFeature } = usePlan();
   const [reminders, setReminders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -39,6 +41,10 @@ export default function EventReminders({ event }) {
   }, [workspaceId, event?.id]);
 
   const createReminder = async (reminderType) => {
+    if (!canUseFeature("reminders_enabled")) {
+      toast({ title: "Reminders are a Pro feature", description: "Upgrade to Kramashah Pro to set event reminders.", variant: "destructive" });
+      return;
+    }
     if (!event?.start_date) {
       toast({ title: "Event has no start date", variant: "destructive" });
       return;

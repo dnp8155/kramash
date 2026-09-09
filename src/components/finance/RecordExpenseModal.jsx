@@ -75,7 +75,7 @@ export default function RecordExpenseModal({
       title="Record Expense"
       footer={
         <>
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
           <Button onClick={handleSubmit} disabled={saving}>
             {saving && <Loader2 className="h-4 w-4 animate-spin" />} Save Expense
           </Button>
