@@ -1,5 +1,5 @@
 {
-  "name": "EventTeamAssignment",
+  "name": "EventServiceAssignment",
   "type": "object",
   "properties": {
     "workspace_id": {
@@ -8,44 +8,32 @@
     },
     "event_id": {
       "type": "string",
-      "description": "Event this team member is assigned to"
+      "description": "Event this service is assigned to"
     },
-    "team_member_id": {
+    "service_id": {
       "type": "string",
-      "description": "Team member assigned to the event"
+      "description": "Service reference (from workspace Services master)"
     },
-    "role_id": {
+    "service_name_snapshot": {
       "type": "string",
-      "description": "Role reference at the time of assignment"
+      "description": "Service name snapshot for historical accuracy if the service is later renamed"
     },
-    "role_name_snapshot": {
+    "provider_id": {
       "type": "string",
-      "description": "Role name snapshot for historical accuracy if the role is later renamed"
+      "description": "Team member providing the service (optional)"
     },
-    "agreed_rate": {
+    "provider_name_snapshot": {
+      "type": "string",
+      "description": "Provider name snapshot for historical accuracy"
+    },
+    "rate": {
       "type": "number",
-      "description": "Final agreed rate for this specific assignment (independent of the member's default rate)"
+      "description": "Event-specific rate for this service. Does NOT modify the master Service.default_rate."
     },
-    "rate_type": {
-      "type": "string",
-      "enum": [
-        "Per Event",
-        "Per Day",
-        "Fixed"
-      ],
-      "default": "Per Event"
-    },
-    "working_dates": {
-      "type": "array",
-      "items": {
-        "type": "string",
-        "format": "date"
-      },
-      "description": "Specific working dates selected from the event's date range. Used for Per Day rate calculation."
-    },
-    "category_type": {
-      "type": "string",
-      "description": "Color-coded category for this assignment (e.g. Bride, Groom, Other)"
+    "is_addon": {
+      "type": "boolean",
+      "default": false,
+      "description": "If true, this service amount is added on top of the base contract value (last-minute add-on)"
     },
     "assignment_status": {
       "type": "string",
@@ -59,7 +47,7 @@
   "required": [
     "workspace_id",
     "event_id",
-    "team_member_id"
+    "service_id"
   ],
   "rls": {
     "read": {

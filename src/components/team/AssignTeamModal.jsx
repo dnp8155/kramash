@@ -6,9 +6,12 @@ import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
 import { rateTypes } from "@/constants/team";
 import { getMemberConflicts, todayStr } from "@/utils/team";
+import { dateRange } from "@/utils/dates";
 import { formatDate } from "@/utils/format";
 import { paymentMethods } from "@/constants/finance";
 import { toast } from "@/components/ui/use-toast";
+
+const categoryTypes = ["Bride", "Groom", "Other"];
 
 export default function AssignTeamModal({
   open,
@@ -24,6 +27,8 @@ export default function AssignTeamModal({
 }) {
   const [memberId, setMemberId] = useState("");
   const [roleId, setRoleId] = useState("");
+  const [categoryType, setCategoryType] = useState("");
+  const [workingDates, setWorkingDates] = useState([]);
   const [agreedRate, setAgreedRate] = useState("");
   const [rateType, setRateType] = useState("Per Event");
   const [overrideConflict, setOverrideConflict] = useState(false);
@@ -32,6 +37,12 @@ export default function AssignTeamModal({
   const [paymentDate, setPaymentDate] = useState(todayStr());
   const [paymentMethod, setPaymentMethod] = useState("Cash");
   const [saving, setSaving] = useState(false);
+
+  // Generate available dates from the event's date range
+  const eventDates = useMemo(() => {
+    if (!event?.start_date) return [];
+    return dateRange(event.start_date, event.end_date);
+  }, [event?.start_date, event?.end_date]);
 
   const eventMap = useMemo(
     () => Object.fromEntries(events.map((e) => [e.id, e])),
@@ -42,6 +53,9 @@ export default function AssignTeamModal({
     if (open) {
       setMemberId("");
       setRoleId("");
+      setCategoryType("");
+      // Default to event start date
+      setWorkingDates(event?.start_date ? [event.start_date] : []);
       setAgreedRate("");
       setRateType("Per Event");
       setOverrideConflict(false);
@@ -50,7 +64,7 @@ export default function AssignTeamModal({
       setPaymentDate(todayStr());
       setPaymentMethod("Cash");
     }
-  }, [open, event?.id]);
+  }, [open, event?.id, event?.start_date]);
 
   const selectableMembers = useMemo(
     () =>
@@ -65,16 +79,46 @@ export default function AssignTeamModal({
     return getMemberConflicts(memberId, event, assignments, eventMap);
   }, [memberId, event, assignments, eventMap]);
 
+  // Calculate rate from working dates × daily rate (when Per Day)
+  const calculateRate = (type, dates, dailyRate) => {
+    if (type === "Per Day" && dates.length > 0 && dailyRate) {
+      return dates.length * Number(dailyRate);
+    }
+    return dailyRate || "";
+  };
+
   const handleMemberChange = (id) => {
     setMemberId(id);
     const member = members.find((m) => m.id === id);
     const role = roles.find((r) => r.id === (member?.role_id || ""));
+    const newRateType = role?.rate_type || member?.rate_type || "Per Event";
+    const dailyRate = role?.default_rate ?? member?.default_rate ?? "";
     setRoleId(member?.role_id || "");
-    setRateType(role?.rate_type || member?.rate_type || "Per Event");
-    setAgreedRate(
-      role?.default_rate ?? member?.default_rate ?? ""
-    );
+    setRateType(newRateType);
+    setAgreedRate(calculateRate(newRateType, workingDates, dailyRate));
     setOverrideConflict(false);
+  };
+
+  const handleWorkingDateToggle = (date) => {
+    setWorkingDates((prev) => {
+      const next = prev.includes(date)
+        ? prev.filter((d) => d !== date)
+        : [...prev, date].sort();
+      // Recalculate rate when working dates change
+      const member = members.find((m) => m.id === memberId);
+      const role = roles.find((r) => r.id === roleId);
+      const dailyRate = role?.default_rate ?? member?.default_rate ?? "";
+      setAgreedRate(calculateRate(rateType, next, dailyRate));
+      return next;
+    });
+  };
+
+  const handleRateTypeChange = (type) => {
+    setRateType(type);
+    const member = members.find((m) => m.id === memberId);
+    const role = roles.find((r) => r.id === roleId);
+    const dailyRate = role?.default_rate ?? member?.default_rate ?? "";
+    setAgreedRate(calculateRate(type, workingDates, dailyRate));
   };
 
   const handleSave = async () => {
@@ -84,6 +128,10 @@ export default function AssignTeamModal({
     }
     if (!roleId) {
       toast({ title: "Select a role", variant: "destructive" });
+      return;
+    }
+    if (workingDates.length === 0) {
+      toast({ title: "Select at least one working date", variant: "destructive" });
       return;
     }
     if (conflicts.length > 0 && !overrideConflict) {
@@ -115,6 +163,8 @@ export default function AssignTeamModal({
         role_name_snapshot: role?.name || "",
         agreed_rate: agreedRate === "" ? null : Number(agreedRate),
         rate_type: rateType,
+        working_dates: workingDates,
+        category_type: categoryType || null,
       });
 
       // Create payment transaction if Record Payment is ON.
@@ -180,24 +230,69 @@ export default function AssignTeamModal({
           </p>
         )}
 
-        <Select
-          label="Role"
-          value={roleId}
-          onChange={(e) => setRoleId(e.target.value)}
-        >
-          <option value="">Select a role…</option>
-          {roles
-            .filter((r) => r.status === "active")
-            .map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.name}
-              </option>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Select
+            label="Role"
+            value={roleId}
+            onChange={(e) => setRoleId(e.target.value)}
+          >
+            <option value="">Select a role…</option>
+            {roles
+              .filter((r) => r.status === "active")
+              .map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.name}
+                </option>
+              ))}
+          </Select>
+          <Select
+            label="Type"
+            value={categoryType}
+            onChange={(e) => setCategoryType(e.target.value)}
+          >
+            <option value="">Select type…</option>
+            {categoryTypes.map((c) => (
+              <option key={c} value={c}>{c}</option>
             ))}
-        </Select>
+          </Select>
+        </div>
+
+        {/* Working Dates */}
+        {eventDates.length > 0 && (
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">
+              Working Date{eventDates.length > 1 ? "s" : ""}
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {eventDates.map((date) => (
+                <label
+                  key={date}
+                  className={`flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs ${
+                    workingDates.includes(date)
+                      ? "border-primary bg-primary/5 text-primary"
+                      : "border-border text-muted-foreground"
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={workingDates.includes(date)}
+                    onChange={() => handleWorkingDateToggle(date)}
+                    className="h-3.5 w-3.5"
+                  />
+                  {formatDate(date)}
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Input
-            label="Agreed Rate"
+            label={
+              rateType === "Per Day"
+                ? `Agreed Rate (${workingDates.length} day${workingDates.length !== 1 ? "s" : ""})`
+                : "Agreed Rate"
+            }
             name="agreed_rate"
             type="number"
             min="0"
@@ -208,7 +303,7 @@ export default function AssignTeamModal({
           <Select
             label="Rate Type"
             value={rateType}
-            onChange={(e) => setRateType(e.target.value)}
+            onChange={(e) => handleRateTypeChange(e.target.value)}
           >
             {rateTypes.map((t) => (
               <option key={t} value={t}>

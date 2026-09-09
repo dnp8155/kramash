@@ -39,3 +39,18 @@ export function isUpcoming(dateStr) {
 export function isPast(dateStr) {
   return !!dateStr && dateStr < todayISO();
 }
+
+// Returns an array of YYYY-MM-DD strings from startDate to endDate (inclusive).
+// If endDate is missing or before startDate, returns just [startDate].
+export function dateRange(startDate, endDate) {
+  if (!startDate) return [];
+  if (!endDate || endDate < startDate) return [startDate];
+  const dates = [];
+  const d = new Date(startDate + "T00:00:00");
+  const end = new Date(endDate + "T00:00:00");
+  while (d <= end) {
+    dates.push(toISODate(d));
+    d.setDate(d.getDate() + 1);
+  }
+  return dates;
+}

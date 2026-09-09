@@ -14,6 +14,7 @@ import {
   Trash2,
   Loader2,
   Wallet,
+  Plus,
 } from "lucide-react";
 import PageHeader from "@/components/common/PageHeader";
 import Card, { CardHeader, CardTitle, CardBody } from "@/components/common/Card";
@@ -23,6 +24,9 @@ import LoadingState from "@/components/common/LoadingState";
 import EmptyState from "@/components/common/EmptyState";
 import EventForm from "@/components/events/EventForm";
 import AssignTeamModal from "@/components/team/AssignTeamModal";
+import AssignServiceModal from "@/components/team/AssignServiceModal";
+import { useEventServiceAssignments } from "@/hooks/useEventServiceAssignments";
+import { useServices } from "@/hooks/useServices";
 import EventFinancialSummary from "@/components/finance/EventFinancialSummary";
 import TransactionActivityTable from "@/components/finance/TransactionActivityTable";
 import RecordClientPaymentModal from "@/components/finance/RecordClientPaymentModal";
@@ -53,6 +57,12 @@ export default function EventDetail() {
   const { assignments, createAssignment, removeAssignment } =
     useEventTeamAssignments();
   const { categories } = useExpenseCategories();
+  const { services } = useServices();
+  const {
+    serviceAssignments,
+    createServiceAssignment,
+    removeServiceAssignment,
+  } = useEventServiceAssignments();
   const t = useBusinessTerminology();
   const { financialYears } = useFinancialYear();
   const {
@@ -74,6 +84,7 @@ export default function EventDetail() {
   const [payAssignmentId, setPayAssignmentId] = useState(null);
   const [expenseOpen, setExpenseOpen] = useState(false);
   const [editing, setEditing] = useState(null);
+  const [serviceAssignOpen, setServiceAssignOpen] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -108,6 +119,22 @@ export default function EventDetail() {
   );
 
   const existingMemberIds = eventAssignments.map((a) => a.team_member_id);
+
+  const eventServiceAssignments = useMemo(
+    () =>
+      serviceAssignments.filter(
+        (sa) => sa.event_id === id && sa.assignment_status === "Assigned"
+      ),
+    [serviceAssignments, id]
+  );
+  const existingServiceIds = eventServiceAssignments.map((sa) => sa.service_id);
+
+  // Add-on total: sum of add-on service rates (added on top of contract value)
+  const addonTotal = eventServiceAssignments
+    .filter((sa) => sa.is_addon)
+    .reduce((sum, sa) => sum + (Number(sa.rate) || 0), 0);
+  const baseContractValue = Number(event?.contract_value) || 0;
+  const adjustedContractValue = baseContractValue + addonTotal;
 
   const fin = useMemo(
     () =>
@@ -171,6 +198,19 @@ export default function EventDetail() {
 
   const handleAssign = async (data) => {
     return await createAssignment({ ...data, event_id: event.id });
+  };
+
+  const handleCreateServiceAssignment = async (data) => {
+    return await createServiceAssignment({ ...data, event_id: event.id });
+  };
+
+  const handleRemoveServiceAssignment = async (assignmentId) => {
+    try {
+      await removeServiceAssignment(assignmentId);
+      toast({ title: "Service removed" });
+    } catch (e) {
+      toast({ title: "Remove failed", description: e?.message, variant: "destructive" });
+    }
   };
 
   const handleRemove = async (assignmentId) => {
@@ -333,6 +373,7 @@ export default function EventDetail() {
                         <p className="truncate text-xs text-muted-foreground">
                           {a.role_name_snapshot || "—"}
                           {a.rate_type ? ` · ${a.rate_type}` : ""}
+                          {a.category_type ? ` · ${a.category_type}` : ""}
                         </p>
                       </div>
                       <div className="hidden text-right sm:block">
@@ -377,6 +418,60 @@ export default function EventDetail() {
                     </div>
                   );
                 })}
+              </div>
+            )}
+          </CardBody>
+        </Card>
+
+        {/* Services Assignments */}
+        <Card className="lg:col-span-3">
+          <CardHeader className="flex items-center justify-between">
+            <CardTitle>Services</CardTitle>
+            <div className="flex items-center gap-3">
+              {addonTotal > 0 && (
+                <span className="text-sm text-muted-foreground">
+                  Add-ons: {formatCurrency(addonTotal)} · Adjusted: {formatCurrency(adjustedContractValue)}
+                </span>
+              )}
+              <Button size="sm" onClick={() => setServiceAssignOpen(true)}>
+                <Plus className="h-4 w-4" /> Add Service
+              </Button>
+            </div>
+          </CardHeader>
+          <CardBody className="p-0">
+            {eventServiceAssignments.length === 0 ? (
+              <div className="px-5 py-4 text-sm text-muted-foreground">
+                No services assigned yet.
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-2 p-4">
+                {eventServiceAssignments.map((sa) => (
+                  <span
+                    key={sa.id}
+                    className={`inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm ${
+                      sa.is_addon
+                        ? "border-warning/30 bg-warning/10 text-foreground"
+                        : "border-border bg-muted/40 text-foreground"
+                    }`}
+                  >
+                    {sa.service_name_snapshot || "Service"}
+                    <span className="text-xs font-medium text-muted-foreground">
+                      {formatCurrency(sa.rate)}
+                    </span>
+                    {sa.is_addon && (
+                      <span className="rounded bg-warning/20 px-1.5 py-0.5 text-[10px] font-semibold text-warning">
+                        ADD-ON
+                      </span>
+                    )}
+                    <button
+                      onClick={() => handleRemoveServiceAssignment(sa.id)}
+                      className="text-muted-foreground hover:text-destructive"
+                      title="Remove service"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
               </div>
             )}
           </CardBody>
@@ -470,6 +565,17 @@ export default function EventDetail() {
         events={events}
         existingMemberIds={existingMemberIds}
         onAssign={handleAssign}
+        onRecordPayment={handleCreateTxn}
+      />
+
+      <AssignServiceModal
+        open={serviceAssignOpen}
+        onClose={() => setServiceAssignOpen(false)}
+        event={event}
+        members={members}
+        services={services}
+        existingServiceIds={existingServiceIds}
+        onAssign={handleCreateServiceAssignment}
         onRecordPayment={handleCreateTxn}
       />
 
