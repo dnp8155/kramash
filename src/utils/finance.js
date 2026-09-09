@@ -13,37 +13,6 @@ const BUSINESS_EXPENSE = transactionTypes[2];
 
 // --- Financial Year (India: 1 April → 31 March) -----------------------------
 
-// Returns { label, name, start, end } for the FY that contains the given date.
-// e.g. "2026-09-09" → FY 2026–27 (2026-04-01 → 2027-03-31).
-// Uses en-dash (–) in the display name for consistent formatting.
-export function getFinancialYear(dateStr) {
-  if (!dateStr) return null;
-  const d = new Date(dateStr + "T00:00:00");
-  if (Number.isNaN(d.getTime())) return null;
-  const year = d.getFullYear();
-  const month = d.getMonth() + 1; // 1-12
-  const startYear = month >= 4 ? year : year - 1;
-  const endYear = startYear + 1;
-  const name = `FY ${startYear}\u2013${String(endYear).slice(-2)}`;
-  return {
-    label: name, // kept for backward compat — same as name
-    name,
-    start: `${startYear}-04-01`,
-    end: `${endYear}-03-31`,
-  };
-}
-
-export function currentFinancialYear() {
-  return getFinancialYear(todayStr());
-}
-
-// Returns the current FY's { name, start_date, end_date } for backend calls.
-export function getCurrentFinancialYear() {
-  const fy = currentFinancialYear();
-  if (!fy) return null;
-  return { name: fy.name, start_date: fy.start, end_date: fy.end };
-}
-
 // Finds the FinancialYear record that contains the given date.
 export function findFYForDate(dateStr, financialYears) {
   if (!dateStr || !financialYears?.length) return null;
@@ -80,25 +49,6 @@ export function checkFYOverlap(startDate, endDate, existingFYs, excludeId) {
       startDate <= fy.end_date &&
       endDate >= fy.start_date
   );
-}
-
-// Build a descending list of FY labels from the active FY plus any FYs present
-// in the given transactions (legacy support for date-based filtering).
-export function financialYearOptions(transactions = []) {
-  const set = new Set();
-  const current = currentFinancialYear();
-  if (current) set.add(current.label);
-  transactions.forEach((t) => {
-    const fy = getFinancialYear(t.transaction_date);
-    if (fy) set.add(fy.label);
-  });
-  return Array.from(set).sort((a, b) => b.localeCompare(a));
-}
-
-export function isInFinancialYear(dateStr, fyLabel) {
-  if (!fyLabel) return true;
-  const fy = getFinancialYear(dateStr);
-  return fy ? fy.label === fyLabel : false;
 }
 
 // --- Money direction --------------------------------------------------------
@@ -241,12 +191,4 @@ export function computeWorkspaceSummary(transactions = []) {
     cashReceived,
     onlineReceived,
   };
-}
-
-// Today as YYYY-MM-DD (local).
-function todayStr() {
-  const d = new Date();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${d.getFullYear()}-${m}-${day}`;
 }

@@ -170,8 +170,7 @@ export default function EventDetail() {
   };
 
   const handleAssign = async (data) => {
-    await createAssignment({ ...data, event_id: event.id });
-    toast({ title: "Team member assigned" });
+    return await createAssignment({ ...data, event_id: event.id });
   };
 
   const handleRemove = async (assignmentId) => {
@@ -471,6 +470,7 @@ export default function EventDetail() {
         events={events}
         existingMemberIds={existingMemberIds}
         onAssign={handleAssign}
+        onRecordPayment={handleCreateTxn}
       />
 
       <RecordClientPaymentModal

@@ -5,8 +5,9 @@ import Button from "@/components/common/Button";
 import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
 import { rateTypes } from "@/constants/team";
-import { getMemberConflicts } from "@/utils/team";
+import { getMemberConflicts, todayStr } from "@/utils/team";
 import { formatDate } from "@/utils/format";
+import { paymentMethods } from "@/constants/finance";
 import { toast } from "@/components/ui/use-toast";
 
 export default function AssignTeamModal({
@@ -19,12 +20,17 @@ export default function AssignTeamModal({
   events,
   existingMemberIds = [],
   onAssign,
+  onRecordPayment,
 }) {
   const [memberId, setMemberId] = useState("");
   const [roleId, setRoleId] = useState("");
   const [agreedRate, setAgreedRate] = useState("");
   const [rateType, setRateType] = useState("Per Event");
   const [overrideConflict, setOverrideConflict] = useState(false);
+  const [recordPayment, setRecordPayment] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState("");
+  const [paymentDate, setPaymentDate] = useState(todayStr());
+  const [paymentMethod, setPaymentMethod] = useState("Cash");
   const [saving, setSaving] = useState(false);
 
   const eventMap = useMemo(
@@ -39,6 +45,10 @@ export default function AssignTeamModal({
       setAgreedRate("");
       setRateType("Per Event");
       setOverrideConflict(false);
+      setRecordPayment(false);
+      setPaymentAmount("");
+      setPaymentDate(todayStr());
+      setPaymentMethod("Cash");
     }
   }, [open, event?.id]);
 
@@ -85,15 +95,45 @@ export default function AssignTeamModal({
       return;
     }
     const role = roles.find((r) => r.id === roleId);
+
+    // Validate payment fields if Record Payment is ON
+    const amt = Number(paymentAmount);
+    if (recordPayment && (!paymentAmount || Number.isNaN(amt) || amt <= 0)) {
+      toast({ title: "Enter a valid payment amount", variant: "destructive" });
+      return;
+    }
+    if (recordPayment && !paymentDate) {
+      toast({ title: "Select a payment date", variant: "destructive" });
+      return;
+    }
+
     setSaving(true);
     try {
-      await onAssign({
+      const assignment = await onAssign({
         team_member_id: memberId,
         role_id: roleId,
         role_name_snapshot: role?.name || "",
         agreed_rate: agreedRate === "" ? null : Number(agreedRate),
         rate_type: rateType,
       });
+
+      // Create payment transaction if Record Payment is ON.
+      // financial_year_id is auto-assigned by createTransaction from the
+      // payment date — NOT from the UI-selected FY.
+      if (recordPayment && onRecordPayment && assignment) {
+        await onRecordPayment({
+          transaction_type: "TEAM_PAYMENT",
+          event_id: event.id,
+          team_member_id: memberId,
+          team_assignment_id: assignment.id,
+          amount: amt,
+          payment_method: paymentMethod,
+          transaction_date: paymentDate,
+        });
+        toast({ title: "Team member assigned and payment recorded" });
+      } else {
+        toast({ title: "Team member assigned" });
+      }
       onClose();
     } catch (e) {
       toast({ title: "Assignment failed", description: e?.message, variant: "destructive" });
@@ -177,6 +217,50 @@ export default function AssignTeamModal({
             ))}
           </Select>
         </div>
+
+        {/* Record Payment toggle */}
+        {onRecordPayment && (
+          <div className="rounded-lg border border-border p-3">
+            <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-foreground">
+              <input
+                type="checkbox"
+                checked={recordPayment}
+                onChange={(e) => setRecordPayment(e.target.checked)}
+                className="h-4 w-4 rounded border-input"
+              />
+              Record Payment Now
+            </label>
+            {recordPayment && (
+              <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <Input
+                  label="Amount"
+                  type="number"
+                  min="0"
+                  step="any"
+                  inputMode="decimal"
+                  value={paymentAmount}
+                  onChange={(e) => setPaymentAmount(e.target.value)}
+                  placeholder="0"
+                />
+                <Input
+                  label="Payment Date"
+                  type="date"
+                  value={paymentDate}
+                  onChange={(e) => setPaymentDate(e.target.value)}
+                />
+                <Select
+                  label="Payment Method"
+                  value={paymentMethod}
+                  onChange={(e) => setPaymentMethod(e.target.value)}
+                >
+                  {paymentMethods.map((m) => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </Select>
+              </div>
+            )}
+          </div>
+        )}
 
         {conflicts.length > 0 && (
           <div className="rounded-lg border border-warning/30 bg-warning/10 p-3">

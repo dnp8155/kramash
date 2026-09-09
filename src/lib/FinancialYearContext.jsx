@@ -22,6 +22,7 @@ export const FinancialYearProvider = ({ children }) => {
   const [activeFY, setActiveFY] = useState(null);
   const [viewingFYId, setViewingFYId] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const load = useCallback(async () => {
     if (!workspaceId) {
@@ -32,6 +33,7 @@ export const FinancialYearProvider = ({ children }) => {
       return;
     }
     setLoading(true);
+    setError(null);
     try {
       let fys = await base44.entities.FinancialYear.filter(
         { workspace_id: workspaceId },
@@ -69,10 +71,11 @@ export const FinancialYearProvider = ({ children }) => {
       } catch {
         setViewingFYId(null);
       }
-    } catch {
+    } catch (e) {
       setFinancialYears([]);
       setActiveFY(null);
       setViewingFYId(null);
+      setError(e?.message || "Failed to load Financial Years");
     } finally {
       setLoading(false);
     }
@@ -193,6 +196,7 @@ export const FinancialYearProvider = ({ children }) => {
         selectedFY,
         selectedFYId: selectedFY?.id || null,
         loading,
+        error,
         selectFY,
         setWorkspaceActiveFY,
         createFY,
