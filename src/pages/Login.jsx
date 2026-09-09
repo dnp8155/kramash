@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff, Loader2, AlertCircle } from "lucide-react";
-import AuthShell from "@/components/auth/AuthShell";
 import AuthLogo from "@/components/auth/AuthLogo";
+import LoginProductVisual from "@/components/auth/LoginProductVisual";
 import GoogleIcon from "@/components/GoogleIcon";
 import { safeReturnTo } from "@/lib/authReturnTo";
 import { useAuth } from "@/lib/AuthContext";
@@ -78,7 +78,6 @@ export default function Login() {
       setLoading(false);
       return;
     }
-    // Success — show transition, then redirect
     setOpening(true);
     setTimeout(() => {
       window.location.href = returnTo;
@@ -90,131 +89,147 @@ export default function Login() {
   };
 
   return (
-    <AuthShell>
-      <AuthLogo />
+    <div className="flex min-h-screen flex-col lg:flex-row bg-background">
+      {/* Left: Login content */}
+      <div className="flex flex-1 flex-col justify-center px-6 py-10 lg:px-20 lg:py-0">
+        <div className="mx-auto w-full max-w-[420px] pb-6">
+          <AuthLogo />
 
-      <div className="mt-10">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Welcome back
-        </p>
-        <h1 className="mt-2 text-2xl font-bold tracking-tight text-foreground">
-          Welcome back to Kramashah.
-        </h1>
-        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          Sign in to manage your clients, projects, team, quotations and finances.
-        </p>
-      </div>
-
-      {error && (
-        <div
-          role="alert"
-          className="mt-6 flex items-start gap-2 rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive"
-        >
-          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-          <span>{error}</span>
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="mt-6 space-y-5">
-        <div className="space-y-1.5">
-          <Label htmlFor="email">Email address</Label>
-          <Input
-            id="email"
-            type="email"
-            autoComplete="email"
-            autoFocus
-            placeholder="you@example.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="h-12"
-            disabled={loading || opening}
-            required
-          />
-        </div>
-
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="password">Password</Label>
-            <Link
-              to="/forgot-password"
-              className="text-xs font-medium text-primary hover:underline"
-            >
-              Forgot password?
-            </Link>
-          </div>
-          <div className="relative">
-            <Input
-              id="password"
-              type={showPassword ? "text" : "password"}
-              autoComplete="current-password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.getModifierState) setCapsLock(e.getModifierState("CapsLock"));
-              }}
-              onKeyUp={(e) => {
-                if (e.getModifierState) setCapsLock(e.getModifierState("CapsLock"));
-              }}
-              className="h-12 pr-10"
-              disabled={loading || opening}
-              required
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword((s) => !s)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              aria-label={showPassword ? "Hide password" : "Show password"}
-            >
-              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </button>
-          </div>
-          {capsLock && (
-            <p className="flex items-center gap-1 text-xs text-warning">
-              <AlertCircle className="h-3 w-3" /> Caps Lock is on
+          <div className="mt-12">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+              Welcome back
+            </h1>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              Sign in to continue to your workspace.
             </p>
+          </div>
+
+          {error && (
+            <div
+              role="alert"
+              className="mt-6 flex items-start gap-2 rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive"
+            >
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>{error}</span>
+            </div>
           )}
+
+          <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+            <div className="space-y-1.5">
+              <Label htmlFor="email">Email address</Label>
+              <Input
+                id="email"
+                type="email"
+                autoComplete="email"
+                autoFocus
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="h-11"
+                disabled={loading || opening}
+                required
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Password</Label>
+                <Link
+                  to="/forgot-password"
+                  className="text-xs font-medium text-muted-foreground hover:text-foreground"
+                >
+                  Forgot password?
+                </Link>
+              </div>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.getModifierState) setCapsLock(e.getModifierState("CapsLock"));
+                  }}
+                  onKeyUp={(e) => {
+                    if (e.getModifierState) setCapsLock(e.getModifierState("CapsLock"));
+                  }}
+                  className="h-11 pr-10"
+                  disabled={loading || opening}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((s) => !s)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              {capsLock && (
+                <p className="flex items-center gap-1 text-xs text-warning">
+                  <AlertCircle className="h-3 w-3" /> Caps Lock is on
+                </p>
+              )}
+            </div>
+
+            <Button
+              type="submit"
+              className="h-11 w-full font-medium"
+              disabled={loading || opening}
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Signing in…
+                </>
+              ) : (
+                "Continue"
+              )}
+            </Button>
+          </form>
+
+          <div className="my-6 flex items-center gap-3">
+            <div className="h-px flex-1 bg-border" />
+            <span className="text-xs font-medium text-muted-foreground">or</span>
+            <div className="h-px flex-1 bg-border" />
+          </div>
+
+          <Button
+            type="button"
+            variant="outline"
+            className="h-11 w-full bg-card font-medium"
+            onClick={handleGoogle}
+            disabled={loading || opening}
+          >
+            <GoogleIcon className="mr-2 h-5 w-5" />
+            Continue with Google
+          </Button>
+
+          <p className="mt-8 text-center text-sm text-muted-foreground">
+            New to Kramashah?{" "}
+            <Link to={registerPath} className="font-medium text-primary hover:underline">
+              Create account
+            </Link>
+          </p>
+
+          <p className="mt-10 text-center text-xs text-muted-foreground/50">
+            © 2026 Kramashah
+          </p>
         </div>
-
-        <Button
-          type="submit"
-          className="h-12 w-full font-medium"
-          disabled={loading || opening}
-        >
-          {loading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Signing in…
-            </>
-          ) : (
-            "Sign in"
-          )}
-        </Button>
-      </form>
-
-      <div className="my-6 flex items-center gap-3">
-        <div className="h-px flex-1 bg-border" />
-        <span className="text-xs font-medium text-muted-foreground">or continue with</span>
-        <div className="h-px flex-1 bg-border" />
       </div>
 
-      <Button
-        type="button"
-        variant="outline"
-        className="h-12 w-full bg-card font-medium"
-        onClick={handleGoogle}
-        disabled={loading || opening}
-      >
-        <GoogleIcon className="mr-2 h-5 w-5" />
-        Continue with Google
-      </Button>
-
-      <p className="mt-8 text-center text-sm text-muted-foreground">
-        New to Kramashah?{" "}
-        <Link to={registerPath} className="font-medium text-primary hover:underline">
-          Create your account
-        </Link>
-      </p>
+      {/* Right: Product visual */}
+      <div className="relative hidden lg:block lg:w-[48%] xl:w-[50%]">
+        <div className="absolute inset-0 bg-gradient-to-br from-muted/20 via-muted/30 to-muted/20" />
+        <div className="relative flex h-full min-h-screen items-center justify-center p-12 pl-8">
+          <div className="w-full max-w-xl">
+            <LoginProductVisual />
+          </div>
+        </div>
+      </div>
 
       {opening && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-white">
@@ -226,6 +241,6 @@ export default function Login() {
           </div>
         </div>
       )}
-    </AuthShell>
+    </div>
   );
 }
