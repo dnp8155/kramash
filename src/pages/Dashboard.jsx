@@ -1,0 +1,101 @@
+import { CalendarDays, Users, Wallet, TrendingUp, ArrowUpRight, Clock } from "lucide-react";
+import PageHeader from "@/components/common/PageHeader";
+import StatCard from "@/components/common/StatCard";
+import Card, { CardHeader, CardTitle, CardBody } from "@/components/common/Card";
+import StatusBadge from "@/components/common/StatusBadge";
+import Button from "@/components/common/Button";
+import { mockEvents } from "@/data/mockEvents";
+import { mockPayments } from "@/data/mockPayments";
+import { mockTeam } from "@/data/mockTeam";
+import { formatCurrency, formatDate } from "@/utils/format";
+import { Link } from "react-router-dom";
+
+export default function Dashboard() {
+  const totalRevenue = mockPayments
+    .filter((p) => p.status === "Received")
+    .reduce((s, p) => s + p.amount, 0);
+  const upcoming = [...mockEvents]
+    .filter((e) => ["Confirmed", "In Progress", "Pending"].includes(e.status))
+    .sort((a, b) => new Date(a.date) - new Date(b.date))
+    .slice(0, 4);
+
+  return (
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        title="Dashboard"
+        description="Welcome back — here's what's happening across your studio."
+        actions={
+          <Button>
+            <CalendarDays className="h-4 w-4" /> New Event
+          </Button>
+        }
+      />
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard label="Total Revenue" value={totalRevenue} isCurrency icon={Wallet} accent="success" trend="↑ 18% vs last month" />
+        <StatCard label="Active Events" value={mockEvents.filter((e) => e.status !== "Cancelled").length} icon={CalendarDays} accent="primary" trend="3 starting this week" />
+        <StatCard label="Team Members" value={mockTeam.length} icon={Users} accent="info" trend="1 on leave" />
+        <StatCard label="Pending Payments" value={mockPayments.filter((p) => p.status === "Pending").length} icon={Clock} accent="warning" trend="₹60,000 awaiting" />
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <CardHeader className="flex items-center justify-between">
+            <CardTitle>Upcoming Events</CardTitle>
+            <Link to="/events" className="text-sm font-medium text-primary hover:underline">
+              View all
+            </Link>
+          </CardHeader>
+          <CardBody className="p-0">
+            <div className="divide-y divide-border">
+              {upcoming.map((event) => (
+                <div key={event.id} className="flex items-center gap-4 px-5 py-3.5">
+                  <div className="flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-lg bg-accent text-center">
+                    <span className="text-[10px] font-semibold uppercase text-muted-foreground">
+                      {new Date(event.date).toLocaleDateString("en-IN", { month: "short" })}
+                    </span>
+                    <span className="text-base font-bold text-foreground">
+                      {new Date(event.date).getDate()}
+                    </span>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-foreground">{event.title}</p>
+                    <p className="truncate text-xs text-muted-foreground">{event.client} · {event.location}</p>
+                  </div>
+                  <StatusBadge status={event.status} />
+                </div>
+              ))}
+            </div>
+          </CardBody>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Activity</CardTitle>
+          </CardHeader>
+          <CardBody className="space-y-4">
+            {[
+              { icon: TrendingUp, text: "Payment received from Mehta Enterprises", sub: "2 hours ago", tone: "text-success" },
+              { icon: CalendarDays, text: "Sharma Wedding marked as Confirmed", sub: "Yesterday", tone: "text-primary" },
+              { icon: Users, text: "Rohan Das invited to the team", sub: "2 days ago", tone: "text-info" },
+              { icon: ArrowUpRight, text: "Quotation sent to IIT Bombay", sub: "3 days ago", tone: "text-warning" },
+            ].map((act, i) => {
+              const Icon = act.icon;
+              return (
+                <div key={i} className="flex gap-3">
+                  <div className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted ${act.tone}`}>
+                    <Icon className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-foreground">{act.text}</p>
+                    <p className="text-xs text-muted-foreground">{act.sub}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </CardBody>
+        </Card>
+      </div>
+    </div>
+  );
+}

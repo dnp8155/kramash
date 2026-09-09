@@ -6,7 +6,18 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ScrollToTop from './components/ScrollToTop';
-// Add page imports here
+import { ThemeProvider } from '@/lib/ThemeProvider';
+import AppLayout from '@/components/layout/AppLayout';
+import ErrorBoundary from '@/components/common/ErrorBoundary';
+import Dashboard from '@/pages/Dashboard';
+import Events from '@/pages/Events';
+import Team from '@/pages/Team';
+import Financial from '@/pages/Financial';
+import RateEstimator from '@/pages/RateEstimator';
+import Quotation from '@/pages/Quotation';
+import Preferences from '@/pages/Preferences';
+import AppUpdates from '@/pages/AppUpdates';
+import Plan from '@/pages/Plan';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -34,7 +45,17 @@ const AuthenticatedApp = () => {
   // Render the main app
   return (
     <Routes>
-      {/* Add your page Route elements here */}
+      <Route element={<AppLayout />}>
+        <Route path="/" element={<ErrorBoundary><Dashboard /></ErrorBoundary>} />
+        <Route path="/events" element={<ErrorBoundary><Events /></ErrorBoundary>} />
+        <Route path="/team" element={<ErrorBoundary><Team /></ErrorBoundary>} />
+        <Route path="/financial" element={<ErrorBoundary><Financial /></ErrorBoundary>} />
+        <Route path="/rate-estimator" element={<ErrorBoundary><RateEstimator /></ErrorBoundary>} />
+        <Route path="/quotation" element={<ErrorBoundary><Quotation /></ErrorBoundary>} />
+        <Route path="/preferences" element={<ErrorBoundary><Preferences /></ErrorBoundary>} />
+        <Route path="/app-updates" element={<ErrorBoundary><AppUpdates /></ErrorBoundary>} />
+        <Route path="/plan" element={<ErrorBoundary><Plan /></ErrorBoundary>} />
+      </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
@@ -45,13 +66,15 @@ function App() {
 
   return (
     <AuthProvider>
-      <QueryClientProvider client={queryClientInstance}>
-        <Router>
-          <ScrollToTop />
-          <AuthenticatedApp />
-        </Router>
-        <Toaster />
-      </QueryClientProvider>
+      <ThemeProvider>
+        <QueryClientProvider client={queryClientInstance}>
+          <Router>
+            <ScrollToTop />
+            <AuthenticatedApp />
+          </Router>
+          <Toaster />
+        </QueryClientProvider>
+      </ThemeProvider>
     </AuthProvider>
   )
 }
