@@ -13,8 +13,9 @@ import StatusBadge from "@/components/common/StatusBadge";
 import Button from "@/components/common/Button";
 import LoadingState from "@/components/common/LoadingState";
 import { useEvents } from "@/hooks/useEvents";
-import { mockPayments } from "@/data/mockPayments";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
+import { useFinancialTransactions } from "@/hooks/useFinancialTransactions";
+import { computeWorkspaceSummary } from "@/utils/finance";
 import { formatCurrency } from "@/utils/format";
 import { isUpcoming } from "@/utils/dates";
 import { Link } from "react-router-dom";
@@ -22,12 +23,35 @@ import { Link } from "react-router-dom";
 export default function Dashboard() {
   const { events, loading } = useEvents();
   const { members } = useTeamMembers();
+  const { transactions } = useFinancialTransactions();
 
-  // Revenue, team and pending payments remain on mock data until the
-  // Financial (Phase 5) and Team (Phase 4) modules are built.
-  const totalRevenue = mockPayments
-    .filter((p) => p.status === "Received")
-    .reduce((s, p) => s + p.amount, 0);
+  const summary = computeWorkspaceSummary(transactions);
+  const totalRevenue = summary.received;
+  const pendingEvents = events.filter((e) => {
+    const cv = Number(e.contract_value) || 0;
+    if (cv <= 0) return false;
+    const received = transactions
+      .filter(
+        (t) =>
+          t.status === "ACTIVE" &&
+          t.transaction_type === "CLIENT_RECEIPT" &&
+          t.event_id === e.id
+      )
+      .reduce((s, t) => s + (Number(t.amount) || 0), 0);
+    return received < cv;
+  });
+  const pendingAmount = pendingEvents.reduce((s, e) => {
+    const cv = Number(e.contract_value) || 0;
+    const received = transactions
+      .filter(
+        (t) =>
+          t.status === "ACTIVE" &&
+          t.transaction_type === "CLIENT_RECEIPT" &&
+          t.event_id === e.id
+      )
+      .reduce((s2, t) => s2 + (Number(t.amount) || 0), 0);
+    return s + Math.max(0, cv - received);
+  }, 0);
   const activeEvents = events.filter((e) => e.status !== "Cancelled").length;
   const upcoming = events
     .filter(
@@ -58,7 +82,7 @@ export default function Dashboard() {
           isCurrency
           icon={Wallet}
           accent="success"
-          trend="↑ 18% vs last month"
+          trend="Client payments received"
         />
         <StatCard
           label="Active Events"
@@ -76,10 +100,11 @@ export default function Dashboard() {
         />
         <StatCard
           label="Pending Payments"
-          value={mockPayments.filter((p) => p.status === "Pending").length}
+          value={pendingAmount}
+          isCurrency
           icon={Clock}
           accent="warning"
-          trend="₹60,000 awaiting"
+          trend={`${pendingEvents.length} event${pendingEvents.length === 1 ? "" : "s"} awaiting`}
         />
       </div>
 

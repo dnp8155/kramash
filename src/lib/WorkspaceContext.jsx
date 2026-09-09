@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, useCallback } from "rea
 import { Navigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
+import { setCurrencySymbol } from "@/utils/format";
 import FullScreenSpinner from "@/components/FullScreenSpinner";
 
 const WorkspaceContext = createContext(null);
@@ -31,6 +32,7 @@ export const WorkspaceProvider = ({ children }) => {
       const activeId = user.active_workspace_id || members[0].workspace_id;
       const m = members.find((x) => x.workspace_id === activeId) || members[0];
       const ws = await base44.entities.Workspace.get(m.workspace_id);
+      setCurrencySymbol(ws?.currency);
       setWorkspace(ws);
       setMembership(m);
       setLoading(false);

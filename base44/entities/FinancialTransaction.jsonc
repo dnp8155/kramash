@@ -1,0 +1,132 @@
+{
+  "name": "FinancialTransaction",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "description": "Workspace this transaction belongs to"
+    },
+    "event_id": {
+      "type": "string",
+      "description": "Event this transaction relates to (optional for general business expenses)"
+    },
+    "transaction_type": {
+      "type": "string",
+      "enum": [
+        "CLIENT_RECEIPT",
+        "TEAM_PAYMENT",
+        "BUSINESS_EXPENSE"
+      ],
+      "description": "CLIENT_RECEIPT = money in from client; TEAM_PAYMENT = money out to crew; BUSINESS_EXPENSE = money out for expenses"
+    },
+    "client_id": {
+      "type": "string",
+      "description": "Client reference for CLIENT_RECEIPT (derived from the event's client)"
+    },
+    "team_member_id": {
+      "type": "string",
+      "description": "Team member reference for TEAM_PAYMENT"
+    },
+    "team_assignment_id": {
+      "type": "string",
+      "description": "Event team assignment reference for TEAM_PAYMENT (links payment to event + member + agreed rate)"
+    },
+    "expense_category_id": {
+      "type": "string",
+      "description": "Expense category reference for BUSINESS_EXPENSE"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Transaction amount in the workspace currency (stored as a number; always > 0)"
+    },
+    "payment_method": {
+      "type": "string",
+      "enum": [
+        "Cash",
+        "UPI",
+        "Bank Transfer",
+        "Card",
+        "Cheque",
+        "Other"
+      ],
+      "description": "How the money was paid/received"
+    },
+    "transaction_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date the transaction occurred (date-only, YYYY-MM-DD)"
+    },
+    "reference_number": {
+      "type": "string",
+      "description": "Optional reference (UTR, cheque no, invoice no)"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Optional notes"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "ACTIVE",
+        "VOID"
+      ],
+      "default": "ACTIVE",
+      "description": "VOID transactions are excluded from all financial totals but retained for audit"
+    }
+  },
+  "required": [
+    "workspace_id",
+    "transaction_type",
+    "amount",
+    "transaction_date"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.workspace_id": {
+            "$in": "{{user.data.workspace_ids}}"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "data.workspace_id": {
+        "$in": "{{user.data.workspace_ids}}"
+      }
+    },
+    "update": {
+      "$or": [
+        {
+          "data.workspace_id": {
+            "$in": "{{user.data.workspace_ids}}"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.workspace_id": {
+            "$in": "{{user.data.workspace_ids}}"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,75 @@
+{
+  "name": "ExpenseCategory",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "description": "Workspace this expense category belongs to"
+    },
+    "name": {
+      "type": "string",
+      "description": "Category name (e.g. Travel, Hotel, Equipment Rental)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive"
+      ],
+      "default": "active"
+    }
+  },
+  "required": [
+    "workspace_id",
+    "name"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.workspace_id": {
+            "$in": "{{user.data.workspace_ids}}"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "data.workspace_id": {
+        "$in": "{{user.data.workspace_ids}}"
+      }
+    },
+    "update": {
+      "$or": [
+        {
+          "data.workspace_id": {
+            "$in": "{{user.data.workspace_ids}}"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.workspace_id": {
+            "$in": "{{user.data.workspace_ids}}"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

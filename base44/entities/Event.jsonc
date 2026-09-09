@@ -47,6 +47,10 @@
       ],
       "default": "Pending"
     },
+    "contract_value": {
+      "type": "number",
+      "description": "Agreed event value \u2014 total the client is expected to pay. Source of truth for client pending calculation. May be set manually or synced from an approved quotation (Phase 6)."
+    },
     "description": {
       "type": "string",
       "description": "Event description / brief"

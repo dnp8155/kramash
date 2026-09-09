@@ -13,6 +13,7 @@ import StatusBadge from "@/components/common/StatusBadge";
 import LoadingState from "@/components/common/LoadingState";
 import EmptyState from "@/components/common/EmptyState";
 import TeamRoleForm from "@/components/team/TeamRoleForm";
+import ExpenseCategoryManager from "@/components/finance/ExpenseCategoryManager";
 import { formatCurrency } from "@/utils/format";
 import { Image } from "@/components/ui/image";
 
@@ -361,6 +362,9 @@ export default function Preferences() {
             )}
           </CardBody>
         </Card>
+
+        {/* Expense Categories */}
+        <ExpenseCategoryManager />
 
         {/* Notifications */}
         <Card>

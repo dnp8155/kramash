@@ -9,11 +9,11 @@ import {
   Mail,
   Pencil,
   UserPlus,
-  Wallet,
   FileText,
   StickyNote,
   Trash2,
   Loader2,
+  Wallet,
 } from "lucide-react";
 import PageHeader from "@/components/common/PageHeader";
 import Card, { CardHeader, CardTitle, CardBody } from "@/components/common/Card";
@@ -23,11 +23,20 @@ import LoadingState from "@/components/common/LoadingState";
 import EmptyState from "@/components/common/EmptyState";
 import EventForm from "@/components/events/EventForm";
 import AssignTeamModal from "@/components/team/AssignTeamModal";
+import EventFinancialSummary from "@/components/finance/EventFinancialSummary";
+import TransactionActivityTable from "@/components/finance/TransactionActivityTable";
+import RecordClientPaymentModal from "@/components/finance/RecordClientPaymentModal";
+import RecordTeamPaymentModal from "@/components/finance/RecordTeamPaymentModal";
+import RecordExpenseModal from "@/components/finance/RecordExpenseModal";
+import EditTransactionModal from "@/components/finance/EditTransactionModal";
 import { useEvents } from "@/hooks/useEvents";
 import { useClients } from "@/hooks/useClients";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { useTeamRoles } from "@/hooks/useTeamRoles";
 import { useEventTeamAssignments } from "@/hooks/useEventTeamAssignments";
+import { useFinancialTransactions } from "@/hooks/useFinancialTransactions";
+import { useExpenseCategories } from "@/hooks/useExpenseCategories";
+import { computeEventFinancials } from "@/utils/finance";
 import { formatDate, formatCurrency, initials } from "@/utils/format";
 import { toast } from "@/components/ui/use-toast";
 import { base44 } from "@/api/base44Client";
@@ -40,6 +49,14 @@ export default function EventDetail() {
   const { roles } = useTeamRoles();
   const { assignments, createAssignment, removeAssignment } =
     useEventTeamAssignments();
+  const { categories } = useExpenseCategories();
+  const {
+    transactions,
+    createTransaction,
+    updateTransaction,
+    voidTransaction,
+    unvoidTransaction,
+  } = useFinancialTransactions({ eventId: id });
 
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -47,6 +64,11 @@ export default function EventDetail() {
   const [editOpen, setEditOpen] = useState(false);
   const [assignOpen, setAssignOpen] = useState(false);
   const [removingId, setRemovingId] = useState(null);
+  const [clientPayOpen, setClientPayOpen] = useState(false);
+  const [teamPayOpen, setTeamPayOpen] = useState(false);
+  const [payAssignmentId, setPayAssignmentId] = useState(null);
+  const [expenseOpen, setExpenseOpen] = useState(false);
+  const [editing, setEditing] = useState(null);
 
   useEffect(() => {
     let active = true;
@@ -82,20 +104,28 @@ export default function EventDetail() {
 
   const existingMemberIds = eventAssignments.map((a) => a.team_member_id);
 
-  const teamCost = eventAssignments.reduce(
-    (sum, a) => sum + (a.agreed_rate || 0),
-    0
+  const fin = useMemo(
+    () =>
+      computeEventFinancials({
+        transactions,
+        event,
+        assignments: eventAssignments,
+      }),
+    [transactions, event, eventAssignments]
+  );
+
+  const paidByAssignment = useMemo(
+    () =>
+      Object.fromEntries(
+        fin.assignmentPayments.map((ap) => [ap.assignment.id, ap])
+      ),
+    [fin]
   );
 
   if (loading) {
     return (
       <div className="flex flex-col gap-6">
-        <Link
-          to="/events"
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" /> Back to Events
-        </Link>
+        <BackLink />
         <Card>
           <LoadingState label="Loading event…" />
         </Card>
@@ -106,12 +136,7 @@ export default function EventDetail() {
   if (notFound || !event) {
     return (
       <div className="flex flex-col gap-6">
-        <Link
-          to="/events"
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" /> Back to Events
-        </Link>
+        <BackLink />
         <Card>
           <EmptyState
             title="Event not found"
@@ -133,6 +158,12 @@ export default function EventDetail() {
     toast({ title: "Event updated" });
   };
 
+  const handleEditContractValue = async (value) => {
+    const updated = await updateEvent(event.id, { contract_value: value });
+    setEvent(updated);
+    toast({ title: "Contract value updated" });
+  };
+
   const handleAssign = async (data) => {
     await createAssignment({ ...data, event_id: event.id });
     toast({ title: "Team member assigned" });
@@ -150,14 +181,24 @@ export default function EventDetail() {
     }
   };
 
+  const handleCreateTxn = async (data) => {
+    await createTransaction(data);
+    toast({ title: "Transaction recorded" });
+  };
+
+  const handleEditTxn = async (data) => {
+    await updateTransaction(editing.id, data);
+    toast({ title: "Transaction updated" });
+  };
+
+  const openPayFor = (assignmentId) => {
+    setPayAssignmentId(assignmentId);
+    setTeamPayOpen(true);
+  };
+
   return (
     <div className="flex flex-col gap-6">
-      <Link
-        to="/events"
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeft className="h-4 w-4" /> Back to Events
-      </Link>
+      <BackLink />
 
       <PageHeader
         title={event.title}
@@ -193,9 +234,7 @@ export default function EventDetail() {
             </div>
             {event.description && (
               <div>
-                <p className="mb-1 text-xs font-medium text-muted-foreground">
-                  Description
-                </p>
+                <p className="mb-1 text-xs font-medium text-muted-foreground">Description</p>
                 <p className="text-foreground">{event.description}</p>
               </div>
             )}
@@ -251,7 +290,7 @@ export default function EventDetail() {
             <CardTitle>Team</CardTitle>
             <div className="flex items-center gap-3">
               <span className="text-sm text-muted-foreground">
-                Team cost: {formatCurrency(teamCost)}
+                Team cost: {formatCurrency(fin.teamAgreed)}
               </span>
               <Button size="sm" onClick={() => setAssignOpen(true)}>
                 <UserPlus className="h-4 w-4" /> Assign Team
@@ -274,10 +313,11 @@ export default function EventDetail() {
               <div className="divide-y divide-border">
                 {eventAssignments.map((a) => {
                   const member = members.find((m) => m.id === a.team_member_id);
+                  const ap = paidByAssignment[a.id];
                   return (
                     <div
                       key={a.id}
-                      className="flex items-center gap-3 px-5 py-3.5"
+                      className="flex flex-wrap items-center gap-3 px-5 py-3.5"
                     >
                       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
                         {member ? initials(member.name) : "?"}
@@ -291,12 +331,32 @@ export default function EventDetail() {
                           {a.rate_type ? ` · ${a.rate_type}` : ""}
                         </p>
                       </div>
-                      <span className="text-sm font-medium text-foreground">
-                        {a.agreed_rate != null ? formatCurrency(a.agreed_rate) : "—"}
-                      </span>
-                      <span className="hidden text-xs text-muted-foreground sm:block">
-                        Paid: {formatCurrency(0)}
-                      </span>
+                      <div className="hidden text-right sm:block">
+                        <p className="text-xs text-muted-foreground">
+                          Agreed {formatCurrency(a.agreed_rate)}
+                        </p>
+                        <p className="text-xs font-medium text-foreground">
+                          Paid {formatCurrency(ap?.paid || 0)}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-muted-foreground">Remaining</p>
+                        <p
+                          className={`text-xs font-semibold ${
+                            (ap?.remaining || 0) > 0 ? "text-warning" : "text-foreground"
+                          }`}
+                        >
+                          {formatCurrency(ap?.remaining || 0)}
+                        </p>
+                      </div>
+                      <StatusBadge status={ap?.status || "Unpaid"} />
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => openPayFor(a.id)}
+                      >
+                        <Wallet className="h-3.5 w-3.5" /> Pay
+                      </Button>
                       <Button
                         variant="ghost"
                         size="icon"
@@ -318,18 +378,46 @@ export default function EventDetail() {
           </CardBody>
         </Card>
 
-        <Card className="lg:col-span-3">
-          <CardHeader>
-            <CardTitle>Financial</CardTitle>
-          </CardHeader>
-          <CardBody>
-            <EmptyState
-              title="No payments recorded"
-              description="Payments & billing arrive in Phase 5."
-              icon={Wallet}
-            />
-          </CardBody>
-        </Card>
+        <div className="lg:col-span-3 flex flex-col gap-6">
+          <EventFinancialSummary
+            fin={fin}
+            onEditContractValue={handleEditContractValue}
+            onRecordClientPayment={() => setClientPayOpen(true)}
+            onRecordExpense={() => setExpenseOpen(true)}
+          />
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Transactions</CardTitle>
+            </CardHeader>
+            <CardBody className="p-0">
+              {transactions.length === 0 ? (
+                <EmptyState
+                  title="No payments recorded"
+                  description="Record client payments, team payments, and expenses for this event."
+                  icon={Wallet}
+                />
+              ) : (
+                <TransactionActivityTable
+                  transactions={transactions}
+                  events={[event]}
+                  clients={clients}
+                  members={members}
+                  categories={categories}
+                  onEdit={(t) => setEditing(t)}
+                  onVoid={async (t) => {
+                    await voidTransaction(t.id);
+                    toast({ title: "Transaction voided" });
+                  }}
+                  onUnvoid={async (t) => {
+                    await unvoidTransaction(t.id);
+                    toast({ title: "Transaction restored" });
+                  }}
+                />
+              )}
+            </CardBody>
+          </Card>
+        </div>
       </div>
 
       <Card>
@@ -343,8 +431,11 @@ export default function EventDetail() {
           <Button variant="outline" onClick={() => setAssignOpen(true)}>
             <UserPlus className="h-4 w-4" /> Add Team
           </Button>
-          <Button variant="outline" disabled title="Available in Phase 5">
+          <Button variant="outline" onClick={() => setClientPayOpen(true)}>
             <Wallet className="h-4 w-4" /> Record Payment
+          </Button>
+          <Button variant="outline" onClick={() => setExpenseOpen(true)}>
+            <FileText className="h-4 w-4" /> Add Expense
           </Button>
           <Button variant="outline" disabled title="Available in Phase 6">
             <FileText className="h-4 w-4" /> Create Quotation
@@ -372,6 +463,47 @@ export default function EventDetail() {
         existingMemberIds={existingMemberIds}
         onAssign={handleAssign}
       />
+
+      <RecordClientPaymentModal
+        open={clientPayOpen}
+        onClose={() => setClientPayOpen(false)}
+        event={event}
+        clients={clients}
+        onSubmit={handleCreateTxn}
+      />
+      <RecordTeamPaymentModal
+        open={teamPayOpen}
+        onClose={() => setTeamPayOpen(false)}
+        event={event}
+        assignments={eventAssignments}
+        members={members}
+        preselectedAssignmentId={payAssignmentId}
+        onSubmit={handleCreateTxn}
+      />
+      <RecordExpenseModal
+        open={expenseOpen}
+        onClose={() => setExpenseOpen(false)}
+        event={event}
+        categories={categories}
+        onSubmit={handleCreateTxn}
+      />
+      <EditTransactionModal
+        open={!!editing}
+        onClose={() => setEditing(null)}
+        transaction={editing}
+        onSubmit={handleEditTxn}
+      />
     </div>
+  );
+}
+
+function BackLink() {
+  return (
+    <Link
+      to="/events"
+      className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+    >
+      <ArrowLeft className="h-4 w-4" /> Back to Events
+    </Link>
   );
 }

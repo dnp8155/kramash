@@ -21,6 +21,9 @@ import TeamMemberForm from "@/components/team/TeamMemberForm";
 import { useTeamRoles } from "@/hooks/useTeamRoles";
 import { useEventTeamAssignments } from "@/hooks/useEventTeamAssignments";
 import { useEvents } from "@/hooks/useEvents";
+import { useFinancialTransactions } from "@/hooks/useFinancialTransactions";
+import { deriveTeamStatus } from "@/utils/finance";
+import RecordTeamPaymentModal from "@/components/finance/RecordTeamPaymentModal";
 import { formatCurrency, formatDate, initials } from "@/utils/format";
 import { todayStr } from "@/utils/team";
 import { toast } from "@/components/ui/use-toast";
@@ -31,11 +34,27 @@ export default function TeamMemberDetail() {
   const { roles } = useTeamRoles();
   const { assignments } = useEventTeamAssignments();
   const { events } = useEvents();
+  const { transactions, createTransaction } = useFinancialTransactions({
+    teamMemberId: id,
+  });
+
+  const paidByAssignment = useMemo(() => {
+    const map = {};
+    transactions
+      .filter((t) => t.status === "ACTIVE" && t.transaction_type === "TEAM_PAYMENT")
+      .forEach((t) => {
+        map[t.team_assignment_id] =
+          (map[t.team_assignment_id] || 0) + (Number(t.amount) || 0);
+      });
+    return map;
+  }, [transactions]);
 
   const [member, setMember] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [payAssignmentId, setPayAssignmentId] = useState(null);
+  const [payOpen, setPayOpen] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -143,6 +162,10 @@ export default function TeamMemberDetail() {
     (sum, a) => sum + (a.agreed_rate || 0),
     0
   );
+  const totalPaid = myAssignments.reduce(
+    (sum, a) => sum + (paidByAssignment[a.id] || 0),
+    0
+  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -216,7 +239,8 @@ export default function TeamMemberDetail() {
           <CardHeader className="flex items-center justify-between">
             <CardTitle>Assignments</CardTitle>
             <span className="text-sm text-muted-foreground">
-              {myAssignments.length} total · {formatCurrency(totalEarnings)} agreed
+              {myAssignments.length} total · {formatCurrency(totalEarnings)} agreed ·{" "}
+              {formatCurrency(totalPaid)} paid
             </span>
           </CardHeader>
           <CardBody className="p-0">
@@ -239,6 +263,11 @@ export default function TeamMemberDetail() {
                     key={assignment.id}
                     assignment={assignment}
                     event={event}
+                    paid={paidByAssignment[assignment.id] || 0}
+                    onPay={() => {
+                      setPayAssignmentId(assignment.id);
+                      setPayOpen(true);
+                    }}
                   />
                 ))}
               </div>
@@ -262,6 +291,11 @@ export default function TeamMemberDetail() {
                     key={assignment.id}
                     assignment={assignment}
                     event={event}
+                    paid={paidByAssignment[assignment.id] || 0}
+                    onPay={() => {
+                      setPayAssignmentId(assignment.id);
+                      setPayOpen(true);
+                    }}
                   />
                 ))}
               </div>
@@ -270,6 +304,17 @@ export default function TeamMemberDetail() {
         </Card>
       </div>
 
+      <RecordTeamPaymentModal
+        open={payOpen}
+        onClose={() => setPayOpen(false)}
+        assignments={myAssignments}
+        members={[member]}
+        preselectedAssignmentId={payAssignmentId}
+        onSubmit={async (data) => {
+          await createTransaction(data);
+          toast({ title: "Payment recorded" });
+        }}
+      />
       <TeamMemberForm
         open={editOpen}
         onClose={() => setEditOpen(false)}
@@ -281,29 +326,37 @@ export default function TeamMemberDetail() {
   );
 }
 
-function AssignmentRow({ assignment, event }) {
+function AssignmentRow({ assignment, event, paid = 0, onPay }) {
+  const agreed = Number(assignment.agreed_rate) || 0;
+  const remaining = Math.max(0, agreed - paid);
+  const status = deriveTeamStatus(paid, agreed);
   return (
-    <Link
-      to={`/events/${event.id}`}
-      className="flex items-center gap-4 px-5 py-3.5 hover:bg-muted/50"
-    >
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-foreground">
+    <div className="flex flex-wrap items-center gap-3 px-5 py-3.5 hover:bg-muted/50">
+      <Link to={`/events/${event.id}`} className="min-w-0 flex-1">
+        <p className="truncate text-sm font-semibold text-foreground hover:text-primary">
           {event.title}
         </p>
         <p className="truncate text-xs text-muted-foreground">
           {assignment.role_name_snapshot || event.event_type} · {event.venue || "—"}
         </p>
-      </div>
+      </Link>
       <span className="hidden text-xs text-muted-foreground sm:block">
         {formatDate(event.start_date)}
       </span>
-      <span className="text-sm font-medium text-foreground">
-        {assignment.agreed_rate != null
-          ? formatCurrency(assignment.agreed_rate)
-          : "—"}
-      </span>
-      <StatusBadge status={event.status} />
-    </Link>
+      <div className="text-right">
+        <p className="text-xs text-muted-foreground">Agreed {formatCurrency(agreed)}</p>
+        <p className="text-xs font-medium text-foreground">Paid {formatCurrency(paid)}</p>
+      </div>
+      <div className="text-right">
+        <p className="text-xs text-muted-foreground">Remaining</p>
+        <p className={`text-xs font-semibold ${remaining > 0 ? "text-warning" : "text-foreground"}`}>
+          {formatCurrency(remaining)}
+        </p>
+      </div>
+      <StatusBadge status={status} />
+      <Button size="sm" variant="outline" onClick={onPay}>
+        <Wallet className="h-3.5 w-3.5" /> Pay
+      </Button>
+    </div>
   );
 }
