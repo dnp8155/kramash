@@ -1,36 +1,78 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, Navigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { LogIn, Mail, Lock, Loader2, Eye, EyeOff } from "lucide-react";
-import AuthLayout from "@/components/AuthLayout";
+import { Eye, EyeOff, Loader2, AlertCircle } from "lucide-react";
+import AuthShell from "@/components/auth/AuthShell";
+import AuthLogo from "@/components/auth/AuthLogo";
 import GoogleIcon from "@/components/GoogleIcon";
-import PhoneOtpForm from "@/components/PhoneOtpForm";
 import { safeReturnTo } from "@/lib/authReturnTo";
+import { useAuth } from "@/lib/AuthContext";
+
+function sanitizeLoginError(err) {
+  const msg = (err?.message || "").toLowerCase();
+  if (/invalid|wrong|incorrect|unauthorized|forbidden|401|403|not found/.test(msg)) {
+    return "Incorrect email or password.";
+  }
+  return "Unable to sign in right now. Please try again.";
+}
 
 export default function Login() {
-  const [mode, setMode] = useState("email");
+  const { isAuthenticated, isLoadingAuth } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [capsLock, setCapsLock] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [opening, setOpening] = useState(false);
+
   const returnTo = safeReturnTo();
+  const hasCustomReturnTo = returnTo !== "/dashboard";
+  const registerPath = hasCustomReturnTo
+    ? `/register?returnTo=${encodeURIComponent(returnTo)}`
+    : "/register";
+
+  useEffect(() => {
+    document.title = "Sign in — Kramashah";
+  }, []);
+
+  if (!isLoadingAuth && isAuthenticated) {
+    return <Navigate to={returnTo} replace />;
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
+    if (!email.trim()) {
+      setError("Please enter your email address.");
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+    if (!password) {
+      setError("Please enter your password.");
+      return;
+    }
+
     setLoading(true);
     try {
-      await base44.auth.loginViaEmailPassword(email, password);
-      window.location.href = returnTo;
+      await base44.auth.loginViaEmailPassword(email.trim(), password);
     } catch (err) {
-      setError(err.message || "Invalid email or password");
-    } finally {
+      setError(sanitizeLoginError(err));
       setLoading(false);
+      return;
     }
+    // Success — show transition, then redirect
+    setOpening(true);
+    setTimeout(() => {
+      window.location.href = returnTo;
+    }, 400);
   };
 
   const handleGoogle = () => {
@@ -38,123 +80,142 @@ export default function Login() {
   };
 
   return (
-    <AuthLayout
-      icon={LogIn}
-      title="Welcome back"
-      subtitle="Log in to your account"
-      footer={
-        <>
-          Don't have an account?{" "}
-          <Link
-            to={"/register" + (returnTo !== "/" ? "?returnTo=" + encodeURIComponent(returnTo) : "")}
-            className="text-primary font-medium hover:underline"
-          >
-            Create one
-          </Link>
-        </>
-      }
-    >
-      <Button variant="outline" className="w-full h-12 text-sm font-medium mb-6" onClick={handleGoogle}>
-        <GoogleIcon className="w-5 h-5 mr-2" />
-        Continue with Google
-      </Button>
+    <AuthShell>
+      <AuthLogo />
 
-      <div className="relative mb-6">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-border" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-card px-3 text-muted-foreground">or</span>
-        </div>
-      </div>
-
-      <div className="mb-5 grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
-        <button
-          type="button"
-          onClick={() => setMode("email")}
-          className={`h-9 rounded-md text-sm font-medium transition-colors ${
-            mode === "email" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          Email
-        </button>
-        <button
-          type="button"
-          onClick={() => setMode("phone")}
-          className={`h-9 rounded-md text-sm font-medium transition-colors ${
-            mode === "phone" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          Phone OTP
-        </button>
+      <div className="mt-10">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Welcome back
+        </p>
+        <h1 className="mt-2 text-2xl font-bold tracking-tight text-foreground">
+          Welcome back to Kramashah.
+        </h1>
+        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+          Sign in to manage your clients, projects, team, quotations and finances.
+        </p>
       </div>
 
       {error && (
-        <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">{error}</div>
+        <div
+          role="alert"
+          className="mt-6 flex items-start gap-2 rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive"
+        >
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>{error}</span>
+        </div>
       )}
 
-      {mode === "phone" ? (
-        <PhoneOtpForm />
-      ) : (
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
-              <Input
-                id="email"
-                type="email"
-                autoComplete="email"
-                autoFocus
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="pl-10 h-12"
-                required
-              />
-            </div>
+      <form onSubmit={handleSubmit} className="mt-6 space-y-5">
+        <div className="space-y-1.5">
+          <Label htmlFor="email">Email address</Label>
+          <Input
+            id="email"
+            type="email"
+            autoComplete="email"
+            autoFocus
+            placeholder="you@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="h-12"
+            disabled={loading || opening}
+            required
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="password">Password</Label>
+            <Link
+              to="/forgot-password"
+              className="text-xs font-medium text-primary hover:underline"
+            >
+              Forgot password?
+            </Link>
           </div>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="password">Password</Label>
-              <Link to="/forgot-password" className="text-xs text-primary hover:underline">
-                Forgot password?
-              </Link>
-            </div>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
-              <Input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                autoComplete="current-password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="pl-10 pr-10 h-12"
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((s) => !s)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                aria-label={showPassword ? "Hide password" : "Show password"}
-              >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
+          <div className="relative">
+            <Input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              autoComplete="current-password"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.getModifierState) setCapsLock(e.getModifierState("CapsLock"));
+              }}
+              onKeyUp={(e) => {
+                if (e.getModifierState) setCapsLock(e.getModifierState("CapsLock"));
+              }}
+              className="h-12 pr-10"
+              disabled={loading || opening}
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((s) => !s)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
           </div>
-          <Button type="submit" className="w-full h-12 font-medium" disabled={loading}>
-            {loading ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Logging in...
-              </>
-            ) : (
-              "Log in"
-            )}
-          </Button>
-        </form>
+          {capsLock && (
+            <p className="flex items-center gap-1 text-xs text-warning">
+              <AlertCircle className="h-3 w-3" /> Caps Lock is on
+            </p>
+          )}
+        </div>
+
+        <Button
+          type="submit"
+          className="h-12 w-full font-medium"
+          disabled={loading || opening}
+        >
+          {loading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Signing in…
+            </>
+          ) : (
+            "Sign in"
+          )}
+        </Button>
+      </form>
+
+      <div className="my-6 flex items-center gap-3">
+        <div className="h-px flex-1 bg-border" />
+        <span className="text-xs font-medium text-muted-foreground">or continue with</span>
+        <div className="h-px flex-1 bg-border" />
+      </div>
+
+      <Button
+        type="button"
+        variant="outline"
+        className="h-12 w-full bg-card font-medium"
+        onClick={handleGoogle}
+        disabled={loading || opening}
+      >
+        <GoogleIcon className="mr-2 h-5 w-5" />
+        Continue with Google
+      </Button>
+
+      <p className="mt-8 text-center text-sm text-muted-foreground">
+        New to Kramashah?{" "}
+        <Link to={registerPath} className="font-medium text-primary hover:underline">
+          Create your account
+        </Link>
+      </p>
+
+      {opening && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white">
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            <span className="text-sm font-medium text-foreground">
+              Opening your workspace…
+            </span>
+          </div>
+        </div>
       )}
-    </AuthLayout>
+    </AuthShell>
   );
 }
