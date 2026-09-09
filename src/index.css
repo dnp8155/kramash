@@ -98,6 +98,20 @@
   }
 }
 
+/* ─── Prevent iOS Safari auto-zoom on form control focus ───
+   iOS Safari automatically zooms the viewport when a form control
+   has a font-size below 16px. Many Kramashah inputs use text-sm (14px)
+   for compact desktop styling. This rule enforces 16px on mobile only
+   (≤640px), so the viewport stays stable when the keyboard opens.
+   Desktop is completely unaffected. User pinch-to-zoom is NOT disabled. */
+@media (max-width: 640px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
 @layer base {
   html {
     -webkit-text-size-adjust: 100%;
