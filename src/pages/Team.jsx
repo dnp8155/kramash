@@ -21,7 +21,7 @@ import { toast } from "@/components/ui/use-toast";
 import { exportTeamCSV } from "@/utils/exports";
 
 export default function Team() {
-  const { members, loading, error, refetch, createMember } = useTeamMembers();
+  const { members, loading, error, refetch, createMember, updateMember } = useTeamMembers();
   const { roles } = useTeamRoles();
   const { assignments } = useEventTeamAssignments();
   const { events } = useEvents();
@@ -33,6 +33,7 @@ export default function Team() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [roleFilter, setRoleFilter] = useState("all");
   const [modalOpen, setModalOpen] = useState(false);
+  const [editingMember, setEditingMember] = useState(null);
 
   const roleName = (m) =>
     roles.find((r) => r.id === m.role_id)?.name || m.profession || "—";
@@ -57,13 +58,33 @@ export default function Team() {
     });
   }, [members, roles, search, statusFilter, roleFilter]);
 
+  const openAdd = () => {
+    setEditingMember(null);
+    setModalOpen(true);
+  };
+
+  const openEdit = (m) => {
+    setEditingMember(m);
+    setModalOpen(true);
+  };
+
   const handleSave = async (data) => {
-    try {
-      await createMember(data);
-      toast({ title: "Team member added" });
-    } catch (e) {
-      toast({ title: "Cannot add team member", description: e?.message, variant: "destructive" });
-      throw e;
+    if (editingMember) {
+      try {
+        await updateMember(editingMember.id, data);
+        toast({ title: "Team member updated" });
+      } catch (e) {
+        toast({ title: "Cannot update team member", description: e?.message, variant: "destructive" });
+        throw e;
+      }
+    } else {
+      try {
+        await createMember(data);
+        toast({ title: "Team member added" });
+      } catch (e) {
+        toast({ title: "Cannot add team member", description: e?.message, variant: "destructive" });
+        throw e;
+      }
     }
   };
 
@@ -77,7 +98,7 @@ export default function Team() {
             <Button variant="outline" onClick={() => { exportTeamCSV(filtered, roles); toast({ title: "Team exported" }); }}>
               <Download className="h-4 w-4" /> Export
             </Button>
-            <Button onClick={() => setModalOpen(true)} disabled={teamLimitReached}>
+            <Button onClick={openAdd} disabled={teamLimitReached}>
               <Plus className="h-4 w-4" /> Add Member
             </Button>
           </div>
@@ -136,7 +157,7 @@ export default function Team() {
             icon={Users}
             action={
               !search && statusFilter === "all" && roleFilter === "all" ? (
-                <Button onClick={() => setModalOpen(true)}>
+                <Button onClick={openAdd}>
                   <Plus className="h-4 w-4" /> Add Member
                 </Button>
               ) : null
@@ -151,6 +172,7 @@ export default function Team() {
               member={m}
               roleName={roleName(m)}
               assignmentCount={assignmentCount(m.id)}
+              onEdit={() => openEdit(m)}
             />
           ))}
         </div>
@@ -164,7 +186,8 @@ export default function Team() {
 
       <TeamMemberForm
         open={modalOpen}
-        onClose={() => setModalOpen(false)}
+        onClose={() => { setModalOpen(false); setEditingMember(null); }}
+        member={editingMember}
         roles={roles}
         onSave={handleSave}
       />

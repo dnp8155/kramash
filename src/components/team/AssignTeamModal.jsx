@@ -58,8 +58,11 @@ export default function AssignTeamModal({
     if (!open) return;
     if (isEditing && editingAssignment) {
       // Prefill from existing assignment — do NOT reset.
+      // Role is derived from the member's CURRENT role, not the assignment
+      // snapshot, so rate calculation always uses the latest Preferences rate.
+      const editMember = members.find((m) => m.id === editingAssignment.team_member_id);
       setMemberId(editingAssignment.team_member_id || "");
-      setRoleId(editingAssignment.role_id || "");
+      setRoleId(editMember?.role_id || editingAssignment.role_id || "");
       setCategoryType(editingAssignment.category_type || "");
       setWorkingDates(editingAssignment.working_dates || (event?.start_date ? [event.start_date] : []));
       setAgreedRate(editingAssignment.agreed_rate != null ? String(editingAssignment.agreed_rate) : "");
@@ -115,6 +118,10 @@ export default function AssignTeamModal({
     return role?.default_rate ?? member?.default_rate ?? "";
   };
 
+  // Warn when the selected member's role has no rate configured in Preferences.
+  const rateMissing =
+    !!memberId && !!roleId && getDailyRate(memberId, roleId) === "";
+
   const handleMemberChange = (id) => {
     setMemberId(id);
     const member = members.find((m) => m.id === id);
@@ -161,7 +168,11 @@ export default function AssignTeamModal({
       return;
     }
     if (!roleId) {
-      toast({ title: "Select a role", variant: "destructive" });
+      toast({
+        title: "No role assigned",
+        description: "This team member has no role. Assign a role in the Team master or Preferences first.",
+        variant: "destructive",
+      });
       return;
     }
     if (workingDates.length === 0) {
@@ -297,20 +308,20 @@ export default function AssignTeamModal({
         )}
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Select
-            label="Role"
-            value={roleId}
-            onChange={(e) => setRoleId(e.target.value)}
-          >
-            <option value="">Select a role…</option>
-            {roles
-              .filter((r) => r.status === "active")
-              .map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.name}
-                </option>
-              ))}
-          </Select>
+          {/* Role is read-only — derived from the selected Team Member's
+              configured Role in Preferences. Not independently selectable. */}
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">
+              Role
+            </label>
+            <div className="flex h-10 items-center rounded-lg border border-input bg-muted/40 px-3 text-sm text-foreground">
+              {roleId
+                ? roles.find((r) => r.id === roleId)?.name || "—"
+                : memberId
+                  ? "No role assigned to this member"
+                  : "Select a member first"}
+            </div>
+          </div>
           <Select
             label="Type"
             value={categoryType}
@@ -378,6 +389,18 @@ export default function AssignTeamModal({
             ))}
           </Select>
         </div>
+
+        {rateMissing && (
+          <div className="rounded-lg border border-warning/30 bg-warning/10 p-3">
+            <p className="flex items-center gap-2 text-sm font-medium text-warning">
+              <AlertTriangle className="h-4 w-4" /> Rate not configured
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Rate not configured for this role. Please configure the role rate
+              in Preferences → Team Roles.
+            </p>
+          </div>
+        )}
 
         {/* Payment summary in edit mode */}
         {isEditing && paymentSummary && (

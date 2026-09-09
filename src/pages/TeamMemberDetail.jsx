@@ -143,6 +143,9 @@ export default function TeamMemberDetail() {
 
   const roleName =
     roles.find((r) => r.id === member.role_id)?.name || member.profession || "—";
+  const role = roles.find((r) => r.id === member.role_id);
+  const displayRate = role?.default_rate ?? member.default_rate;
+  const displayRateType = role?.rate_type ?? member.rate_type;
 
   const handleSave = async (data) => {
     const updated = await base44.entities.TeamMember.update(member.id, data);
@@ -219,8 +222,8 @@ export default function TeamMemberDetail() {
               )}
               <p className="flex items-center gap-2">
                 <Wallet className="h-4 w-4" />{" "}
-                {member.default_rate != null
-                  ? `${formatCurrency(member.default_rate)} / ${member.rate_type}`
+                {displayRate != null
+                  ? `${formatCurrency(displayRate)} / ${displayRateType || "Per Event"}`
                   : "—"}
               </p>
             </div>
