@@ -4,13 +4,28 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Eye, EyeOff, Loader2, AlertCircle } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Eye, EyeOff, Loader2, AlertCircle, Check } from "lucide-react";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import AuthShell from "@/components/auth/AuthShell";
 import AuthLogo from "@/components/auth/AuthLogo";
+import SignupProductPanel from "@/components/auth/SignupProductPanel";
 import GoogleIcon from "@/components/GoogleIcon";
 import { safeReturnTo } from "@/lib/authReturnTo";
 import { useAuth } from "@/lib/AuthContext";
+
+function getPasswordStrength(pwd) {
+  if (!pwd) return null;
+  if (pwd.length < 6) return { label: "Too short", bars: 0, color: "text-muted-foreground", barColor: "bg-border" };
+  let score = 0;
+  if (pwd.length >= 8) score++;
+  if (/[A-Z]/.test(pwd) && /[a-z]/.test(pwd)) score++;
+  if (/[0-9]/.test(pwd)) score++;
+  if (/[^A-Za-z0-9]/.test(pwd)) score++;
+  if (score <= 1) return { label: "Weak", bars: 1, color: "text-destructive", barColor: "bg-destructive" };
+  if (score <= 2) return { label: "Good", bars: 2, color: "text-warning", barColor: "bg-warning" };
+  return { label: "Strong", bars: 3, color: "text-success", barColor: "bg-success" };
+}
 
 export default function Register() {
   const { isAuthenticated, isLoadingAuth } = useAuth();
@@ -21,11 +36,14 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [capsLock, setCapsLock] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showOtp, setShowOtp] = useState(false);
   const [otpCode, setOtpCode] = useState("");
   const [opening, setOpening] = useState(false);
+  const [resendTimer, setResendTimer] = useState(0);
+  const [resendInfo, setResendInfo] = useState("");
 
   const returnTo = safeReturnTo();
   const hasCustomReturnTo = returnTo !== "/dashboard";
@@ -33,9 +51,17 @@ export default function Register() {
     ? `/login?returnTo=${encodeURIComponent(returnTo)}`
     : "/login";
 
+  const strength = getPasswordStrength(password);
+
   useEffect(() => {
-    document.title = "Create account — Kramashah";
+    document.title = "Create Account — Kramashah";
   }, []);
+
+  useEffect(() => {
+    if (resendTimer <= 0) return;
+    const t = setTimeout(() => setResendTimer((s) => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [resendTimer]);
 
   if (!isLoadingAuth && isAuthenticated) {
     return <Navigate to={returnTo} replace />;
@@ -45,20 +71,28 @@ export default function Register() {
     e.preventDefault();
     setError("");
 
+    if (!fullName.trim()) {
+      setError("Please enter your name.");
+      return;
+    }
     if (!email.trim()) {
       setError("Please enter your email address.");
       return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      setError("Please enter a valid email address.");
+      setError("Enter a valid email address.");
       return;
     }
     if (password.length < 6) {
-      setError("Password must be at least 6 characters.");
+      setError("Use at least 6 characters for your password.");
       return;
     }
     if (password !== confirmPassword) {
       setError("Passwords do not match.");
+      return;
+    }
+    if (!termsAccepted) {
+      setError("Please accept the Terms of Service and Privacy Policy to continue.");
       return;
     }
 
@@ -66,6 +100,7 @@ export default function Register() {
     try {
       await base44.auth.register({ email: email.trim(), password });
       setShowOtp(true);
+      setResendTimer(30);
     } catch (err) {
       const msg = (err?.message || "").toLowerCase();
       if (/already|exists|registered/.test(msg)) {
@@ -96,9 +131,9 @@ export default function Register() {
       setOpening(true);
       setTimeout(() => {
         window.location.href = returnTo;
-      }, 400);
+      }, 800);
     } catch {
-      setError("Invalid or expired verification code.");
+      setError("That verification code is incorrect or has expired.");
     } finally {
       setLoading(false);
     }
@@ -106,10 +141,13 @@ export default function Register() {
 
   const handleResend = async () => {
     setError("");
+    setResendInfo("");
     try {
       await base44.auth.resendOtp(email.trim());
+      setResendTimer(30);
+      setResendInfo("A new code has been sent.");
     } catch {
-      /* non-blocking */
+      setResendInfo("Unable to resend right now. Please try again in a moment.");
     }
   };
 
@@ -128,7 +166,7 @@ export default function Register() {
             Verify your email
           </h1>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            We sent a 6-digit code to{" "}
+            We sent a verification code to{" "}
             <span className="font-medium text-foreground">{email}</span>. Enter it below
             to activate your account.
           </p>
@@ -141,6 +179,12 @@ export default function Register() {
           >
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
             <span>{error}</span>
+          </div>
+        )}
+
+        {resendInfo && !error && (
+          <div className="mt-6 rounded-lg border border-success/20 bg-success/5 p-3 text-sm text-success">
+            {resendInfo}
           </div>
         )}
 
@@ -174,27 +218,46 @@ export default function Register() {
               Verifying…
             </>
           ) : (
-            "Verify and continue"
+            "Verify email"
           )}
         </Button>
 
-        <p className="mt-6 text-center text-sm text-muted-foreground">
-          Didn't receive the code?{" "}
+        <div className="mt-6 flex items-center justify-between text-sm">
           <button
             type="button"
-            onClick={handleResend}
-            className="font-medium text-primary hover:underline"
+            onClick={() => {
+              setShowOtp(false);
+              setOtpCode("");
+              setError("");
+              setResendInfo("");
+            }}
+            className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground"
           >
-            Resend
+            Change email
           </button>
-        </p>
+          {resendTimer > 0 ? (
+            <span className="text-muted-foreground">
+              Resend code in 0:{resendTimer.toString().padStart(2, "0")}
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={handleResend}
+              className="font-medium text-primary hover:underline"
+            >
+              Resend code
+            </button>
+          )}
+        </div>
 
         {opening && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-white">
             <div className="flex flex-col items-center gap-3">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-success/10 text-success">
+                <Check className="h-6 w-6" />
+              </div>
               <span className="text-sm font-medium text-foreground">
-                Opening your workspace…
+                Account created. Let's set up your workspace…
               </span>
             </div>
           </div>
@@ -205,7 +268,7 @@ export default function Register() {
 
   // Registration form
   return (
-    <AuthShell>
+    <AuthShell panel={<SignupProductPanel />}>
       <AuthLogo />
 
       <div className="mt-10">
@@ -213,10 +276,11 @@ export default function Register() {
           Get started
         </p>
         <h1 className="mt-2 text-2xl font-bold tracking-tight text-foreground">
-          Create your Kramashah workspace.
+          Create your Kramashah account.
         </h1>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          Start organizing your clients, projects, team and finances in one place.
+          Set up your account now. You'll configure your business, team and workflow in
+          the next step.
         </p>
       </div>
 
@@ -238,7 +302,7 @@ export default function Register() {
             type="text"
             autoComplete="name"
             autoFocus
-            placeholder="Krishna Shah"
+            placeholder="Enter your full name"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             className="h-12"
@@ -294,6 +358,23 @@ export default function Register() {
               <AlertCircle className="h-3 w-3" /> Caps Lock is on
             </p>
           )}
+          {password && strength.bars > 0 && (
+            <div className="flex items-center gap-2">
+              <div className="flex gap-1">
+                {[1, 2, 3].map((n) => (
+                  <div
+                    key={n}
+                    className={`h-1 w-8 rounded-full ${
+                      strength.bars >= n ? strength.barColor : "bg-border"
+                    }`}
+                  />
+                ))}
+              </div>
+              <span className={`text-xs font-medium ${strength.color}`}>
+                {strength.label}
+              </span>
+            </div>
+          )}
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="confirm">Confirm password</Label>
@@ -318,7 +399,26 @@ export default function Register() {
               {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           </div>
+          {confirmPassword && password !== confirmPassword && (
+            <p className="text-xs text-destructive">Passwords do not match.</p>
+          )}
         </div>
+
+        <div className="flex items-start gap-2">
+          <Checkbox
+            id="terms"
+            checked={termsAccepted}
+            onCheckedChange={setTermsAccepted}
+            className="mt-0.5"
+          />
+          <Label
+            htmlFor="terms"
+            className="text-xs leading-relaxed text-muted-foreground font-normal cursor-pointer"
+          >
+            I agree to the Terms of Service and Privacy Policy.
+          </Label>
+        </div>
+
         <Button type="submit" className="h-12 w-full font-medium" disabled={loading}>
           {loading ? (
             <>
@@ -329,6 +429,10 @@ export default function Register() {
             "Create account"
           )}
         </Button>
+
+        <p className="text-center text-xs text-muted-foreground">
+          No credit card required
+        </p>
       </form>
 
       <div className="my-6 flex items-center gap-3">
@@ -349,7 +453,7 @@ export default function Register() {
       </Button>
 
       <p className="mt-8 text-center text-sm text-muted-foreground">
-        Already have an account?{" "}
+        Already have a Kramashah account?{" "}
         <Link to={loginPath} className="font-medium text-primary hover:underline">
           Sign in
         </Link>

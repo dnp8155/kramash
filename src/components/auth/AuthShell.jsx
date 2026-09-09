@@ -3,7 +3,7 @@ import AuthProductPanel from "./AuthProductPanel";
 // Shared auth layout. Split-screen on desktop with product panel;
 // single-column on mobile. `showProduct={false}` gives a compact centered
 // layout for Forgot/Reset pages.
-export default function AuthShell({ children, showProduct = true }) {
+export default function AuthShell({ children, showProduct = true, panel }) {
   if (!showProduct) {
     return (
       <div className="flex min-h-screen flex-col bg-white">
@@ -22,7 +22,7 @@ export default function AuthShell({ children, showProduct = true }) {
       </div>
       {/* Right: Product panel */}
       <div className="hidden lg:block lg:w-[48%] xl:w-[46%]">
-        <AuthProductPanel />
+        {panel || <AuthProductPanel />}
       </div>
     </div>
   );
