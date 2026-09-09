@@ -1,9 +1,15 @@
 import { NavLink } from "react-router-dom";
-import { navItems, workspaceName } from "@/constants/navigation";
+import { navItems } from "@/constants/navigation";
+import { useWorkspace } from "@/lib/WorkspaceContext";
 import { Camera, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function Sidebar({ open, onClose }) {
+  const { currentWorkspace } = useWorkspace();
+  const planLabel = currentWorkspace?.plan_type
+    ? `${currentWorkspace.plan_type[0].toUpperCase()}${currentWorkspace.plan_type.slice(1)} Plan`
+    : "Free Plan";
+
   return (
     <>
       {/* Mobile overlay */}
@@ -29,7 +35,9 @@ export default function Sidebar({ open, onClose }) {
               <Camera className="h-5 w-5" />
             </div>
             <div className="leading-tight">
-              <p className="text-base font-bold tracking-tight text-foreground">{workspaceName}</p>
+              <p className="max-w-[150px] truncate text-base font-bold tracking-tight text-foreground">
+                {currentWorkspace?.name || "Kramashah"}
+              </p>
               <p className="text-[11px] text-muted-foreground">Production Suite</p>
             </div>
           </div>
@@ -77,11 +85,17 @@ export default function Sidebar({ open, onClose }) {
         {/* Footer */}
         <div className="border-t border-sidebar-border p-4">
           <div className="rounded-lg bg-accent px-3 py-3">
-            <p className="text-xs font-semibold text-foreground">Free Plan</p>
-            <p className="mt-0.5 text-[11px] text-muted-foreground">3 of 5 events used</p>
-            <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-border">
-              <div className="h-full w-3/5 rounded-full bg-primary" />
-            </div>
+            <p className="text-xs font-semibold text-foreground">{planLabel}</p>
+            <p className="mt-0.5 text-[11px] text-muted-foreground">
+              {currentWorkspace?.plan_status === "active" ? "Active subscription" : "Manage your plan"}
+            </p>
+            <NavLink
+              to="/plan"
+              onClick={onClose}
+              className="mt-2 block text-[11px] font-medium text-primary hover:underline"
+            >
+              Manage plan →
+            </NavLink>
           </div>
         </div>
       </aside>
