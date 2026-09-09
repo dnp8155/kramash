@@ -36,23 +36,46 @@ export function useEventTeamAssignments() {
     load();
   }, [load]);
 
+  // Routes through the manageAssignment backend function for server-side
+  // SELF duplicate prevention (one SELF per event across team + service).
   const createAssignment = useCallback(
     async (data) => {
-      const a = await base44.entities.EventTeamAssignment.create({
-        ...data,
+      const res = await base44.functions.invoke("manageAssignment", {
+        operation: "create",
+        assignment_type: "team",
         workspace_id: workspaceId,
+        ...data,
       });
+      const result = res?.data || res;
+      if (!result?.success) {
+        throw new Error(result?.error || "Failed to create assignment");
+      }
+      const a = result.record;
       setAssignments((prev) => [a, ...prev]);
       return a;
     },
     [workspaceId]
   );
 
-  const updateAssignment = useCallback(async (id, data) => {
-    const a = await base44.entities.EventTeamAssignment.update(id, data);
-    setAssignments((prev) => prev.map((x) => (x.id === id ? a : x)));
-    return a;
-  }, []);
+  const updateAssignment = useCallback(
+    async (id, data) => {
+      const res = await base44.functions.invoke("manageAssignment", {
+        operation: "update",
+        assignment_type: "team",
+        workspace_id: workspaceId,
+        assignment_id: id,
+        ...data,
+      });
+      const result = res?.data || res;
+      if (!result?.success) {
+        throw new Error(result?.error || "Failed to update assignment");
+      }
+      const a = result.record;
+      setAssignments((prev) => prev.map((x) => (x.id === id ? a : x)));
+      return a;
+    },
+    [workspaceId]
+  );
 
   // Removal deletes the assignment relationship, not the team member.
   const removeAssignment = useCallback(async (id) => {

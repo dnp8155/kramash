@@ -5,9 +5,12 @@ import Button from "@/components/common/Button";
 import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
 import ClientForm from "@/components/clients/ClientForm";
+import EventTypeAutocomplete from "@/components/events/EventTypeAutocomplete";
 import { defaultEventTypes, defaultEventStatuses } from "@/constants/events";
 import { useBusinessTerminology } from "@/lib/BusinessTerminology";
 import { useWorkspace } from "@/lib/WorkspaceContext";
+import { eventTypeExists, addEventType } from "@/utils/eventTypes";
+import { base44 } from "@/api/base44Client";
 import { toast } from "@/components/ui/use-toast";
 
 const empty = {
@@ -35,7 +38,7 @@ export default function EventForm({
   const [saving, setSaving] = useState(false);
   const [clientModalOpen, setClientModalOpen] = useState(false);
   const t = useBusinessTerminology();
-  const { currentWorkspace } = useWorkspace();
+  const { currentWorkspace, refresh } = useWorkspace();
   const eventTypes = currentWorkspace?.event_types?.length
     ? currentWorkspace.event_types
     : defaultEventTypes;
@@ -85,7 +88,7 @@ export default function EventForm({
       await onSave({
         title: form.title.trim(),
         client_id: form.client_id,
-        event_type: form.event_type,
+        event_type: form.event_type.trim(),
         start_date: form.start_date,
         end_date: form.end_date || null,
         venue: form.venue.trim(),
@@ -94,6 +97,22 @@ export default function EventForm({
         description: form.description.trim(),
         notes: form.notes.trim(),
       });
+
+      // Auto-add new event type to workspace suggestions (case-insensitive dedup).
+      // Non-critical: if this fails, the event is still saved successfully.
+      const trimmedType = form.event_type.trim();
+      if (trimmedType && !eventTypeExists(trimmedType, currentWorkspace?.event_types)) {
+        try {
+          const updatedTypes = addEventType(currentWorkspace?.event_types || [], trimmedType);
+          await base44.entities.Workspace.update(currentWorkspace.id, {
+            event_types: updatedTypes,
+          });
+          await refresh();
+        } catch {
+          // Workspace update failed — event was saved, so don't block.
+        }
+      }
+
       onClose();
     } catch (e) {
       toast({ title: "Save failed", description: e?.message, variant: "destructive" });
@@ -162,18 +181,13 @@ export default function EventForm({
               </Button>
             </div>
           </div>
-          <Select
+          <EventTypeAutocomplete
             label="Type"
             value={form.event_type}
-            onChange={(e) => set("event_type", e.target.value)}
-          >
-            <option value="">Select type…</option>
-            {eventTypes.map((type) => (
-              <option key={type} value={type}>
-                {type}
-              </option>
-            ))}
-          </Select>
+            onChange={(val) => set("event_type", val)}
+            suggestions={eventTypes}
+            placeholder="Select or type a new type…"
+          />
           <Select
             label="Status"
             value={form.status}

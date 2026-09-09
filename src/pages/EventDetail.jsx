@@ -133,6 +133,24 @@ export default function EventDetail() {
 
   const existingMemberIds = eventAssignments.map((a) => a.team_member_id);
 
+  // SELF detection: find the owner's team member record and check if SELF
+  // is already assigned to this event (across both team and service assignments).
+  // Used to filter SELF from the "Add" modals — one SELF per event.
+  const selfMemberId = useMemo(
+    () => (ownerName ? members.find((m) => isSelfMember(m.name, ownerName))?.id : null),
+    [members, ownerName]
+  );
+  const selfAlreadyAssignedToEvent = useMemo(
+    () => {
+      if (!selfMemberId) return false;
+      return (
+        eventAssignments.some((a) => a.team_member_id === selfMemberId) ||
+        eventServiceAssignments.some((sa) => sa.provider_id === selfMemberId)
+      );
+    },
+    [selfMemberId, eventAssignments, eventServiceAssignments]
+  );
+
   const eventServiceAssignments = useMemo(
     () =>
       serviceAssignments.filter(
@@ -650,6 +668,7 @@ export default function EventDetail() {
         onRecordPayment={handleCreateTxn}
         editingAssignment={editingAssignment}
         paymentSummary={editingAssignment ? paidByAssignment[editingAssignment.id] : null}
+        selfAlreadyAssigned={selfAlreadyAssignedToEvent}
       />
 
       <AssignServiceModal
@@ -664,6 +683,7 @@ export default function EventDetail() {
         onAssign={handleCreateServiceAssignment}
         onUpdate={handleUpdateServiceAssignment}
         onRecordPayment={handleCreateTxn}
+        selfAlreadyAssigned={selfAlreadyAssignedToEvent}
       />
 
       <ServicePaymentModal

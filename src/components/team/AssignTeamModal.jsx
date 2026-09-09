@@ -30,6 +30,7 @@ export default function AssignTeamModal({
   onRecordPayment,
   editingAssignment = null,
   paymentSummary = null,
+  selfAlreadyAssigned = false,
 }) {
   const isEditing = !!editingAssignment;
   const [memberId, setMemberId] = useState("");
@@ -101,9 +102,12 @@ export default function AssignTeamModal({
       members.filter(
         (m) =>
           m.status === "Active" &&
-          (!existingMemberIds.includes(m.id) || (isEditing && editingAssignment?.team_member_id === m.id))
+          (!existingMemberIds.includes(m.id) || (isEditing && editingAssignment?.team_member_id === m.id)) &&
+          // Don't show SELF if already assigned to this event (add mode only).
+          // In edit mode, the member select is disabled so this filter is moot.
+          !(selfAlreadyAssigned && isSelfMember(m.name, ownerName) && !isEditing)
       ),
-    [members, existingMemberIds, isEditing, editingAssignment]
+    [members, existingMemberIds, isEditing, editingAssignment, selfAlreadyAssigned, ownerName]
   );
 
   const conflicts = useMemo(() => {
@@ -311,6 +315,11 @@ export default function AssignTeamModal({
         {!isEditing && selectableMembers.length === 0 && (
           <p className="-mt-2 text-xs text-muted-foreground">
             All active team members are already assigned to this event.
+          </p>
+        )}
+        {!isEditing && selfAlreadyAssigned && (
+          <p className="-mt-2 text-xs text-muted-foreground">
+            Owner / Self is already assigned to this event.
           </p>
         )}
         {isSelf && (

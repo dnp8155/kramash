@@ -31,6 +31,7 @@ export default function AssignServiceModal({
   onAssign,
   onUpdate,
   onRecordPayment,
+  selfAlreadyAssigned = false,
 }) {
   const [providerId, setProviderId] = useState("");
   const [serviceId, setServiceId] = useState("");
@@ -72,8 +73,15 @@ export default function AssignServiceModal({
   }, [open, editingAssignment, event?.id]);
 
   const activeMembers = useMemo(
-    () => members.filter((m) => m.status === "Active"),
-    [members]
+    () =>
+      members.filter(
+        (m) =>
+          m.status === "Active" &&
+          // Don't show SELF as a provider if already assigned to this event.
+          // In edit mode, allow the current assignment's provider to remain selectable.
+          !(selfAlreadyAssigned && isSelfMember(m.name, ownerName) && !(isEditing && editingAssignment?.provider_id === m.id))
+      ),
+    [members, selfAlreadyAssigned, ownerName, isEditing, editingAssignment]
   );
 
   const availableServices = useMemo(() => {
@@ -215,6 +223,11 @@ export default function AssignServiceModal({
             </option>
           ))}
         </Select>
+        {!isEditing && selfAlreadyAssigned && (
+          <p className="-mt-2 text-xs text-muted-foreground">
+            Owner / Self is already assigned to this event.
+          </p>
+        )}
 
         <Select
           label="Service"

@@ -37,23 +37,46 @@ export function useEventServiceAssignments() {
     load();
   }, [load]);
 
+  // Routes through the manageAssignment backend function for server-side
+  // SELF duplicate prevention (one SELF per event across team + service).
   const createServiceAssignment = useCallback(
     async (data) => {
-      const a = await base44.entities.EventServiceAssignment.create({
-        ...data,
+      const res = await base44.functions.invoke("manageAssignment", {
+        operation: "create",
+        assignment_type: "service",
         workspace_id: workspaceId,
+        ...data,
       });
+      const result = res?.data || res;
+      if (!result?.success) {
+        throw new Error(result?.error || "Failed to create assignment");
+      }
+      const a = result.record;
       setServiceAssignments((prev) => [a, ...prev]);
       return a;
     },
     [workspaceId]
   );
 
-  const updateServiceAssignment = useCallback(async (id, data) => {
-    const a = await base44.entities.EventServiceAssignment.update(id, data);
-    setServiceAssignments((prev) => prev.map((x) => (x.id === id ? a : x)));
-    return a;
-  }, []);
+  const updateServiceAssignment = useCallback(
+    async (id, data) => {
+      const res = await base44.functions.invoke("manageAssignment", {
+        operation: "update",
+        assignment_type: "service",
+        workspace_id: workspaceId,
+        assignment_id: id,
+        ...data,
+      });
+      const result = res?.data || res;
+      if (!result?.success) {
+        throw new Error(result?.error || "Failed to update assignment");
+      }
+      const a = result.record;
+      setServiceAssignments((prev) => prev.map((x) => (x.id === id ? a : x)));
+      return a;
+    },
+    [workspaceId]
+  );
 
   // Soft-delete: marks as Removed so associated payment records retain their link.
   const removeServiceAssignment = useCallback(async (id) => {

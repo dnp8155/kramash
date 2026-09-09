@@ -4,6 +4,7 @@ import Card, { CardHeader, CardTitle, CardBody } from "@/components/common/Card"
 import Button from "@/components/common/Button";
 import Input from "@/components/common/Input";
 import { defaultEventTypes, defaultEventStatuses } from "@/constants/events";
+import { eventTypeExists } from "@/utils/eventTypes";
 
 // Workspace-level manager for Event Types and Event Statuses.
 // Values are stored on the Workspace entity and drive the EventForm dropdowns.
@@ -18,7 +19,7 @@ export default function EventTypeManager({ eventTypes, eventStatuses, onChange }
   const addType = () => {
     const val = newType.trim();
     if (!val) return;
-    if (types.includes(val)) {
+    if (eventTypeExists(val, types)) {
       setNewType("");
       return;
     }
