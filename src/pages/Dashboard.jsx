@@ -14,13 +14,14 @@ import Button from "@/components/common/Button";
 import LoadingState from "@/components/common/LoadingState";
 import { useEvents } from "@/hooks/useEvents";
 import { mockPayments } from "@/data/mockPayments";
-import { mockTeam } from "@/data/mockTeam";
+import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { formatCurrency } from "@/utils/format";
 import { isUpcoming } from "@/utils/dates";
 import { Link } from "react-router-dom";
 
 export default function Dashboard() {
   const { events, loading } = useEvents();
+  const { members } = useTeamMembers();
 
   // Revenue, team and pending payments remain on mock data until the
   // Financial (Phase 5) and Team (Phase 4) modules are built.
@@ -68,10 +69,10 @@ export default function Dashboard() {
         />
         <StatCard
           label="Team Members"
-          value={mockTeam.length}
+          value={members.length}
           icon={Users}
           accent="info"
-          trend="1 on leave"
+          trend={`${members.filter((m) => m.status === "Active").length} active`}
         />
         <StatCard
           label="Pending Payments"

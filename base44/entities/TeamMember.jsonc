@@ -1,0 +1,108 @@
+{
+  "name": "TeamMember",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "description": "Workspace this team member belongs to"
+    },
+    "name": {
+      "type": "string",
+      "description": "Team member name"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Primary contact number"
+    },
+    "email": {
+      "type": "string",
+      "description": "Contact email"
+    },
+    "profession": {
+      "type": "string",
+      "description": "Profession / role label (snapshot of role name, or free text)"
+    },
+    "role_id": {
+      "type": "string",
+      "description": "Reference to TeamRole"
+    },
+    "default_rate": {
+      "type": "number",
+      "description": "Default rate for this team member"
+    },
+    "rate_type": {
+      "type": "string",
+      "enum": [
+        "Per Event",
+        "Per Day",
+        "Fixed"
+      ],
+      "default": "Per Event"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Free-form notes about this team member"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Active",
+        "Inactive"
+      ],
+      "default": "Active"
+    }
+  },
+  "required": [
+    "workspace_id",
+    "name"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.workspace_id": {
+            "$in": "{{user.data.workspace_ids}}"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "data.workspace_id": {
+        "$in": "{{user.data.workspace_ids}}"
+      }
+    },
+    "update": {
+      "$or": [
+        {
+          "data.workspace_id": {
+            "$in": "{{user.data.workspace_ids}}"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.workspace_id": {
+            "$in": "{{user.data.workspace_ids}}"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,101 @@
+{
+  "name": "EventTeamAssignment",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "description": "Workspace this assignment belongs to"
+    },
+    "event_id": {
+      "type": "string",
+      "description": "Event this team member is assigned to"
+    },
+    "team_member_id": {
+      "type": "string",
+      "description": "Team member assigned to the event"
+    },
+    "role_id": {
+      "type": "string",
+      "description": "Role reference at the time of assignment"
+    },
+    "role_name_snapshot": {
+      "type": "string",
+      "description": "Role name snapshot for historical accuracy if the role is later renamed"
+    },
+    "agreed_rate": {
+      "type": "number",
+      "description": "Final agreed rate for this specific assignment (independent of the member's default rate)"
+    },
+    "rate_type": {
+      "type": "string",
+      "enum": [
+        "Per Event",
+        "Per Day",
+        "Fixed"
+      ],
+      "default": "Per Event"
+    },
+    "assignment_status": {
+      "type": "string",
+      "enum": [
+        "Assigned",
+        "Removed"
+      ],
+      "default": "Assigned"
+    }
+  },
+  "required": [
+    "workspace_id",
+    "event_id",
+    "team_member_id"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.workspace_id": {
+            "$in": "{{user.data.workspace_ids}}"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "data.workspace_id": {
+        "$in": "{{user.data.workspace_ids}}"
+      }
+    },
+    "update": {
+      "$or": [
+        {
+          "data.workspace_id": {
+            "$in": "{{user.data.workspace_ids}}"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.workspace_id": {
+            "$in": "{{user.data.workspace_ids}}"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

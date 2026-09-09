@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
   ArrowLeft,
@@ -12,6 +12,8 @@ import {
   Wallet,
   FileText,
   StickyNote,
+  Trash2,
+  Loader2,
 } from "lucide-react";
 import PageHeader from "@/components/common/PageHeader";
 import Card, { CardHeader, CardTitle, CardBody } from "@/components/common/Card";
@@ -20,26 +22,38 @@ import Button from "@/components/common/Button";
 import LoadingState from "@/components/common/LoadingState";
 import EmptyState from "@/components/common/EmptyState";
 import EventForm from "@/components/events/EventForm";
+import AssignTeamModal from "@/components/team/AssignTeamModal";
 import { useEvents } from "@/hooks/useEvents";
 import { useClients } from "@/hooks/useClients";
-import { formatDate } from "@/utils/format";
+import { useTeamMembers } from "@/hooks/useTeamMembers";
+import { useTeamRoles } from "@/hooks/useTeamRoles";
+import { useEventTeamAssignments } from "@/hooks/useEventTeamAssignments";
+import { formatDate, formatCurrency, initials } from "@/utils/format";
 import { toast } from "@/components/ui/use-toast";
 import { base44 } from "@/api/base44Client";
 
 export default function EventDetail() {
   const { id } = useParams();
-  const { updateEvent } = useEvents();
+  const { events, updateEvent } = useEvents();
   const { clients, createClient } = useClients();
+  const { members } = useTeamMembers();
+  const { roles } = useTeamRoles();
+  const { assignments, createAssignment, removeAssignment } =
+    useEventTeamAssignments();
+
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [assignOpen, setAssignOpen] = useState(false);
+  const [removingId, setRemovingId] = useState(null);
 
   useEffect(() => {
     let active = true;
     setLoading(true);
     setNotFound(false);
-    base44.entities.Event.get(id)
+    base44.entities.Event
+      .get(id)
       .then((ev) => {
         if (!active) return;
         if (!ev) setNotFound(true);
@@ -55,6 +69,23 @@ export default function EventDetail() {
       active = false;
     };
   }, [id]);
+
+  const client = clients.find((c) => c.id === event?.client_id);
+
+  const eventAssignments = useMemo(
+    () =>
+      assignments.filter(
+        (a) => a.event_id === id && a.assignment_status === "Assigned"
+      ),
+    [assignments, id]
+  );
+
+  const existingMemberIds = eventAssignments.map((a) => a.team_member_id);
+
+  const teamCost = eventAssignments.reduce(
+    (sum, a) => sum + (a.agreed_rate || 0),
+    0
+  );
 
   if (loading) {
     return (
@@ -92,7 +123,6 @@ export default function EventDetail() {
     );
   }
 
-  const client = clients.find((c) => c.id === event.client_id);
   const dateLabel = event.end_date
     ? `${formatDate(event.start_date)} → ${formatDate(event.end_date)}`
     : formatDate(event.start_date);
@@ -101,6 +131,23 @@ export default function EventDetail() {
     const updated = await updateEvent(event.id, data);
     setEvent(updated);
     toast({ title: "Event updated" });
+  };
+
+  const handleAssign = async (data) => {
+    await createAssignment({ ...data, event_id: event.id });
+    toast({ title: "Team member assigned" });
+  };
+
+  const handleRemove = async (assignmentId) => {
+    setRemovingId(assignmentId);
+    try {
+      await removeAssignment(assignmentId);
+      toast({ title: "Team member removed" });
+    } catch (e) {
+      toast({ title: "Remove failed", description: e?.message, variant: "destructive" });
+    } finally {
+      setRemovingId(null);
+    }
   };
 
   return (
@@ -200,15 +247,74 @@ export default function EventDetail() {
         </Card>
 
         <Card className="lg:col-span-3">
-          <CardHeader>
+          <CardHeader className="flex items-center justify-between">
             <CardTitle>Team</CardTitle>
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-muted-foreground">
+                Team cost: {formatCurrency(teamCost)}
+              </span>
+              <Button size="sm" onClick={() => setAssignOpen(true)}>
+                <UserPlus className="h-4 w-4" /> Assign Team
+              </Button>
+            </div>
           </CardHeader>
-          <CardBody>
-            <EmptyState
-              title="No team assigned yet"
-              description="Team management & assignment arrives in Phase 4."
-              icon={Users}
-            />
+          <CardBody className="p-0">
+            {eventAssignments.length === 0 ? (
+              <EmptyState
+                title="No team assigned to this event yet"
+                description="Assign photographers, cinematographers, and crew to this event."
+                icon={Users}
+                action={
+                  <Button onClick={() => setAssignOpen(true)}>
+                    <UserPlus className="h-4 w-4" /> Assign Team
+                  </Button>
+                }
+              />
+            ) : (
+              <div className="divide-y divide-border">
+                {eventAssignments.map((a) => {
+                  const member = members.find((m) => m.id === a.team_member_id);
+                  return (
+                    <div
+                      key={a.id}
+                      className="flex items-center gap-3 px-5 py-3.5"
+                    >
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                        {member ? initials(member.name) : "?"}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold text-foreground">
+                          {member ? member.name : "Unknown member"}
+                        </p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {a.role_name_snapshot || "—"}
+                          {a.rate_type ? ` · ${a.rate_type}` : ""}
+                        </p>
+                      </div>
+                      <span className="text-sm font-medium text-foreground">
+                        {a.agreed_rate != null ? formatCurrency(a.agreed_rate) : "—"}
+                      </span>
+                      <span className="hidden text-xs text-muted-foreground sm:block">
+                        Paid: {formatCurrency(0)}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleRemove(a.id)}
+                        disabled={removingId === a.id}
+                        title="Remove from event"
+                      >
+                        {removingId === a.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </CardBody>
         </Card>
 
@@ -234,7 +340,7 @@ export default function EventDetail() {
           <Button onClick={() => setEditOpen(true)}>
             <Pencil className="h-4 w-4" /> Edit Event
           </Button>
-          <Button variant="outline" disabled title="Available in Phase 4">
+          <Button variant="outline" onClick={() => setAssignOpen(true)}>
             <UserPlus className="h-4 w-4" /> Add Team
           </Button>
           <Button variant="outline" disabled title="Available in Phase 5">
@@ -253,6 +359,18 @@ export default function EventDetail() {
         clients={clients}
         onSave={handleSave}
         onCreateClient={createClient}
+      />
+
+      <AssignTeamModal
+        open={assignOpen}
+        onClose={() => setAssignOpen(false)}
+        event={event}
+        members={members}
+        roles={roles}
+        assignments={assignments}
+        events={events}
+        existingMemberIds={existingMemberIds}
+        onAssign={handleAssign}
       />
     </div>
   );

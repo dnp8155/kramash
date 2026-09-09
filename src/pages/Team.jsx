@@ -1,74 +1,149 @@
 import { useMemo, useState } from "react";
-import { Plus, Mail, Phone, Users } from "lucide-react";
+import { Plus, Users } from "lucide-react";
 import PageHeader from "@/components/common/PageHeader";
 import Card, { CardBody } from "@/components/common/Card";
-import StatusBadge from "@/components/common/StatusBadge";
 import SearchInput from "@/components/common/SearchInput";
 import FilterControl from "@/components/common/FilterControl";
 import Button from "@/components/common/Button";
 import EmptyState from "@/components/common/EmptyState";
-import { mockTeam, teamStatuses } from "@/data/mockTeam";
-import { initials } from "@/utils/format";
+import LoadingState from "@/components/common/LoadingState";
+import ErrorState from "@/components/common/ErrorState";
+import TeamMemberCard from "@/components/team/TeamMemberCard";
+import TeamMemberForm from "@/components/team/TeamMemberForm";
+import AvailabilityChecker from "@/components/team/AvailabilityChecker";
+import { useTeamMembers } from "@/hooks/useTeamMembers";
+import { useTeamRoles } from "@/hooks/useTeamRoles";
+import { useEventTeamAssignments } from "@/hooks/useEventTeamAssignments";
+import { useEvents } from "@/hooks/useEvents";
+import { toast } from "@/components/ui/use-toast";
 
 export default function Team() {
+  const { members, loading, error, refetch, createMember } = useTeamMembers();
+  const { roles } = useTeamRoles();
+  const { assignments } = useEventTeamAssignments();
+  const { events } = useEvents();
+
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [roleFilter, setRoleFilter] = useState("all");
+  const [modalOpen, setModalOpen] = useState(false);
 
-  const filtered = useMemo(
-    () =>
-      mockTeam.filter((m) => {
-        const matchesSearch =
-          !search || [m.name, m.role].some((f) => f.toLowerCase().includes(search.toLowerCase()));
-        const matchesStatus = statusFilter === "all" || m.status === statusFilter;
-        return matchesSearch && matchesStatus;
-      }),
-    [search, statusFilter]
-  );
+  const roleName = (m) =>
+    roles.find((r) => r.id === m.role_id)?.name || m.profession || "—";
+
+  const assignmentCount = (memberId) =>
+    assignments.filter(
+      (a) => a.team_member_id === memberId && a.assignment_status === "Assigned"
+    ).length;
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return members.filter((m) => {
+      const matchesSearch =
+        !q ||
+        [m.name, m.phone, m.email, m.profession, roleName(m)].some((f) =>
+          (f || "").toLowerCase().includes(q)
+        );
+      const matchesStatus = statusFilter === "all" || m.status === statusFilter;
+      const matchesRole =
+        roleFilter === "all" || m.role_id === roleFilter;
+      return matchesSearch && matchesStatus && matchesRole;
+    });
+  }, [members, roles, search, statusFilter, roleFilter]);
+
+  const handleSave = async (data) => {
+    await createMember(data);
+    toast({ title: "Team member added" });
+  };
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Team"
         description="Manage your crew, photographers, and editors."
-        actions={<Button><Plus className="h-4 w-4" /> Invite Member</Button>}
+        actions={
+          <Button onClick={() => setModalOpen(true)}>
+            <Plus className="h-4 w-4" /> Add Member
+          </Button>
+        }
       />
 
       <Card>
         <CardBody className="flex flex-col gap-3 sm:flex-row sm:items-end">
-          <SearchInput value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search members…" className="flex-1" />
-          <FilterControl label="Status" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} options={teamStatuses} />
+          <SearchInput
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by name, phone, role…"
+            className="flex-1"
+          />
+          <FilterControl
+            label="Status"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            options={["Active", "Inactive"]}
+          />
+          <FilterControl
+            label="Role"
+            value={roleFilter}
+            onChange={(e) => setRoleFilter(e.target.value)}
+            options={roles.map((r) => r.id)}
+            optionLabels={roles.map((r) => r.name)}
+          />
         </CardBody>
       </Card>
 
-      {filtered.length === 0 ? (
-        <Card><EmptyState title="No members found" description="Try a different search." icon={Users} /></Card>
+      {loading ? (
+        <Card>
+          <LoadingState label="Loading team…" />
+        </Card>
+      ) : error ? (
+        <Card>
+          <ErrorState message={error} onRetry={refetch} />
+        </Card>
+      ) : filtered.length === 0 ? (
+        <Card>
+          <EmptyState
+            title={search || statusFilter !== "all" || roleFilter !== "all" ? "No team members found" : "No team members yet"}
+            description={
+              search || statusFilter !== "all" || roleFilter !== "all"
+                ? "Try a different search or filter."
+                : "Add your first team member to begin scheduling."
+            }
+            icon={Users}
+            action={
+              !search && statusFilter === "all" && roleFilter === "all" ? (
+                <Button onClick={() => setModalOpen(true)}>
+                  <Plus className="h-4 w-4" /> Add Member
+                </Button>
+              ) : null
+            }
+          />
+        </Card>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {filtered.map((m) => (
-            <Card key={m.id} className="transition-shadow hover:shadow-md">
-              <CardBody className="flex flex-col gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-base font-semibold text-primary">
-                    {m.avatar || initials(m.name)}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-foreground">{m.name}</p>
-                    <p className="truncate text-xs text-muted-foreground">{m.role}</p>
-                  </div>
-                  <StatusBadge status={m.status} />
-                </div>
-                <div className="flex flex-col gap-1.5 text-sm text-muted-foreground">
-                  <p className="flex items-center gap-2 truncate"><Mail className="h-4 w-4 shrink-0" /> {m.email}</p>
-                  <p className="flex items-center gap-2"><Phone className="h-4 w-4 shrink-0" /> {m.phone}</p>
-                </div>
-                <div className="flex items-center justify-between border-t border-border pt-3">
-                  <span className="text-xs text-muted-foreground">{m.events} events assigned</span>
-                </div>
-              </CardBody>
-            </Card>
+            <TeamMemberCard
+              key={m.id}
+              member={m}
+              roleName={roleName(m)}
+              assignmentCount={assignmentCount(m.id)}
+            />
           ))}
         </div>
       )}
+
+      <AvailabilityChecker
+        members={members}
+        assignments={assignments}
+        events={events}
+      />
+
+      <TeamMemberForm
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        roles={roles}
+        onSave={handleSave}
+      />
     </div>
   );
 }

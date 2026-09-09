@@ -1,13 +1,19 @@
 import { useState, useEffect, useRef } from "react";
-import { Save, Building2, Bell, Palette, Receipt, Upload, Loader2, Trash2 } from "lucide-react";
+import { Save, Building2, Bell, Palette, Receipt, Upload, Loader2, Trash2, Plus, Pencil, Users } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useWorkspace } from "@/lib/WorkspaceContext";
+import { useTeamRoles } from "@/hooks/useTeamRoles";
 import { toast } from "@/components/ui/use-toast";
 import PageHeader from "@/components/common/PageHeader";
 import Card, { CardBody, CardHeader, CardTitle } from "@/components/common/Card";
 import Button from "@/components/common/Button";
 import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
+import StatusBadge from "@/components/common/StatusBadge";
+import LoadingState from "@/components/common/LoadingState";
+import EmptyState from "@/components/common/EmptyState";
+import TeamRoleForm from "@/components/team/TeamRoleForm";
+import { formatCurrency } from "@/utils/format";
 import { Image } from "@/components/ui/image";
 
 const CURRENCIES = [
@@ -59,6 +65,9 @@ function Toggle({ checked, onChange, label, description }) {
 
 export default function Preferences() {
   const { currentWorkspace, refresh, loading } = useWorkspace();
+  const { roles, loading: rolesLoading, createRole, updateRole } = useTeamRoles();
+  const [roleModalOpen, setRoleModalOpen] = useState(false);
+  const [editingRole, setEditingRole] = useState(null);
   const [form, setForm] = useState(null);
   const [notif, setNotif] = useState({ email: true, push: false, paymentAlerts: true, eventReminders: true });
   const [appearance, setAppearance] = useState({ compact: false, animations: true });
@@ -152,6 +161,22 @@ export default function Preferences() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleRoleSave = async (data) => {
+    if (editingRole) {
+      await updateRole(editingRole.id, data);
+      toast({ title: "Role updated" });
+    } else {
+      await createRole(data);
+      toast({ title: "Role added" });
+    }
+  };
+
+  const handleRoleToggle = async (role) => {
+    await updateRole(role.id, {
+      status: role.status === "active" ? "inactive" : "active",
+    });
   };
 
   return (
@@ -269,6 +294,74 @@ export default function Preferences() {
           </CardBody>
         </Card>
 
+        {/* Team Roles */}
+        <Card className="lg:col-span-2">
+          <CardHeader className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-primary" />
+              <CardTitle>Team Roles</CardTitle>
+            </div>
+            <Button
+              size="sm"
+              onClick={() => {
+                setEditingRole(null);
+                setRoleModalOpen(true);
+              }}
+            >
+              <Plus className="h-4 w-4" /> Add Role
+            </Button>
+          </CardHeader>
+          <CardBody className="p-0">
+            {rolesLoading ? (
+              <LoadingState label="Loading roles…" />
+            ) : roles.length === 0 ? (
+              <EmptyState
+                title="No roles yet"
+                description="Add roles like Photographer, Editor, or Drone Operator to build your crew."
+                icon={Users}
+              />
+            ) : (
+              <div className="divide-y divide-border">
+                {roles.map((r) => (
+                  <div key={r.id} className="flex items-center gap-3 px-5 py-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-foreground">
+                        {r.name}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {r.default_rate != null
+                          ? `${formatCurrency(r.default_rate)} · ${r.rate_type}`
+                          : r.rate_type || "—"}
+                      </p>
+                    </div>
+                    <StatusBadge
+                      status={r.status === "active" ? "Active" : "Inactive"}
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleRoleToggle(r)}
+                    >
+                      {r.status === "active" ? "Disable" : "Enable"}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        setEditingRole(r);
+                        setRoleModalOpen(true);
+                      }}
+                      title="Edit role"
+                    >
+                      <Pencil className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardBody>
+        </Card>
+
         {/* Notifications */}
         <Card>
           <CardHeader className="flex items-center gap-2">
@@ -295,6 +388,13 @@ export default function Preferences() {
           </CardBody>
         </Card>
       </div>
+
+      <TeamRoleForm
+        open={roleModalOpen}
+        onClose={() => setRoleModalOpen(false)}
+        role={editingRole}
+        onSave={handleRoleSave}
+      />
     </div>
   );
 }
