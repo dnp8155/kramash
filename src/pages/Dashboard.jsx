@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import {
   CalendarDays,
   Users,
@@ -15,8 +16,9 @@ import LoadingState from "@/components/common/LoadingState";
 import { useEvents } from "@/hooks/useEvents";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { useFinancialTransactions } from "@/hooks/useFinancialTransactions";
+import { useFinancialYear } from "@/lib/FinancialYearContext";
 import { useBusinessTerminology } from "@/lib/BusinessTerminology";
-import { computeWorkspaceSummary } from "@/utils/finance";
+import { computeWorkspaceSummary, filterTransactionsByFY } from "@/utils/finance";
 import { formatCurrency } from "@/utils/format";
 import { isUpcoming } from "@/utils/dates";
 import { Link } from "react-router-dom";
@@ -25,9 +27,14 @@ export default function Dashboard() {
   const { events, loading } = useEvents();
   const { members } = useTeamMembers();
   const { transactions } = useFinancialTransactions();
+  const { financialYears, activeFY, activeFYId } = useFinancialYear();
   const t = useBusinessTerminology();
 
-  const summary = computeWorkspaceSummary(transactions);
+  const fyTransactions = useMemo(
+    () => filterTransactionsByFY(transactions, activeFYId, financialYears),
+    [transactions, activeFYId, financialYears]
+  );
+  const summary = computeWorkspaceSummary(fyTransactions);
   const totalRevenue = summary.received;
   const pendingEvents = events.filter((e) => {
     const cv = Number(e.contract_value) || 0;
@@ -79,7 +86,7 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
-          label="Total Revenue"
+          label={`Total Revenue${activeFY ? ` · ${activeFY.name}` : ""}`}
           value={totalRevenue}
           isCurrency
           icon={Wallet}

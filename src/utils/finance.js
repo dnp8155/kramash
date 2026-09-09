@@ -13,8 +13,9 @@ const BUSINESS_EXPENSE = transactionTypes[2];
 
 // --- Financial Year (India: 1 April → 31 March) -----------------------------
 
-// Returns { label, start, end } for the FY that contains the given date.
-// e.g. "2026-09-09" → FY 2026-27 (2026-04-01 → 2027-03-31).
+// Returns { label, name, start, end } for the FY that contains the given date.
+// e.g. "2026-09-09" → FY 2026–27 (2026-04-01 → 2027-03-31).
+// Uses en-dash (–) in the display name for consistent formatting.
 export function getFinancialYear(dateStr) {
   if (!dateStr) return null;
   const d = new Date(dateStr + "T00:00:00");
@@ -23,8 +24,10 @@ export function getFinancialYear(dateStr) {
   const month = d.getMonth() + 1; // 1-12
   const startYear = month >= 4 ? year : year - 1;
   const endYear = startYear + 1;
+  const name = `FY ${startYear}\u2013${String(endYear).slice(-2)}`;
   return {
-    label: `FY ${startYear}-${String(endYear).slice(-2)}`,
+    label: name, // kept for backward compat — same as name
+    name,
     start: `${startYear}-04-01`,
     end: `${endYear}-03-31`,
   };
@@ -34,8 +37,53 @@ export function currentFinancialYear() {
   return getFinancialYear(todayStr());
 }
 
-// Build a descending list of FY labels: the active FY plus any FYs present in
-// the given transactions, so the filter dropdown always offers relevant years.
+// Returns the current FY's { name, start_date, end_date } for backend calls.
+export function getCurrentFinancialYear() {
+  const fy = currentFinancialYear();
+  if (!fy) return null;
+  return { name: fy.name, start_date: fy.start, end_date: fy.end };
+}
+
+// Finds the FinancialYear record that contains the given date.
+export function findFYForDate(dateStr, financialYears) {
+  if (!dateStr || !financialYears?.length) return null;
+  return (
+    financialYears.find(
+      (fy) => dateStr >= fy.start_date && dateStr <= fy.end_date
+    ) || null
+  );
+}
+
+// Resolves the FY ID for a transaction. Uses the stored financial_year_id if
+// present; otherwise falls back to date-based lookup from FY records.
+export function resolveTransactionFYId(transaction, financialYears) {
+  if (transaction.financial_year_id) return transaction.financial_year_id;
+  if (!transaction.transaction_date || !financialYears?.length) return null;
+  const fy = findFYForDate(transaction.transaction_date, financialYears);
+  return fy?.id || null;
+}
+
+// Filters transactions by FY ID using resolveTransactionFYId for fallback.
+// Pass null fyId to return all transactions.
+export function filterTransactionsByFY(transactions, fyId, financialYears) {
+  if (!fyId) return transactions;
+  return transactions.filter(
+    (t) => resolveTransactionFYId(t, financialYears) === fyId
+  );
+}
+
+// Validates that a date range doesn't overlap with existing FYs.
+export function checkFYOverlap(startDate, endDate, existingFYs, excludeId) {
+  return existingFYs.some(
+    (fy) =>
+      (!excludeId || fy.id !== excludeId) &&
+      startDate <= fy.end_date &&
+      endDate >= fy.start_date
+  );
+}
+
+// Build a descending list of FY labels from the active FY plus any FYs present
+// in the given transactions (legacy support for date-based filtering).
 export function financialYearOptions(transactions = []) {
   const set = new Set();
   const current = currentFinancialYear();
@@ -158,10 +206,10 @@ export function computeEventFinancials({ transactions = [], event, assignments =
 
 // --- Global workspace summary ----------------------------------------------
 
-// Workspace-level totals, optionally filtered by financial year.
-export function computeWorkspaceSummary(transactions = [], fyLabel = null) {
-  const inFy = (t) => (fyLabel ? isInFinancialYear(t.transaction_date, fyLabel) : true);
-  const scoped = transactions.filter((t) => active(t) && inFy(t));
+// Workspace-level totals from pre-filtered transactions.
+// The caller is responsible for filtering by FY (use filterTransactionsByFY).
+export function computeWorkspaceSummary(transactions = []) {
+  const scoped = transactions.filter((t) => active(t));
 
   const received = scoped
     .filter((t) => t.transaction_type === CLIENT_RECEIPT)
@@ -184,8 +232,6 @@ export function computeWorkspaceSummary(transactions = [], fyLabel = null) {
     .filter((t) => t.transaction_type === CLIENT_RECEIPT && isOnlineMethod(t.payment_method))
     .reduce((s, t) => s + (Number(t.amount) || 0), 0);
 
-  // Pending = sum of (contractValue - received) across events that have a
-  // contract value, clamped at 0 (overpayments excluded).
   return {
     received,
     teamPaid,

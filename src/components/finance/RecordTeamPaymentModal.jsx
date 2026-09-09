@@ -72,6 +72,8 @@ export default function RecordTeamPaymentModal({
         notes: form.notes.trim(),
       });
       onClose();
+    } catch (err) {
+      setForm((f) => ({ ...f, error: { ...f.error, submit: err.message } }));
     } finally {
       setSaving(false);
     }
@@ -92,6 +94,11 @@ export default function RecordTeamPaymentModal({
       }
     >
       <div className="flex flex-col gap-4">
+        {form.error?.submit && (
+          <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive">
+            {form.error.submit}
+          </div>
+        )}
         <Select
           label="Team Member"
           value={form.team_assignment_id}

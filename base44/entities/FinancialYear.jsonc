@@ -1,0 +1,93 @@
+{
+  "name": "FinancialYear",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "description": "Workspace this financial year belongs to"
+    },
+    "name": {
+      "type": "string",
+      "description": "Display label using en-dash format (e.g. FY 2026\u201327)"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date",
+      "description": "FY start date \u2014 Indian convention: April 1 (YYYY-MM-DD)"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date",
+      "description": "FY end date \u2014 Indian convention: March 31 (YYYY-MM-DD)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "open",
+        "closed"
+      ],
+      "default": "open",
+      "description": "open = accepts new transactions; closed = read-only for historical reporting"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this is the workspace's currently selected/default FY. Only one FY per workspace should be active."
+    }
+  },
+  "required": [
+    "workspace_id",
+    "name",
+    "start_date",
+    "end_date"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.workspace_id": {
+            "$in": "{{user.data.workspace_ids}}"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "data.workspace_id": {
+        "$in": "{{user.data.workspace_ids}}"
+      }
+    },
+    "update": {
+      "$or": [
+        {
+          "data.workspace_id": {
+            "$in": "{{user.data.workspace_ids}}"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.workspace_id": {
+            "$in": "{{user.data.workspace_ids}}"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

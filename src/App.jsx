@@ -22,6 +22,7 @@ import QuotationEditor from "@/pages/QuotationEditor";
 import QuotationDetail from "@/pages/QuotationDetail";
 import { PlanProvider } from "@/lib/PlanContext";
 import { BusinessTerminologyProvider } from "@/lib/BusinessTerminology";
+import { FinancialYearProvider } from "@/lib/FinancialYearContext";
 import AdminGuard from "@/components/admin/AdminGuard";
 import AdminLayout from "@/components/admin/AdminLayout";
 import AdminDashboard from "@/pages/admin/AdminDashboard";
@@ -58,11 +59,13 @@ const AuthenticatedApp = () => (
   <AuthReady>
     <WorkspaceProvider>
       <WorkspaceGate>
-        <BusinessTerminologyProvider>
-          <PlanProvider>
-            <Outlet />
-          </PlanProvider>
-        </BusinessTerminologyProvider>
+        <FinancialYearProvider>
+          <BusinessTerminologyProvider>
+            <PlanProvider>
+              <Outlet />
+            </PlanProvider>
+          </BusinessTerminologyProvider>
+        </FinancialYearProvider>
       </WorkspaceGate>
     </WorkspaceProvider>
   </AuthReady>

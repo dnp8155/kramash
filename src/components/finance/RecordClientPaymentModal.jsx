@@ -61,6 +61,8 @@ export default function RecordClientPaymentModal({
         notes: form.notes.trim(),
       });
       onClose();
+    } catch (err) {
+      setForm((f) => ({ ...f, error: { ...f.error, submit: err.message } }));
     } finally {
       setSaving(false);
     }
@@ -81,6 +83,11 @@ export default function RecordClientPaymentModal({
       }
     >
       <div className="flex flex-col gap-4">
+        {form.error?.submit && (
+          <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive">
+            {form.error.submit}
+          </div>
+        )}
         {event ? (
           <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm">
             <p className="font-medium text-foreground">{event.title}</p>

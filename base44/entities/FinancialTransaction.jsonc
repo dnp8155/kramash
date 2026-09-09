@@ -6,6 +6,10 @@
       "type": "string",
       "description": "Workspace this transaction belongs to"
     },
+    "financial_year_id": {
+      "type": "string",
+      "description": "Financial Year this transaction belongs to (resolved from transaction_date at creation time)"
+    },
     "event_id": {
       "type": "string",
       "description": "Event this transaction relates to (optional for general business expenses)"

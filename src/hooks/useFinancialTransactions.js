@@ -1,12 +1,16 @@
 import { useCallback, useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useWorkspace } from "@/lib/WorkspaceContext";
+import { useFinancialYear } from "@/lib/FinancialYearContext";
+import { findFYForDate } from "@/utils/finance";
 
 // Loads + mutates financial transactions scoped to the active workspace.
 // Pass `eventId` to load only the transactions for a single event (server-side
 // filtered); omit it to load the whole workspace ledger.
+// Automatically assigns financial_year_id on create/update based on date.
 export function useFinancialTransactions({ eventId, teamMemberId } = {}) {
   const { workspaceId } = useWorkspace();
+  const { financialYears } = useFinancialYear();
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -43,22 +47,44 @@ export function useFinancialTransactions({ eventId, teamMemberId } = {}) {
 
   const createTransaction = useCallback(
     async (data) => {
+      // Resolve FY from transaction date — never save without an FY
+      const fy = findFYForDate(data.transaction_date, financialYears);
+      if (!fy) {
+        throw new Error(
+          "No Financial Year is available for this transaction date. Please create the applicable Financial Year first."
+        );
+      }
       const t = await base44.entities.FinancialTransaction.create({
         ...data,
         workspace_id: workspaceId,
+        financial_year_id: fy.id,
         status: data.status || "ACTIVE",
       });
       setTransactions((prev) => [t, ...prev]);
       return t;
     },
-    [workspaceId]
+    [workspaceId, financialYears]
   );
 
-  const updateTransaction = useCallback(async (id, data) => {
-    const t = await base44.entities.FinancialTransaction.update(id, data);
-    setTransactions((prev) => prev.map((x) => (x.id === id ? t : x)));
-    return t;
-  }, []);
+  const updateTransaction = useCallback(
+    async (id, data) => {
+      const updateData = { ...data };
+      // If date changed, re-resolve the FY
+      if (data.transaction_date) {
+        const fy = findFYForDate(data.transaction_date, financialYears);
+        if (!fy) {
+          throw new Error(
+            "No Financial Year is available for this transaction date. Please create the applicable Financial Year first."
+          );
+        }
+        updateData.financial_year_id = fy.id;
+      }
+      const t = await base44.entities.FinancialTransaction.update(id, updateData);
+      setTransactions((prev) => prev.map((x) => (x.id === id ? t : x)));
+      return t;
+    },
+    [financialYears]
+  );
 
   // Soft-delete: marks the transaction VOID so it stays in audit history but is
   // excluded from all totals. Can be reversed by unvoiding.

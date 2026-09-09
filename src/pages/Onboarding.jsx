@@ -160,6 +160,12 @@ export default function Onboarding() {
       } catch {
         /* non-blocking — PlanContext defaults to Free if no subscription exists */
       }
+      // Initialize the current Financial Year for this workspace
+      try {
+        await base44.functions.invoke("initializeFinancialYear", { workspace_id: ws.id });
+      } catch {
+        /* non-blocking — FinancialYearProvider will retry on first load */
+      }
       // Seed industry-specific presets (team roles, services, expense categories)
       try {
         await seedWorkspacePresets(ws.id, form.business_category);

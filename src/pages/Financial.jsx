@@ -24,11 +24,11 @@ import { useClients } from "@/hooks/useClients";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { useExpenseCategories } from "@/hooks/useExpenseCategories";
 import { useEventTeamAssignments } from "@/hooks/useEventTeamAssignments";
+import { useFinancialYear } from "@/lib/FinancialYearContext";
 import {
   computeWorkspaceSummary,
-  financialYearOptions,
-  isInFinancialYear,
-  currentFinancialYear,
+  filterTransactionsByFY,
+  resolveTransactionFYId,
 } from "@/utils/finance";
 import { transactionTypeLabels, paymentMethods } from "@/constants/finance";
 import { formatCurrency } from "@/utils/format";
@@ -40,6 +40,8 @@ import RecordClientPaymentModal from "@/components/finance/RecordClientPaymentMo
 import RecordTeamPaymentModal from "@/components/finance/RecordTeamPaymentModal";
 import RecordExpenseModal from "@/components/finance/RecordExpenseModal";
 import EditTransactionModal from "@/components/finance/EditTransactionModal";
+import FinancialYearSelector from "@/components/finance/FinancialYearSelector";
+import FinancialYearManager from "@/components/finance/FinancialYearManager";
 
 export default function Financial() {
   const {
@@ -56,26 +58,26 @@ export default function Financial() {
   const { members } = useTeamMembers();
   const { categories } = useExpenseCategories();
   const { assignments } = useEventTeamAssignments();
+  const { financialYears, activeFY, activeFYId } = useFinancialYear();
   const t = useBusinessTerminology();
 
-  const [fy, setFy] = useState(currentFinancialYear()?.label || "all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [methodFilter, setMethodFilter] = useState("all");
   const [search, setSearch] = useState("");
+  const [showAllYears, setShowAllYears] = useState(false);
 
   const [clientOpen, setClientOpen] = useState(false);
   const [teamOpen, setTeamOpen] = useState(false);
   const [expenseOpen, setExpenseOpen] = useState(false);
   const [editing, setEditing] = useState(null);
 
-  const fyOptions = useMemo(
-    () => financialYearOptions(transactions),
-    [transactions]
-  );
-
+  // Summary always uses the active FY (not affected by showAllYears toggle).
   const summary = useMemo(
-    () => computeWorkspaceSummary(transactions, fy === "all" ? null : fy),
-    [transactions, fy]
+    () =>
+      computeWorkspaceSummary(
+        filterTransactionsByFY(transactions, activeFYId, financialYears)
+      ),
+    [transactions, activeFYId, financialYears]
   );
 
   // All-time client pending across events (outstanding dues to follow up).
@@ -97,7 +99,10 @@ export default function Financial() {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return transactions.filter((t) => {
-      if (fy !== "all" && !isInFinancialYear(t.transaction_date, fy)) return false;
+      // FY filter: use active FY unless showAllYears is toggled
+      if (!showAllYears && activeFYId) {
+        if (resolveTransactionFYId(t, financialYears) !== activeFYId) return false;
+      }
       if (typeFilter !== "all" && t.transaction_type !== typeFilter) return false;
       if (methodFilter !== "all" && t.payment_method !== methodFilter) return false;
       if (q) {
@@ -113,16 +118,26 @@ export default function Financial() {
       }
       return true;
     });
-  }, [transactions, fy, typeFilter, methodFilter, search, events, clients, members, categories]);
+  }, [transactions, activeFYId, financialYears, showAllYears, typeFilter, methodFilter, search, events, clients, members, categories]);
 
   const handleCreate = async (data) => {
-    await createTransaction(data);
-    toast({ title: "Transaction recorded" });
+    try {
+      await createTransaction(data);
+      toast({ title: "Transaction recorded" });
+    } catch (e) {
+      toast({ title: "Failed to record", description: e.message, variant: "destructive" });
+      throw e;
+    }
   };
 
   const handleEdit = async (data) => {
-    await updateTransaction(editing.id, data);
-    toast({ title: "Transaction updated" });
+    try {
+      await updateTransaction(editing.id, data);
+      toast({ title: "Transaction updated" });
+    } catch (e) {
+      toast({ title: "Failed to update", description: e.message, variant: "destructive" });
+      throw e;
+    }
   };
 
   const handleVoid = async (t) => {
@@ -136,6 +151,8 @@ export default function Financial() {
   };
 
   const profitPositive = summary.profit >= 0;
+  const fyLabel = activeFY?.name || "All Years";
+  const exportFYLabel = showAllYears ? "all" : fyLabel;
 
   return (
     <div className="flex flex-col gap-6">
@@ -143,9 +160,18 @@ export default function Financial() {
         title="Financial"
         description={`Track payments, dues, and revenue across ${t.workItemPlural.toLowerCase()}.`}
         actions={
-          <Button variant="outline" onClick={() => { exportFinancialCSV(filtered, events, clients, members, categories, fy, t); toast({ title: "Financial activity exported" }); }}>
-            <Download className="h-4 w-4" /> Export
-          </Button>
+          <div className="flex items-center gap-3">
+            <FinancialYearSelector className="w-40" />
+            <Button
+              variant="outline"
+              onClick={() => {
+                exportFinancialCSV(filtered, events, clients, members, categories, exportFYLabel, t);
+                toast({ title: "Financial activity exported" });
+              }}
+            >
+              <Download className="h-4 w-4" /> Export
+            </Button>
+          </div>
         }
       />
 
@@ -163,7 +189,7 @@ export default function Financial() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <StatCard
-          label="Total Received"
+          label={`Total Received · ${fyLabel}`}
           value={summary.received}
           isCurrency
           icon={TrendingUp}
@@ -171,7 +197,7 @@ export default function Financial() {
           trend="Client payments in"
         />
         <StatCard
-          label="Total Paid"
+          label={`Total Paid · ${fyLabel}`}
           value={summary.totalPaid}
           isCurrency
           icon={TrendingDown}
@@ -179,7 +205,7 @@ export default function Financial() {
           trend="Team + expenses"
         />
         <StatCard
-          label="Profit"
+          label={`Profit · ${fyLabel}`}
           value={summary.profit}
           isCurrency
           icon={profitPositive ? TrendingUp : TrendingDown}
@@ -192,10 +218,10 @@ export default function Financial() {
           isCurrency
           icon={Clock}
           accent="warning"
-          trend="Outstanding client dues"
+          trend="Outstanding client dues (all-time)"
         />
         <StatCard
-          label="Cash Received"
+          label={`Cash Received · ${fyLabel}`}
           value={summary.cashReceived}
           isCurrency
           icon={Banknote}
@@ -203,7 +229,7 @@ export default function Financial() {
           trend="Client cash payments"
         />
         <StatCard
-          label="Online Received"
+          label={`Online Received · ${fyLabel}`}
           value={summary.onlineReceived}
           isCurrency
           icon={CreditCard}
@@ -212,6 +238,8 @@ export default function Financial() {
         />
       </div>
 
+      <FinancialYearManager transactions={transactions} />
+
       <Card>
         <CardBody className="flex flex-col gap-3 sm:flex-row sm:items-end sm:flex-wrap">
           <SearchInput
@@ -219,12 +247,6 @@ export default function Financial() {
             onChange={(e) => setSearch(e.target.value)}
             placeholder={`Search by ${t.workItemSingular.toLowerCase()} or party…`}
             className="flex-1 sm:min-w-[200px]"
-          />
-          <FilterControl
-            label="Financial Year"
-            value={fy}
-            onChange={(e) => setFy(e.target.value)}
-            options={fyOptions}
           />
           <FilterControl
             label="Type"
@@ -241,12 +263,28 @@ export default function Financial() {
             onChange={(e) => setMethodFilter(e.target.value)}
             options={paymentMethods}
           />
+          <label className="flex h-9 items-center gap-2 text-sm text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={showAllYears}
+              onChange={(e) => setShowAllYears(e.target.checked)}
+              className="h-4 w-4 rounded border-border"
+            />
+            All Years
+          </label>
         </CardBody>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Payment Activity</CardTitle>
+          <CardTitle>
+            Payment Activity
+            {!showAllYears && activeFY && (
+              <span className="ml-2 text-sm font-normal text-muted-foreground">
+                · {activeFY.name}
+              </span>
+            )}
+          </CardTitle>
         </CardHeader>
         {loading ? (
           <LoadingState label="Loading transactions…" />
