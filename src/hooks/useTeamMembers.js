@@ -38,10 +38,19 @@ export function useTeamMembers() {
 
   const createMember = useCallback(
     async (data) => {
-      const m = await base44.entities.TeamMember.create({
-        ...data,
+      const res = await base44.functions.invoke("createResource", {
         workspace_id: workspaceId,
+        resource_type: "team_members",
+        resource_data: data,
       });
+      const result = res?.data || res;
+      if (result?.error === "PLAN_LIMIT_REACHED") {
+        throw new Error(result.message);
+      }
+      if (!result?.success) {
+        throw new Error(result?.error || "Failed to create team member");
+      }
+      const m = result.record;
       setMembers((prev) => [m, ...prev]);
       return m;
     },

@@ -1,0 +1,46 @@
+{
+  "name": "PlanLimit",
+  "type": "object",
+  "properties": {
+    "plan_id": {
+      "type": "string",
+      "description": "Plan this limit belongs to"
+    },
+    "limit_key": {
+      "type": "string",
+      "description": "Limit identifier (e.g. max_events, max_team_members, max_services, pdf_export_enabled, quotation_enabled, advanced_theme_enabled, reminders_enabled)"
+    },
+    "limit_value": {
+      "type": "number",
+      "description": "Limit value. For resource limits: max count (999999 = unlimited). For feature flags: 1 = enabled, 0 = disabled."
+    },
+    "enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this limit entry is active. If false, the limit is not enforced."
+    }
+  },
+  "required": [
+    "plan_id",
+    "limit_key",
+    "limit_value"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

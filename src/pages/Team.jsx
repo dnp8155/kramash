@@ -15,6 +15,8 @@ import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { useTeamRoles } from "@/hooks/useTeamRoles";
 import { useEventTeamAssignments } from "@/hooks/useEventTeamAssignments";
 import { useEvents } from "@/hooks/useEvents";
+import { usePlan } from "@/lib/PlanContext";
+import PlanLimitReached from "@/components/common/PlanLimitReached";
 import { toast } from "@/components/ui/use-toast";
 
 export default function Team() {
@@ -22,6 +24,9 @@ export default function Team() {
   const { roles } = useTeamRoles();
   const { assignments } = useEventTeamAssignments();
   const { events } = useEvents();
+  const { canCreateResource, usage, getLimit } = usePlan();
+  const teamLimit = getLimit("max_team_members");
+  const teamLimitReached = !canCreateResource("team_members");
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -52,8 +57,13 @@ export default function Team() {
   }, [members, roles, search, statusFilter, roleFilter]);
 
   const handleSave = async (data) => {
-    await createMember(data);
-    toast({ title: "Team member added" });
+    try {
+      await createMember(data);
+      toast({ title: "Team member added" });
+    } catch (e) {
+      toast({ title: "Cannot add team member", description: e?.message, variant: "destructive" });
+      throw e;
+    }
   };
 
   return (
@@ -62,11 +72,19 @@ export default function Team() {
         title="Team"
         description="Manage your crew, photographers, and editors."
         actions={
-          <Button onClick={() => setModalOpen(true)}>
+          <Button onClick={() => setModalOpen(true)} disabled={teamLimitReached}>
             <Plus className="h-4 w-4" /> Add Member
           </Button>
         }
       />
+
+      {teamLimitReached && (
+        <PlanLimitReached
+          resource="team member"
+          currentUsage={usage.team_members}
+          limit={teamLimit}
+        />
+      )}
 
       <Card>
         <CardBody className="flex flex-col gap-3 sm:flex-row sm:items-end">

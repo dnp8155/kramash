@@ -94,6 +94,10 @@
     "default_gst_rate": {
       "type": "number",
       "description": "Default GST rate percentage (e.g. 18)"
+    },
+    "default_quotation_terms": {
+      "type": "string",
+      "description": "Default terms and conditions preloaded into new quotations"
     }
   },
   "required": [

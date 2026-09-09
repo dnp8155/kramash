@@ -38,10 +38,19 @@ export function useEvents() {
 
   const createEvent = useCallback(
     async (data) => {
-      const ev = await base44.entities.Event.create({
-        ...data,
+      const res = await base44.functions.invoke("createResource", {
         workspace_id: workspaceId,
+        resource_type: "events",
+        resource_data: data,
       });
+      const result = res?.data || res;
+      if (result?.error === "PLAN_LIMIT_REACHED") {
+        throw new Error(result.message);
+      }
+      if (!result?.success) {
+        throw new Error(result?.error || "Failed to create event");
+      }
+      const ev = result.record;
       setEvents((prev) => [ev, ...prev]);
       return ev;
     },

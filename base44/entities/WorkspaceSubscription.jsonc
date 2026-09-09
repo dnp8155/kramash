@@ -1,0 +1,111 @@
+{
+  "name": "WorkspaceSubscription",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "description": "Workspace this subscription belongs to"
+    },
+    "plan_id": {
+      "type": "string",
+      "description": "Plan assigned to this workspace"
+    },
+    "pricing_id": {
+      "type": "string",
+      "description": "PlanPricing reference (null for Free plan)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "ACTIVE",
+        "EXPIRED",
+        "CANCELLED",
+        "SUSPENDED"
+      ],
+      "default": "ACTIVE",
+      "description": "Current subscription status"
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date",
+      "description": "Subscription start date (date-only, YYYY-MM-DD)"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date",
+      "description": "Subscription expiry date (date-only, YYYY-MM-DD). Null for Free plan."
+    },
+    "auto_renew": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the subscription auto-renews (Phase 8 \u2014 payment gateway)"
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "ADMIN",
+        "PAYMENT_GATEWAY",
+        "PROMOTIONAL",
+        "ONBOARDING"
+      ],
+      "default": "ONBOARDING",
+      "description": "How the subscription was activated"
+    },
+    "assigned_price": {
+      "type": "number",
+      "description": "Snapshot of the price at assignment for historical accuracy"
+    },
+    "billing_cycle_snapshot": {
+      "type": "string",
+      "description": "Snapshot of billing cycle (MONTHLY, SIX_MONTHS, ANNUAL, or FREE)"
+    },
+    "plan_code_snapshot": {
+      "type": "string",
+      "description": "Snapshot of plan code (FREE or PRO) for quick resolution without joins"
+    },
+    "updated_by": {
+      "type": "string",
+      "description": "Admin user id who last modified this subscription"
+    },
+    "reason": {
+      "type": "string",
+      "description": "Optional admin note for this subscription change"
+    }
+  },
+  "required": [
+    "workspace_id",
+    "plan_id",
+    "status"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.workspace_id": {
+            "$in": "{{user.data.workspace_ids}}"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

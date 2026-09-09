@@ -1,0 +1,235 @@
+{
+  "name": "Quotation",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "description": "Workspace this quotation belongs to"
+    },
+    "quotation_number": {
+      "type": "string",
+      "description": "Unique workspace-level quotation number (e.g. QT-2026-0001)"
+    },
+    "client_id": {
+      "type": "string",
+      "description": "Client this quotation is for"
+    },
+    "event_id": {
+      "type": "string",
+      "description": "Optional event this quotation is linked to"
+    },
+    "quotation_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Quotation date (date-only, YYYY-MM-DD)"
+    },
+    "valid_until": {
+      "type": "string",
+      "format": "date",
+      "description": "Optional validity date (date-only, YYYY-MM-DD)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Draft",
+        "Finalized",
+        "Accepted",
+        "Rejected"
+      ],
+      "default": "Draft"
+    },
+    "subtotal": {
+      "type": "number",
+      "description": "Sum of all line item totals"
+    },
+    "discount_type": {
+      "type": "string",
+      "enum": [
+        "percentage",
+        "fixed"
+      ],
+      "default": "percentage"
+    },
+    "discount_value": {
+      "type": "number",
+      "description": "Discount value (percentage or fixed amount)"
+    },
+    "discount_amount": {
+      "type": "number",
+      "description": "Computed discount amount in currency"
+    },
+    "taxable_amount": {
+      "type": "number",
+      "description": "Subtotal minus discount"
+    },
+    "gst_applicable": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether GST is applied to this quotation"
+    },
+    "gst_mode": {
+      "type": "string",
+      "enum": [
+        "cgst_sgst",
+        "igst"
+      ],
+      "default": "cgst_sgst"
+    },
+    "cgst_amount": {
+      "type": "number",
+      "description": "CGST amount (same-state)"
+    },
+    "sgst_amount": {
+      "type": "number",
+      "description": "SGST amount (same-state)"
+    },
+    "igst_amount": {
+      "type": "number",
+      "description": "IGST amount (inter-state)"
+    },
+    "gst_total": {
+      "type": "number",
+      "description": "Total GST amount"
+    },
+    "grand_total": {
+      "type": "number",
+      "description": "Final total payable (taxable + GST)"
+    },
+    "terms_and_conditions": {
+      "type": "string",
+      "description": "Quotation terms and conditions text"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Optional internal or client-facing notes"
+    },
+    "client_snapshot": {
+      "type": "object",
+      "description": "Snapshot of client details at finalization for historical accuracy",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "phone": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "address": {
+          "type": "string"
+        }
+      }
+    },
+    "business_snapshot": {
+      "type": "object",
+      "description": "Snapshot of workspace/business details at finalization for historical accuracy",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "logo": {
+          "type": "string"
+        },
+        "address": {
+          "type": "string"
+        },
+        "phone": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "gst_business_name": {
+          "type": "string"
+        },
+        "gstin": {
+          "type": "string"
+        },
+        "gst_billing_address": {
+          "type": "string"
+        },
+        "gst_state": {
+          "type": "string"
+        }
+      }
+    },
+    "event_snapshot": {
+      "type": "object",
+      "description": "Snapshot of event details at finalization for historical accuracy",
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "start_date": {
+          "type": "string"
+        },
+        "end_date": {
+          "type": "string"
+        },
+        "venue": {
+          "type": "string"
+        },
+        "venue_address": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "required": [
+    "workspace_id",
+    "quotation_number",
+    "client_id",
+    "quotation_date",
+    "status"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.workspace_id": {
+            "$in": "{{user.data.workspace_ids}}"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "data.workspace_id": {
+        "$in": "{{user.data.workspace_ids}}"
+      }
+    },
+    "update": {
+      "$or": [
+        {
+          "data.workspace_id": {
+            "$in": "{{user.data.workspace_ids}}"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.workspace_id": {
+            "$in": "{{user.data.workspace_ids}}"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

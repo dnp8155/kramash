@@ -12,6 +12,8 @@ import EventCard from "@/components/events/EventCard";
 import EventForm from "@/components/events/EventForm";
 import { useEvents } from "@/hooks/useEvents";
 import { useClients } from "@/hooks/useClients";
+import { usePlan } from "@/lib/PlanContext";
+import PlanLimitReached from "@/components/common/PlanLimitReached";
 import { eventStatuses, eventTypes, eventPeriods } from "@/constants/events";
 import { isToday, isThisWeek, isUpcoming, isPast } from "@/utils/dates";
 import { toast } from "@/components/ui/use-toast";
@@ -19,6 +21,9 @@ import { toast } from "@/components/ui/use-toast";
 export default function Events() {
   const { events, loading, error, refetch, createEvent, updateEvent } = useEvents();
   const { clients, createClient } = useClients();
+  const { canCreateResource, usage, getLimit } = usePlan();
+  const eventsLimit = getLimit("max_events");
+  const eventsLimitReached = !canCreateResource("events");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -59,8 +64,13 @@ export default function Events() {
       await updateEvent(editingEvent.id, data);
       toast({ title: "Event updated" });
     } else {
-      await createEvent(data);
-      toast({ title: "Event created" });
+      try {
+        await createEvent(data);
+        toast({ title: "Event created" });
+      } catch (e) {
+        toast({ title: "Cannot create event", description: e?.message, variant: "destructive" });
+        throw e;
+      }
     }
   };
 
@@ -75,11 +85,19 @@ export default function Events() {
         title="Events"
         description="Manage your upcoming and past productions."
         actions={
-          <Button onClick={openNew}>
+          <Button onClick={openNew} disabled={eventsLimitReached}>
             <Plus className="h-4 w-4" /> New Event
           </Button>
         }
       />
+
+      {eventsLimitReached && (
+        <PlanLimitReached
+          resource="event"
+          currentUsage={usage.events}
+          limit={eventsLimit}
+        />
+      )}
 
       <Card>
         <CardBody className="flex flex-col gap-3 sm:flex-row sm:items-end sm:flex-wrap">

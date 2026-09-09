@@ -1,0 +1,60 @@
+{
+  "name": "PlanPricing",
+  "type": "object",
+  "properties": {
+    "plan_id": {
+      "type": "string",
+      "description": "Plan this pricing option belongs to"
+    },
+    "billing_cycle": {
+      "type": "string",
+      "enum": [
+        "MONTHLY",
+        "SIX_MONTHS",
+        "ANNUAL"
+      ],
+      "description": "Billing cycle type"
+    },
+    "price": {
+      "type": "number",
+      "description": "Price for this billing cycle in the given currency"
+    },
+    "currency": {
+      "type": "string",
+      "default": "INR"
+    },
+    "duration_months": {
+      "type": "number",
+      "description": "Number of months this billing cycle covers (1, 6, or 12)"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this pricing option is available for new subscriptions"
+    }
+  },
+  "required": [
+    "plan_id",
+    "billing_cycle",
+    "price",
+    "duration_months"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

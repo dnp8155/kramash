@@ -17,6 +17,15 @@ import Team from "@/pages/Team";
 import Financial from "@/pages/Financial";
 import RateEstimator from "@/pages/RateEstimator";
 import Quotation from "@/pages/Quotation";
+import QuotationEditor from "@/pages/QuotationEditor";
+import QuotationDetail from "@/pages/QuotationDetail";
+import { PlanProvider } from "@/lib/PlanContext";
+import AdminGuard from "@/components/admin/AdminGuard";
+import AdminLayout from "@/components/admin/AdminLayout";
+import AdminDashboard from "@/pages/admin/AdminDashboard";
+import AdminWorkspaces from "@/pages/admin/AdminWorkspaces";
+import AdminWorkspaceDetail from "@/pages/admin/AdminWorkspaceDetail";
+import AdminPlans from "@/pages/admin/AdminPlans";
 import Preferences from "@/pages/Preferences";
 import AppUpdates from "@/pages/AppUpdates";
 import Plan from "@/pages/Plan";
@@ -45,7 +54,9 @@ const AuthenticatedApp = () => (
   <AuthReady>
     <WorkspaceProvider>
       <WorkspaceGate>
-        <Outlet />
+        <PlanProvider>
+          <Outlet />
+        </PlanProvider>
       </WorkspaceGate>
     </WorkspaceProvider>
   </AuthReady>
@@ -97,9 +108,22 @@ function App() {
                   <Route path="/financial" element={<ErrorBoundary><Financial /></ErrorBoundary>} />
                   <Route path="/rate-estimator" element={<ErrorBoundary><RateEstimator /></ErrorBoundary>} />
                   <Route path="/quotation" element={<ErrorBoundary><Quotation /></ErrorBoundary>} />
+                  <Route path="/quotation/new" element={<ErrorBoundary><QuotationEditor /></ErrorBoundary>} />
+                  <Route path="/quotation/:id" element={<ErrorBoundary><QuotationDetail /></ErrorBoundary>} />
+                  <Route path="/quotation/:id/edit" element={<ErrorBoundary><QuotationEditor /></ErrorBoundary>} />
                   <Route path="/preferences" element={<ErrorBoundary><Preferences /></ErrorBoundary>} />
                   <Route path="/app-updates" element={<ErrorBoundary><AppUpdates /></ErrorBoundary>} />
                   <Route path="/plan" element={<ErrorBoundary><Plan /></ErrorBoundary>} />
+                </Route>
+              </Route>
+
+              {/* SaaS Admin area (auth + admin role required, no workspace needed) */}
+              <Route element={<AuthReady><AdminGuard /></AuthReady>}>
+                <Route element={<AdminLayout />}>
+                  <Route path="/admin" element={<AdminDashboard />} />
+                  <Route path="/admin/workspaces" element={<AdminWorkspaces />} />
+                  <Route path="/admin/workspaces/:id" element={<AdminWorkspaceDetail />} />
+                  <Route path="/admin/plans" element={<AdminPlans />} />
                 </Route>
               </Route>
 

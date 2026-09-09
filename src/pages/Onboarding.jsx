@@ -121,6 +121,12 @@ export default function Onboarding() {
         role: "owner",
         status: "active",
       });
+      // Initialize the default Free subscription for this workspace
+      try {
+        await base44.functions.invoke("initializeFreePlan", { workspace_id: ws.id });
+      } catch {
+        /* non-blocking — PlanContext defaults to Free if no subscription exists */
+      }
       const updateData = { active_workspace_id: ws.id, workspace_ids: [ws.id] };
       if (form.phone.trim()) updateData.phone = form.phone.trim();
       try {

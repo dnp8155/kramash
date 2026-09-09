@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Save, Building2, Bell, Palette, Receipt, Upload, Loader2, Trash2, Plus, Pencil, Users } from "lucide-react";
+import { Save, Building2, Bell, Palette, Receipt, Upload, Loader2, Trash2, Plus, Pencil, Users, FileText } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useWorkspace } from "@/lib/WorkspaceContext";
 import { useTeamRoles } from "@/hooks/useTeamRoles";
@@ -14,6 +14,7 @@ import LoadingState from "@/components/common/LoadingState";
 import EmptyState from "@/components/common/EmptyState";
 import TeamRoleForm from "@/components/team/TeamRoleForm";
 import ExpenseCategoryManager from "@/components/finance/ExpenseCategoryManager";
+import ServiceManager from "@/components/services/ServiceManager";
 import { formatCurrency } from "@/utils/format";
 import { Image } from "@/components/ui/image";
 
@@ -96,6 +97,7 @@ export default function Preferences() {
         gst_billing_address: currentWorkspace.gst_billing_address || "",
         gst_state: currentWorkspace.gst_state || "",
         default_gst_rate: currentWorkspace.default_gst_rate ?? 18,
+        default_quotation_terms: currentWorkspace.default_quotation_terms || "",
       });
     }
   }, [currentWorkspace?.id]);
@@ -154,6 +156,7 @@ export default function Preferences() {
         gst_billing_address: form.gst_enabled ? form.gst_billing_address.trim() : "",
         gst_state: form.gst_enabled ? form.gst_state.trim() : "",
         default_gst_rate: form.gst_enabled ? Number(form.default_gst_rate) : null,
+        default_quotation_terms: form.default_quotation_terms || "",
       });
       await refresh();
       toast({ title: "Changes saved", description: "Your workspace has been updated." });
@@ -360,6 +363,29 @@ export default function Preferences() {
                 ))}
               </div>
             )}
+          </CardBody>
+        </Card>
+
+        {/* Service Rates */}
+        <ServiceManager />
+
+        {/* Default Quotation Terms */}
+        <Card className="lg:col-span-2">
+          <CardHeader className="flex items-center gap-2">
+            <FileText className="h-4 w-4 text-primary" />
+            <CardTitle>Default Quotation Terms</CardTitle>
+          </CardHeader>
+          <CardBody>
+            <textarea
+              value={form.default_quotation_terms || ""}
+              onChange={(e) => set("default_quotation_terms", e.target.value)}
+              rows={5}
+              placeholder="Default terms and conditions preloaded into new quotations (payment terms, delivery timeline, cancellation policy…)"
+              className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30"
+            />
+            <p className="mt-2 text-xs text-muted-foreground">
+              These terms preload into new quotations. You can edit them per quotation.
+            </p>
           </CardBody>
         </Card>
 

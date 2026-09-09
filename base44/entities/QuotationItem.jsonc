@@ -1,0 +1,120 @@
+{
+  "name": "QuotationItem",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "description": "Workspace this quotation item belongs to"
+    },
+    "quotation_id": {
+      "type": "string",
+      "description": "Quotation this item belongs to"
+    },
+    "item_type": {
+      "type": "string",
+      "enum": [
+        "service",
+        "role",
+        "custom"
+      ],
+      "default": "service",
+      "description": "Whether this item references a Service, a Team Role, or a custom line"
+    },
+    "reference_id": {
+      "type": "string",
+      "description": "Service or TeamRole id (null for custom items)"
+    },
+    "name": {
+      "type": "string",
+      "description": "Snapshot of the item name at creation time"
+    },
+    "description": {
+      "type": "string",
+      "description": "Snapshot of the item description"
+    },
+    "quantity": {
+      "type": "number",
+      "description": "Quantity of this item"
+    },
+    "days": {
+      "type": "number",
+      "description": "Number of days (for Per Day rate type). Defaults to 1 if not applicable."
+    },
+    "unit_rate": {
+      "type": "number",
+      "description": "Rate per unit (may be overridden from the service/role default)"
+    },
+    "line_total": {
+      "type": "number",
+      "description": "Computed total for this line (quantity \u00d7 days \u00d7 unit_rate)"
+    },
+    "gst_rate": {
+      "type": "number",
+      "description": "GST rate percentage snapshot for this item"
+    },
+    "sac_code": {
+      "type": "string",
+      "description": "SAC code snapshot for this item"
+    },
+    "sort_order": {
+      "type": "number",
+      "default": 0,
+      "description": "Display order within the quotation"
+    }
+  },
+  "required": [
+    "workspace_id",
+    "quotation_id",
+    "item_type",
+    "name"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.workspace_id": {
+            "$in": "{{user.data.workspace_ids}}"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "data.workspace_id": {
+        "$in": "{{user.data.workspace_ids}}"
+      }
+    },
+    "update": {
+      "$or": [
+        {
+          "data.workspace_id": {
+            "$in": "{{user.data.workspace_ids}}"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.workspace_id": {
+            "$in": "{{user.data.workspace_ids}}"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

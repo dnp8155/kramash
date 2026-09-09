@@ -1,14 +1,17 @@
 import { NavLink } from "react-router-dom";
 import { navItems } from "@/constants/navigation";
 import { useWorkspace } from "@/lib/WorkspaceContext";
-import { Camera, X } from "lucide-react";
+import { usePlan } from "@/lib/PlanContext";
+import { useAuth } from "@/lib/AuthContext";
+import { Camera, X, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function Sidebar({ open, onClose }) {
   const { currentWorkspace } = useWorkspace();
-  const planLabel = currentWorkspace?.plan_type
-    ? `${currentWorkspace.plan_type[0].toUpperCase()}${currentWorkspace.plan_type.slice(1)} Plan`
-    : "Free Plan";
+  const { planName, isPro } = usePlan();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
+  const planLabel = `${planName} Plan`;
 
   return (
     <>
@@ -79,6 +82,25 @@ export default function Sidebar({ open, onClose }) {
                 </li>
               );
             })}
+            {isAdmin && (
+              <li>
+                <NavLink
+                  to="/admin"
+                  onClick={onClose}
+                  className={({ isActive }) =>
+                    cn(
+                      "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                      isActive
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "text-sidebar-foreground hover:bg-sidebar-accent"
+                    )
+                  }
+                >
+                  <Shield className="h-[18px] w-[18px] shrink-0" />
+                  <span className="truncate">SaaS Admin</span>
+                </NavLink>
+              </li>
+            )}
           </ul>
         </nav>
 
@@ -87,7 +109,7 @@ export default function Sidebar({ open, onClose }) {
           <div className="rounded-lg bg-accent px-3 py-3">
             <p className="text-xs font-semibold text-foreground">{planLabel}</p>
             <p className="mt-0.5 text-[11px] text-muted-foreground">
-              {currentWorkspace?.plan_status === "active" ? "Active subscription" : "Manage your plan"}
+              {isPro ? "Pro subscription" : "Free plan"}
             </p>
             <NavLink
               to="/plan"

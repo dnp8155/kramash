@@ -1,0 +1,82 @@
+{
+  "name": "UpgradeRequest",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "description": "Workspace requesting the upgrade"
+    },
+    "requested_plan_id": {
+      "type": "string",
+      "description": "Plan the workspace wants to upgrade to"
+    },
+    "requested_pricing_id": {
+      "type": "string",
+      "description": "PlanPricing the workspace wants (null for Free downgrade requests)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "PENDING",
+        "APPROVED",
+        "REJECTED"
+      ],
+      "default": "PENDING",
+      "description": "Review status"
+    },
+    "requested_at": {
+      "type": "string",
+      "format": "date",
+      "description": "Date the request was submitted (date-only, YYYY-MM-DD)"
+    },
+    "reviewed_at": {
+      "type": "string",
+      "format": "date",
+      "description": "Date the request was reviewed (date-only, YYYY-MM-DD)"
+    },
+    "reviewed_by": {
+      "type": "string",
+      "description": "Admin user id who reviewed the request"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Optional notes from the requester or admin"
+    }
+  },
+  "required": [
+    "workspace_id",
+    "requested_plan_id",
+    "status"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.workspace_id": {
+            "$in": "{{user.data.workspace_ids}}"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "data.workspace_id": {
+        "$in": "{{user.data.workspace_ids}}"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
