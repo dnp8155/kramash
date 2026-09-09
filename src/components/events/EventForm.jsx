@@ -12,7 +12,7 @@ import { toast } from "@/components/ui/use-toast";
 const empty = {
   title: "",
   client_id: "",
-  event_type: "Wedding",
+  event_type: "",
   start_date: "",
   end_date: "",
   venue: "",
@@ -159,9 +159,10 @@ export default function EventForm({
             value={form.event_type}
             onChange={(e) => set("event_type", e.target.value)}
           >
-            {eventTypes.map((t) => (
-              <option key={t} value={t}>
-                {t}
+            <option value="">Select type…</option>
+            {eventTypes.map((type) => (
+              <option key={type} value={type}>
+                {type}
               </option>
             ))}
           </Select>

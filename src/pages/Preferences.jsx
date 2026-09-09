@@ -17,6 +17,7 @@ import ExpenseCategoryManager from "@/components/finance/ExpenseCategoryManager"
 import ServiceManager from "@/components/services/ServiceManager";
 import { formatCurrency } from "@/utils/format";
 import { Image } from "@/components/ui/image";
+import { BUSINESS_CATEGORIES, CATEGORY_LABELS } from "@/lib/BusinessTerminology";
 
 const CURRENCIES = [
   { v: "INR", l: "INR (₹)" },
@@ -34,16 +35,10 @@ const TIMEZONES = [
 ];
 const COUNTRIES = ["India", "United States", "United Kingdom", "United Arab Emirates", "Singapore", "Other"];
 const GST_RATES = [0, 5, 12, 18, 28];
-const BUSINESS_TYPES = [
-  "Photography",
-  "Cinematic Videography",
-  "Wedding Films",
-  "Event Management",
-  "Production House",
-  "Studio",
-  "Freelancer",
-  "Other",
-];
+const CATEGORY_OPTIONS = Object.values(BUSINESS_CATEGORIES).map((v) => ({
+  value: v,
+  label: CATEGORY_LABELS[v],
+}));
 
 function Toggle({ checked, onChange, label, description }) {
   return (
@@ -81,6 +76,8 @@ export default function Preferences() {
     if (currentWorkspace) {
       setForm({
         name: currentWorkspace.name || "",
+        business_category: currentWorkspace.business_category || BUSINESS_CATEGORIES.PHOTOGRAPHY,
+        custom_business_type: currentWorkspace.custom_business_type || "",
         business_type: currentWorkspace.business_type || "",
         email: currentWorkspace.email || "",
         phone: currentWorkspace.phone || "",
@@ -140,7 +137,11 @@ export default function Preferences() {
     try {
       await base44.entities.Workspace.update(currentWorkspace.id, {
         name: form.name.trim(),
-        business_type: form.business_type,
+        business_category: form.business_category,
+        custom_business_type: form.business_category === BUSINESS_CATEGORIES.OTHER ? form.custom_business_type.trim() : "",
+        business_type: form.business_category === BUSINESS_CATEGORIES.OTHER
+          ? form.custom_business_type.trim()
+          : CATEGORY_LABELS[form.business_category],
         email: form.email.trim(),
         phone: form.phone.trim(),
         logo: form.logo,
@@ -231,11 +232,19 @@ export default function Preferences() {
               </div>
             </div>
             <Input label="Business Name" value={form.name} onChange={(e) => set("name", e.target.value)} className="sm:col-span-2" />
-            <Select label="Business Type" value={form.business_type} onChange={(e) => set("business_type", e.target.value)}>
-              {BUSINESS_TYPES.map((t) => (
-                <option key={t} value={t}>{t}</option>
+            <Select label="Business Category" value={form.business_category} onChange={(e) => set("business_category", e.target.value)}>
+              {CATEGORY_OPTIONS.map((c) => (
+                <option key={c.value} value={c.value}>{c.label}</option>
               ))}
             </Select>
+            {form.business_category === BUSINESS_CATEGORIES.OTHER && (
+              <Input
+                label="Custom Business Type"
+                value={form.custom_business_type}
+                onChange={(e) => set("custom_business_type", e.target.value)}
+                placeholder="e.g. Interior Design, Consulting"
+              />
+            )}
             <Input label="Address" value={form.address} onChange={(e) => set("address", e.target.value)} />
             <Input label="Contact Email" value={form.email} onChange={(e) => set("email", e.target.value)} />
             <Input label="Phone" value={form.phone} onChange={(e) => set("phone", e.target.value)} />

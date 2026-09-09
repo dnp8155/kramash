@@ -65,12 +65,14 @@ export function exportEventsCSV(events, clients, fyLabel, t) {
 }
 
 // ─── Clients Export ───
-export function exportClientsCSV(clients, events) {
+// Accepts an optional terminology object (t) for dynamic labels.
+export function exportClientsCSV(clients, events, t) {
   const eventCountByClient = {};
   for (const e of events) {
     if (e.client_id) eventCountByClient[e.client_id] = (eventCountByClient[e.client_id] || 0) + 1;
   }
-  const headers = ["Client Name", "Phone", "Alternate Phone", "Email", "City", "State", "Event Count"];
+  const workLabel = t?.workItemSingular || "Event";
+  const headers = ["Client Name", "Phone", "Alternate Phone", "Email", "City", "State", `${workLabel} Count`];
   const rows = clients.map((c) => [
     c.name || "",
     c.phone || "",

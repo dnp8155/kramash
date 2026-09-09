@@ -65,13 +65,13 @@ export default function Events() {
   const handleSave = async (data) => {
     if (editingEvent) {
       await updateEvent(editingEvent.id, data);
-      toast({ title: "Event updated" });
+      toast({ title: `${t.workItemSingular} updated` });
     } else {
       try {
         await createEvent(data);
-        toast({ title: "Event created" });
+        toast({ title: `${t.workItemSingular} created` });
       } catch (e) {
-        toast({ title: "Cannot create event", description: e?.message, variant: "destructive" });
+        toast({ title: `Cannot create ${t.workItemSingular.toLowerCase()}`, description: e?.message, variant: "destructive" });
         throw e;
       }
     }
@@ -101,7 +101,7 @@ export default function Events() {
 
       {eventsLimitReached && (
         <PlanLimitReached
-          resource="event"
+          resource={t.workItemPlural.toLowerCase()}
           currentUsage={usage.events}
           limit={eventsLimit}
         />

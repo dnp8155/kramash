@@ -141,9 +141,9 @@ export default function Financial() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Financial"
-        description="Track payments, dues, and revenue across events."
+        description={`Track payments, dues, and revenue across ${t.workItemPlural.toLowerCase()}.`}
         actions={
-          <Button variant="outline" onClick={() => { exportFinancialCSV(filtered, events, clients, members, categories, fy); toast({ title: "Financial activity exported" }); }}>
+          <Button variant="outline" onClick={() => { exportFinancialCSV(filtered, events, clients, members, categories, fy, t); toast({ title: "Financial activity exported" }); }}>
             <Download className="h-4 w-4" /> Export
           </Button>
         }
@@ -217,7 +217,7 @@ export default function Financial() {
           <SearchInput
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by event or party…"
+            placeholder={`Search by ${t.workItemSingular.toLowerCase()} or party…`}
             className="flex-1 sm:min-w-[200px]"
           />
           <FilterControl

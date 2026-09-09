@@ -42,6 +42,7 @@ export async function generateQuotationPDF({
   workspace,
   client,
   event,
+  terminology,
 }) {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
 
@@ -70,6 +71,11 @@ export async function generateQuotationPDF({
   const eventTitle = evt.title || event?.title || "";
   const eventDate = evt.start_date || event?.start_date || "";
   const eventVenue = evt.venue || event?.venue || "";
+
+  // Terminology labels (with safe fallbacks)
+  const workSingular = terminology?.workItemSingular || "Event";
+  const locationLabel = terminology?.locationLabel || "Venue";
+  const startDateLabel = terminology?.startDateLabel || "Date";
 
   let y = MARGIN;
 
@@ -154,7 +160,7 @@ export async function generateQuotationPDF({
   doc.text("BILL TO", billToX, y);
 
   if (eventTitle) {
-    doc.text("EVENT DETAILS", eventX, y);
+    doc.text(`${workSingular.toUpperCase()} DETAILS`, eventX, y);
   }
 
   doc.setFont("helvetica", "normal");
@@ -174,8 +180,8 @@ export async function generateQuotationPDF({
   if (eventTitle) {
     const eventLines = [
       eventTitle,
-      eventDate ? `Date: ${formatDate(eventDate)}` : null,
-      eventVenue ? `Venue: ${eventVenue}` : null,
+      eventDate ? `${startDateLabel}: ${formatDate(eventDate)}` : null,
+      eventVenue ? `${locationLabel}: ${eventVenue}` : null,
     ].filter(Boolean);
     eventLines.forEach((line, i) => {
       const wrapped = doc.splitTextToSize(line, PAGE_W / 2 - MARGIN - 5);

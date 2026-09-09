@@ -67,7 +67,7 @@ export default function Dashboard() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Dashboard"
-        description="Welcome back — here's what's happening across your studio."
+        description="Welcome back — here's what's happening across your workspace."
         actions={
           <Link to="/events">
             <Button>
@@ -123,7 +123,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardBody className="p-0">
             {loading ? (
-              <LoadingState label="Loading events…" />
+              <LoadingState label={`Loading ${t.workItemPlural.toLowerCase()}…`} />
             ) : upcoming.length === 0 ? (
               <div className="px-5 py-10 text-center text-sm text-muted-foreground">
                 No upcoming {t.workItemPlural.toLowerCase()}.

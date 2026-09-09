@@ -17,12 +17,14 @@ import LoadingState from "@/components/common/LoadingState";
 import EmptyState from "@/components/common/EmptyState";
 import StatusBadge from "@/components/common/StatusBadge";
 import ClientForm from "@/components/clients/ClientForm";
+import { useBusinessTerminology } from "@/lib/BusinessTerminology";
 import { formatDate } from "@/utils/format";
 import { toast } from "@/components/ui/use-toast";
 import { base44 } from "@/api/base44Client";
 
 export default function ClientDetail() {
   const { id } = useParams();
+  const t = useBusinessTerminology();
   const [client, setClient] = useState(null);
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -113,7 +115,7 @@ export default function ClientDetail() {
 
       <PageHeader
         title={client.name}
-        description={`${events.length} event${events.length === 1 ? "" : "s"}`}
+        description={`${events.length} ${t.workItemSingular.toLowerCase()}${events.length === 1 ? "" : "s"}`}
         actions={
           <Button onClick={() => setEditOpen(true)}>
             <Pencil className="h-4 w-4" /> Edit Client
@@ -161,7 +163,7 @@ export default function ClientDetail() {
 
         <Card className="lg:col-span-2">
           <CardHeader className="flex items-center justify-between">
-            <CardTitle>Events</CardTitle>
+            <CardTitle>{t.clientWorkLabel}</CardTitle>
             <span className="text-sm text-muted-foreground">
               {events.length} total
             </span>
@@ -169,8 +171,8 @@ export default function ClientDetail() {
           <CardBody className="p-0">
             {events.length === 0 ? (
               <EmptyState
-                title="No events yet"
-                description="Create an event for this client to get started."
+                title={`No ${t.workItemPlural.toLowerCase()} yet`}
+                description={`Create a ${t.workItemSingular.toLowerCase()} for this client to get started.`}
                 icon={CalendarDays}
               />
             ) : (

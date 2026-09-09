@@ -11,12 +11,14 @@ import ClientCard from "@/components/clients/ClientCard";
 import ClientForm from "@/components/clients/ClientForm";
 import { useClients } from "@/hooks/useClients";
 import { useEvents } from "@/hooks/useEvents";
+import { useBusinessTerminology } from "@/lib/BusinessTerminology";
 import { exportClientsCSV } from "@/utils/exports";
 import { toast } from "@/components/ui/use-toast";
 
 export default function Clients() {
   const { clients, loading, error, refetch, createClient } = useClients();
   const { events } = useEvents();
+  const t = useBusinessTerminology();
   const [search, setSearch] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -39,10 +41,10 @@ export default function Clients() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Clients"
-        description="Manage your clients and their event history."
+        description={`Manage your clients and their ${t.workItemSingular.toLowerCase()} history.`}
         actions={
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => { exportClientsCSV(clients, events); toast({ title: "Clients exported" }); }}>
+            <Button variant="outline" onClick={() => { exportClientsCSV(clients, events, t); toast({ title: "Clients exported" }); }}>
               <Download className="h-4 w-4" /> Export
             </Button>
             <Button onClick={() => setModalOpen(true)}>
@@ -77,7 +79,7 @@ export default function Clients() {
             description={
               search
                 ? "Try a different search."
-                : "Add a client to create and manage events."
+                : `Add a client to create and manage ${t.workItemPlural.toLowerCase()}.`
             }
             icon={Users}
             action={

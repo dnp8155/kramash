@@ -15,6 +15,7 @@ import { useClients } from "@/hooks/useClients";
 import { useEvents } from "@/hooks/useEvents";
 import { useWorkspace } from "@/lib/WorkspaceContext";
 import { usePlan } from "@/lib/PlanContext";
+import { useBusinessTerminology } from "@/lib/BusinessTerminology";
 import { base44 } from "@/api/base44Client";
 import { toast } from "@/components/ui/use-toast";
 import { formatCurrency, formatDate } from "@/utils/format";
@@ -29,6 +30,7 @@ export default function Quotation() {
   const { quotations, loading, error, refetch } = useQuotations();
   const { clients } = useClients();
   const { events } = useEvents();
+  const t = useBusinessTerminology();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [pdfLoadingId, setPdfLoadingId] = useState(null);
@@ -66,6 +68,7 @@ export default function Quotation() {
         workspace: currentWorkspace,
         client,
         event,
+        terminology: t,
       });
     } catch (e) {
       toast({ title: "PDF failed", description: e?.message, variant: "destructive" });
@@ -94,7 +97,7 @@ export default function Quotation() {
           <SearchInput
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by quotation #, client, event…"
+            placeholder={`Search by quotation #, client, ${t.workItemSingular.toLowerCase()}…`}
             className="flex-1"
           />
           <FilterControl
@@ -111,7 +114,7 @@ export default function Quotation() {
         {filtered.length === 0 ? (
           <EmptyState
             title="No quotations created yet"
-            description="Create a quotation for your next event."
+            description={`Create a quotation for your next ${t.workItemSingular.toLowerCase()}.`}
             icon={FileText}
             action={
               <Button onClick={() => navigate("/quotation/new")}>
@@ -127,7 +130,7 @@ export default function Quotation() {
                   <tr className="border-b border-border bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
                     <th className="px-5 py-3 font-semibold">Quotation #</th>
                     <th className="px-5 py-3 font-semibold">Client</th>
-                    <th className="px-5 py-3 font-semibold">Event</th>
+                    <th className="px-5 py-3 font-semibold">{t.workItemSingular}</th>
                     <th className="px-5 py-3 font-semibold">Amount</th>
                     <th className="px-5 py-3 font-semibold">Date</th>
                     <th className="px-5 py-3 font-semibold">Status</th>

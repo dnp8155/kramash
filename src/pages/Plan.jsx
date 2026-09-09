@@ -12,31 +12,34 @@ import { usePlans } from "@/hooks/usePlans";
 import { base44 } from "@/api/base44Client";
 import { formatCurrency, formatDate } from "@/utils/format";
 import { RESOURCE_LABELS, formatLimit, UNLIMITED } from "@/utils/plan";
+import { useBusinessTerminology } from "@/lib/BusinessTerminology";
 import { toast } from "@/components/ui/use-toast";
-
-const FREE_FEATURES = [
-  { key: "max_events", label: "Up to 5 events" },
-  { key: "max_team_members", label: "Up to 3 team members" },
-  { key: "max_services", label: "Up to 5 services" },
-  { key: "quotation_enabled", label: "Basic quotations" },
-  { key: "pdf_export_enabled", label: "PDF export" },
-  { key: "reminders_enabled", label: "Reminders" },
-];
-
-const PRO_FEATURES = [
-  { key: "max_events", label: "Unlimited events" },
-  { key: "max_team_members", label: "Unlimited team members" },
-  { key: "max_services", label: "Unlimited services" },
-  { key: "quotation_enabled", label: "GST-enabled quotations" },
-  { key: "pdf_export_enabled", label: "Branded PDF export" },
-  { key: "reminders_enabled", label: "Payment reminders" },
-  { key: "advanced_theme_enabled", label: "Advanced themes" },
-];
 
 export default function Plan() {
   const { plan, planCode, planName, subscription, subscriptionStatus, expiresAt, usage, limits, isPro, isExpired, loading, refresh } = usePlan();
   const { workspaceId } = useWorkspace();
+  const t = useBusinessTerminology();
   const { plans, pricings, loading: plansLoading } = usePlans();
+
+  const workPlural = t.workItemPlural.toLowerCase();
+  const FREE_FEATURES = [
+    { key: "max_events", label: `Up to 5 ${workPlural}` },
+    { key: "max_team_members", label: "Up to 3 team members" },
+    { key: "max_services", label: "Up to 5 services" },
+    { key: "quotation_enabled", label: "Basic quotations" },
+    { key: "pdf_export_enabled", label: "PDF export" },
+    { key: "reminders_enabled", label: "Reminders" },
+  ];
+
+  const PRO_FEATURES = [
+    { key: "max_events", label: `Unlimited ${workPlural}` },
+    { key: "max_team_members", label: "Unlimited team members" },
+    { key: "max_services", label: "Unlimited services" },
+    { key: "quotation_enabled", label: "GST-enabled quotations" },
+    { key: "pdf_export_enabled", label: "Branded PDF export" },
+    { key: "reminders_enabled", label: "Payment reminders" },
+    { key: "advanced_theme_enabled", label: "Advanced themes" },
+  ];
   const [upgradeModal, setUpgradeModal] = useState(null); // pricing object or null
   const [requesting, setRequesting] = useState(false);
   const [paying, setPaying] = useState(null); // pricing_id being processed
@@ -145,7 +148,7 @@ export default function Plan() {
   if (verifying) return <LoadingState label="Verifying payment…" />;
 
   const usageItems = [
-    { key: "events", label: "Events", limitKey: "max_events", current: usage.events },
+    { key: "events", label: t.workItemPlural, limitKey: "max_events", current: usage.events },
     { key: "team_members", label: "Team Members", limitKey: "max_team_members", current: usage.team_members },
     { key: "services", label: "Services", limitKey: "max_services", current: usage.services },
   ];

@@ -9,6 +9,7 @@ import { useClients } from "@/hooks/useClients";
 import { useEvents } from "@/hooks/useEvents";
 import { useQuotations } from "@/hooks/useQuotations";
 import { usePlan } from "@/lib/PlanContext";
+import { useBusinessTerminology } from "@/lib/BusinessTerminology";
 import { toast } from "@/components/ui/use-toast";
 import PageHeader from "@/components/common/PageHeader";
 import Card, { CardBody, CardHeader, CardTitle } from "@/components/common/Card";
@@ -27,6 +28,7 @@ export default function QuotationDetail() {
   const { events, updateEvent } = useEvents();
   const { quotations, createQuotation, updateQuotation } = useQuotations();
   const { canUseFeature } = usePlan();
+  const t = useBusinessTerminology();
 
   const [quotation, setQuotation] = useState(null);
   const [items, setItems] = useState([]);
@@ -97,6 +99,7 @@ export default function QuotationDetail() {
         workspace: currentWorkspace,
         client: displayClient,
         event: displayEvent,
+        terminology: t,
       });
     } catch (e) {
       toast({ title: "PDF generation failed", description: e?.message, variant: "destructive" });
@@ -156,7 +159,7 @@ export default function QuotationDetail() {
       await updateEvent(event.id, { contract_value: newCV });
       const updated = await updateQuotation(quotation.id, { status: "Accepted" });
       setQuotation(updated);
-      toast({ title: "Quotation accepted", description: `Event contract value updated to ${formatCurrency(newCV)}.` });
+      toast({ title: "Quotation accepted", description: `${t.workItemSingular} contract value updated to ${formatCurrency(newCV)}.` });
     } catch (e) {
       toast({ title: "Accept failed", description: e?.message, variant: "destructive" });
     } finally {
@@ -260,7 +263,7 @@ export default function QuotationDetail() {
                 {displayClient?.email && <p className="text-xs text-muted-foreground">{displayClient.email}</p>}
               </div>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Event</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t.workItemSingular}</p>
                 <p className="mt-1 text-sm font-semibold text-foreground">{displayEvent?.title || "—"}</p>
                 {displayEvent?.start_date && <p className="text-xs text-muted-foreground">{formatDate(displayEvent.start_date)}</p>}
                 {displayEvent?.venue && <p className="text-xs text-muted-foreground">{displayEvent.venue}</p>}
@@ -358,7 +361,7 @@ export default function QuotationDetail() {
               )}
               {quotation.status === "Accepted" && (
                 <p className="rounded-lg bg-success/10 px-3 py-2 text-xs text-success">
-                  Accepted — event contract value synced.
+                  Accepted — {t.workItemSingular.toLowerCase()} contract value synced.
                 </p>
               )}
             </CardBody>
@@ -421,7 +424,7 @@ export default function QuotationDetail() {
           <div className="w-full max-w-md rounded-xl bg-card p-6 shadow-lg">
             <h3 className="text-lg font-semibold text-foreground">Update Contract Value?</h3>
             <p className="mt-2 text-sm text-muted-foreground">
-              This event currently has a contract value of{" "}
+              This {t.workItemSingular.toLowerCase()} currently has a contract value of{" "}
               <span className="font-semibold text-foreground">{formatCurrency(Number(event.contract_value) || 0)}</span>.
               Update it to the accepted quotation total of{" "}
               <span className="font-semibold text-foreground">{formatCurrency(quotation.grand_total)}</span>?

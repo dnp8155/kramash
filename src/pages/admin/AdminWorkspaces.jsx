@@ -8,6 +8,7 @@ import LoadingState from "@/components/common/LoadingState";
 import ErrorState from "@/components/common/ErrorState";
 import { useAdminData } from "@/hooks/useAdminData";
 import { getCurrentSubscription, getEffectivePlanCode, isSubscriptionActive } from "@/utils/plan";
+import { CATEGORY_LABELS, inferCategory } from "@/lib/BusinessTerminology";
 import { formatDate } from "@/utils/format";
 
 export default function AdminWorkspaces() {
@@ -61,6 +62,7 @@ export default function AdminWorkspaces() {
                 <tr className="border-b border-border bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
                   <th className="px-5 py-3 font-semibold">Workspace</th>
                   <th className="px-5 py-3 font-semibold">Owner</th>
+                  <th className="px-5 py-3 font-semibold">Category</th>
                   <th className="px-5 py-3 font-semibold">Plan</th>
                   <th className="px-5 py-3 font-semibold">Status</th>
                   <th className="px-5 py-3 font-semibold">Expiry</th>
@@ -77,6 +79,10 @@ export default function AdminWorkspaces() {
                     <tr key={ws.id} className="cursor-pointer hover:bg-muted/30" onClick={() => navigate(`/admin/workspaces/${ws.id}`)}>
                       <td className="px-5 py-3 font-medium text-foreground">{ws.name}</td>
                       <td className="px-5 py-3 text-muted-foreground">{owner?.email || "—"}</td>
+                      <td className="px-5 py-3 text-muted-foreground">
+                        {CATEGORY_LABELS[inferCategory(ws)] || "—"}
+                        {ws.business_category === "OTHER" && ws.custom_business_type ? ` (${ws.custom_business_type})` : ""}
+                      </td>
                       <td className="px-5 py-3">
                         <span className={planCode === "PRO" ? "font-semibold text-warning" : "text-muted-foreground"}>
                           {planCode === "PRO" ? "Pro" : "Free"}

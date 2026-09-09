@@ -12,6 +12,7 @@ import {
 import Card, { CardHeader, CardTitle, CardBody } from "@/components/common/Card";
 import Button from "@/components/common/Button";
 import Input from "@/components/common/Input";
+import { useBusinessTerminology } from "@/lib/BusinessTerminology";
 import { formatCurrency } from "@/utils/format";
 
 function Row({ label, value, accent }) {
@@ -97,11 +98,12 @@ export default function EventFinancialSummary({
   onRecordClientPayment,
   onRecordExpense,
 }) {
+  const t = useBusinessTerminology();
   const profitPositive = fin.profit >= 0;
   return (
     <Card>
       <CardHeader className="flex items-center justify-between">
-        <CardTitle>Financial</CardTitle>
+        <CardTitle>{t.financialSummaryLabel}</CardTitle>
         <div
           className={`flex items-center gap-1.5 text-sm font-semibold ${
             profitPositive ? "text-success" : "text-destructive"

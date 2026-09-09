@@ -8,6 +8,7 @@ import { useEvents } from "@/hooks/useEvents";
 import { useServices } from "@/hooks/useServices";
 import { useTeamRoles } from "@/hooks/useTeamRoles";
 import { useQuotations } from "@/hooks/useQuotations";
+import { useBusinessTerminology } from "@/lib/BusinessTerminology";
 import { toast } from "@/components/ui/use-toast";
 import PageHeader from "@/components/common/PageHeader";
 import Card, { CardBody, CardHeader, CardTitle } from "@/components/common/Card";
@@ -36,6 +37,7 @@ export default function QuotationEditor() {
   const { services } = useServices();
   const { roles } = useTeamRoles();
   const { quotations, createQuotation, updateQuotation } = useQuotations();
+  const t = useBusinessTerminology();
 
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
@@ -317,12 +319,12 @@ export default function QuotationEditor() {
                 ))}
               </Select>
               <Select
-                label="Event (optional)"
+                label={`${t.workItemSingular} (optional)`}
                 value={form.event_id}
                 onChange={(e) => set("event_id", e.target.value)}
                 disabled={!form.client_id}
               >
-                <option value="">No event</option>
+                <option value="">No {t.workItemSingular.toLowerCase()}</option>
                 {clientEvents.map((e) => (
                   <option key={e.id} value={e.id}>{e.title}</option>
                 ))}
