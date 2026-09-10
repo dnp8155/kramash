@@ -113,9 +113,7 @@ export default function IndustrySection() {
             <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0">
               <current.icon className="w-7 h-7 text-primary" />
             </div>
-            <div>
-              <h3 className="font-heading text-xl font-bold text-foreground">{current.title}</h3>
-            </div>
+            <h3 className="font-heading text-2xl font-bold text-foreground">{current.title}</h3>
           </div>
           <p className="text-muted-foreground text-base leading-relaxed mb-6">{current.copy}</p>
           <div className="flex flex-wrap gap-2">

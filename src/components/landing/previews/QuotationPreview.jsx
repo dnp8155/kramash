@@ -22,22 +22,22 @@ export default function QuotationPreview() {
           </div>
         </div>
         <div className="text-right">
-          <div className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">Valid Until</div>
-          <div className="text-xs text-foreground font-medium">30 Nov 2026</div>
+          <div className="text-[10px] text-sidebar-muted">Date</div>
+          <div className="text-xs text-sidebar-foreground font-medium">12 Oct 2026</div>
         </div>
       </div>
 
+      {/* Client + items */}
       <div className="p-5">
-        {/* Client block */}
-        <div className="flex items-start justify-between mb-4">
+        <div className="flex items-start justify-between mb-5">
           <div>
             <div className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">Billed To</div>
-            <div className="text-xs font-medium text-foreground">Mr. &amp; Mrs. Sharma</div>
-            <div className="text-[10px] text-muted-foreground">The Leela Palace, Udaipur</div>
+            <div className="text-sm font-semibold text-foreground">Mr. & Mrs. Sharma</div>
+            <div className="text-xs text-muted-foreground">Sharma Wedding · The Leela Palace</div>
           </div>
           <div className="text-right">
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">Event Date</div>
-            <div className="text-xs text-foreground font-medium">12 Oct 2026</div>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">Valid Until</div>
+            <div className="text-xs text-foreground font-medium">30 Nov 2026</div>
           </div>
         </div>
 
