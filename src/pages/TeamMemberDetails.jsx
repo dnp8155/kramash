@@ -20,6 +20,8 @@ import { ArrowLeft, Pencil, Phone, Mail, StickyNote, Calendar, ArrowRight, Walle
 import { cn } from "@/lib/utils";
 import { invalidateEntities } from "@/lib/queryInvalidation";
 import { isSelfMember } from "@/lib/teamService";
+import { buildPersonStatements } from "@/lib/personStatementService";
+import PersonStatementCard from "@/components/team/PersonStatementCard";
 
 export default function TeamMemberDetails() {
   const { id } = useParams();
@@ -47,7 +49,22 @@ export default function TeamMemberDetails() {
           { workspace_id: workspaceId, team_member_id: id }, "-transaction_date", 500
         );
       } catch (e) { tx = []; }
-      const evIds = [...new Set((asgns || []).map((a) => a.event_id))];
+      let svcAsgns = [];
+      try {
+        svcAsgns = await base44.entities.EventServiceAssignment.filter(
+          { workspace_id: workspaceId, provider_id: id }, "-created_date", 500
+        );
+      } catch (e) { svcAsgns = []; }
+      let expenseTx = [];
+      try {
+        expenseTx = await base44.entities.FinancialTransaction.filter(
+          { workspace_id: workspaceId, transaction_type: "BUSINESS_EXPENSE", status: "ACTIVE" }, "-transaction_date", 1000
+        );
+      } catch (e) { expenseTx = []; }
+      const evIds = [...new Set([
+        ...((asgns || []).map((a) => a.event_id)),
+        ...((svcAsgns || []).map((a) => a.event_id))
+      ])];
       const evs = [];
       await Promise.all(
         evIds.map(async (eid) => {
@@ -57,7 +74,7 @@ export default function TeamMemberDetails() {
           } catch (e) { /* skip */ }
         })
       );
-      return { notFound: false, member: m, assignments: asgns || [], transactions: tx || [], events: evs };
+      return { notFound: false, member: m, assignments: asgns || [], transactions: tx || [], events: evs, serviceAssignments: svcAsgns || [], expenseTransactions: expenseTx || [] };
     },
     enabled: !!id && !!workspaceId
   });
@@ -99,6 +116,22 @@ export default function TeamMemberDetails() {
 
   const eventsById = {};
   events.forEach((e) => { eventsById[e.id] = e; });
+  const serviceAssignments = data?.serviceAssignments || [];
+  const expenseTransactions = data?.expenseTransactions || [];
+
+  // Build consolidated person statement for this member (team roles + service provider)
+  let personStatement = null;
+  if (!selfMember) {
+    const stmts = buildPersonStatements({
+      members: [member],
+      teamAssignments: assignments,
+      serviceAssignments,
+      transactions: [...transactions, ...expenseTransactions],
+      eventsById
+    });
+    personStatement = stmts.find((s) => s.key === member.id) || stmts[0] || null;
+  }
+
   const active = assignments.filter((a) => a.assignment_status !== "removed");
   const upcoming = active
     .map((a) => ({ a, ev: eventsById[a.event_id] }))
@@ -182,6 +215,11 @@ export default function TeamMemberDetails() {
           </div>
         </Card>
       </div>
+
+      {/* Person Statement */}
+      {personStatement && (
+        <PersonStatementCard statement={personStatement} currency={currency} />
+      )}
 
       {/* Upcoming assignments */}
       <Card className="p-5">
