@@ -1,4 +1,4 @@
-import { Pencil, Trash2, ExternalLink, Archive, RotateCcw, Calendar, Crown } from "lucide-react";
+import { Pencil, Trash2, ExternalLink, Archive, RotateCcw, Calendar, CalendarClock, Crown } from "lucide-react";
 import { TEAM_MEMBER_STATUS, AVAILABILITY_STATUS } from "@/constants/teamConfig";
 import { formatMoney } from "@/utils/format";
 import { memberBookingCount, isSelfMember } from "@/lib/teamService";
@@ -43,6 +43,20 @@ export default function TeamMemberCard({ member, assignments = [], transactions 
     .filter(Boolean)
     .sort((x, y) => x.start.localeCompare(y.start));
   const nextBooking = upcomingBookings[0] || null;
+
+  // Last worked date — most recent past assignment (end date < today)
+  const pastBookings = memberAssignments
+    .map((a) => {
+      const ev = eventsById[a.event_id];
+      if (!ev || ev.status === "cancelled") return null;
+      const start = a.booking_start_date || ev.start_date;
+      const end = a.booking_end_date || ev.end_date || start;
+      if (end >= today) return null;
+      return { a, ev, start, end };
+    })
+    .filter(Boolean)
+    .sort((x, y) => y.end.localeCompare(x.end));
+  const lastWorked = pastBookings[0] || null;
 
   const isSelf = isSelfMember(member);
   const memberColor = getMemberColor(member);
@@ -94,12 +108,32 @@ export default function TeamMemberCard({ member, assignments = [], transactions 
           </button>
           <span className="text-xs text-muted-foreground truncate hidden sm:inline">· {nextBooking.ev.title}</span>
         </div>
+      ) : lastWorked ? (
+        <div className="mt-2.5 flex items-center gap-1.5 text-sm">
+          <CalendarClock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+          <span className="text-xs text-muted-foreground">Last worked:</span>
+          <button onClick={() => onOpen?.(member)} className="text-foreground font-medium hover:underline">
+            {formatEventDate(lastWorked.start, lastWorked.end)}
+          </button>
+          <span className="text-xs text-muted-foreground truncate hidden sm:inline">· {lastWorked.ev.title}</span>
+        </div>
       ) : (
         <div className="mt-2.5 flex items-center gap-1.5 text-sm">
           <span className="text-xs text-muted-foreground">Bookings:</span>
           <button onClick={() => onOpen?.(member)} className="text-foreground font-medium hover:underline flex items-center gap-1">
             {bookings}
             {bookings > 0 && <ExternalLink className="w-3 h-3 text-muted-foreground" />}
+          </button>
+        </div>
+      )}
+
+      {/* Last worked date — shown alongside next booking when both exist */}
+      {nextBooking && lastWorked && (
+        <div className="mt-1 flex items-center gap-1.5 text-sm">
+          <CalendarClock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+          <span className="text-xs text-muted-foreground">Last worked:</span>
+          <button onClick={() => onOpen?.(member)} className="text-foreground font-medium hover:underline">
+            {formatEventDate(lastWorked.start, lastWorked.end)}
           </button>
         </div>
       )}
