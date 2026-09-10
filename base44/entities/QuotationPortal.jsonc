@@ -41,12 +41,13 @@
     "public_token"
   ],
   "rls": {
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
     "read": {
       "$or": [
         {
-          "data.workspace_id": {
-            "$in": "{{user.data.workspace_ids}}"
-          }
+          "created_by_id": "{{user.id}}"
         },
         {
           "user_condition": {
@@ -55,17 +56,10 @@
         }
       ]
     },
-    "create": {
-      "data.workspace_id": {
-        "$in": "{{user.data.workspace_ids}}"
-      }
-    },
     "update": {
       "$or": [
         {
-          "data.workspace_id": {
-            "$in": "{{user.data.workspace_ids}}"
-          }
+          "created_by_id": "{{user.id}}"
         },
         {
           "user_condition": {
@@ -77,9 +71,7 @@
     "delete": {
       "$or": [
         {
-          "data.workspace_id": {
-            "$in": "{{user.data.workspace_ids}}"
-          }
+          "created_by_id": "{{user.id}}"
         },
         {
           "user_condition": {
