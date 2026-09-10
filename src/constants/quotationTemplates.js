@@ -1,11 +1,18 @@
 import { renderGoldPremium } from "@/components/quotation/templates/goldPremiumTemplate";
 import { renderNavyGold } from "@/components/quotation/templates/navyGoldTemplate";
 import { renderClassicMinimal } from "@/components/quotation/templates/classicMinimalTemplate";
+import { renderBlackPremium } from "@/components/quotation/templates/blackPremiumTemplate";
 
 // Quotation PDF template registry.
 // Each template has: id, name, description, render(data) -> HTML string.
 // To add a new template, create a render function and add it here.
 export const QUOTATION_TEMPLATES = [
+  {
+    id: "black_premium",
+    name: "Black Premium",
+    description: "Black & white luxury layout with project summary box",
+    render: renderBlackPremium
+  },
   {
     id: "gold_premium",
     name: "Gold Premium",

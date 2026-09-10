@@ -85,7 +85,7 @@ export async function generateQuotationPdf({
   let templateConfig = {};
   try { templateConfig = quotation.template_config ? JSON.parse(quotation.template_config) : {}; } catch (e) {}
 
-  const templateId = quotation.template_id || "classic_minimal";
+  const templateId = quotation.template_id || "black_premium";
   const html = renderTemplate(templateId, {
     workspace,
     quotation,

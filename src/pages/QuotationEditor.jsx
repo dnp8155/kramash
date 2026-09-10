@@ -115,7 +115,7 @@ export default function QuotationEditor() {
   const [accessPassword, setAccessPassword] = useState("");
 
   // Template
-  const [templateId, setTemplateId] = useState("classic_minimal");
+  const [templateId, setTemplateId] = useState("black_premium");
   const [templateConfig, setTemplateConfig] = useState({});
   const [projectTitle, setProjectTitle] = useState("");
   const [projectSummary, setProjectSummary] = useState("");
@@ -193,7 +193,7 @@ export default function QuotationEditor() {
         setSpecialNotes(q.special_notes || "");
         setNotes(q.notes || "");
         setFooterMessage(q.footer_message || DEFAULT_FOOTER_MESSAGE);
-        setTemplateId(q.template_id || "gold_premium");
+        setTemplateId(q.template_id || "black_premium");
         try { setTemplateConfig(JSON.parse(q.template_config || "{}")); } catch { setTemplateConfig({}); }
         setProjectTitle(q.project_title || "");
         setProjectSummary(q.project_summary || "");
