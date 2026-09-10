@@ -21,6 +21,7 @@ import { generateQuotationPDF } from "@/utils/quotationPdf";
 import { nextQuotationNumber } from "@/utils/quotation";
 import PortalManager from "@/components/quotation/PortalManager";
 import PaymentMilestoneList from "@/components/quotation/PaymentMilestoneList";
+import CreateInvoiceFromQuotation from "@/components/invoice/CreateInvoiceFromQuotation";
 
 export default function QuotationDetail() {
   const { id } = useParams();
@@ -38,6 +39,7 @@ export default function QuotationDetail() {
   const [pdfLoading, setPdfLoading] = useState(false);
   const [accepting, setAccepting] = useState(false);
   const [showAcceptConfirm, setShowAcceptConfirm] = useState(false);
+  const [showCreateInvoice, setShowCreateInvoice] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -275,6 +277,11 @@ export default function QuotationDetail() {
               {pdfLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
               Download PDF
             </Button>
+            {(quotation.status === "Accepted" || quotation.status === "Finalized") && (
+              <Button onClick={() => setShowCreateInvoice(true)}>
+                <FileText className="h-4 w-4" /> Create Invoice
+              </Button>
+            )}
           </div>
         }
       />
@@ -586,6 +593,14 @@ export default function QuotationDetail() {
             </div>
           </div>
         </div>
+      )}
+
+      {showCreateInvoice && (
+        <CreateInvoiceFromQuotation
+          quotation={quotation}
+          workspaceId={workspaceId}
+          onClose={() => setShowCreateInvoice(false)}
+        />
       )}
     </div>
   );

@@ -20,6 +20,10 @@ import RateEstimator from "@/pages/RateEstimator";
 import Quotation from "@/pages/Quotation";
 import QuotationEditor from "@/pages/QuotationEditor";
 import QuotationDetail from "@/pages/QuotationDetail";
+import Invoices from "@/pages/Invoices";
+import InvoiceEditor from "@/pages/InvoiceEditor";
+import InvoiceDetail from "@/pages/InvoiceDetail";
+import InvoicePublic from "@/pages/InvoicePublic";
 import { PlanProvider } from "@/lib/PlanContext";
 import { BusinessTerminologyProvider } from "@/lib/BusinessTerminology";
 import { FinancialYearProvider } from "@/lib/FinancialYearContext";
@@ -115,6 +119,7 @@ function App() {
               <Route path="/portal/:token" element={<ClientPortal />} />
               <Route path="/portal/:token/sign" element={<ClientPortalSign />} />
               <Route path="/job-sheet/:token" element={<JobSheetPublic />} />
+              <Route path="/invoice/:token" element={<InvoicePublic />} />
 
               {/* Onboarding (authenticated, no app shell) */}
               <Route path="/onboarding" element={<OnboardingRoute />} />
@@ -136,6 +141,10 @@ function App() {
                   <Route path="/quotation/new" element={<ErrorBoundary><QuotationEditor /></ErrorBoundary>} />
                   <Route path="/quotation/:id" element={<ErrorBoundary><QuotationDetail /></ErrorBoundary>} />
                   <Route path="/quotation/:id/edit" element={<ErrorBoundary><QuotationEditor /></ErrorBoundary>} />
+                  <Route path="/invoices" element={<ErrorBoundary><Invoices /></ErrorBoundary>} />
+                  <Route path="/invoices/new" element={<ErrorBoundary><InvoiceEditor /></ErrorBoundary>} />
+                  <Route path="/invoices/:id" element={<ErrorBoundary><InvoiceDetail /></ErrorBoundary>} />
+                  <Route path="/invoices/:id/edit" element={<ErrorBoundary><InvoiceEditor /></ErrorBoundary>} />
                   <Route path="/preferences" element={<ErrorBoundary><Preferences /></ErrorBoundary>} />
                   <Route path="/app-updates" element={<ErrorBoundary><AppUpdates /></ErrorBoundary>} />
                   <Route path="/plan" element={<ErrorBoundary><Plan /></ErrorBoundary>} />

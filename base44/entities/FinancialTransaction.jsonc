@@ -43,6 +43,10 @@
       "type": "string",
       "description": "Expense category reference for BUSINESS_EXPENSE"
     },
+    "invoice_id": {
+      "type": "string",
+      "description": "Invoice this payment transaction is linked to (for CLIENT_RECEIPT payments against invoices)"
+    },
     "amount": {
       "type": "number",
       "description": "Transaction amount in the workspace currency (stored as a number; always > 0)"
