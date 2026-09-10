@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useWorkspace } from "@/lib/WorkspaceContext";
@@ -182,13 +182,28 @@ export default function Dashboard() {
     return "Good evening";
   })());
   const dateLocale = DATE_LOCALES[lang] || DATE_LOCALES.en;
+  const tz = workspace?.timezone || "Asia/Kolkata";
+
+  // Live clock — updates every second, respects workspace timezone
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const dateStr = new Intl.DateTimeFormat(dateLocale, {
+    weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: tz
+  }).format(now);
+  const timeStr = new Intl.DateTimeFormat(dateLocale, {
+    hour: "2-digit", minute: "2-digit", hour12: true, timeZone: tz
+  }).format(now);
 
   return (
     <div className="p-4 sm:p-6 space-y-6 max-w-[1400px] mx-auto">
       <PageHeader
         eyebrow="Overview"
         title={`${greeting}, ${user?.full_name?.split(" ")[0] || t("there")}`}
-        subtitle={`${workspace?.name || "Your workspace"} · ${new Date().toLocaleDateString(dateLocale, { weekday: "long", day: "numeric", month: "long", year: "numeric" })}`}
+        subtitle={`${dateStr} · ${timeStr}`}
       >
         <FiscalYearSelector />
       </PageHeader>
