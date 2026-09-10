@@ -162,6 +162,34 @@ export function buildEventSnapshot(event) {
   });
 }
 
+// ---- Bank & Social snapshot helpers (mirrors quotation) ----
+
+export function buildBankDetailsSnapshot(bankData) {
+  if (!bankData) return "";
+  return JSON.stringify({
+    account_name: bankData.account_name || "",
+    bank_name: bankData.bank_name || "",
+    account_number: bankData.account_number || "",
+    ifsc: bankData.ifsc || "",
+    upi_id: bankData.upi_id || ""
+  });
+}
+
+export function buildSocialLinksSnapshot(socialData) {
+  if (!socialData) return "";
+  return JSON.stringify({
+    instagram: socialData.instagram || "",
+    youtube: socialData.youtube || "",
+    website: socialData.website || "",
+    portfolio: socialData.portfolio || ""
+  });
+}
+
+export function parseSnapshot(json) {
+  if (!json) return null;
+  try { return JSON.parse(json); } catch (e) { return null; }
+}
+
 // ---- Item helpers ----
 
 export function invoiceLineTotal(item) {

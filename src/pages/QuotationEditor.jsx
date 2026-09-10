@@ -21,6 +21,7 @@ import {
   deserializePackageStructure, generatePublicToken
 } from "@/lib/quotationService";
 import { createFromQuotation } from "@/lib/invoiceService";
+import CreateInvoiceDialog from "@/components/quotation/CreateInvoiceDialog";
 import { syncAcceptedQuotation } from "@/lib/milestoneService";
 import { generateQuotationPdf, generateJobSheetPdf } from "@/lib/quotationPdf";
 import { DEFAULT_QUOTATION_TERMS, DEFAULT_FOOTER_MESSAGE, QUOTATION_STATUS_META } from "@/constants/quotationConfig";

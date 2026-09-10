@@ -24,8 +24,9 @@ import {
   generateInvoiceNumber, loadInvoice,
   createInvoice, updateInvoice, deleteInvoice,
   verifyInvoiceRefs, buildClientSnapshot, buildBusinessSnapshot, buildEventSnapshot,
-  computeInvoiceTotals
+  computeInvoiceTotals, buildBankDetailsSnapshot, buildSocialLinksSnapshot, parseSnapshot
 } from "@/lib/invoiceService";
+import InvoiceBankDetailsSection from "@/components/invoice/InvoiceBankDetailsSection";
 import ClientForm from "@/components/clients/ClientForm";
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -73,6 +74,8 @@ export default function InvoiceEditor() {
   const [milestoneTag, setMilestoneTag] = useState("Full Payment");
   const [showItemizedRates, setShowItemizedRates] = useState(true);
   const [authorizedSignatory, setAuthorizedSignatory] = useState("");
+  const [bankDetails, setBankDetails] = useState({});
+  const [socialLinks, setSocialLinks] = useState({});
 
   const [clients, setClients] = useState([]);
   const [events, setEvents] = useState([]);
@@ -150,6 +153,8 @@ export default function InvoiceEditor() {
         setMilestoneTag(inv.milestone_tag || "Full Payment");
         setShowItemizedRates(inv.show_itemized_rates !== false);
         setAuthorizedSignatory(inv.authorized_signatory || "");
+        setBankDetails(parseSnapshot(inv.bank_details_snapshot) || {});
+        setSocialLinks(parseSnapshot(inv.social_links_snapshot) || {});
         setPublicLinkData({
           public_link_enabled: !!inv.public_link_enabled,
           public_token: inv.public_token || "",
@@ -235,13 +240,18 @@ export default function InvoiceEditor() {
         const inv = await createInvoice(workspaceId, data, items, {
           client_snapshot: buildClientSnapshot(refCheck.client || client),
           business_snapshot: buildBusinessSnapshot(workspace),
-          event_snapshot: buildEventSnapshot(refCheck.event || event)
+          event_snapshot: buildEventSnapshot(refCheck.event || event),
+          bank_details_snapshot: buildBankDetailsSnapshot(bankDetails),
+          social_links_snapshot: buildSocialLinksSnapshot(socialLinks)
         });
         invalidateEntities(queryClient, ["Invoice", "InvoiceItem"]);
         toast({ title: "Invoice saved" });
         navigate(`/invoices/${inv.id}`, { replace: true });
       } else {
-        await updateInvoice(workspaceId, id, data, items);
+        await updateInvoice(workspaceId, id, data, items, {
+          bank_details_snapshot: buildBankDetailsSnapshot(bankDetails),
+          social_links_snapshot: buildSocialLinksSnapshot(socialLinks)
+        });
         invalidateEntities(queryClient, ["Invoice", "InvoiceItem"]);
         toast({ title: "Invoice updated" });
         load();
@@ -512,6 +522,15 @@ export default function InvoiceEditor() {
           placeholder="Name of authorized signatory"
         />
       </div>
+
+      {/* Bank & UPI + Social Links */}
+      <InvoiceBankDetailsSection
+        bankDetails={bankDetails}
+        setBankDetails={setBankDetails}
+        socialLinks={socialLinks}
+        setSocialLinks={setSocialLinks}
+        readOnly={readOnly}
+      />
 
       {/* Public Link Panel */}
       {!isNew && existingInvoice && (
