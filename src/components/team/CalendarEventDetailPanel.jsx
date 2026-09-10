@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { formatEventDates, isAssignedToDate } from "@/lib/dates";
 import { Calendar, Users, Briefcase, ArrowRight, Crown, Tag } from "lucide-react";
 import { cn } from "@/lib/utils";
+import MemberTypeTag from "@/components/common/MemberTypeTag";
 
 // Detail panel shown when a calendar date with events is clicked.
 // Lists each event on that date with its team (date-filtered) and services
@@ -118,7 +119,9 @@ export default function CalendarEventDetailPanel({
                         {m.name}
                         {m.is_self && <span className="text-[9px] font-semibold">SELF</span>}
                         {!m.is_self && side && (
-                          <span className="text-[9px] text-muted-foreground border-l border-foreground/20 pl-0.5">{side}</span>
+                          <span className="border-l border-foreground/20 pl-0.5">
+                            <MemberTypeTag label={side} className="text-[9px]" />
+                          </span>
                         )}
                       </span>
                     );

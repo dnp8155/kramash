@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar, Users, Briefcase, Loader2, AlertTriangle, Check, Crown, Settings2 } from "lucide-react";
+import MemberTypeTag from "@/components/common/MemberTypeTag";
 
 const DAY_STATUS = {
   planned: { label: "Planned", cls: "bg-muted text-muted-foreground border-border" },
@@ -252,7 +253,9 @@ export default function DayScheduleCard({
                   <span>{m.name}</span>
                   {isSelf && <span className="text-[10px] font-semibold text-warning">SELF</span>}
                   {!isSelf && side && (
-                    <span className="text-[10px] text-muted-foreground border-l border-foreground/20 pl-1 ml-0.5">{side}</span>
+                    <span className="border-l border-foreground/20 pl-1 ml-0.5">
+                      <MemberTypeTag label={side} className="text-[10px]" />
+                    </span>
                   )}
                   {!isSelf && !side && role && (
                     <span className="text-[10px] text-muted-foreground border-l border-foreground/20 pl-1 ml-0.5">{role}</span>
