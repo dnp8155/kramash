@@ -344,7 +344,7 @@ export default function TeamMemberDetail() {
 function AssignmentRow({ assignment, event, paid = 0, onPay, isSelf = false }) {
   const agreed = Number(assignment.agreed_rate) || 0;
   const remaining = Math.max(0, agreed - paid);
-  const status = deriveTeamStatus(paid, agreed);
+  const status = isSelf ? "SELF" : deriveTeamStatus(paid, agreed);
   return (
     <div className="flex flex-wrap items-center gap-3 px-5 py-3.5 hover:bg-muted/50">
       <Link to={`/events/${event.id}`} className="min-w-0 flex-1">
@@ -360,11 +360,15 @@ function AssignmentRow({ assignment, event, paid = 0, onPay, isSelf = false }) {
       </span>
       <div className="text-right">
         <p className="text-xs text-muted-foreground">Agreed {formatCurrency(agreed)}</p>
-        <p className="text-xs font-medium text-foreground">Paid {formatCurrency(paid)}</p>
+        <p className="text-xs font-medium text-foreground">
+          {isSelf ? "Owner Share" : "Paid"} {formatCurrency(paid)}
+        </p>
       </div>
       <div className="text-right">
-        <p className="text-xs text-muted-foreground">Remaining</p>
-        <p className={`text-xs font-semibold ${remaining > 0 ? "text-warning" : "text-foreground"}`}>
+        <p className="text-xs text-muted-foreground">
+          {isSelf ? "Owner Share" : "Remaining"}
+        </p>
+        <p className={`text-xs font-semibold ${isSelf ? "text-primary" : remaining > 0 ? "text-warning" : "text-foreground"}`}>
           {formatCurrency(remaining)}
         </p>
       </div>

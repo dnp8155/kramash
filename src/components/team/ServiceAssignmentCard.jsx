@@ -99,17 +99,19 @@ export default function ServiceAssignmentCard({
       <div className="mt-3 grid grid-cols-3 gap-2 border-t border-border pt-3">
         <div>
           <p className="text-xs text-muted-foreground">
-            {isClientProvider ? "Received" : "Paid"}
+            {isSelf ? "Owner Share" : isClientProvider ? "Received" : "Paid"}
           </p>
           <p className="text-sm font-semibold text-foreground">
             {formatCurrency(summary.totalPaid)}
           </p>
         </div>
         <div>
-          <p className="text-xs text-muted-foreground">Remaining</p>
+          <p className="text-xs text-muted-foreground">
+            {isSelf ? "Owner Share" : "Remaining"}
+          </p>
           <p
             className={`text-sm font-semibold ${
-              summary.remaining > 0 ? "text-warning" : "text-foreground"
+              isSelf ? "text-primary" : summary.remaining > 0 ? "text-warning" : "text-foreground"
             }`}
           >
             {formatCurrency(summary.remaining)}
@@ -117,7 +119,7 @@ export default function ServiceAssignmentCard({
         </div>
         <div>
           <p className="text-xs text-muted-foreground">Status</p>
-          <StatusBadge status={summary.status} className="mt-0.5" />
+          <StatusBadge status={isSelf ? "SELF" : summary.status} className="mt-0.5" />
         </div>
       </div>
 

@@ -32,8 +32,10 @@ export default async function(req: Request): Promise<Response> {
 
     // ─── SELF validation ───
     // Block payments to the workspace owner when the transaction is an
-    // outgoing payment (TEAM_PAYMENT or BUSINESS_EXPENSE) linked to a team member.
-    if ((transaction_type === 'TEAM_PAYMENT' || transaction_type === 'BUSINESS_EXPENSE') && team_member_id) {
+    // outgoing payment (TEAM_PAYMENT or BUSINESS_EXPENSE). Checks both:
+    //   1. team_member_id — direct team payment
+    //   2. service_assignment_id — service provider payment (resolve provider)
+    if (transaction_type === 'TEAM_PAYMENT' || transaction_type === 'BUSINESS_EXPENSE') {
       const workspace = await base44.asServiceRole.entities.Workspace.get(workspace_id);
       if (workspace?.owner_user_id) {
         let ownerName = '';
@@ -42,16 +44,36 @@ export default async function(req: Request): Promise<Response> {
           ownerName = ownerUser?.full_name || '';
         } catch { /* ignore — SELF check skipped if owner can't be resolved */ }
 
-        let teamMemberName = '';
-        try {
-          const teamMember = await base44.asServiceRole.entities.TeamMember.get(team_member_id);
-          teamMemberName = teamMember?.name || '';
-        } catch { /* ignore */ }
+        // Check 1: direct team_member_id match
+        if (ownerName && team_member_id) {
+          let teamMemberName = '';
+          try {
+            const teamMember = await base44.asServiceRole.entities.TeamMember.get(team_member_id);
+            teamMemberName = teamMember?.name || '';
+          } catch { /* ignore */ }
 
-        if (ownerName && teamMemberName && normalizeName(ownerName) === normalizeName(teamMemberName)) {
-          return Response.json({
-            error: "Cannot record a payment to the workspace owner (SELF). The owner's share is treated as internal profit, not an external payment.",
-          }, { status: 403 });
+          if (teamMemberName && normalizeName(ownerName) === normalizeName(teamMemberName)) {
+            return Response.json({
+              error: "Cannot record a payment to the workspace owner (SELF). The owner's share is treated as internal profit, not an external payment.",
+            }, { status: 403 });
+          }
+        }
+
+        // Check 2: service_assignment_id — resolve the provider and verify
+        const serviceAssignmentId = body.service_assignment_id;
+        if (ownerName && serviceAssignmentId) {
+          try {
+            const sa = await base44.asServiceRole.entities.EventServiceAssignment.get(serviceAssignmentId);
+            if (sa?.provider_id && sa.provider_id !== 'client') {
+              const provider = await base44.asServiceRole.entities.TeamMember.get(sa.provider_id);
+              const providerName = provider?.name || '';
+              if (providerName && normalizeName(ownerName) === normalizeName(providerName)) {
+                return Response.json({
+                  error: "Cannot record a payment to the workspace owner (SELF). The owner's share is treated as internal profit, not an external payment.",
+                }, { status: 403 });
+              }
+            }
+          } catch { /* ignore — service assignment not found or accessible */ }
         }
       }
     }

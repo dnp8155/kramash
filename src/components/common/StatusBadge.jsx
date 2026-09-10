@@ -36,6 +36,7 @@ const statusStyles = {
   SENT: "bg-success/10 text-success border-success/20",
   DISMISSED: "bg-muted text-muted-foreground border-border",
   NONE: "bg-muted text-muted-foreground border-border",
+  SELF: "bg-primary/10 text-primary border-primary/20",
   default: "bg-muted text-muted-foreground border-border",
 };
 

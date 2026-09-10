@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertTriangle } from "lucide-react";
 import Modal from "@/components/common/Modal";
 import Button from "@/components/common/Button";
 import TransactionFields from "@/components/finance/TransactionFields";
 import TransactionError from "@/components/finance/TransactionError";
+import SelfBadge from "@/components/common/SelfBadge";
 import { todayStr } from "@/utils/team";
 import { formatCurrency } from "@/utils/format";
 import { computeServicePaymentSummary } from "@/utils/finance";
+import { useWorkspace } from "@/lib/WorkspaceContext";
+import { isSelfMember } from "@/utils/selfDetection";
 
 const empty = () => ({
   amount: "",
@@ -40,10 +43,12 @@ export default function ServicePaymentModal({
   const setField = (k, v) =>
     setForm((f) => ({ ...f, [k]: v, error: { ...f.error, [k]: undefined } }));
 
+  const { ownerName } = useWorkspace();
   const summary = assignment
     ? computeServicePaymentSummary(assignment, transactions)
     : null;
   const isClientProvider = assignment?.provider_id === "client";
+  const isSelf = isSelfMember(assignment?.provider_name_snapshot, ownerName);
 
   const handleSubmit = async () => {
     const err = {};
@@ -80,6 +85,34 @@ export default function ServicePaymentModal({
   };
 
   if (!assignment) return null;
+
+  // SELF guard: the workspace owner cannot be paid as an external service provider.
+  if (isSelf) {
+    return (
+      <Modal
+        open={open}
+        onClose={onClose}
+        title={`Add Payment — ${assignment.service_name_snapshot || "Service"}`}
+        footer={
+          <Button variant="outline" onClick={onClose}>
+            Close
+          </Button>
+        }
+      >
+        <div className="flex flex-col items-center gap-3 py-6 text-center">
+          <AlertTriangle className="h-8 w-8 text-primary" />
+          <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+            <SelfBadge /> Workspace Owner
+          </p>
+          <p className="max-w-sm text-sm text-muted-foreground">
+            This service provider is the workspace owner (SELF). The service
+            amount is treated as the owner's internal profit share, not an
+            external payable. No payment transaction can be created.
+          </p>
+        </div>
+      </Modal>
+    );
+  }
 
   return (
     <Modal
