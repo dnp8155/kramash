@@ -8,6 +8,7 @@ import Input from "@/components/common/Input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { lookupCity } from "@/lib/cityMapping";
+import { isValidIndianPhone, isValidEmail } from "@/lib/validation";
 
 const empty = {
   name: "", phone: "", alternate_phone: "", email: "",
@@ -50,7 +51,9 @@ export default function ClientForm({ open, onClose, onSaved, client = null, work
   const validate = () => {
     if (!form.name?.trim()) return "Client name is required.";
     if (!form.phone?.trim() && !form.email?.trim()) return "Phone or email is required.";
-    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) return "Enter a valid email address.";
+    if (form.phone && !isValidIndianPhone(form.phone)) return "Enter a valid Indian phone number (10 digits, starts with 6-9).";
+    if (form.alternate_phone && !isValidIndianPhone(form.alternate_phone)) return "Enter a valid alternate phone number.";
+    if (form.email && !isValidEmail(form.email)) return "Enter a valid email address.";
     return "";
   };
 
@@ -107,11 +110,11 @@ export default function ClientForm({ open, onClose, onSaved, client = null, work
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>Phone</Label>
-              <Input value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="Mobile number" />
+              <Input value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="10-digit mobile (e.g. 9876543210)" inputMode="tel" maxLength="13" />
             </div>
             <div className="space-y-1.5">
               <Label>Alternate Phone</Label>
-              <Input value={form.alternate_phone} onChange={(e) => set("alternate_phone", e.target.value)} placeholder="Optional" />
+              <Input value={form.alternate_phone} onChange={(e) => set("alternate_phone", e.target.value)} placeholder="Optional" inputMode="tel" maxLength="13" />
             </div>
           </div>
 

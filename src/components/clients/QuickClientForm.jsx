@@ -2,6 +2,7 @@ import { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Loader2, Check, X } from "lucide-react";
 import Input from "@/components/common/Input";
+import { isValidIndianPhone, isValidEmail } from "@/lib/validation";
 
 export default function QuickClientForm({ workspaceId, onSaved, onCancel }) {
   const [name, setName] = useState("");
@@ -15,7 +16,11 @@ export default function QuickClientForm({ workspaceId, onSaved, onCancel }) {
       setError("Name is required.");
       return;
     }
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (phone && !isValidIndianPhone(phone)) {
+      setError("Enter a valid Indian phone number (10 digits, starts with 6-9).");
+      return;
+    }
+    if (email && !isValidEmail(email)) {
       setError("Please enter a valid email.");
       return;
     }
@@ -39,7 +44,7 @@ export default function QuickClientForm({ workspaceId, onSaved, onCancel }) {
   return (
     <div className="space-y-2">
       <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Client name *" autoFocus disabled={saving} />
-      <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Phone" disabled={saving} />
+      <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="10-digit mobile" inputMode="tel" maxLength="13" disabled={saving} />
       <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" disabled={saving} />
       {error && <p className="text-xs text-destructive">{error}</p>}
       <div className="flex items-center gap-2">

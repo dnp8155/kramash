@@ -9,6 +9,7 @@ import Toggle from "@/components/common/Toggle";
 import { Upload, Loader2, Pencil, Check } from "lucide-react";
 import { businessTypes } from "@/constants/preferencesConfig";
 import { toast } from "@/components/ui/use-toast";
+import { isValidIndianPhone, isValidEmail } from "@/lib/validation";
 
 const currencies = [{ v: "INR", l: "INR (₹)" }, { v: "USD", l: "USD ($)" }, { v: "EUR", l: "EUR (€)" }, { v: "AED", l: "AED (د.إ)" }];
 const timezones = ["Asia/Kolkata", "UTC", "Asia/Dubai", "America/New_York"];
@@ -71,6 +72,14 @@ export default function WorkspaceSettings() {
   };
 
   const save = async () => {
+    if (form.phone && !isValidIndianPhone(form.phone)) {
+      toast({ title: "Invalid phone", description: "Enter a valid Indian phone number (10 digits, starts with 6-9).", variant: "destructive" });
+      return;
+    }
+    if (form.email && !isValidEmail(form.email)) {
+      toast({ title: "Invalid email", description: "Enter a valid email address.", variant: "destructive" });
+      return;
+    }
     setSaving(true);
     try {
       const updated = await base44.entities.Workspace.update(workspace.id, {
@@ -151,7 +160,7 @@ export default function WorkspaceSettings() {
           )}
         </Field>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Field label="Business Phone"><Input value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="+91…" /></Field>
+          <Field label="Business Phone"><Input value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="10-digit mobile (e.g. 9876543210)" inputMode="tel" maxLength="13" /></Field>
           <Field label="Business Email">
             <div className="flex items-center gap-2">
               <Input

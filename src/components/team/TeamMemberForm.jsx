@@ -14,6 +14,7 @@ import { loadActiveRoles, clearOtherSelfMembers } from "@/lib/teamService";
 import { useAuth } from "@/lib/AuthContext";
 import { Crown } from "lucide-react";
 import { TEAM_COLOR_PALETTE, getMemberColor } from "@/lib/teamColors";
+import { isValidIndianPhone, isValidEmail } from "@/lib/validation";
 
 // Master Team Member form — identity + role + contact + status + notes only.
 // Rate and Member Type are NOT collected here:
@@ -80,7 +81,8 @@ export default function TeamMemberForm({ open, onClose, onSaved, member = null, 
   const validate = () => {
     if (!form.name.trim()) return "Name is required.";
     if (!form.role_id) return "Please select a Role / Profession.";
-    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) return "Enter a valid email address.";
+    if (form.phone && !isValidIndianPhone(form.phone)) return "Enter a valid Indian mobile number (10 digits, starts with 6-9).";
+    if (form.email && !isValidEmail(form.email)) return "Enter a valid email address.";
     return "";
   };
 
@@ -169,7 +171,7 @@ export default function TeamMemberForm({ open, onClose, onSaved, member = null, 
 
           <div className="space-y-1.5">
             <Label>Mobile Number (optional)</Label>
-            <Input value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="Enter mobile number" />
+            <Input value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="10-digit mobile (e.g. 9876543210)" inputMode="tel" maxLength="13" />
           </div>
 
           <div className="space-y-1.5">
