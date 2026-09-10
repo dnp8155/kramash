@@ -148,11 +148,11 @@ export default function PortalManager({ quotationId, quotation, onUpdateQuotatio
           <Copy className="h-4 w-4" />
         </button>
         <a
-          href={publicUrl}
+          href={`${publicUrl}?preview=1`}
           target="_blank"
           rel="noopener noreferrer"
           className="shrink-0 rounded-lg border border-border bg-card p-2 text-muted-foreground transition-colors hover:bg-muted"
-          title="Open in new tab"
+          title="Preview (does not count as client view)"
         >
           <ExternalLink className="h-4 w-4" />
         </a>
@@ -196,24 +196,19 @@ export default function PortalManager({ quotationId, quotation, onUpdateQuotatio
           <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Client Views</span>
         </div>
         <div className="mt-2 space-y-1.5">
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Total views</span>
-            <span className="font-semibold text-foreground">{portal.view_count || 0}</span>
-          </div>
-          {portal.first_viewed_at && (
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">First viewed</span>
-              <span className="text-foreground">{formatTimestamp(portal.first_viewed_at)}</span>
-            </div>
-          )}
-          {portal.last_viewed_at && (
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Last viewed</span>
-              <span className="font-semibold text-foreground">{formatTimestamp(portal.last_viewed_at)}</span>
-            </div>
-          )}
-          {!portal.first_viewed_at && (
-            <p className="text-xs text-muted-foreground">Not viewed yet</p>
+          {portal.first_viewed_at ? (
+            <>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Viewed by Client at</span>
+                <span className="font-semibold text-foreground">{formatTimestamp(portal.last_viewed_at)}</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-muted-foreground">Total views</span>
+                <span className="text-muted-foreground">{portal.view_count || 0}</span>
+              </div>
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">Not viewed yet</p>
           )}
         </div>
       </div>

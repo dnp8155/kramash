@@ -20,6 +20,11 @@ export default async function (req: Request): Promise<Response> {
       return Response.json({ error: "Not found" }, { status: 404 });
     }
 
+    // Admin preview mode — loads quotation data without incrementing the
+    // client view counter. Used when the admin opens the public link from
+    // the dashboard to preview the client experience.
+    const isPreview = body?.preview === true;
+
     // Find portal by token
     const portals = await base44.asServiceRole.entities.QuotationPortal.filter({
       public_token: token,
@@ -127,15 +132,18 @@ export default async function (req: Request): Promise<Response> {
       paymentSummary = { total_payable: totalPayable, total_paid: 0, balance: totalPayable, has_payments: false };
     }
 
-    // Increment view count (post-response, non-blocking)
-    const now = new Date().toISOString();
-    waitUntil(
-      base44.asServiceRole.entities.QuotationPortal.update(portal.id, {
-        view_count: (portal.view_count || 0) + 1,
-        first_viewed_at: portal.first_viewed_at || now,
-        last_viewed_at: now,
-      })
-    );
+    // Increment view count (post-response, non-blocking).
+    // Skipped in preview mode so admin previews don't count as client views.
+    if (!isPreview) {
+      const now = new Date().toISOString();
+      waitUntil(
+        base44.asServiceRole.entities.QuotationPortal.update(portal.id, {
+          view_count: (portal.view_count || 0) + 1,
+          first_viewed_at: portal.first_viewed_at || now,
+          last_viewed_at: now,
+        })
+      );
+    }
 
     // Compute expiry
     const isExpired =

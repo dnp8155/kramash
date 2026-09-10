@@ -13,9 +13,9 @@ import QuotationSocialSection from "@/components/portal/QuotationSocialSection";
 import QuotationTermsSection from "@/components/portal/QuotationTermsSection";
 import QuotationSignSection from "@/components/portal/QuotationSignSection";
 
-async function fetchPortalData(token) {
+async function fetchPortalData(token, preview = false) {
   try {
-    const res = await base44.functions.invoke("getPortalData", { token });
+    const res = await base44.functions.invoke("getPortalData", { token, preview });
     return { ok: res.status >= 200 && res.status < 300, status: res.status, data: res.data };
   } catch (err) {
     const status = err?.response?.status || 0;
@@ -51,12 +51,13 @@ export default function ClientPortalSign() {
   const [acceptError, setAcceptError] = useState(null);
   const [downloading, setDownloading] = useState(false);
   const signRef = useRef(null);
+  const isPreview = new URLSearchParams(window.location.search).get("preview") === "1";
 
   useEffect(() => {
     if (!token) return;
     (async () => {
       setLoading(true);
-      const res = await fetchPortalData(token);
+      const res = await fetchPortalData(token, isPreview);
       if (res.ok) {
         setData(res.data);
       } else if (res.status === 403) {
@@ -96,7 +97,7 @@ export default function ClientPortalSign() {
     const res = await acceptQuotation(token, signature);
     if (res.ok) {
       // Refresh data to show the accepted/locked state
-      const refreshRes = await fetchPortalData(token);
+      const refreshRes = await fetchPortalData(token, isPreview);
       if (refreshRes.ok) setData(refreshRes.data);
     } else {
       setAcceptError(res.data?.error || res.data?.message || "Failed to accept quotation. Please try again or contact your service provider.");

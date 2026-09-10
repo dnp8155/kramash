@@ -11,9 +11,9 @@ import PortalServiceSection from "@/components/portal/PortalServiceSection";
 import { generateQuotationPDF } from "@/utils/quotationPdf";
 import { Image } from "@/components/ui/image";
 
-async function fetchPortalData(token) {
+async function fetchPortalData(token, preview = false) {
   try {
-    const res = await base44.functions.invoke("getPortalData", { token });
+    const res = await base44.functions.invoke("getPortalData", { token, preview });
     return { ok: res.status >= 200 && res.status < 300, status: res.status, data: res.data };
   } catch (err) {
     const status = err?.response?.status || 0;
@@ -33,9 +33,10 @@ export default function ClientPortal() {
 
   useEffect(() => {
     if (!token) return;
+    const isPreview = new URLSearchParams(window.location.search).get("preview") === "1";
     (async () => {
       setLoading(true);
-      const res = await fetchPortalData(token);
+      const res = await fetchPortalData(token, isPreview);
       if (res.ok) {
         setData(res.data);
       } else if (res.status === 403) {
