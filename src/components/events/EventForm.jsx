@@ -146,7 +146,7 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
       onSaved?.(saved);
       onClose?.();
     } catch (err) {
-      const data = err?.response?.data || err;
+      const data = err?.data || err;
       if (data?.error === "PLAN_LIMIT_REACHED") {
         const wl = (t.workItemSingular || "event").toLowerCase();
         setError(`You've reached the Free Plan ${wl} limit (${data.current}/${data.limit}). Upgrade to Pro to create more ${wl}s.`);

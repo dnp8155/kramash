@@ -92,7 +92,7 @@ export default function RecordServicePaymentDialog({
       onSaved?.(saved);
       onClose?.();
     } catch (err) {
-      const data = err?.response?.data || err;
+      const data = err?.data || err;
       if (data?.error === "SELF_PAYMENT_BLOCKED") {
         setError(data.message || "The workspace owner cannot be paid as a service provider.");
       } else {

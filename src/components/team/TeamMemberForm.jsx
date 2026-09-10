@@ -121,7 +121,7 @@ export default function TeamMemberForm({ open, onClose, onSaved, member = null, 
       onSaved?.(saved);
       onClose?.();
     } catch (err) {
-      const data = err?.response?.data || err;
+      const data = err?.data || err;
       if (data?.error === "PLAN_LIMIT_REACHED") {
         setError(`Your Free Plan team limit has been reached (${data.current}/${data.limit}). Upgrade to Pro to add more team members.`);
       } else if (data?.error === "This workspace is suspended. Please contact support.") {

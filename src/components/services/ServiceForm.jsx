@@ -73,7 +73,7 @@ export default function ServiceForm({
       onSaved?.(saved);
       onClose?.();
     } catch (err) {
-      const data = err?.response?.data || err;
+      const data = err?.data || err;
       if (data?.error === "PLAN_LIMIT_REACHED") {
         setError(`You've reached the Free Plan service limit (${data.current}/${data.limit}). Upgrade to Pro to create more services.`);
       } else if (data?.error === "This workspace is suspended. Please contact support.") {

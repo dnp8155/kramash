@@ -231,7 +231,7 @@ export default function EventEditor() {
       toast({ title: isEdit ? "Project updated" : "Project created" });
       navigate(eventId ? `/events/${eventId}` : "/events");
     } catch (err) {
-      const data = err?.response?.data || err;
+      const data = err?.data || err;
       let msg;
       if (data?.error === "PLAN_LIMIT_REACHED") {
         const wl = (tTerm.workItemSingular || "event").toLowerCase();

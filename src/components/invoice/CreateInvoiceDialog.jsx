@@ -103,9 +103,9 @@ export default function CreateInvoiceDialog({ open, onClose, quotation }) {
       onClose();
       navigate(`/invoices/${data.invoice_id}`);
     } catch (e) {
-      const msg = e?.response?.data?.error || e?.message || "Failed to create invoice.";
+      const msg = e?.data?.error || e?.message || "Failed to create invoice.";
       if (msg === "DUPLICATE_INVOICE" || msg === "DUPLICATE_MILESTONE_INVOICE") {
-        setError(e?.response?.data?.message || "An invoice already exists for this.");
+        setError(e?.data?.message || "An invoice already exists for this.");
       } else {
         setError(msg);
       }

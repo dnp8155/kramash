@@ -259,7 +259,7 @@ export default function AssignTeamDialog({
       onSaved?.(saved);
       onClose?.();
     } catch (err) {
-      const data = err?.response?.data || err;
+      const data = err?.data || err;
       if (data?.error === "SELF_ALREADY_ASSIGNED") {
         setError(data.message || "Owner / Self is already assigned to this event.");
       } else if (data?.error === "ALREADY_ASSIGNED") {

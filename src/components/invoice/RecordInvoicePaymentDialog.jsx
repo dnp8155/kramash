@@ -84,7 +84,7 @@ export default function RecordInvoicePaymentDialog({ open, onClose, invoice, onR
       onRecorded?.(data);
       onClose();
     } catch (e) {
-      const msg = e?.response?.data?.message || e?.response?.data?.error || e?.message || "Failed to record payment.";
+      const msg = e?.data?.message || e?.data?.error || e?.message || "Failed to record payment.";
       setError(msg);
     } finally {
       setSaving(false);
