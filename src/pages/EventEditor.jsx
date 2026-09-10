@@ -20,7 +20,7 @@ import ClientForm from "@/components/clients/ClientForm";
 import QuickClientForm from "@/components/clients/QuickClientForm";
 import { EVENT_STATUS, EVENT_STATUS_ORDER } from "@/constants/statusConfig";
 import { CURRENCY_SYMBOLS } from "@/constants/financeConfig";
-import { getEventTypes } from "@/lib/eventTypeService";
+import { getEventTypes, buildAllEventTypes, mergeEventTypes, normalizeEventType } from "@/lib/eventTypeService";
 import { fyForDate } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import {
@@ -65,7 +65,9 @@ export default function EventEditor() {
   const tTerm = term || {};
   const isEdit = !!id;
 
-  const workTypes = getEventTypes(workspace, tTerm.category);
+  const [usedEventTypes, setUsedEventTypes] = useState([]);
+  const [showCustomType, setShowCustomType] = useState(false);
+  const [customTypeInput, setCustomTypeInput] = useState("");
 
   const [form, setForm] = useState(empty);
   const [clients, setClients] = useState([]);
@@ -78,6 +80,8 @@ export default function EventEditor() {
   const [showClientForm, setShowClientForm] = useState(false);
   const [showQuickClient, setShowQuickClient] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
+
+  const workTypes = buildAllEventTypes(workspace, tTerm.category, usedEventTypes);
   const { showConfirm, confirmBack, stayHere, requestBack, markLeaving } = useBackGuard(isDirty);
   const { toast } = useToast();
   const topRef = useRef(null);
@@ -92,6 +96,7 @@ export default function EventEditor() {
     if (workspaceId) {
       loadClients();
       loadTeamAndServices();
+      loadUsedEventTypes();
     }
     if (isEdit) {
       loadEvent();
@@ -100,6 +105,17 @@ export default function EventEditor() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workspaceId, id]);
+
+  const loadUsedEventTypes = async () => {
+    if (!workspaceId) return;
+    try {
+      const events = await base44.entities.Event.filter({ workspace_id: workspaceId }, "-created_date", 200);
+      const types = (events || []).map((e) => e.event_type).filter(Boolean);
+      setUsedEventTypes([...new Set(types)]);
+    } catch {
+      setUsedEventTypes([]);
+    }
+  };
 
   const loadEvent = async () => {
     setLoadingEvent(true);
@@ -217,6 +233,19 @@ export default function EventEditor() {
         saved = res.data || res;
       }
       const eventId = saved?.id || id;
+      // Auto-add new event type to workspace config for future suggestions
+      const eventType = normalizeEventType(form.event_type);
+      if (eventType) {
+        try {
+          const currentTypes = getEventTypes(workspace, tTerm.category);
+          const updatedTypes = mergeEventTypes(currentTypes, eventType);
+          if (updatedTypes.length !== currentTypes.length) {
+            await base44.entities.Workspace.update(workspaceId, {
+              event_types: JSON.stringify(updatedTypes)
+            });
+          }
+        } catch { /* non-critical */ }
+      }
       if (eventId) {
         try { await syncTeamAssignments(eventId, payload.team_member_ids); } catch { /* non-fatal */ }
       }
@@ -361,7 +390,47 @@ export default function EventEditor() {
                             </button>
                           );
                         })}
+                        {/* Show custom type as active chip if set and not in list */}
+                        {form.event_type && !workTypes.some((wt) => wt.toLowerCase() === form.event_type.toLowerCase()) && (
+                          <span className="px-3 py-1.5 rounded-lg text-xs font-medium bg-primary text-primary-foreground border-primary shadow-sm">
+                            {form.event_type}
+                          </span>
+                        )}
+                        <button type="button" onClick={() => setShowCustomType((v) => !v)}
+                          className={cn("inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all",
+                            showCustomType ? "bg-muted text-foreground border-border" : "bg-card text-primary border-dashed border-primary/40 hover:bg-primary/5")}>
+                          <Plus className="w-3 h-3" /> Custom
+                        </button>
                       </div>
+                      {showCustomType && (
+                        <div className="flex gap-2 mt-2">
+                          <Input
+                            value={customTypeInput}
+                            onChange={(e) => setCustomTypeInput(e.target.value)}
+                            placeholder="Type custom type name"
+                            className="flex-1"
+                            autoFocus
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                if (customTypeInput.trim()) {
+                                  set("event_type", normalizeEventType(customTypeInput));
+                                  setCustomTypeInput("");
+                                  setShowCustomType(false);
+                                }
+                              }
+                            }}
+                          />
+                          <Button type="button" size="sm" onClick={() => {
+                            if (customTypeInput.trim()) {
+                              set("event_type", normalizeEventType(customTypeInput));
+                              setCustomTypeInput("");
+                              setShowCustomType(false);
+                            }
+                          }}>Add</Button>
+                          <Button type="button" variant="outline" size="sm" onClick={() => { setShowCustomType(false); setCustomTypeInput(""); }}>Cancel</Button>
+                        </div>
+                      )}
                     </div>
 
                     <div className="space-y-1.5">
