@@ -187,7 +187,7 @@ export default function JobSheetPublic() {
   };
 
   return (
-    <div className="min-h-dvh bg-muted/30 pb-8">
+    <div className="min-h-dvh bg-muted/30 pb-safe-bottom">
       {/* Header */}
       <div className="bg-card px-4 pb-safe pt-safe shadow-sm">
         <div className="mx-auto max-w-lg pt-4">
@@ -343,7 +343,7 @@ export default function JobSheetPublic() {
         )}
 
         {/* Read-only footer */}
-        <p className="pt-2 text-center text-xs text-muted-foreground">
+        <p className="pb-4 pt-2 text-center text-xs text-muted-foreground">
           Read-only job sheet · Powered by Kramashah
         </p>
       </div>

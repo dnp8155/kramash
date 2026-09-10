@@ -1,5 +1,5 @@
 import { FileText, CheckCircle2, AlertCircle, Download, Loader2 } from "lucide-react";
-import { formatCurrency } from "@/utils/format";
+import { formatCurrency, formatDate } from "@/utils/format";
 
 export default function QuotationStatusCard({
   quotation,
@@ -59,7 +59,7 @@ export default function QuotationStatusCard({
             </p>
             <p className="mt-1 text-lg font-bold text-red-900">Quotation Expired</p>
             <p className="mt-0.5 text-sm text-red-600">
-              This quotation was valid until {quotation.valid_until}. Please contact us for a new quotation.
+              This quotation was valid until {formatDate(quotation.valid_until)}. Please contact us for a new quotation.
             </p>
           </div>
         </div>

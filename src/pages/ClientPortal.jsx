@@ -120,9 +120,9 @@ export default function ClientPortal() {
   };
 
   return (
-    <div className="min-h-[100dvh] bg-muted/20">
+    <div className="min-h-[100dvh] bg-muted/20 pb-safe-bottom">
       {workspace && (
-        <div className="border-b border-border bg-card">
+        <div className="border-b border-border bg-card pt-safe">
           <div className="mx-auto flex max-w-3xl items-center gap-3 px-4 py-4">
             {workspace.logo && (
               <Image src={workspace.logo} alt="" className="h-8 w-8 rounded-lg object-cover" fittingType="fill" />

@@ -25,7 +25,7 @@ export default function QuotationHeaderBlock({ quotation, workspace, client, eve
     <div className="rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-6">
       {/* Top row: logo + quotation number */}
       <div className="flex items-start justify-between gap-4 border-b border-border pb-4">
-        <div className="flex items-center gap-3">
+        <div className="flex min-w-0 items-center gap-3">
           {workspace?.logo && (
             <Image src={workspace.logo} alt="" className="h-10 w-10 rounded-lg object-cover" fittingType="fill" />
           )}
@@ -34,7 +34,7 @@ export default function QuotationHeaderBlock({ quotation, workspace, client, eve
             {bizAddress && <p className="text-xs text-muted-foreground">{bizAddress}</p>}
           </div>
         </div>
-        <div className="text-right">
+        <div className="shrink-0 text-right">
           <div className="flex items-center justify-end gap-1.5">
             <FileText className="h-4 w-4 text-primary" />
             <p className="text-sm font-bold text-foreground">{quotation.quotation_number}</p>

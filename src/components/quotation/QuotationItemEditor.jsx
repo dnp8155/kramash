@@ -4,8 +4,11 @@ import Select from "@/components/common/Select";
 import { lineTotal } from "@/utils/quotation";
 import { formatCurrency } from "@/utils/format";
 
+const inputCls =
+  "h-9 w-full rounded-lg border border-input bg-card px-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30";
+const labelCls = "text-[10px] font-medium uppercase tracking-wide text-muted-foreground";
+
 // Editable line-item table for the quotation editor.
-// items: [{ item_type, reference_id, name, description, quantity, days, unit_rate, gst_rate, sac_code, sort_order }]
 export default function QuotationItemEditor({
   items,
   services,
@@ -17,17 +20,12 @@ export default function QuotationItemEditor({
   const activeRoles = (roles || []).filter((r) => r.status === "active");
 
   const update = (idx, field, value) => {
-    const next = items.map((it, i) =>
-      i === idx ? { ...it, [field]: value } : it
-    );
-    // Recompute line_total
+    const next = items.map((it, i) => (i === idx ? { ...it, [field]: value } : it));
     next[idx] = { ...next[idx], line_total: lineTotal(next[idx]) };
     onChange(next);
   };
 
-  const remove = (idx) => {
-    onChange(items.filter((_, i) => i !== idx));
-  };
+  const remove = (idx) => onChange(items.filter((_, i) => i !== idx));
 
   const addService = () => {
     const svc = activeServices[0];
@@ -109,19 +107,51 @@ export default function QuotationItemEditor({
     const role = activeRoles.find((r) => r.id === roleId);
     if (!role) return;
     const next = [...items];
-    next[idx] = {
-      ...next[idx],
-      reference_id: role.id,
-      name: role.name,
-      unit_rate: role.default_rate || 0,
-    };
+    next[idx] = { ...next[idx], reference_id: role.id, name: role.name, unit_rate: role.default_rate || 0 };
     next[idx].line_total = lineTotal(next[idx]);
     onChange(next);
   };
 
+  const ItemSelect = ({ item, idx }) => {
+    if (item.item_type === "service") {
+      return (
+        <Select
+          value={item.reference_id || ""}
+          onChange={(e) => handleServiceSelect(idx, e.target.value)}
+          className="mb-1"
+        >
+          {activeServices.map((s) => (
+            <option key={s.id} value={s.id}>{s.name}</option>
+          ))}
+        </Select>
+      );
+    }
+    if (item.item_type === "role") {
+      return (
+        <Select
+          value={item.reference_id || ""}
+          onChange={(e) => handleRoleSelect(idx, e.target.value)}
+          className="mb-1"
+        >
+          {activeRoles.map((r) => (
+            <option key={r.id} value={r.id}>{r.name}</option>
+          ))}
+        </Select>
+      );
+    }
+    return (
+      <input
+        type="text"
+        value={item.name}
+        onChange={(e) => update(idx, "name", e.target.value)}
+        placeholder="Item name"
+        className="mb-1 h-9 w-full rounded-lg border border-input bg-card px-3 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30"
+      />
+    );
+  };
+
   return (
     <div className="space-y-3">
-      {/* Add buttons */}
       <div className="flex flex-wrap gap-2">
         <Button size="sm" variant="secondary" onClick={addService} disabled={activeServices.length === 0}>
           <Plus className="h-4 w-4" /> Add Service
@@ -139,123 +169,143 @@ export default function QuotationItemEditor({
           No line items yet. Add a service, team role, or custom item above.
         </p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
-                <th className="px-3 py-2 font-semibold w-8"></th>
-                <th className="px-3 py-2 font-semibold min-w-[180px]">Item</th>
-                <th className="px-3 py-2 font-semibold w-16">Qty</th>
-                <th className="px-3 py-2 font-semibold w-16">Days</th>
-                <th className="px-3 py-2 font-semibold w-28">Rate</th>
-                {gstEnabled && <th className="px-3 py-2 font-semibold w-20">GST %</th>}
-                <th className="px-3 py-2 font-semibold w-28 text-right">Amount</th>
-                <th className="px-3 py-2 font-semibold w-10"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {items.map((item, idx) => (
-                <tr key={idx} className="align-top">
-                  <td className="px-3 py-2 text-muted-foreground">
-                    <GripVertical className="h-4 w-4" />
-                  </td>
-                  <td className="px-3 py-2">
-                    {item.item_type === "service" && (
-                      <Select
-                        value={item.reference_id || ""}
-                        onChange={(e) => handleServiceSelect(idx, e.target.value)}
-                        className="mb-1"
-                      >
-                        {activeServices.map((s) => (
-                          <option key={s.id} value={s.id}>{s.name}</option>
-                        ))}
-                      </Select>
-                    )}
-                    {item.item_type === "role" && (
-                      <Select
-                        value={item.reference_id || ""}
-                        onChange={(e) => handleRoleSelect(idx, e.target.value)}
-                        className="mb-1"
-                      >
-                        {activeRoles.map((r) => (
-                          <option key={r.id} value={r.id}>{r.name}</option>
-                        ))}
-                      </Select>
-                    )}
-                    {item.item_type === "custom" && (
+        <>
+          {/* Desktop: table */}
+          <div className="hidden overflow-x-auto sm:block">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
+                  <th className="px-3 py-2 font-semibold w-8"></th>
+                  <th className="px-3 py-2 font-semibold min-w-[180px]">Item</th>
+                  <th className="px-3 py-2 font-semibold w-16">Qty</th>
+                  <th className="px-3 py-2 font-semibold w-16">Days</th>
+                  <th className="px-3 py-2 font-semibold w-28">Rate</th>
+                  {gstEnabled && <th className="px-3 py-2 font-semibold w-20">GST %</th>}
+                  <th className="px-3 py-2 font-semibold w-28 text-right">Amount</th>
+                  <th className="px-3 py-2 font-semibold w-10"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {items.map((item, idx) => (
+                  <tr key={idx} className="align-top">
+                    <td className="px-3 py-2 text-muted-foreground">
+                      <GripVertical className="h-4 w-4" />
+                    </td>
+                    <td className="px-3 py-2">
+                      <ItemSelect item={item} idx={idx} />
                       <input
                         type="text"
-                        value={item.name}
-                        onChange={(e) => update(idx, "name", e.target.value)}
-                        placeholder="Item name"
-                        className="mb-1 h-9 w-full rounded-lg border border-input bg-card px-3 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30"
-                      />
-                    )}
-                    <input
-                      type="text"
-                      value={item.description || ""}
-                      onChange={(e) => update(idx, "description", e.target.value)}
-                      placeholder="Description (optional)"
-                      className="h-8 w-full rounded-lg border border-input bg-card px-2 text-xs text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring/30"
-                    />
-                  </td>
-                  <td className="px-3 py-2">
-                    <input
-                      type="number"
-                      min="1"
-                      value={item.quantity}
-                      onChange={(e) => update(idx, "quantity", Math.max(1, Number(e.target.value) || 1))}
-                      className="h-9 w-full rounded-lg border border-input bg-card px-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30"
-                    />
-                  </td>
-                  <td className="px-3 py-2">
-                    <input
-                      type="number"
-                      min="1"
-                      value={item.days}
-                      onChange={(e) => update(idx, "days", Math.max(1, Number(e.target.value) || 1))}
-                      className="h-9 w-full rounded-lg border border-input bg-card px-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30"
-                    />
-                  </td>
-                  <td className="px-3 py-2">
-                    <input
-                      type="number"
-                      min="0"
-                      value={item.unit_rate}
-                      onChange={(e) => update(idx, "unit_rate", Math.max(0, Number(e.target.value) || 0))}
-                      className="h-9 w-full rounded-lg border border-input bg-card px-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30"
-                    />
-                  </td>
-                  {gstEnabled && (
-                    <td className="px-3 py-2">
-                      <input
-                        type="number"
-                        min="0"
-                        max="100"
-                        value={item.gst_rate || ""}
-                        onChange={(e) => update(idx, "gst_rate", e.target.value ? Number(e.target.value) : null)}
-                        placeholder="—"
-                        className="h-9 w-full rounded-lg border border-input bg-card px-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30"
+                        value={item.description || ""}
+                        onChange={(e) => update(idx, "description", e.target.value)}
+                        placeholder="Description (optional)"
+                        className="h-8 w-full rounded-lg border border-input bg-card px-2 text-xs text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring/30"
                       />
                     </td>
+                    <td className="px-3 py-2">
+                      <input type="number" min="1" value={item.quantity}
+                        onChange={(e) => update(idx, "quantity", Math.max(1, Number(e.target.value) || 1))}
+                        className={inputCls} />
+                    </td>
+                    <td className="px-3 py-2">
+                      <input type="number" min="1" value={item.days}
+                        onChange={(e) => update(idx, "days", Math.max(1, Number(e.target.value) || 1))}
+                        className={inputCls} />
+                    </td>
+                    <td className="px-3 py-2">
+                      <input type="number" min="0" value={item.unit_rate}
+                        onChange={(e) => update(idx, "unit_rate", Math.max(0, Number(e.target.value) || 0))}
+                        className={inputCls} />
+                    </td>
+                    {gstEnabled && (
+                      <td className="px-3 py-2">
+                        <input type="number" min="0" max="100" value={item.gst_rate || ""}
+                          onChange={(e) => update(idx, "gst_rate", e.target.value ? Number(e.target.value) : null)}
+                          placeholder="—" className={inputCls} />
+                      </td>
+                    )}
+                    <td className="px-3 py-2 text-right font-semibold text-foreground">
+                      {formatCurrency(item.line_total || 0)}
+                    </td>
+                    <td className="px-3 py-2">
+                      <button onClick={() => remove(idx)}
+                        className="rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                        aria-label="Remove item">
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile: cards */}
+          <div className="space-y-3 sm:hidden">
+            {items.map((item, idx) => (
+              <div key={idx} className="rounded-lg border border-border bg-card p-3">
+                <div className="mb-2 flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                    <GripVertical className="h-3.5 w-3.5" />
+                    <span className="rounded bg-muted px-1.5 py-0.5 uppercase tracking-wide">
+                      {item.item_type}
+                    </span>
+                  </div>
+                  <button onClick={() => remove(idx)}
+                    className="rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                    aria-label="Remove item">
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+
+                <ItemSelect item={item} idx={idx} />
+
+                <input
+                  type="text"
+                  value={item.description || ""}
+                  onChange={(e) => update(idx, "description", e.target.value)}
+                  placeholder="Description (optional)"
+                  className="mb-2 h-8 w-full rounded-lg border border-input bg-card px-2 text-xs text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring/30"
+                />
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className={labelCls}>Qty</label>
+                    <input type="number" min="1" value={item.quantity}
+                      onChange={(e) => update(idx, "quantity", Math.max(1, Number(e.target.value) || 1))}
+                      className={inputCls} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Days</label>
+                    <input type="number" min="1" value={item.days}
+                      onChange={(e) => update(idx, "days", Math.max(1, Number(e.target.value) || 1))}
+                      className={inputCls} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Rate</label>
+                    <input type="number" min="0" value={item.unit_rate}
+                      onChange={(e) => update(idx, "unit_rate", Math.max(0, Number(e.target.value) || 0))}
+                      className={inputCls} />
+                  </div>
+                  {gstEnabled && (
+                    <div>
+                      <label className={labelCls}>GST %</label>
+                      <input type="number" min="0" max="100" value={item.gst_rate || ""}
+                        onChange={(e) => update(idx, "gst_rate", e.target.value ? Number(e.target.value) : null)}
+                        placeholder="—" className={inputCls} />
+                    </div>
                   )}
-                  <td className="px-3 py-2 text-right font-semibold text-foreground">
+                </div>
+
+                <div className="mt-2 flex items-center justify-between border-t border-border pt-2">
+                  <span className={labelCls}>Amount</span>
+                  <span className="text-sm font-semibold text-foreground">
                     {formatCurrency(item.line_total || 0)}
-                  </td>
-                  <td className="px-3 py-2">
-                    <button
-                      onClick={() => remove(idx)}
-                      className="rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                      aria-label="Remove item"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );

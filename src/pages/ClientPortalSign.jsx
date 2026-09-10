@@ -131,7 +131,7 @@ export default function ClientPortalSign() {
   const showPricing = !quotation.is_package && quotation.show_item_pricing !== false;
 
   return (
-    <div className="min-h-[100dvh] bg-muted/20">
+    <div className="min-h-[100dvh] bg-muted/20 pb-safe-bottom">
       <QuotationActionBar
         quotation={quotation}
         onDownload={handleDownloadPDF}

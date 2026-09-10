@@ -20,7 +20,7 @@ export default function QuotationMilestoneSection({ quotation }) {
                   {m.percentage}%
                 </span>
               )}
-              <span className="text-sm font-medium text-foreground">{m.label || `Milestone ${idx + 1}`}</span>
+              <span className="min-w-0 text-sm font-medium text-foreground">{m.label || `Milestone ${idx + 1}`}</span>
             </div>
             {m.amount != null && (
               <span className="text-sm font-bold text-foreground">{formatCurrency(m.amount)}</span>

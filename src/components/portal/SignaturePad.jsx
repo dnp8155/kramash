@@ -7,19 +7,58 @@ export default function SignaturePad({ onChange, disabled }) {
   const lastPointRef = useRef(null);
   const [hasStrokes, setHasStrokes] = useState(false);
 
+  // Initialize canvas + handle resize (orientation change, viewport, keyboard)
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    const dpr = window.devicePixelRatio || 1;
-    const rect = canvas.getBoundingClientRect();
-    canvas.width = rect.width * dpr;
-    canvas.height = rect.height * dpr;
-    ctx.scale(dpr, dpr);
-    ctx.lineWidth = 2;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.strokeStyle = "#1a1a2e";
+    const container = canvas.parentElement;
+    if (!container) return;
+
+    const setupCanvas = () => {
+      const ctx = canvas.getContext("2d");
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return;
+
+      // Save existing drawing before resize
+      let savedImage = null;
+      if (canvas.width > 0 && canvas.height > 0) {
+        try {
+          savedImage = canvas.toDataURL("image/png");
+        } catch {}
+      }
+
+      canvas.width = Math.round(rect.width * dpr);
+      canvas.height = Math.round(rect.height * dpr);
+      ctx.scale(dpr, dpr);
+      ctx.lineWidth = 2;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.strokeStyle = "#1a1a2e";
+
+      // Restore drawing after resize
+      if (savedImage) {
+        const img = new Image();
+        img.onload = () => {
+          ctx.drawImage(img, 0, 0, rect.width, rect.height);
+        };
+        img.src = savedImage;
+      }
+    };
+
+    setupCanvas();
+
+    const ro = new ResizeObserver(setupCanvas);
+    ro.observe(container);
+
+    // Re-setup after orientation change (with delay for layout to settle)
+    const handleOrientation = () => setTimeout(setupCanvas, 250);
+    window.addEventListener("orientationchange", handleOrientation);
+
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("orientationchange", handleOrientation);
+    };
   }, []);
 
   const getPos = (e) => {
@@ -89,7 +128,7 @@ export default function SignaturePad({ onChange, disabled }) {
           onTouchEnd={end}
         />
         {!hasStrokes && (
-          <p className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">
+          <p className="pointer-events-none absolute inset-0 flex items-center justify-center px-4 text-center text-sm text-muted-foreground">
             Draw your signature here
           </p>
         )}
