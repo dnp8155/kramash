@@ -83,7 +83,7 @@
     "template_id": {
       "type": "string",
       "title": "PDF Template ID",
-      "default": "gold_premium"
+      "default": "classic_minimal"
     },
     "template_config": {
       "type": "string",

@@ -114,7 +114,7 @@ export default function QuotationEditor() {
   const [accessPassword, setAccessPassword] = useState("");
 
   // Template
-  const [templateId, setTemplateId] = useState("gold_premium");
+  const [templateId, setTemplateId] = useState("classic_minimal");
   const [templateConfig, setTemplateConfig] = useState({});
   const [projectTitle, setProjectTitle] = useState("");
   const [projectSummary, setProjectSummary] = useState("");

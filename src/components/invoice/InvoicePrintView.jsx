@@ -3,7 +3,7 @@ import { Download, X, Pencil } from "lucide-react";
 import Button from "@/components/common/Button";
 import { formatMoney } from "@/utils/format";
 import { computeInvoiceTotals, invoiceLineTotal } from "@/lib/invoiceService";
-import { renderInvoiceGoldPremium } from "@/components/invoice/templates/invoiceGoldPremiumTemplate";
+import { renderInvoiceSimpleBw } from "@/components/invoice/templates/invoiceSimpleBwTemplate";
 import { generateTemplatePdf } from "@/lib/quotationTemplatePdf";
 
 const STATUS_LABELS = {
@@ -31,7 +31,7 @@ export default function InvoicePrintView({ open, onClose, invoice, items, worksp
 
   const templateHtml = useMemo(() => {
     if (!invoice) return "";
-    return renderInvoiceGoldPremium({ workspace, invoice, items, currency, totals });
+    return renderInvoiceSimpleBw({ workspace, invoice, items, currency, totals });
   }, [workspace, invoice, items, currency, totals]);
 
   useEffect(() => {

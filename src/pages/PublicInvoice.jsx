@@ -7,7 +7,7 @@ import { formatMoney } from "@/utils/format";
 import { CURRENCY_SYMBOLS } from "@/constants/financeConfig";
 import { Download, Printer, Lock, FileText, CheckCircle2, Clock, AlertCircle } from "lucide-react";
 import Button from "@/components/common/Button";
-import { renderInvoiceGoldPremium } from "@/components/invoice/templates/invoiceGoldPremiumTemplate";
+import { renderInvoiceSimpleBw } from "@/components/invoice/templates/invoiceSimpleBwTemplate";
 import { generateTemplatePdf } from "@/lib/quotationTemplatePdf";
 
 const fmtDate = (iso) => {
@@ -54,7 +54,7 @@ export default function PublicInvoice() {
   }, [token]);
 
   // Build PDF HTML for download/print
-  const templateHtml = data ? renderInvoiceGoldPremium({
+  const templateHtml = data ? renderInvoiceSimpleBw({
     workspace: { name: data.business?.name, logo: data.business?.logo, address: data.business?.address, city: data.business?.city, state: data.business?.state, country: data.business?.country, phone: data.business?.phone, email: data.business?.email, default_gst_rate: data.invoice?.gst_rate },
     invoice: {
       ...data.invoice,

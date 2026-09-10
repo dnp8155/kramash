@@ -36,7 +36,7 @@ export async function generateTemplatePdf(html, { filename = "quotation.pdf", re
     await waitForImages(doc);
     await new Promise((r) => setTimeout(r, 300));
 
-    const target = doc.querySelector(".quotation-page") || doc.querySelector(".quotation") || doc.body;
+    const target = doc.querySelector(".quotation-page") || doc.querySelector(".invoice-page") || doc.querySelector(".quotation") || doc.body;
     target.style.background = "#ffffff";
 
     const captureWidth = target.offsetWidth || 1120;
