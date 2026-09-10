@@ -58,6 +58,61 @@
     "notes": {
       "type": "string",
       "description": "Internal notes"
+    },
+    "job_sheet_config": {
+      "type": "object",
+      "description": "Operational Job Sheet display configuration for crew execution. Controls what operational data is shown to crew/supervisors. Never contains financial data.",
+      "properties": {
+        "show_team_names": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show assigned member names alongside roles. If false, only role labels and counts are shown."
+        },
+        "include_contacts": {
+          "type": "boolean",
+          "default": false,
+          "description": "Include crew contact directory with phone numbers."
+        },
+        "include_equipment": {
+          "type": "boolean",
+          "default": true,
+          "description": "Include equipment / kit checklist section."
+        },
+        "equipment_items": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Custom equipment checklist items. Empty/null falls back to category-based defaults."
+        },
+        "default_reporting_time": {
+          "type": "string",
+          "description": "Default reporting time for all dates (e.g. 8:00 AM). Overridden by date_overrides."
+        },
+        "date_overrides": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "date": {
+                "type": "string",
+                "format": "date"
+              },
+              "reporting_time": {
+                "type": "string"
+              },
+              "venue": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Per-date overrides for reporting time and venue."
+        },
+        "internal_notes": {
+          "type": "string",
+          "description": "Operational execution notes specific to the job sheet (distinct from general event notes)."
+        }
+      }
     }
   },
   "required": [

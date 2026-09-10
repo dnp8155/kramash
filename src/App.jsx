@@ -41,6 +41,7 @@ import Terms from "@/pages/Terms";
 import Privacy from "@/pages/Privacy";
 import Onboarding from "@/pages/Onboarding";
 import EventDetail from "@/pages/EventDetail";
+import JobSheet from "@/pages/JobSheet";
 import Clients from "@/pages/Clients";
 import ClientDetail from "@/pages/ClientDetail";
 import TeamMemberDetail from "@/pages/TeamMemberDetail";
@@ -122,6 +123,7 @@ function App() {
                   <Route path="/dashboard" element={<ErrorBoundary><Dashboard /></ErrorBoundary>} />
                   <Route path="/events" element={<ErrorBoundary><Events /></ErrorBoundary>} />
                   <Route path="/events/:id" element={<ErrorBoundary><EventDetail /></ErrorBoundary>} />
+                  <Route path="/events/:id/job-sheet" element={<ErrorBoundary><JobSheet /></ErrorBoundary>} />
                   <Route path="/clients" element={<ErrorBoundary><Clients /></ErrorBoundary>} />
                   <Route path="/clients/:id" element={<ErrorBoundary><ClientDetail /></ErrorBoundary>} />
                   <Route path="/team" element={<ErrorBoundary><Team /></ErrorBoundary>} />

@@ -334,9 +334,16 @@ export default function EventDetail() {
         title={event.title}
         description={`${event.event_type} · ${dateLabel}`}
         actions={
-          <Button onClick={() => setEditOpen(true)}>
-            <Pencil className="h-4 w-4" /> {t.editWorkItemLabel}
-          </Button>
+          <div className="flex gap-2">
+            <Link to={`/events/${id}/job-sheet`}>
+              <Button variant="outline">
+                <FileText className="h-4 w-4" /> Job Sheet
+              </Button>
+            </Link>
+            <Button onClick={() => setEditOpen(true)}>
+              <Pencil className="h-4 w-4" /> {t.editWorkItemLabel}
+            </Button>
+          </div>
         }
       />
 
