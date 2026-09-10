@@ -68,7 +68,7 @@ export default function ServiceForm({
         saved = await base44.entities.Service.update(service.id, payload);
       } else {
         const res = await base44.functions.invoke("createService", payload);
-        saved = res.data;
+        saved = res;
       }
       onSaved?.(saved);
       onClose?.();

@@ -30,10 +30,10 @@ export default function PublicLinkPanel({ quotation, onUpdated }) {
         quotation_id: quotation.id,
         enabled: !enabled
       });
-      onUpdated?.(res.data);
+      onUpdated?.(res);
       toast({
-        title: res.data.public_link_enabled ? "Public link enabled" : "Public link disabled",
-        description: res.data.public_link_enabled ? "The client portal is now accessible." : "The portal is no longer accessible."
+        title: res.public_link_enabled ? "Public link enabled" : "Public link disabled",
+        description: res.public_link_enabled ? "The client portal is now accessible." : "The portal is no longer accessible."
       });
     } catch (e) {
       toast({ title: "Failed to toggle public link", description: e?.message, variant: "destructive" });
@@ -49,7 +49,7 @@ export default function PublicLinkPanel({ quotation, onUpdated }) {
         quotation_id: quotation.id,
         hide_team_names: !hideNames
       });
-      onUpdated?.(res.data);
+      onUpdated?.(res);
       toast({ title: hideNames ? "Team names visible" : "Team names hidden" });
     } catch (e) {
       toast({ title: "Failed to update visibility", description: e?.message, variant: "destructive" });
