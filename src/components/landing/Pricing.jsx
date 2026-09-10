@@ -1,216 +1,177 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Check, X, Loader2, ShieldCheck } from "lucide-react";
+import { Check, ArrowRight, Sparkles, Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
-const BILLING_CYCLES = [
-  { key: "MONTHLY", label: "Monthly", suffix: "/mo" },
-  { key: "SIX_MONTHS", label: "6 Months", suffix: "/6 mo" },
-  { key: "ANNUAL", label: "Annual", suffix: "/yr" },
-];
+const BOOLEAN_KEYS = new Set(["pdf_export_enabled", "reminders_enabled"]);
 
-const LIMIT_LABELS = {
-  max_events: { label: "Projects / Events", type: "count" },
-  max_team_members: { label: "Team Members", type: "count" },
-  max_services: { label: "Services", type: "count" },
-  quotation_enabled: { label: "Quotations", type: "flag" },
-  pdf_export_enabled: { label: "PDF Export", type: "flag" },
-  reminders_enabled: { label: "Event Reminders", type: "flag" },
-  advanced_theme_enabled: { label: "Advanced Theme", type: "flag" },
-};
-
-const LIMIT_ORDER = [
-  "max_events",
-  "max_team_members",
-  "max_services",
-  "quotation_enabled",
-  "pdf_export_enabled",
-  "reminders_enabled",
-  "advanced_theme_enabled",
-];
-
-function formatPrice(amount, currency) {
-  if (currency === "INR") return `₹${amount.toLocaleString("en-IN")}`;
-  return `${currency} ${amount.toLocaleString()}`;
+function formatLimitValue(key, value) {
+  if (value === undefined || value === null) return null;
+  if (BOOLEAN_KEYS.has(key)) {
+    return value === true || value === "true" ? "Included" : null;
+  }
+  const num = parseInt(String(value), 10);
+  if (num >= 999999) return "Unlimited";
+  return String(num);
 }
 
-function PlanCard({ plan, limits, pricing, billingCycle, isPopular }) {
-  const isFree = plan.code === "FREE";
-  const currentPrice = isFree ? null : pricing?.find((p) => p.billing_cycle === billingCycle);
-  const cycleConfig = BILLING_CYCLES.find((c) => c.key === billingCycle);
-
-  const sortedLimits = LIMIT_ORDER.map((key) => {
-    const limit = limits.find((l) => l.limit_key === key && l.enabled);
-    if (!limit) return null;
-    const config = LIMIT_LABELS[key];
-    if (config.type === "count") {
-      return {
-        label: config.label,
-        value: limit.limit_value >= 999999 ? "Unlimited" : String(limit.limit_value),
-        enabled: true,
-      };
-    }
-    return {
-      label: config.label,
-      value: limit.limit_value === 1 ? "Included" : "—",
-      enabled: limit.limit_value === 1,
-    };
-  }).filter(Boolean);
-
-  return (
-    <div
-      className={`relative flex flex-col rounded-2xl border bg-white p-7 ${
-        isPopular
-          ? "border-primary shadow-lg ring-1 ring-primary/20"
-          : "border-border shadow-sm"
-      }`}
-    >
-      {isPopular && (
-        <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-4 py-1 text-xs font-semibold text-primary-foreground">
-          Most Popular
-        </span>
-      )}
-
-      <h3 className="text-xl font-bold text-foreground">{plan.name}</h3>
-      <p className="mt-1 text-sm text-muted-foreground">{plan.description}</p>
-
-      <div className="mt-5 flex items-baseline gap-1">
-        {isFree ? (
-          <span className="text-4xl font-bold text-foreground">₹0</span>
-        ) : (
-          <>
-            <span className="text-4xl font-bold text-foreground">
-              {currentPrice ? formatPrice(currentPrice.price, currentPrice.currency) : "—"}
-            </span>
-            <span className="text-sm text-muted-foreground">{cycleConfig?.suffix}</span>
-          </>
-        )}
-      </div>
-
-      <Link
-        to="/register"
-        data-cta={isFree ? "pricing_start_free" : "pricing_plan_select"}
-        className={`mt-5 inline-flex h-11 items-center justify-center rounded-xl text-sm font-semibold transition-colors ${
-          isPopular
-            ? "bg-primary text-primary-foreground hover:bg-primary/90"
-            : "border border-border text-foreground hover:bg-muted"
-        }`}
-      >
-        {isFree ? "Start Free" : `Choose ${plan.name}`}
-      </Link>
-
-      <div className="mt-6 space-y-3 border-t border-border pt-5">
-        {sortedLimits.map((limit, i) => (
-          <div key={i} className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">{limit.label}</span>
-            <span className={`flex items-center gap-1.5 font-medium ${limit.enabled ? "text-foreground" : "text-muted-foreground/60"}`}>
-              {limit.enabled ? (
-                <Check className="h-3.5 w-3.5 text-success" />
-              ) : (
-                <X className="h-3.5 w-3.5 text-muted-foreground/40" />
-              )}
-              {limit.value}
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+function limitLabel(key) {
+  const map = {
+    max_events: "Projects / Events",
+    max_team_members: "Team Members",
+    max_services: "Services",
+    pdf_export_enabled: "PDF Export",
+    reminders_enabled: "Reminders",
+  };
+  return map[key] || key;
 }
 
 export default function Pricing() {
-  const [data, setData] = useState(null);
+  const [planData, setPlanData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [billingCycle, setBillingCycle] = useState("MONTHLY");
 
   useEffect(() => {
-    async function fetchPlans() {
+    (async () => {
       try {
-        const [plans, pricings, limits] = await Promise.all([
+        const [plans, pricings, allLimits] = await Promise.all([
           base44.entities.Plan.list(),
           base44.entities.PlanPricing.list(),
           base44.entities.PlanLimit.list(),
         ]);
-        setData({ plans, pricings, limits });
+
+        const activePlans = (plans || [])
+          .filter((p) => p.is_active)
+          .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+
+        const data = activePlans.map((plan) => {
+          const planPricings = (pricings || [])
+            .filter((p) => p.plan_id === plan.id && p.is_active)
+            .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+          const monthly = planPricings.find((p) => p.billing_cycle === "MONTHLY") || planPricings[0] || null;
+
+          const limits = {};
+          (allLimits || [])
+            .filter((l) => l.plan_id === plan.id && l.enabled)
+            .forEach((l) => {
+              limits[l.limit_key] = BOOLEAN_KEYS.has(l.limit_key)
+                ? String(l.limit_value) === "true"
+                : parseInt(String(l.limit_value), 10);
+            });
+
+          return { plan, monthly, limits, pricings: planPricings };
+        });
+
+        setPlanData(data);
       } catch (e) {
-        setData(null);
+        setPlanData([]);
       } finally {
         setLoading(false);
       }
-    }
-    fetchPlans();
+    })();
   }, []);
 
-  const sortedPlans = data
-    ? [...data.plans].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
-    : [];
+  if (loading) {
+    return (
+      <section id="pricing" className="py-20 sm:py-24">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 text-center">
+          <Loader2 className="w-6 h-6 text-muted-foreground animate-spin mx-auto" />
+        </div>
+      </section>
+    );
+  }
+
+  if (planData.length === 0) return null;
+
+  // Determine the "most popular" plan (middle one if 3+, or the one with highest price)
+  const popularIndex = planData.length >= 3 ? Math.floor(planData.length / 2) : 0;
 
   return (
-    <section id="pricing" className="bg-white py-20 md:py-28">
-      <div className="mx-auto max-w-[1200px] px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-3xl text-center">
-          <p className="text-xs font-semibold uppercase tracking-wider text-primary">Pricing</p>
-          <h2 className="mt-3 text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-[42px]">
-            Simple pricing that grows with you.
+    <section id="pricing" className="py-20 sm:py-24">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+        <div className="max-w-2xl mx-auto text-center mb-14">
+          <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs font-semibold text-primary mb-4">
+            PRICING
+          </div>
+          <h2 className="font-heading text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
+            Plans that fit your business.
           </h2>
-          <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
-            Start free and upgrade when you need more. No credit card required to get started.
+          <p className="mt-4 text-muted-foreground text-base sm:text-lg leading-relaxed">
+            Start free, upgrade when you grow. No hidden fees, cancel anytime.
           </p>
         </div>
 
-        {/* Billing cycle selector */}
-        <div className="mt-8 flex justify-center">
-          <div className="inline-flex items-center rounded-xl border border-border bg-muted/30 p-1">
-            {BILLING_CYCLES.map((cycle) => (
-              <button
-                key={cycle.key}
-                onClick={() => setBillingCycle(cycle.key)}
-                className={`rounded-lg px-4 py-2 text-sm font-medium transition-all ${
-                  billingCycle === cycle.key
-                    ? "bg-white text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
+        <div className={`grid gap-6 ${planData.length === 3 ? "lg:grid-cols-3" : "sm:grid-cols-2 max-w-3xl mx-auto"}`}>
+          {planData.map(({ plan, monthly, limits }, i) => {
+            const isPopular = i === popularIndex;
+            const price = monthly?.price || 0;
+            const currency = monthly?.currency || "INR";
+            const cycleLabel = monthly?.billing_cycle === "ANNUAL" ? "/ year" : monthly?.billing_cycle === "SIX_MONTHS" ? "/ 6 months" : "/ month";
+
+            const limitEntries = Object.entries(limits)
+              .map(([key, val]) => {
+                const formatted = formatLimitValue(key, val);
+                if (formatted === null) return null;
+                return { label: limitLabel(key), value: formatted };
+              })
+              .filter(Boolean);
+
+            return (
+              <div
+                key={plan.id}
+                className={`relative rounded-2xl border p-7 transition-all ${
+                  isPopular
+                    ? "border-primary/40 bg-card shadow-xl shadow-primary/10 lg:scale-[1.03]"
+                    : "border-border bg-card shadow-card hover:shadow-card-hover"
                 }`}
               >
-                {cycle.label}
-              </button>
-            ))}
-          </div>
+                {isPopular && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 rounded-full bg-primary text-primary-foreground px-3 py-1 text-xs font-semibold shadow-md">
+                    <Sparkles className="w-3 h-3" />
+                    Most Popular
+                  </div>
+                )}
+                <h3 className="font-heading text-xl font-bold text-foreground">{plan.name}</h3>
+                {plan.description && (
+                  <p className="mt-1.5 text-sm text-muted-foreground">{plan.description}</p>
+                )}
+                <div className="mt-5 flex items-baseline gap-1.5">
+                  <span className="font-heading text-4xl font-bold text-foreground">
+                    {price === 0 ? "Free" : `${currency === "INR" ? "₹" : ""}${price.toLocaleString("en-IN")}`}
+                  </span>
+                  {price > 0 && <span className="text-sm text-muted-foreground">{cycleLabel}</span>}
+                </div>
+
+                <Link
+                  to="/register"
+                  className={`pricing_plan_select mt-6 h-11 w-full inline-flex items-center justify-center gap-2 text-sm font-semibold rounded-xl transition-all ${
+                    isPopular
+                      ? "bg-primary text-primary-foreground hover:bg-primary-hover shadow-md"
+                      : "border border-border bg-card text-foreground hover:bg-muted"
+                  }`}
+                >
+                  {price === 0 ? "Start Free" : `Choose ${plan.name}`}
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+
+                <ul className="mt-6 space-y-3">
+                  {limitEntries.map((entry, j) => (
+                    <li key={j} className="flex items-center gap-3 text-sm text-foreground">
+                      <div className="w-5 h-5 rounded-full bg-success/15 flex items-center justify-center shrink-0">
+                        <Check className="w-3 h-3 text-success" strokeWidth={3} />
+                      </div>
+                      <span className="font-medium">{entry.value}</span>
+                      <span className="text-muted-foreground">{entry.label}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            );
+          })}
         </div>
 
-        {/* Plan cards */}
-        {loading ? (
-          <div className="mt-12 flex items-center justify-center gap-3 py-20 text-muted-foreground">
-            <Loader2 className="h-5 w-5 animate-spin text-primary" />
-            <span className="text-sm">Loading plans…</span>
-          </div>
-        ) : data ? (
-          <div className="mx-auto mt-12 grid max-w-3xl grid-cols-1 gap-6 md:grid-cols-2">
-            {sortedPlans.map((plan) => {
-              const planLimits = data.limits.filter((l) => l.plan_id === plan.id);
-              const planPricings = data.pricings.filter((p) => p.plan_id === plan.id);
-              return (
-                <PlanCard
-                  key={plan.id}
-                  plan={plan}
-                  limits={planLimits}
-                  pricing={planPricings}
-                  billingCycle={billingCycle}
-                  isPopular={plan.code === "PRO"}
-                />
-              );
-            })}
-          </div>
-        ) : (
-          <div className="mt-12 rounded-xl border border-border bg-muted/20 p-8 text-center text-sm text-muted-foreground">
-            Pricing is temporarily unavailable. Please try again later.
-          </div>
-        )}
-
-        {/* Safe downgrade message */}
-        <div className="mt-8 flex items-center justify-center gap-2 text-sm text-muted-foreground">
-          <ShieldCheck className="h-4 w-4 text-success" />
+        <p className="mt-8 text-center text-sm text-muted-foreground">
           Your existing business data isn't deleted if you downgrade.
-        </div>
+        </p>
       </div>
     </section>
   );

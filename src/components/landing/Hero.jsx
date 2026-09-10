@@ -1,112 +1,83 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Check, Layers, FileText, Cloud, Workflow } from "lucide-react";
-import { LANDING_CATEGORIES } from "./categories";
-import DashboardMockup from "./DashboardMockup";
-
-const PROOF_POINTS = [
-  { icon: Layers, label: "4 Business Types", sub: "Multi-industry ready" },
-  { icon: FileText, label: "GST Ready", sub: "Professional quotations" },
-  { icon: Cloud, label: "24 / 7", sub: "Cloud access" },
-  { icon: Workflow, label: "One Workspace", sub: "From client to profit" },
-];
+import { ArrowRight, ShieldCheck, Zap, FileText } from "lucide-react";
+import { getBusinessTerminology, BUSINESS_CATEGORY_OPTIONS } from "@/lib/businessTerminology";
+import DashboardPreview from "@/components/landing/previews/DashboardPreview";
 
 export default function Hero() {
-  const [activeKey, setActiveKey] = useState(LANDING_CATEGORIES[0].key);
-  const activeCategory = LANDING_CATEGORIES.find((c) => c.key === activeKey);
+  const [category, setCategory] = useState("PHOTOGRAPHY");
+  const term = getBusinessTerminology({ business_category: category });
 
   return (
-    <section className="relative overflow-hidden bg-white pt-28 pb-16 sm:pt-32">
-      <div className="mx-auto max-w-[1200px] px-4 sm:px-6 lg:px-8">
-        {/* Hero text */}
-        <div className="mx-auto max-w-4xl text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-border bg-muted/40 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-            Built for Service Businesses
-          </div>
+    <section className="relative overflow-hidden">
+      <div className="absolute inset-0 -z-10">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[40rem] h-[40rem] rounded-full bg-primary/5 blur-3xl" />
+      </div>
 
-          <h1 className="mt-6 text-4xl font-bold leading-[1.05] tracking-tight text-foreground sm:text-5xl md:text-6xl">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 pt-16 pb-12 sm:pt-20 sm:pb-16">
+        {/* Copy */}
+        <div className="max-w-3xl mx-auto text-center mb-10">
+          <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-1.5 text-xs font-semibold text-muted-foreground mb-6 shadow-xs">
+            BUILT FOR SERVICE BUSINESSES
+          </div>
+          <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-foreground leading-[1.08]">
             Run your entire service business from one workspace.
           </h1>
-
-          <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground">
-            Manage clients, projects or events, team availability, quotations, payments and
-            profitability without juggling spreadsheets and disconnected tools.
+          <p className="mt-5 text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+            Manage clients, projects or events, team availability, quotations, payments and profitability without juggling spreadsheets and disconnected tools.
           </p>
-
-          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
             <Link
               to="/register"
-              data-cta="hero_start_free"
-              className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-primary px-7 text-base font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+              className="hero_start_free h-12 px-6 inline-flex items-center justify-center gap-2 text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary-hover rounded-xl shadow-md hover:shadow-lg transition-all"
             >
-              Start for free <ArrowRight className="h-4 w-4" />
+              Start for free
+              <ArrowRight className="w-4 h-4" />
             </Link>
             <a
-              href="#product"
-              data-cta="hero_explore"
-              className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-border bg-white px-7 text-base font-semibold text-foreground transition-colors hover:bg-muted"
+              href="#how-it-works"
+              className="hero_explore h-12 px-6 inline-flex items-center justify-center gap-2 text-sm font-semibold border border-border bg-card text-foreground hover:bg-muted rounded-xl shadow-sm transition-all"
             >
-              Explore Kramashah
+              See how it works
             </a>
           </div>
-
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
-            <span className="flex items-center gap-1.5">
-              <Check className="h-4 w-4 text-success" /> No credit card required
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
+            <span className="inline-flex items-center gap-1.5">
+              <ShieldCheck className="w-3.5 h-3.5 text-success" />
+              No credit card required
             </span>
-            <span className="flex items-center gap-1.5">
-              <Check className="h-4 w-4 text-success" /> Setup in minutes
+            <span className="inline-flex items-center gap-1.5">
+              <Zap className="w-3.5 h-3.5 text-primary" />
+              Setup in minutes
             </span>
-            <span className="flex items-center gap-1.5">
-              <Check className="h-4 w-4 text-success" /> GST-ready quotations
+            <span className="inline-flex items-center gap-1.5">
+              <FileText className="w-3.5 h-3.5 text-warning" />
+              GST-ready quotations
             </span>
           </div>
         </div>
 
         {/* Category switcher */}
-        <div className="mt-12 flex flex-wrap items-center justify-center gap-2">
-          {LANDING_CATEGORIES.map((cat) => {
-            const isActive = cat.key === activeKey;
-            return (
+        <div className="flex justify-center mb-6 overflow-x-auto scrollbar-thin pb-1">
+          <div className="inline-flex items-center gap-1 p-1 rounded-xl border border-border bg-card shadow-sm">
+            {BUSINESS_CATEGORY_OPTIONS.map((opt) => (
               <button
-                key={cat.key}
-                onClick={() => setActiveKey(cat.key)}
-                className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all ${
-                  isActive
+                key={opt.value}
+                onClick={() => setCategory(opt.value)}
+                className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-lg transition-all whitespace-nowrap ${
+                  category === opt.value
                     ? "bg-primary text-primary-foreground shadow-sm"
-                    : "border border-border bg-white text-muted-foreground hover:text-foreground hover:border-foreground/20"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
                 }`}
-                aria-pressed={isActive}
               >
-                <cat.icon className="h-4 w-4" />
-                {cat.label}
+                {opt.value === "OTHER" ? "Other Services" : opt.label}
               </button>
-            );
-          })}
+            ))}
+          </div>
         </div>
 
-        {/* Dashboard mockup */}
-        <div className="mt-8 px-0 lg:px-8">
-          <DashboardMockup category={activeCategory} />
-        </div>
-      </div>
-
-      {/* Product proof strip */}
-      <div className="mx-auto mt-16 max-w-[1200px] px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-border bg-border md:grid-cols-4">
-          {PROOF_POINTS.map((point, i) => (
-            <div key={i} className="flex items-center gap-3 bg-white p-5">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <point.icon className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-sm font-bold text-foreground">{point.label}</p>
-                <p className="text-xs text-muted-foreground">{point.sub}</p>
-              </div>
-            </div>
-          ))}
-        </div>
+        {/* Product preview */}
+        <DashboardPreview terminology={term} />
       </div>
     </section>
   );

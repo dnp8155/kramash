@@ -1,33 +1,55 @@
-import Navbar from "@/components/landing/Navbar";
+import React, { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/lib/AuthContext";
+import LandingNav from "@/components/landing/LandingNav";
 import Hero from "@/components/landing/Hero";
+import ProductProof from "@/components/landing/ProductProof";
 import IndustrySection from "@/components/landing/IndustrySection";
 import ProblemSolution from "@/components/landing/ProblemSolution";
-import CoreFeatures from "@/components/landing/CoreFeatures";
-import ProductShowcase from "@/components/landing/ProductShowcase";
+import Features from "@/components/landing/Features";
+import Showcase from "@/components/landing/Showcase";
 import HowItWorks from "@/components/landing/HowItWorks";
 import TrustSection from "@/components/landing/TrustSection";
 import Pricing from "@/components/landing/Pricing";
 import FAQ from "@/components/landing/FAQ";
-import FinalCTA from "@/components/landing/FinalCTA";
-import Footer from "@/components/landing/Footer";
+import CTA from "@/components/landing/CTA";
+import LandingFooter from "@/components/landing/LandingFooter";
 
 export default function Landing() {
+  const navigate = useNavigate();
+  const { isAuthenticated, authChecked, isLoadingAuth } = useAuth();
+
+  useEffect(() => {
+    if (authChecked && isAuthenticated) {
+      navigate("/events", { replace: true });
+    }
+  }, [authChecked, isAuthenticated, navigate]);
+
+  if (!authChecked || isLoadingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-dvh bg-white">
-      <Navbar />
+    <div className="min-h-screen bg-background">
+      <LandingNav />
       <main>
         <Hero />
+        <ProductProof />
         <IndustrySection />
         <ProblemSolution />
-        <CoreFeatures />
-        <ProductShowcase />
+        <Features />
+        <Showcase />
         <HowItWorks />
         <TrustSection />
         <Pricing />
         <FAQ />
-        <FinalCTA />
+        <CTA />
       </main>
-      <Footer />
+      <LandingFooter />
     </div>
   );
 }
