@@ -32,12 +32,12 @@ export default function ClientForm({ open, onClose, client, onSave }) {
       toast({ title: "Client name is required", variant: "destructive" });
       return;
     }
-    if (!form.phone.trim() && !form.email.trim()) {
-      toast({
-        title: "Phone or email is required",
-        description: "Add at least one contact detail.",
-        variant: "destructive",
-      });
+    if (form.name.trim().length > 100) {
+      toast({ title: "Client name is too long (max 100 characters)", variant: "destructive" });
+      return;
+    }
+    if (form.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+      toast({ title: "Please enter a valid email address", variant: "destructive" });
       return;
     }
     setSaving(true);

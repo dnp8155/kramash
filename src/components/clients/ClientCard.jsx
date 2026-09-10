@@ -1,9 +1,9 @@
 import { Link } from "react-router-dom";
-import { Phone, Mail, MapPin, ArrowRight } from "lucide-react";
+import { Phone, Mail, MapPin, ArrowRight, CalendarDays } from "lucide-react";
 import Card, { CardBody } from "@/components/common/Card";
-import { initials } from "@/utils/format";
+import { initials, formatCurrency } from "@/utils/format";
 
-export default function ClientCard({ client }) {
+export default function ClientCard({ client, eventCount = 0, outstanding = 0 }) {
   const location = [client.city, client.state].filter(Boolean).join(", ");
   return (
     <Link to={`/clients/${client.id}`} className="block h-full">
@@ -39,6 +39,21 @@ export default function ClientCard({ client }) {
               </p>
             )}
           </div>
+          {(eventCount > 0 || outstanding > 0) && (
+            <div className="flex flex-wrap items-center gap-4 text-xs">
+              {eventCount > 0 && (
+                <span className="flex items-center gap-1 text-muted-foreground">
+                  <CalendarDays className="h-3.5 w-3.5" />
+                  {eventCount} {eventCount === 1 ? "Event" : "Events"}
+                </span>
+              )}
+              {outstanding > 0 && (
+                <span className="font-medium text-destructive">
+                  Outstanding: {formatCurrency(outstanding)}
+                </span>
+              )}
+            </div>
+          )}
           <div className="mt-auto flex items-center justify-end border-t border-border pt-3 text-sm font-medium text-primary">
             View Details <ArrowRight className="h-4 w-4" />
           </div>

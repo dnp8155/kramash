@@ -1,11 +1,12 @@
-import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
   Phone,
   Mail,
   MapPin,
   Pencil,
+  Trash2,
   CalendarDays,
   StickyNote,
   Users,
@@ -17,19 +18,42 @@ import LoadingState from "@/components/common/LoadingState";
 import EmptyState from "@/components/common/EmptyState";
 import StatusBadge from "@/components/common/StatusBadge";
 import ClientForm from "@/components/clients/ClientForm";
+import ClientFinancialSummary from "@/components/clients/ClientFinancialSummary";
+import ClientPaymentHistory from "@/components/clients/ClientPaymentHistory";
+import DeleteClientModal from "@/components/clients/DeleteClientModal";
 import { useBusinessTerminology } from "@/lib/BusinessTerminology";
-import { formatDate } from "@/utils/format";
+import { formatDate, formatCurrency } from "@/utils/format";
 import { toast } from "@/components/ui/use-toast";
 import { base44 } from "@/api/base44Client";
 
+const STATUS_SORT = {
+  "In Progress": 0,
+  Pending: 1,
+  Confirmed: 1,
+  Completed: 2,
+  Cancelled: 3,
+};
+
+function sortEvents(events) {
+  return [...events].sort((a, b) => {
+    const pa = STATUS_SORT[a.status] ?? 4;
+    const pb = STATUS_SORT[b.status] ?? 4;
+    if (pa !== pb) return pa - pb;
+    return (b.start_date || "").localeCompare(a.start_date || "");
+  });
+}
+
 export default function ClientDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const t = useBusinessTerminology();
   const [client, setClient] = useState(null);
   const [events, setEvents] = useState([]);
+  const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -37,17 +61,17 @@ export default function ClientDetail() {
     setNotFound(false);
     Promise.all([
       base44.entities.Client.get(id).catch(() => null),
-      base44.entities.Event
-        .filter({ client_id: id }, "-start_date", 200)
-        .catch(() => []),
+      base44.entities.Event.filter({ client_id: id }, "-start_date", 200).catch(() => []),
+      base44.entities.FinancialTransaction.filter({ client_id: id }, "-transaction_date", 500).catch(() => []),
     ])
-      .then(([c, evs]) => {
+      .then(([c, evs, txns]) => {
         if (!active) return;
         if (!c) {
           setNotFound(true);
         } else {
           setClient(c);
           setEvents(evs || []);
+          setTransactions(txns || []);
         }
       })
       .finally(() => {
@@ -57,6 +81,28 @@ export default function ClientDetail() {
       active = false;
     };
   }, [id]);
+
+  const financials = useMemo(() => {
+    const activeEvents = events.filter((e) => e.status !== "Cancelled");
+    const totalEvents = events.length;
+    const contractValue = activeEvents.reduce(
+      (s, e) => s + (Number(e.contract_value) || 0),
+      0
+    );
+    const receipts = transactions.filter(
+      (t) => t.status === "ACTIVE" && t.transaction_type === "CLIENT_RECEIPT"
+    );
+    const received = receipts.reduce((s, t) => s + (Number(t.amount) || 0), 0);
+    const outstanding = activeEvents.reduce((s, e) => {
+      const eventReceived = receipts
+        .filter((t) => t.event_id === e.id)
+        .reduce((rs, t) => rs + (Number(t.amount) || 0), 0);
+      return s + Math.max(0, (Number(e.contract_value) || 0) - eventReceived);
+    }, 0);
+    return { totalEvents, contractValue, received, outstanding, receipts };
+  }, [events, transactions]);
+
+  const sortedEvents = useMemo(() => sortEvents(events), [events]);
 
   if (loading) {
     return (
@@ -97,7 +143,12 @@ export default function ClientDetail() {
   const handleSave = async (data) => {
     const updated = await base44.entities.Client.update(client.id, data);
     setClient(updated);
-    toast({ title: "Client updated" });
+    toast({ title: "Client updated successfully." });
+  };
+
+  const handleDeleted = () => {
+    setDeleteOpen(false);
+    navigate("/clients");
   };
 
   const location = [client.city, client.state, client.country]
@@ -115,18 +166,48 @@ export default function ClientDetail() {
 
       <PageHeader
         title={client.name}
-        description={`${events.length} ${t.workItemSingular.toLowerCase()}${events.length === 1 ? "" : "s"}`}
+        description={`${financials.totalEvents} ${t.workItemSingular.toLowerCase()}${financials.totalEvents === 1 ? "" : "s"}`}
         actions={
-          <Button onClick={() => setEditOpen(true)}>
-            <Pencil className="h-4 w-4" /> Edit Client
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            {client.phone && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => (window.location.href = `tel:${client.phone}`)}
+              >
+                <Phone className="h-4 w-4" /> Call
+              </Button>
+            )}
+            {client.email && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => (window.location.href = `mailto:${client.email}`)}
+              >
+                <Mail className="h-4 w-4" /> Email
+              </Button>
+            )}
+            <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
+              <Pencil className="h-4 w-4" /> Edit
+            </Button>
+            <Button variant="destructive" size="sm" onClick={() => setDeleteOpen(true)}>
+              <Trash2 className="h-4 w-4" /> Delete
+            </Button>
+          </div>
         }
+      />
+
+      <ClientFinancialSummary
+        totalEvents={financials.totalEvents}
+        contractValue={financials.contractValue}
+        received={financials.received}
+        outstanding={financials.outstanding}
       />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <Card>
           <CardHeader>
-            <CardTitle>Contact</CardTitle>
+            <CardTitle>Profile</CardTitle>
           </CardHeader>
           <CardBody className="flex flex-col gap-3 text-sm">
             {client.phone && (
@@ -164,20 +245,18 @@ export default function ClientDetail() {
         <Card className="lg:col-span-2">
           <CardHeader className="flex items-center justify-between">
             <CardTitle>{t.clientWorkLabel}</CardTitle>
-            <span className="text-sm text-muted-foreground">
-              {events.length} total
-            </span>
+            <span className="text-sm text-muted-foreground">{events.length} total</span>
           </CardHeader>
           <CardBody className="p-0">
             {events.length === 0 ? (
               <EmptyState
                 title={`No ${t.workItemPlural.toLowerCase()} yet`}
-                description={`Create a ${t.workItemSingular.toLowerCase()} for this client to get started.`}
+                description={`This client has no ${t.workItemPlural.toLowerCase()} or projects yet.`}
                 icon={CalendarDays}
               />
             ) : (
               <div className="divide-y divide-border">
-                {events.map((ev) => (
+                {sortedEvents.map((ev) => (
                   <Link
                     to={`/events/${ev.id}`}
                     key={ev.id}
@@ -188,12 +267,19 @@ export default function ClientDetail() {
                         {ev.title}
                       </p>
                       <p className="truncate text-xs text-muted-foreground">
-                        {ev.event_type} · {ev.venue || "—"}
+                        {ev.event_type || "—"} · {ev.venue || "—"}
                       </p>
                     </div>
-                    <span className="hidden text-xs text-muted-foreground sm:block">
-                      {formatDate(ev.start_date)}
-                    </span>
+                    <div className="hidden text-right sm:block">
+                      <p className="text-xs text-muted-foreground">
+                        {formatDate(ev.start_date)}
+                      </p>
+                      {ev.contract_value > 0 && (
+                        <p className="text-xs font-medium text-foreground">
+                          {formatCurrency(ev.contract_value)}
+                        </p>
+                      )}
+                    </div>
                     <StatusBadge status={ev.status} />
                   </Link>
                 ))}
@@ -203,11 +289,19 @@ export default function ClientDetail() {
         </Card>
       </div>
 
+      <ClientPaymentHistory payments={financials.receipts} events={events} />
+
       <ClientForm
         open={editOpen}
         onClose={() => setEditOpen(false)}
         client={client}
         onSave={handleSave}
+      />
+      <DeleteClientModal
+        open={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        client={client}
+        onDeleted={handleDeleted}
       />
     </div>
   );

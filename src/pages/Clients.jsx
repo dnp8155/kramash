@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Plus, Users, Download } from "lucide-react";
 import PageHeader from "@/components/common/PageHeader";
 import Card, { CardBody } from "@/components/common/Card";
@@ -11,6 +11,7 @@ import ClientCard from "@/components/clients/ClientCard";
 import ClientForm from "@/components/clients/ClientForm";
 import { useClients } from "@/hooks/useClients";
 import { useEvents } from "@/hooks/useEvents";
+import { base44 } from "@/api/base44Client";
 import { useBusinessTerminology } from "@/lib/BusinessTerminology";
 import { exportClientsCSV } from "@/utils/exports";
 import { toast } from "@/components/ui/use-toast";
@@ -21,12 +22,40 @@ export default function Clients() {
   const t = useBusinessTerminology();
   const [search, setSearch] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
+  const [transactions, setTransactions] = useState([]);
+
+  useEffect(() => {
+    base44.entities.FinancialTransaction.filter(
+      { transaction_type: "CLIENT_RECEIPT", status: "ACTIVE" },
+      "-transaction_date",
+      500
+    )
+      .then(setTransactions)
+      .catch(() => setTransactions([]));
+  }, []);
+
+  const clientStats = useMemo(() => {
+    const map = new Map();
+    for (const c of clients) {
+      const clientEvents = events.filter((e) => e.client_id === c.id);
+      const eventCount = clientEvents.length;
+      const contractValue = clientEvents
+        .filter((e) => e.status !== "Cancelled")
+        .reduce((s, e) => s + (Number(e.contract_value) || 0), 0);
+      const received = transactions
+        .filter((t) => t.client_id === c.id)
+        .reduce((s, t) => s + (Number(t.amount) || 0), 0);
+      const outstanding = Math.max(0, contractValue - received);
+      map.set(c.id, { eventCount, outstanding });
+    }
+    return map;
+  }, [clients, events, transactions]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return clients;
     return clients.filter((c) =>
-      [c.name, c.phone, c.alternate_phone, c.email].some((f) =>
+      [c.name, c.phone, c.alternate_phone, c.email, c.city, c.state].some((f) =>
         (f || "").toLowerCase().includes(q)
       )
     );
@@ -34,7 +63,7 @@ export default function Clients() {
 
   const handleSave = async (data) => {
     await createClient(data);
-    toast({ title: "Client added" });
+    toast({ title: "Client created successfully." });
   };
 
   return (
@@ -78,8 +107,8 @@ export default function Clients() {
             title={search ? "No clients found" : "No clients yet"}
             description={
               search
-                ? "Try a different search."
-                : `Add a client to create and manage ${t.workItemPlural.toLowerCase()}.`
+                ? "Try a different name, phone number or email."
+                : "Add your first client to start managing projects, events and payments."
             }
             icon={Users}
             action={
@@ -94,7 +123,12 @@ export default function Clients() {
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {filtered.map((c) => (
-            <ClientCard key={c.id} client={c} />
+            <ClientCard
+              key={c.id}
+              client={c}
+              eventCount={clientStats.get(c.id)?.eventCount || 0}
+              outstanding={clientStats.get(c.id)?.outstanding || 0}
+            />
           ))}
         </div>
       )}
