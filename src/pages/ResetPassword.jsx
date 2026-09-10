@@ -28,8 +28,8 @@ export default function ResetPassword() {
     e.preventDefault();
     setError("");
 
-    if (newPassword.length < 6) {
-      setError("Password must be at least 6 characters.");
+    if (newPassword.length < 8) {
+      setError("Password must be at least 8 characters.");
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -108,7 +108,7 @@ export default function ResetPassword() {
               type={showPassword ? "text" : "password"}
               autoComplete="new-password"
               autoFocus
-              placeholder="At least 6 characters"
+              placeholder="At least 8 characters"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               onKeyDown={(e) => {

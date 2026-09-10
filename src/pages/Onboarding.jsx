@@ -130,6 +130,7 @@ export default function Onboarding() {
         owner_user_id: user.id,
         owner_name: user.full_name || form.name.trim(),
         is_active: true,
+        onboarding_completed: true,
         email: form.email.trim(),
         phone: form.phone.trim(),
         logo: "",

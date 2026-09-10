@@ -153,6 +153,11 @@
       "default": true,
       "description": "Whether this workspace is active. Inactive workspaces are read-only."
     },
+    "onboarding_completed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the workspace owner has completed the onboarding flow. False until the workspace is fully created and configured. Used to route users to onboarding vs dashboard."
+    },
     "bank_account_name": {
       "type": "string",
       "description": "Bank account holder name for client payments"

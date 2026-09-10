@@ -81,7 +81,7 @@ export const WorkspaceProvider = ({ children }) => {
         membership,
         role: membership?.role || null,
         loading,
-        needsOnboarding: !loading && !workspace,
+        needsOnboarding: !loading && (!workspace || workspace.onboarding_completed === false),
         refresh,
         ownerName,
       }}
