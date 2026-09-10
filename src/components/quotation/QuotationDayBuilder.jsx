@@ -1,6 +1,5 @@
 import { useMemo } from "react";
 import QuotationDayCard from "@/components/quotation/QuotationDayCard";
-import EmptyState from "@/components/common/EmptyState";
 import { includedDates } from "@/lib/quotationCalc";
 
 export default function QuotationDayBuilder({
@@ -140,19 +139,19 @@ export default function QuotationDayBuilder({
   // ---- Render ----
 
   const uncategorizedItems = itemsByDay["uncategorized"] || [];
-
-  // If no dates configured and no items, show empty state
-  if (incDates.length === 0 && items.length === 0) {
-    return (
-      <EmptyState
-        title="No dates configured"
-        description="Set a start and end date above to generate day chips, then build your day/phase structure."
-      />
-    );
-  }
+  const noDates = incDates.length === 0;
 
   return (
     <div className="space-y-3">
+      {noDates && items.length === 0 && (
+        <div className="text-center py-4">
+          <p className="text-sm font-medium text-muted-foreground">No dates configured yet.</p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Set a start and end date above to build day-wise structure, or add custom items below.
+          </p>
+        </div>
+      )}
+
       {incDates.map((date) => (
         <QuotationDayCard
           key={date}
@@ -176,28 +175,26 @@ export default function QuotationDayBuilder({
         />
       ))}
 
-      {uncategorizedItems.length > 0 && (
-        <QuotationDayCard
-          date="uncategorized"
-          isUncategorized
-          phaseTitle={getPhaseTitle("uncategorized")}
-          items={uncategorizedItems}
-          onUpdatePhaseTitle={updatePhaseTitle}
-          onAddTeam={addTeamMember}
-          onAddService={addService}
-          onAddCustom={addCustom}
-          onUpdateItem={updateItem}
-          onRemoveItem={removeItem}
-          onDuplicate={duplicateDay}
-          teamMembers={teamMembers}
-          roles={roles}
-          services={services}
-          currency={currency}
-          readOnly={readOnly}
-          includedDates={incDates}
-          itemErrors={itemErrors}
-        />
-      )}
+      <QuotationDayCard
+        date="uncategorized"
+        isUncategorized
+        phaseTitle={getPhaseTitle("uncategorized")}
+        items={uncategorizedItems}
+        onUpdatePhaseTitle={updatePhaseTitle}
+        onAddTeam={addTeamMember}
+        onAddService={addService}
+        onAddCustom={addCustom}
+        onUpdateItem={updateItem}
+        onRemoveItem={removeItem}
+        onDuplicate={duplicateDay}
+        teamMembers={teamMembers}
+        roles={roles}
+        services={services}
+        currency={currency}
+        readOnly={readOnly}
+        includedDates={incDates}
+        itemErrors={itemErrors}
+      />
     </div>
   );
 }
