@@ -72,6 +72,7 @@ export default function QuotationEditor() {
   const [templatePreviewHtml, setTemplatePreviewHtml] = useState("");
   const [showClientForm, setShowClientForm] = useState(false);
   const [customClientMode, setCustomClientMode] = useState(false);
+  const [showCreateInvoiceDialog, setShowCreateInvoiceDialog] = useState(false);
 
   // Quotation meta
   const [quotationNumber, setQuotationNumber] = useState("");
@@ -573,14 +574,7 @@ export default function QuotationEditor() {
             </Button>
           )}
           {status === "accepted" && existingQuotation && (
-            <Button size="sm" onClick={async () => {
-              try {
-                const inv = await createFromQuotation(workspaceId, existingQuotation, items);
-                invalidateEntities(queryClient, ["Invoice", "InvoiceItem"]);
-                toast({ title: "Invoice created", description: inv.invoice_number });
-                navigate(`/invoices/${inv.id}`);
-              } catch (e) { setError(e?.message || "Failed to create invoice."); }
-            }}>
+            <Button size="sm" onClick={() => setShowCreateInvoiceDialog(true)}>
               <Receipt className="w-3.5 h-3.5" /> Create Invoice
             </Button>
           )}
