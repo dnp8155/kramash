@@ -12,7 +12,8 @@
     },
     "default_rate": {
       "type": "number",
-      "description": "Default rate for this role in the workspace currency"
+      "default": 0,
+      "description": "Default rate for this role in the workspace currency. Cannot be negative."
     },
     "rate_type": {
       "type": "string",

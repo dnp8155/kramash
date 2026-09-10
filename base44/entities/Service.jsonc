@@ -16,21 +16,24 @@
     },
     "default_rate": {
       "type": "number",
-      "description": "Default rate for this service in the workspace currency"
+      "default": 0,
+      "description": "Default rate for this service in the workspace currency. Cannot be negative."
     },
     "rate_type": {
       "type": "string",
       "enum": [
         "Fixed",
         "Per Day",
-        "Per Unit"
+        "Per Unit",
+        "Per Event"
       ],
       "default": "Fixed",
       "description": "How the default rate is charged"
     },
     "gst_rate": {
       "type": "number",
-      "description": "Optional default GST rate percentage for this service (e.g. 18). Only used when workspace GST is enabled."
+      "default": 0,
+      "description": "Optional default GST rate percentage for this service (e.g. 18). Only used when workspace GST is enabled. Cannot be negative."
     },
     "sac_code": {
       "type": "string",

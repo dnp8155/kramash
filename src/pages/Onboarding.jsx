@@ -128,6 +128,8 @@ export default function Onboarding() {
           ? form.custom_business_type.trim()
           : CATEGORY_LABELS[form.business_category],
         owner_user_id: user.id,
+        owner_name: user.full_name || form.name.trim(),
+        is_active: true,
         email: form.email.trim(),
         phone: form.phone.trim(),
         logo: "",
@@ -153,6 +155,7 @@ export default function Onboarding() {
         user_id: user.id,
         role: "owner",
         status: "active",
+        joined_at: new Date().toISOString(),
       });
       // Initialize the default Free subscription for this workspace
       try {

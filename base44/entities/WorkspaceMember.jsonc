@@ -23,16 +23,24 @@
         "manager",
         "staff"
       ],
-      "default": "owner"
+      "default": "owner",
+      "description": "Member role within this workspace. owner = full control; admin = manage all data; accountant = financial access; manager = operational access; staff = limited access."
     },
     "status": {
       "type": "string",
       "enum": [
         "active",
+        "inactive",
         "invited",
         "removed"
       ],
-      "default": "active"
+      "default": "active",
+      "description": "Membership status. active = can access workspace; inactive = disabled but retained; invited = pending acceptance; removed = revoked."
+    },
+    "joined_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the user joined this workspace (set at membership creation)"
     }
   },
   "required": [

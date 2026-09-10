@@ -36,6 +36,10 @@
       "type": "string",
       "description": "User id of the workspace owner"
     },
+    "owner_name": {
+      "type": "string",
+      "description": "Display name of the workspace owner (denormalized for portal/branding use)"
+    },
     "email": {
       "type": "string",
       "description": "Business contact email"
@@ -115,7 +119,8 @@
     },
     "default_gst_rate": {
       "type": "number",
-      "description": "Default GST rate percentage (e.g. 18)"
+      "default": 18,
+      "description": "Default GST rate percentage (e.g. 18). Allowed: 0, 5, 12, 18, 28."
     },
     "event_types": {
       "type": "array",
@@ -134,6 +139,19 @@
     "default_quotation_terms": {
       "type": "string",
       "description": "Default terms and conditions preloaded into new quotations"
+    },
+    "default_quotation_footer": {
+      "type": "string",
+      "description": "Default footer text shown at the bottom of quotations and invoices"
+    },
+    "active_financial_year_id": {
+      "type": "string",
+      "description": "Reference to the currently active FinancialYear for this workspace"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this workspace is active. Inactive workspaces are read-only."
     },
     "bank_account_name": {
       "type": "string",
