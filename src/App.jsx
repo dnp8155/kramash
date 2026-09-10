@@ -47,6 +47,7 @@ import ClientDetail from "@/pages/ClientDetail";
 import TeamMemberDetail from "@/pages/TeamMemberDetail";
 import ClientPortal from "@/pages/ClientPortal";
 import ClientPortalSign from "@/pages/ClientPortalSign";
+import JobSheetPublic from "@/pages/JobSheetPublic";
 
 // Guards an area behind authentication. No app data renders until the auth
 // check completes, so there is no flash of sensitive content.
@@ -113,6 +114,7 @@ function App() {
               {/* Public client portal (no auth required) */}
               <Route path="/portal/:token" element={<ClientPortal />} />
               <Route path="/portal/:token/sign" element={<ClientPortalSign />} />
+              <Route path="/job-sheet/:token" element={<JobSheetPublic />} />
 
               {/* Onboarding (authenticated, no app shell) */}
               <Route path="/onboarding" element={<OnboardingRoute />} />

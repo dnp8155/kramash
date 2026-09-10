@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft, Printer, Settings, MapPin } from "lucide-react";
+import { ArrowLeft, Printer, Settings, MapPin, Download, Share2, Loader2 } from "lucide-react";
 import Button from "@/components/common/Button";
 import LoadingState from "@/components/common/LoadingState";
 import Card, { CardHeader, CardTitle, CardBody } from "@/components/common/Card";
 import JobSheetSettings from "@/components/jobsheet/JobSheetSettings";
+import JobSheetShare from "@/components/jobsheet/JobSheetShare";
+import { generateJobSheetPDF } from "@/utils/jobSheetPdf";
 import JobSheetItinerary from "@/components/jobsheet/JobSheetItinerary";
 import JobSheetDeliverables from "@/components/jobsheet/JobSheetDeliverables";
 import JobSheetContacts from "@/components/jobsheet/JobSheetContacts";
@@ -29,6 +31,8 @@ export default function JobSheet() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
+  const [showShare, setShowShare] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
   const [config, setConfig] = useState(DEFAULT_CONFIG);
 
   useEffect(() => {
@@ -77,6 +81,17 @@ export default function JobSheet() {
 
   const handlePrint = () => window.print();
 
+  const handleDownloadPDF = async () => {
+    setPdfLoading(true);
+    try {
+      await generateJobSheetPDF({ data, config });
+    } catch (e) {
+      toast({ title: "PDF failed", description: e?.message, variant: "destructive" });
+    } finally {
+      setPdfLoading(false);
+    }
+  };
+
   if (loading) return <LoadingState label="Generating job sheet…" />;
   if (!data) return <p className="py-10 text-center text-muted-foreground">Unable to load job sheet.</p>;
 
@@ -103,8 +118,14 @@ export default function JobSheet() {
           <Button variant="outline" size="sm" onClick={() => setShowSettings(!showSettings)}>
             <Settings className="h-4 w-4" /> Settings
           </Button>
+          <Button variant="outline" size="sm" onClick={() => setShowShare(!showShare)}>
+            <Share2 className="h-4 w-4" /> Share
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleDownloadPDF} disabled={pdfLoading}>
+            {pdfLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} PDF
+          </Button>
           <Button size="sm" onClick={handlePrint}>
-            <Printer className="h-4 w-4" /> Print / PDF
+            <Printer className="h-4 w-4" /> Print
           </Button>
         </div>
       </div>
@@ -117,6 +138,8 @@ export default function JobSheet() {
           category={category}
         />
       )}
+
+      {showShare && <JobSheetShare eventId={id} />}
 
       {/* Job Sheet document */}
       <div className="space-y-6">
