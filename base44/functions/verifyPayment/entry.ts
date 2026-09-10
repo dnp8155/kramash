@@ -7,6 +7,7 @@
 // Idempotent: if the payment was already verified, returns the existing subscription.
 
 import { verifyRazorpaySignature, verifyRazorpayPayment, activateProFromPayment, markPaymentFailed } from "../../shared/paymentEngine.ts";
+import { verifyWorkspaceMembership } from "../../shared/planEngine.ts";
 
 export default async function (req) {
   try {
@@ -39,6 +40,12 @@ export default async function (req) {
     const payment = (payments && payments[0]) || null;
     if (!payment) {
       return Response.json({ error: "Payment record not found for this order." }, { status: 404 });
+    }
+
+    // Authorization: only a member of the payment's workspace can verify it.
+    const isMember = await verifyWorkspaceMembership(base44, user.id, payment.workspace_id);
+    if (!isMember) {
+      return Response.json({ error: "Not a member of this workspace." }, { status: 403 });
     }
 
     // Idempotency: already verified.
