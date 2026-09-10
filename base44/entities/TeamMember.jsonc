@@ -26,9 +26,19 @@
       "type": "string",
       "description": "Reference to TeamRole"
     },
+    "is_self": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this member represents the workspace owner / business operator. SELF members are excluded from external team wage obligations."
+    },
+    "member_type_id": {
+      "type": "string",
+      "description": "Optional reference to a workspace member-type configuration (e.g. Bride Side, Groom Side, Common). Free-text ID; not a separate entity."
+    },
     "default_rate": {
       "type": "number",
-      "description": "Default rate for this team member"
+      "default": 0,
+      "description": "Default rate for this team member. Used as a suggestion when assigning to events; does NOT overwrite existing assignment agreed_rate."
     },
     "rate_type": {
       "type": "string",

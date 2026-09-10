@@ -1,0 +1,92 @@
+{
+  "name": "TeamBlockDate",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "description": "Workspace this block date belongs to"
+    },
+    "team_member_id": {
+      "type": "string",
+      "description": "Team member this block date applies to"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Block start date (date-only, YYYY-MM-DD). Required."
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Block end date (date-only, YYYY-MM-DD). Defaults to start_date for single-day blocks."
+    },
+    "reason": {
+      "type": "string",
+      "default": "Leave",
+      "description": "Reason for the block (e.g. Leave, Personal, Unavailable, Holiday, Other)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "cancelled"
+      ],
+      "default": "active",
+      "description": "active = member is unavailable during this range; cancelled = block was cancelled, member is available again."
+    }
+  },
+  "required": [
+    "workspace_id",
+    "team_member_id",
+    "start_date"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.workspace_id": {
+            "$in": "{{user.data.workspace_ids}}"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "data.workspace_id": {
+        "$in": "{{user.data.workspace_ids}}"
+      }
+    },
+    "update": {
+      "$or": [
+        {
+          "data.workspace_id": {
+            "$in": "{{user.data.workspace_ids}}"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.workspace_id": {
+            "$in": "{{user.data.workspace_ids}}"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

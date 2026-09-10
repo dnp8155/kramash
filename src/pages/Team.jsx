@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Plus, Users, Download, FileBarChart } from "lucide-react";
+import { Plus, Users, Download, FileBarChart, Settings2 } from "lucide-react";
 import PageHeader from "@/components/common/PageHeader";
 import Card, { CardBody } from "@/components/common/Card";
 import SearchInput from "@/components/common/SearchInput";
@@ -10,6 +10,7 @@ import LoadingState from "@/components/common/LoadingState";
 import ErrorState from "@/components/common/ErrorState";
 import TeamMemberCard from "@/components/team/TeamMemberCard";
 import TeamMemberForm from "@/components/team/TeamMemberForm";
+import TeamRoleForm from "@/components/team/TeamRoleForm";
 import AvailabilityChecker from "@/components/team/AvailabilityChecker";
 import PersonStatementCard from "@/components/team/PersonStatementCard";
 import FinancialYearSelector from "@/components/finance/FinancialYearSelector";
@@ -19,6 +20,7 @@ import { useEventTeamAssignments } from "@/hooks/useEventTeamAssignments";
 import { useEventServiceAssignments } from "@/hooks/useEventServiceAssignments";
 import { useEvents } from "@/hooks/useEvents";
 import { useFinancialTransactions } from "@/hooks/useFinancialTransactions";
+import { useTeamBlockDates } from "@/hooks/useTeamBlockDates";
 import { useFinancialYear } from "@/lib/FinancialYearContext";
 import { usePlan } from "@/lib/PlanContext";
 import { useWorkspace } from "@/lib/WorkspaceContext";
@@ -34,6 +36,7 @@ export default function Team() {
   const { serviceAssignments } = useEventServiceAssignments();
   const { events } = useEvents();
   const { transactions } = useFinancialTransactions();
+  const { blockDates } = useTeamBlockDates();
   const { financialYears, selectedFYId } = useFinancialYear();
   const { ownerName } = useWorkspace();
   const { canCreateResource, usage, getLimit } = usePlan();
@@ -41,10 +44,12 @@ export default function Team() {
   const teamLimitReached = !canCreateResource("team_members");
 
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("Active");
   const [roleFilter, setRoleFilter] = useState("all");
   const [modalOpen, setModalOpen] = useState(false);
   const [editingMember, setEditingMember] = useState(null);
+  const [roleModalOpen, setRoleModalOpen] = useState(false);
+  const [editingRole, setEditingRole] = useState(null);
   const [view, setView] = useState("cards"); // "cards" | "statements"
 
   const roleName = (m) =>
@@ -133,14 +138,17 @@ export default function Team() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Team"
-        description="Manage your crew, photographers, and editors."
+        description="Manage your team members, roles, rates and availability."
         actions={
           <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => { setEditingRole(null); setRoleModalOpen(true); }}>
+              <Settings2 className="h-4 w-4" /> Manage Roles
+            </Button>
             <Button variant="outline" onClick={() => { exportTeamCSV(filtered, roles); toast({ title: "Team exported" }); }}>
               <Download className="h-4 w-4" /> Export
             </Button>
             <Button onClick={openAdd} disabled={teamLimitReached}>
-              <Plus className="h-4 w-4" /> Add Member
+              <Plus className="h-4 w-4" /> Add Team Member
             </Button>
           </div>
         }
@@ -166,7 +174,8 @@ export default function Team() {
             label="Status"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            options={["Active", "Inactive"]}
+            options={["all", "Active", "Inactive"]}
+            optionLabels={["All", "Active", "Inactive"]}
           />
           <FilterControl
             label="Role"

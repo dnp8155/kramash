@@ -77,10 +77,15 @@ export function useEventTeamAssignments() {
     [workspaceId]
   );
 
-  // Removal deletes the assignment relationship, not the team member.
+  // Removal sets assignment_status to "Removed" (soft delete) — the assignment
+  // record is retained for historical auditing and financial traceability.
+  // Removed assignments disappear from active lists but remain in the database.
   const removeAssignment = useCallback(async (id) => {
-    await base44.entities.EventTeamAssignment.delete(id);
-    setAssignments((prev) => prev.filter((x) => x.id !== id));
+    const a = await base44.entities.EventTeamAssignment.update(id, {
+      assignment_status: "Removed",
+    });
+    setAssignments((prev) => prev.map((x) => (x.id === id ? a : x)));
+    return a;
   }, []);
 
   return {

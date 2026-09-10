@@ -5,7 +5,7 @@ import Button from "@/components/common/Button";
 import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
 import { rateTypes } from "@/constants/team";
-import { getMemberConflicts, todayStr } from "@/utils/team";
+import { getMemberConflicts, getBlockDateConflicts, todayStr } from "@/utils/team";
 import { dateRange } from "@/utils/dates";
 import { formatDate, formatCurrency } from "@/utils/format";
 import { paymentMethods } from "@/constants/finance";
@@ -13,8 +13,10 @@ import { toast } from "@/components/ui/use-toast";
 import SelfBadge from "@/components/common/SelfBadge";
 import { useWorkspace } from "@/lib/WorkspaceContext";
 import { isSelfMember } from "@/utils/selfDetection";
+import { getSideConfig, sideOrder } from "@/utils/sideConfig";
 
-const categoryTypes = ["Bride", "Groom", "Other"];
+// Member types are sourced from sideConfig — supports custom values too.
+const categoryTypes = sideOrder;
 
 export default function AssignTeamModal({
   open,
@@ -31,6 +33,7 @@ export default function AssignTeamModal({
   editingAssignment = null,
   paymentSummary = null,
   selfAlreadyAssigned = false,
+  blockDates = [],
 }) {
   const isEditing = !!editingAssignment;
   const [memberId, setMemberId] = useState("");
@@ -41,6 +44,8 @@ export default function AssignTeamModal({
   const [rateType, setRateType] = useState("Per Event");
   const [rateTouched, setRateTouched] = useState(false);
   const [overrideConflict, setOverrideConflict] = useState(false);
+  const [overrideBlockConflict, setOverrideBlockConflict] = useState(false);
+  const [notes, setNotes] = useState("");
   const [recordPayment, setRecordPayment] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentDate, setPaymentDate] = useState(todayStr());
@@ -71,12 +76,14 @@ export default function AssignTeamModal({
       const editMember = members.find((m) => m.id === editingAssignment.team_member_id);
       setMemberId(editingAssignment.team_member_id || "");
       setRoleId(editMember?.role_id || editingAssignment.role_id || "");
-      setCategoryType(editingAssignment.category_type || "");
+      setCategoryType(editingAssignment.category_type || editingAssignment.member_type_snapshot || "");
       setWorkingDates(editingAssignment.working_dates || (event?.start_date ? [event.start_date] : []));
       setAgreedRate(editingAssignment.agreed_rate != null ? String(editingAssignment.agreed_rate) : "");
       setRateType(editingAssignment.rate_type || "Per Event");
       setRateTouched(false);
       setOverrideConflict(false);
+      setOverrideBlockConflict(false);
+      setNotes(editingAssignment.notes || "");
       setRecordPayment(false);
       setPaymentAmount("");
       setPaymentDate(todayStr());
@@ -90,6 +97,8 @@ export default function AssignTeamModal({
       setRateType("Per Event");
       setRateTouched(false);
       setOverrideConflict(false);
+      setOverrideBlockConflict(false);
+      setNotes("");
       setRecordPayment(false);
       setPaymentAmount("");
       setPaymentDate(todayStr());
@@ -112,8 +121,18 @@ export default function AssignTeamModal({
 
   const conflicts = useMemo(() => {
     if (!memberId || !event) return [];
-    return getMemberConflicts(memberId, event, assignments, eventMap);
-  }, [memberId, event, assignments, eventMap]);
+    return getMemberConflicts(memberId, event, assignments, eventMap, workingDates);
+  }, [memberId, event, assignments, eventMap, workingDates]);
+
+  // Block date conflicts: check if the member has active blocks overlapping
+  // the dates being assigned.
+  const blockConflicts = useMemo(() => {
+    if (!memberId) return [];
+    const dates = workingDates.length > 0
+      ? workingDates
+      : (event ? dateRange(event.start_date, event.end_date) : []);
+    return getBlockDateConflicts(memberId, dates, blockDates);
+  }, [memberId, workingDates, event, blockDates]);
 
   // Calculate rate from working dates × daily rate (when Per Day)
   const calculateRate = (type, dates, dailyRate) => {
@@ -198,7 +217,16 @@ export default function AssignTeamModal({
       });
       return;
     }
+    if (!isEditing && blockConflicts.length > 0 && !overrideBlockConflict) {
+      toast({
+        title: "Block date conflict",
+        description: "The member is blocked on one or more selected dates. Acknowledge to assign anyway.",
+        variant: "destructive",
+      });
+      return;
+    }
     const role = roles.find((r) => r.id === roleId);
+    const memberTypeConfig = categoryType ? getSideConfig(categoryType) : null;
 
     // Validate payment fields if Record Payment is ON (add mode only)
     const amt = Number(paymentAmount);
@@ -211,16 +239,29 @@ export default function AssignTeamModal({
       return;
     }
 
+    // Compute booking dates from working dates or event range
+    const bookingStart = workingDates.length > 0
+      ? workingDates.sort()[0]
+      : event?.start_date;
+    const bookingEnd = workingDates.length > 0
+      ? workingDates.sort()[workingDates.length - 1]
+      : (event?.end_date || event?.start_date);
+
     setSaving(true);
     try {
       const payload = {
         team_member_id: memberId,
         role_id: roleId,
         role_name_snapshot: role?.name || "",
+        member_type_id: categoryType || null,
+        member_type_snapshot: memberTypeConfig?.label || categoryType || null,
         agreed_rate: agreedRate === "" ? null : Number(agreedRate),
         rate_type: rateType,
         working_dates: workingDates,
+        booking_start_date: bookingStart || null,
+        booking_end_date: bookingEnd || null,
         category_type: categoryType || null,
+        notes: notes.trim() || null,
       };
 
       if (isEditing) {
@@ -508,14 +549,15 @@ export default function AssignTeamModal({
               <AlertTriangle className="h-4 w-4" /> Booking conflict
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              This member is already assigned to another event overlapping this
-              date range:
+              This member is already assigned to another event on one or more of
+              the selected dates:
             </p>
             <ul className="mt-2 space-y-1">
               {conflicts.map(({ event: ev }) => (
                 <li key={ev.id} className="text-xs text-foreground">
                   • {ev.title} — {formatDate(ev.start_date)}
                   {ev.end_date ? ` → ${formatDate(ev.end_date)}` : ""}
+                  {ev.venue ? ` · ${ev.venue}` : ""}
                 </li>
               ))}
             </ul>
@@ -530,6 +572,49 @@ export default function AssignTeamModal({
             </label>
           </div>
         )}
+
+        {blockConflicts.length > 0 && (
+          <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3">
+            <p className="flex items-center gap-2 text-sm font-medium text-destructive">
+              <AlertTriangle className="h-4 w-4" /> Block date conflict
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              This member is unavailable on one or more selected dates:
+            </p>
+            <ul className="mt-2 space-y-1">
+              {blockConflicts.map((b) => (
+                <li key={b.id} className="text-xs text-foreground">
+                  • {formatDate(b.start_date)}
+                  {b.end_date && b.end_date !== b.start_date ? ` → ${formatDate(b.end_date)}` : ""}
+                  {b.reason ? ` · ${b.reason}` : ""}
+                </li>
+              ))}
+            </ul>
+            <label className="mt-3 flex cursor-pointer items-center gap-2 text-xs font-medium text-foreground">
+              <input
+                type="checkbox"
+                checked={overrideBlockConflict}
+                onChange={(e) => setOverrideBlockConflict(e.target.checked)}
+                className="h-4 w-4 rounded border-input"
+              />
+              Assign anyway despite the block
+            </label>
+          </div>
+        )}
+
+        {/* Assignment notes */}
+        <div>
+          <label className="mb-1.5 block text-sm font-medium text-foreground">
+            Notes (optional)
+          </label>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={2}
+            placeholder="Assignment-specific notes"
+            className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30"
+          />
+        </div>
 
         {event && (
           <p className="text-xs text-muted-foreground">

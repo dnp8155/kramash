@@ -22,6 +22,14 @@
       "type": "string",
       "description": "Role name snapshot for historical accuracy if the role is later renamed"
     },
+    "member_type_id": {
+      "type": "string",
+      "description": "Member type reference at the time of assignment (e.g. Bride, Groom, Common, Other)"
+    },
+    "member_type_snapshot": {
+      "type": "string",
+      "description": "Member type label snapshot for historical accuracy if the workspace member-type config changes later"
+    },
     "agreed_rate": {
       "type": "number",
       "description": "Final agreed rate for this specific assignment (independent of the member's default rate)"
@@ -41,11 +49,21 @@
         "type": "string",
         "format": "date"
       },
-      "description": "Specific working dates selected from the event's date range. Used for Per Day rate calculation."
+      "description": "Specific working dates selected from the event's date range. Used for Per Day rate calculation and per-date conflict detection."
+    },
+    "booking_start_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Booking start date for this assignment (date-only, YYYY-MM-DD). Typically the event start_date or the first working date."
+    },
+    "booking_end_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Booking end date for this assignment (date-only, YYYY-MM-DD). Typically the event end_date or the last working date."
     },
     "category_type": {
       "type": "string",
-      "description": "Color-coded category for this assignment (e.g. Bride, Groom, Other)"
+      "description": "Color-coded category for this assignment (e.g. Bride, Groom, Other). Legacy field retained for backward compatibility; member_type_snapshot is the canonical snapshot."
     },
     "assignment_status": {
       "type": "string",
@@ -54,6 +72,10 @@
         "Removed"
       ],
       "default": "Assigned"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Assignment-specific notes (distinct from the team member's general notes)"
     }
   },
   "required": [
