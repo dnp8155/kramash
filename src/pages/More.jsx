@@ -25,8 +25,7 @@ export default function More() {
   ];
 
   const workspaceItems = [
-    { label: "Workspace", desc: "Business type, roles, services, currency, team.", icon: Building2, path: "/settings/workspace" },
-    { label: "Preferences", desc: "Labels, defaults, and display options.", icon: SlidersHorizontal, path: "/preferences" },
+    { label: "Preferences", desc: "Profile, workspace, roles, services, display, billing and more.", icon: SlidersHorizontal, path: "/preferences" },
     { label: "App & Updates", desc: "Version info and update status.", icon: Smartphone, path: "/app-updates" },
     { label: "Help & Support", desc: "Get help and contact support.", icon: LifeBuoy, path: "/help" }
   ];

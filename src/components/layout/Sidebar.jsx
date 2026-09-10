@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { mainNav, moreNav, moreGroup, settingsNav, settingsGroup } from "@/constants/navigation";
+import { mainNav, moreNav, moreGroup } from "@/constants/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
 import { useT } from "@/hooks/useT";
@@ -16,8 +16,6 @@ export default function Sidebar({ mobile = false, onClose, collapsed = false, on
   const t = useT();
   const moreActive = moreNav.some((item) => location.pathname === item.path);
   const [moreOpen, setMoreOpen] = useState(moreActive);
-  const settingsActive = settingsNav.some((item) => location.pathname === item.path);
-  const [settingsOpen, setSettingsOpen] = useState(settingsActive);
 
   // Resolve a dynamic label for a nav item (Events -> Projects for Architecture/Other).
   const navLabel = (item) => t(item.path === "/events" ? term.workItemPlural : item.label);
@@ -65,18 +63,6 @@ export default function Sidebar({ mobile = false, onClose, collapsed = false, on
           {moreOpen && (
             <div className="space-y-1 w-full flex flex-col items-center">
               {moreNav.map((item) => renderItem(item))}
-            </div>
-          )}
-          <button
-            onClick={() => setSettingsOpen((v) => !v)}
-            className="w-10 h-10 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-            title={t(settingsGroup.label)}
-          >
-            <settingsGroup.icon className="w-4 h-4 shrink-0" />
-          </button>
-          {settingsOpen && (
-            <div className="space-y-1 w-full flex flex-col items-center">
-              {settingsNav.map((item) => renderItem(item))}
             </div>
           )}
         </nav>
@@ -142,21 +128,6 @@ export default function Sidebar({ mobile = false, onClose, collapsed = false, on
         {moreOpen && (
           <div className="space-y-1 pl-3 border-l border-border ml-3">
             {moreNav.map((item) => renderItem(item))}
-          </div>
-        )}
-
-        <button
-          onClick={() => setSettingsOpen((v) => !v)}
-          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-        >
-          <settingsGroup.icon className="w-4 h-4 shrink-0" />
-          <span className="flex-1 text-left">{t(settingsGroup.label)}</span>
-          {settingsOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-        </button>
-
-        {settingsOpen && (
-          <div className="space-y-1 pl-3 border-l border-border ml-3">
-            {settingsNav.map((item) => renderItem(item))}
           </div>
         )}
       </nav>

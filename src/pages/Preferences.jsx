@@ -7,12 +7,17 @@ import Button from "@/components/common/Button";
 import Select from "@/components/common/Select";
 import Toggle from "@/components/common/Toggle";
 import WorkspaceSettings from "@/components/settings/WorkspaceSettings";
+import ProfileSection from "@/components/settings/ProfileSection";
+import AppearanceSection from "@/components/settings/AppearanceSection";
+import NotificationsSection from "@/components/settings/NotificationsSection";
+import BillingSection from "@/components/settings/BillingSection";
+import SessionSection from "@/components/settings/SessionSection";
 import TeamRoleForm from "@/components/team/TeamRoleForm";
 import ServiceForm from "@/components/services/ServiceForm";
 import { useToast } from "@/components/ui/use-toast";
 import { loadRoles } from "@/lib/teamService";
 import { loadAllServices } from "@/lib/quotationService";
-import { Pencil, Trash2, Plus, Download, Loader2 } from "lucide-react";
+import { Pencil, Trash2, Plus, Download, Loader2, User, Building2, Briefcase, Tags, Palette, Bell, CreditCard, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { exportFinancialCsv } from "@/lib/exportUtils";
 import { loadAllTransactions } from "@/lib/financeService";
@@ -21,6 +26,18 @@ import { txInFY, fyDisplayLabel } from "@/lib/financialYearService";
 import { getIndustryPresets } from "@/constants/industryPresets";
 import TeamMemberTypeManager from "@/components/preferences/TeamMemberTypeManager";
 import EventTypeManager from "@/components/preferences/EventTypeManager";
+
+const sections = [
+  { id: "profile", label: "Profile", icon: User },
+  { id: "workspace", label: "Workspace", icon: Building2 },
+  { id: "business", label: "Business Setup", icon: Briefcase },
+  { id: "types", label: "Types & Display", icon: Tags },
+  { id: "appearance", label: "Appearance", icon: Palette },
+  { id: "notifications", label: "Notifications", icon: Bell },
+  { id: "billing", label: "Billing & Plan", icon: CreditCard },
+  { id: "export", label: "Data Export", icon: Download },
+  { id: "session", label: "Session", icon: LogOut },
+];
 
 const BUSINESS_TYPE_TO_CATEGORY = {
   "Photography": "PHOTOGRAPHY",
@@ -33,6 +50,7 @@ export default function Preferences() {
   const { workspaceId, workspace } = useWorkspace();
   const { toast } = useToast();
   const { fiscalYears, selectedFY, selectFY } = useFinancialYear();
+  const [activeTab, setActiveTab] = useState("profile");
   const [exporting, setExporting] = useState(false);
   const [toggles, setToggles] = useState(() => {
     try {
@@ -195,112 +213,155 @@ export default function Preferences() {
     }
   };
 
+  const activeLabel = sections.find((s) => s.id === activeTab)?.label || "Preferences";
+
   return (
-    <div className="p-4 sm:p-6 space-y-4 max-w-[1200px] mx-auto">
-      {/* Top row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Owner & workspace (live) */}
-        <WorkspaceSettings />
+    <div className="p-4 sm:p-6 max-w-[1000px] mx-auto space-y-5">
+      <div>
+        <h1 className="text-xl font-bold text-foreground">Preferences</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">{activeLabel}</p>
       </div>
 
-      {/* Business type */}
-      <Card title="Business Type">
-        <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-end">
-          <Field label="Business Type" className="flex-1">
-            <Select value={businessType} onChange={(e) => changeBusinessType(e.target.value)}>
-              {businessTypes.map((b) => <option key={b}>{b}</option>)}
-            </Select>
-          </Field>
-          <Button onClick={loadPresetSet} disabled={loadingPresets}>
-            {loadingPresets ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading…</> : "Load Set"}
-          </Button>
+      {/* Tab nav */}
+      <nav className="flex gap-1 overflow-x-auto scrollbar-thin pb-1">
+        {sections.map((s) => {
+          const Icon = s.icon;
+          return (
+            <button
+              key={s.id}
+              onClick={() => setActiveTab(s.id)}
+              className={cn(
+                "flex items-center gap-2 px-3 py-2 rounded-lg text-sm whitespace-nowrap transition-colors shrink-0",
+                activeTab === s.id
+                  ? "bg-primary/10 text-primary font-semibold"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              )}
+            >
+              <Icon className="w-4 h-4 shrink-0" />
+              {s.label}
+            </button>
+          );
+        })}
+      </nav>
+
+      {/* Profile */}
+      {activeTab === "profile" && <ProfileSection />}
+
+      {/* Workspace */}
+      {activeTab === "workspace" && <WorkspaceSettings />}
+
+      {/* Business Setup */}
+      {activeTab === "business" && (
+        <div className="space-y-4">
+          <Card title="Business Type">
+            <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-end">
+              <Field label="Business Type" className="flex-1">
+                <Select value={businessType} onChange={(e) => changeBusinessType(e.target.value)}>
+                  {businessTypes.map((b) => <option key={b}>{b}</option>)}
+                </Select>
+              </Field>
+              <Button onClick={loadPresetSet} disabled={loadingPresets}>
+                {loadingPresets ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading…</> : "Load Set"}
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">Load starter roles and services for the selected business type. Existing items with the same name are skipped.</p>
+          </Card>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <Card title="Team Roles">
+              <div className="space-y-2">
+                {loadingRoles ? (
+                  <p className="text-sm text-muted-foreground py-2">Loading roles…</p>
+                ) : roles.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-2">No roles yet. Add one to get started.</p>
+                ) : (
+                  roles.map((r) => (
+                    <div key={r.id} className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-muted/40">
+                      <span className={`w-2 h-2 rounded-full shrink-0 ${r.status === "active" ? "bg-[#10b981]" : "bg-[#ef4444]"}`} />
+                      <span className={cn("text-sm flex-1 min-w-0 truncate", r.status === "inactive" && "text-muted-foreground line-through")}>{r.name}</span>
+                      <span className="text-sm text-muted-foreground whitespace-nowrap">{formatINR(r.default_rate)}</span>
+                      <span className="text-[10px] text-muted-foreground whitespace-nowrap hidden sm:inline">{r.rate_type}</span>
+                      <button onClick={() => openEditRole(r)} className="text-muted-foreground hover:text-foreground shrink-0" aria-label="Edit role">
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <button onClick={() => toggleRoleStatus(r)} className="text-muted-foreground hover:text-warning shrink-0" aria-label="Toggle status" title={r.status === "active" ? "Disable" : "Enable"}>
+                        {r.status === "active" ? <Trash2 className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+              <Button variant="dark" size="sm" className="mt-3" onClick={openAddRole}><Plus className="w-3.5 h-3.5" />Add Role</Button>
+            </Card>
+            <Card title="Services">
+              <div className="space-y-2">
+                {loadingServices ? (
+                  <p className="text-sm text-muted-foreground py-2">Loading services…</p>
+                ) : serviceList.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-2">No services yet. Add one to get started.</p>
+                ) : (
+                  serviceList.map((s) => (
+                    <div key={s.id} className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-muted/40">
+                      <span className={`w-2 h-2 rounded-full shrink-0 ${s.status === "active" ? "bg-[#10b981]" : "bg-[#ef4444]"}`} />
+                      <span className={cn("text-sm flex-1 min-w-0 truncate", s.status === "inactive" && "text-muted-foreground line-through")}>{s.name}</span>
+                      <span className="text-sm text-muted-foreground whitespace-nowrap">{formatINR(s.default_rate)}</span>
+                      <span className="text-[10px] text-muted-foreground whitespace-nowrap hidden sm:inline">{s.rate_type}</span>
+                      {workspace?.gst_enabled && Number(s.gst_rate) > 0 && (
+                        <span className="text-[10px] text-muted-foreground whitespace-nowrap hidden sm:inline">GST {s.gst_rate}%</span>
+                      )}
+                      <button onClick={() => openEditService(s)} className="text-muted-foreground hover:text-foreground shrink-0" aria-label="Edit service">
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <button onClick={() => toggleServiceStatus(s)} className="text-muted-foreground hover:text-warning shrink-0" aria-label="Toggle status" title={s.status === "active" ? "Disable" : "Enable"}>
+                        {s.status === "active" ? <Trash2 className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+                      </button>
+                      <button onClick={() => deleteService(s)} className="text-muted-foreground hover:text-destructive shrink-0" aria-label="Delete service">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+              <Button variant="dark" size="sm" className="mt-3" onClick={openAddService}><Plus className="w-3.5 h-3.5" />Add Service</Button>
+            </Card>
+          </div>
         </div>
-        <p className="text-xs text-muted-foreground mt-2">Load starter roles and services for the selected business type. Existing items with the same name are skipped.</p>
-      </Card>
+      )}
 
-      {/* Roles & services */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card title="Team Roles">
-          <div className="space-y-2">
-            {loadingRoles ? (
-              <p className="text-sm text-muted-foreground py-2">Loading roles…</p>
-            ) : roles.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-2">No roles yet. Add one to get started.</p>
-            ) : (
-              roles.map((r) => (
-                <div key={r.id} className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-muted/40">
-                  <span className={`w-2 h-2 rounded-full shrink-0 ${r.status === "active" ? "bg-[#10b981]" : "bg-[#ef4444]"}`} />
-                  <span className={cn("text-sm flex-1 min-w-0 truncate", r.status === "inactive" && "text-muted-foreground line-through")}>{r.name}</span>
-                  <span className="text-sm text-muted-foreground whitespace-nowrap">{formatINR(r.default_rate)}</span>
-                  <span className="text-[10px] text-muted-foreground whitespace-nowrap hidden sm:inline">{r.rate_type}</span>
-                  <button onClick={() => openEditRole(r)} className="text-muted-foreground hover:text-foreground shrink-0" aria-label="Edit role">
-                    <Pencil className="w-3.5 h-3.5" />
-                  </button>
-                  <button onClick={() => toggleRoleStatus(r)} className="text-muted-foreground hover:text-warning shrink-0" aria-label="Toggle status" title={r.status === "active" ? "Disable" : "Enable"}>
-                    {r.status === "active" ? <Trash2 className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
-                  </button>
-                </div>
-              ))
-            )}
-          </div>
-          <Button variant="dark" size="sm" className="mt-3" onClick={openAddRole}><Plus className="w-3.5 h-3.5" />Add Role</Button>
-        </Card>
-        <Card title="Services">
-          <div className="space-y-2">
-            {loadingServices ? (
-              <p className="text-sm text-muted-foreground py-2">Loading services…</p>
-            ) : serviceList.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-2">No services yet. Add one to get started.</p>
-            ) : (
-              serviceList.map((s) => (
-                <div key={s.id} className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-muted/40">
-                  <span className={`w-2 h-2 rounded-full shrink-0 ${s.status === "active" ? "bg-[#10b981]" : "bg-[#ef4444]"}`} />
-                  <span className={cn("text-sm flex-1 min-w-0 truncate", s.status === "inactive" && "text-muted-foreground line-through")}>{s.name}</span>
-                  <span className="text-sm text-muted-foreground whitespace-nowrap">{formatINR(s.default_rate)}</span>
-                  <span className="text-[10px] text-muted-foreground whitespace-nowrap hidden sm:inline">{s.rate_type}</span>
-                  {workspace?.gst_enabled && Number(s.gst_rate) > 0 && (
-                    <span className="text-[10px] text-muted-foreground whitespace-nowrap hidden sm:inline">GST {s.gst_rate}%</span>
-                  )}
-                  <button onClick={() => openEditService(s)} className="text-muted-foreground hover:text-foreground shrink-0" aria-label="Edit service">
-                    <Pencil className="w-3.5 h-3.5" />
-                  </button>
-                  <button onClick={() => toggleServiceStatus(s)} className="text-muted-foreground hover:text-warning shrink-0" aria-label="Toggle status" title={s.status === "active" ? "Disable" : "Enable"}>
-                    {s.status === "active" ? <Trash2 className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
-                  </button>
-                  <button onClick={() => deleteService(s)} className="text-muted-foreground hover:text-destructive shrink-0" aria-label="Delete service">
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              ))
-            )}
-          </div>
-          <Button variant="dark" size="sm" className="mt-3" onClick={openAddService}><Plus className="w-3.5 h-3.5" />Add Service</Button>
-        </Card>
-      </div>
+      {/* Types & Display */}
+      {activeTab === "types" && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Card title="Team Member Types">
+            <TeamMemberTypeManager workspace={workspace} />
+          </Card>
+          <Card title="Event / Work Types">
+            <EventTypeManager workspace={workspace} />
+          </Card>
+          <Card title="Card & Table Display">
+            <div className="space-y-3">
+              <ToggleRow label="Show team members" checked={toggles.showTeam} onChange={setT("showTeam")} />
+              <ToggleRow label="Show services" checked={toggles.showServices} onChange={setT("showServices")} />
+              <ToggleRow label="Show address & venue" checked={toggles.showAddress} onChange={setT("showAddress")} />
+            </div>
+            <div className="mt-4 pt-4 border-t border-border">
+              <div className="text-sm font-semibold mb-2">Shared Invoice</div>
+              <ToggleRow label="Show logo on invoice" checked={toggles.showLogo} onChange={setT("showLogo")} />
+            </div>
+          </Card>
+        </div>
+      )}
 
-      {/* Member types, event types & display */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card title="Team Member Types">
-          <TeamMemberTypeManager workspace={workspace} />
-        </Card>
-        <Card title="Event / Work Types">
-          <EventTypeManager workspace={workspace} />
-        </Card>
-        <Card title="Card & Table Display">
-          <div className="space-y-3">
-            <ToggleRow label="Show team members" checked={toggles.showTeam} onChange={setT("showTeam")} />
-            <ToggleRow label="Show services" checked={toggles.showServices} onChange={setT("showServices")} />
-            <ToggleRow label="Show address & venue" checked={toggles.showAddress} onChange={setT("showAddress")} />
-          </div>
-          <div className="mt-4 pt-4 border-t border-border">
-            <div className="text-sm font-semibold mb-2">Shared Invoice</div>
-            <ToggleRow label="Show logo on invoice" checked={toggles.showLogo} onChange={setT("showLogo")} />
-          </div>
-        </Card>
-      </div>
+      {/* Appearance */}
+      {activeTab === "appearance" && <AppearanceSection />}
 
-      {/* Bottom */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      {/* Notifications */}
+      {activeTab === "notifications" && <NotificationsSection />}
+
+      {/* Billing */}
+      {activeTab === "billing" && <BillingSection />}
+
+      {/* Export */}
+      {activeTab === "export" && (
         <Card title="Export">
           <Field label="Financial year" className="mb-3">
             <Select value={selectedFY?.id || ""} onChange={(e) => selectFY(e.target.value)}>
@@ -337,7 +398,10 @@ export default function Preferences() {
           </Button>
           <p className="text-xs text-muted-foreground mt-2">Exports financial activity for the selected year. Event, client, and team exports are available on their respective pages.</p>
         </Card>
-      </div>
+      )}
+
+      {/* Session */}
+      {activeTab === "session" && <SessionSection />}
 
       <TeamRoleForm
         open={showRoleForm}

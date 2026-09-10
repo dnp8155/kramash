@@ -13,13 +13,6 @@ import {
   Crown,
   Grid,
   ChevronDown,
-  Settings,
-  User,
-  Building2,
-  Palette,
-  Bell,
-  CreditCard,
-  KeyRound,
   LifeBuoy,
   Headphones
 } from "lucide-react";
@@ -43,14 +36,4 @@ export const moreNav = [
   { label: "Your Plan", path: "/plan", icon: Crown }
 ];
 
-export const settingsNav = [
-  { label: "Profile", path: "/settings/profile", icon: User },
-  { label: "Workspace", path: "/settings/workspace", icon: Building2 },
-  { label: "Appearance", path: "/settings/appearance", icon: Palette },
-  { label: "Notifications", path: "/settings/notifications", icon: Bell },
-  { label: "Billing & Plan", path: "/settings/billing", icon: CreditCard },
-  { label: "Session", path: "/settings/session", icon: KeyRound }
-];
-
 export const moreGroup = { label: "More", icon: Grid, caret: ChevronDown };
-export const settingsGroup = { label: "Settings", icon: Settings, caret: ChevronDown };

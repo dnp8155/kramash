@@ -32,7 +32,6 @@ import Invoices from '@/pages/Invoices';
 import InvoiceEditor from '@/pages/InvoiceEditor';
 import SignPdf from '@/pages/SignPdf';
 import Preferences from '@/pages/Preferences';
-import Settings from '@/pages/Settings';
 import AppUpdates from '@/pages/AppUpdates';
 import YourPlan from '@/pages/YourPlan';
 import Help from '@/pages/Help';
@@ -138,7 +137,6 @@ const AuthenticatedApp = () => {
           <Route path="/invoices/:id" element={<InvoiceEditor />} />
           <Route path="/sign-pdf" element={<SignPdf />} />
           <Route path="/preferences" element={<Preferences />} />
-          <Route path="/settings/:section?" element={<Settings />} />
           <Route path="/app-updates" element={<AppUpdates />} />
           <Route path="/plan" element={<YourPlan />} />
           <Route path="/help" element={<Help />} />
