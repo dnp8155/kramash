@@ -1,16 +1,15 @@
 {
   "name": "Kramasha — Service Business Management",
   "short_name": "Kramasha",
-  "description": "Manage clients, projects, teams, quotations, payments and profitability in one workspace. Built for Photography, Event Management, Architecture and other service businesses.",
+  "description": "Manage clients, projects or events, teams, quotations, payments and profitability in one workspace. Built for Photography, Event Management, Architecture and other service businesses.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#f5f3ee",
+  "background_color": "#f7f5f0",
   "theme_color": "#1e3a5f",
-  "categories": ["business", "productivity", "finance"],
   "lang": "en",
-  "dir": "ltr",
+  "categories": ["business", "productivity", "finance"],
   "icons": [
     {
       "src": "https://media.base44.com/images/public/6a8c4677eeb41482e947f9c6/99658306b_ChatGPTImageAug29202608_10_43PM.png",
@@ -29,20 +28,12 @@
     {
       "name": "Dashboard",
       "short_name": "Dashboard",
-      "url": "/dashboard",
-      "icons": [{ "src": "https://media.base44.com/images/public/6a8c4677eeb41482e947f9c6/99658306b_ChatGPTImageAug29202608_10_43PM.png", "sizes": "96x96" }]
+      "url": "/dashboard"
     },
     {
-      "name": "Events",
-      "short_name": "Events",
-      "url": "/events",
-      "icons": [{ "src": "https://media.base44.com/images/public/6a8c4677eeb41482e947f9c6/99658306b_ChatGPTImageAug29202608_10_43PM.png", "sizes": "96x96" }]
-    },
-    {
-      "name": "Quotations",
-      "short_name": "Quotes",
-      "url": "/quotation",
-      "icons": [{ "src": "https://media.base44.com/images/public/6a8c4677eeb41482e947f9c6/99658306b_ChatGPTImageAug29202608_10_43PM.png", "sizes": "96x96" }]
+      "name": "New Event",
+      "short_name": "New",
+      "url": "/events/new"
     }
   ]
 }

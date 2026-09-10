@@ -176,12 +176,21 @@ export function fyRecordValue(fy) {
   return fy.fy_id.replace(/^FY\s*/, "").trim();
 }
 
+// Local-date "today" in YYYY-MM-DD (avoids UTC off-by-one in IST timezone).
+function localTodayISO() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 // Derived display status: Active | Closed | Upcoming | Current
 export function fyDisplayStatus(fy) {
   if (!fy) return "";
   if (fy.is_active) return "Active";
   if (fy.status === "closed") return "Closed";
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localTodayISO();
   if (fy.end_date < today) return "Closed";
   if (fy.start_date > today) return "Upcoming";
   return "Current";
@@ -191,6 +200,6 @@ export function fyDisplayStatus(fy) {
 export function isFYClosed(fy) {
   if (!fy) return false;
   if (fy.status === "closed") return true;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localTodayISO();
   return fy.end_date < today;
 }

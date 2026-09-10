@@ -372,7 +372,16 @@ export default function EventDetails() {
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-sm font-semibold text-foreground uppercase tracking-wide">Entry Details</h2>
             <button
-              onClick={() => { if (confirm(`Delete this ${term.workItemSingular.toLowerCase()}?`)) { base44.entities.Event.delete(event.id).then(() => navigate("/events")); } }}
+              onClick={async () => {
+                if (!confirm(`Delete this ${term.workItemSingular.toLowerCase()}? This cannot be undone.`)) return;
+                try {
+                  await base44.entities.Event.delete(event.id);
+                  toast({ title: `${term.workItemSingular} deleted` });
+                  navigate("/events");
+                } catch (e) {
+                  toast({ title: "Failed to delete", description: e?.message, variant: "destructive" });
+                }
+              }}
               className="text-destructive/60 hover:text-destructive hover:bg-destructive/5 p-1.5 rounded-md transition-colors"
               title="Delete"
             >
