@@ -77,7 +77,7 @@ export default function QuotationEditor() {
   // Quotation meta
   const [quotationNumber, setQuotationNumber] = useState("");
   const [quotationDate, setQuotationDate] = useState(today());
-  const [validUntil, setValidUntil] = useState("");
+  const [validUntil, setValidUntil] = useState(today());
   const [clientId, setClientId] = useState("");
   const [eventId, setEventId] = useState("");
   const [status, setStatus] = useState("draft");
@@ -88,8 +88,8 @@ export default function QuotationEditor() {
   const [contextType, setContextType] = useState("");
 
   // Date engine
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const [startDate, setStartDate] = useState(today());
+  const [endDate, setEndDate] = useState(today());
   const [excludedDates, setExcludedDates] = useState([]);
 
   // Pricing

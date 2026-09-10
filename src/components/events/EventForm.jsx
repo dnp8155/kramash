@@ -13,7 +13,7 @@ import { CURRENCY_SYMBOLS } from "@/constants/financeConfig";
 import ClientForm from "@/components/clients/ClientForm";
 import DateRangeChips from "@/components/common/DateRangeChips";
 import { Plus } from "lucide-react";
-import { fyForDate } from "@/lib/dates";
+import { fyForDate, todayISO } from "@/lib/dates";
 import { useFinancialYear } from "@/hooks/useFinancialYear";
 import { fyDisplayLabel, fyRecordValue } from "@/lib/financialYearService";
 import { getEventTypes, buildAllEventTypes, normalizeEventType, mergeEventTypes } from "@/lib/eventTypeService";
@@ -44,7 +44,7 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
   useEffect(() => {
     if (open) {
       setError("");
-      const base = event ? { ...empty, ...event } : empty;
+      const base = event ? { ...empty, ...event } : { ...empty, start_date: todayISO(), end_date: todayISO() };
       // Backfill event_dates from legacy start_date when editing old events.
       if (event && (!base.event_dates || base.event_dates.length === 0) && base.start_date) {
         base.event_dates = [base.start_date];

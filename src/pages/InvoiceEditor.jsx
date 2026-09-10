@@ -58,7 +58,7 @@ export default function InvoiceEditor() {
 
   const [invoiceNumber, setInvoiceNumber] = useState("");
   const [invoiceDate, setInvoiceDate] = useState(today());
-  const [dueDate, setDueDate] = useState("");
+  const [dueDate, setDueDate] = useState(today());
   const [clientId, setClientId] = useState("");
   const [eventId, setEventId] = useState("");
   const [status, setStatus] = useState("draft");

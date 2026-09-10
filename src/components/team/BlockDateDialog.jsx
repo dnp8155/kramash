@@ -5,13 +5,14 @@ import Select from "@/components/common/Select";
 import Input from "@/components/common/Input";
 import { useToast } from "@/components/ui/use-toast";
 import { X, Ban } from "lucide-react";
+import { todayISO } from "@/lib/dates";
 
 const REASONS = ["Leave", "Sick", "Personal", "Holiday", "Other"];
 
 export default function BlockDateDialog({ open, onClose, onSaved, workspaceId, members, preselectedMemberId = null, preselectedDate = null }) {
   const [memberId, setMemberId] = useState(preselectedMemberId || "");
-  const [startDate, setStartDate] = useState(preselectedDate || "");
-  const [endDate, setEndDate] = useState(preselectedDate || "");
+  const [startDate, setStartDate] = useState(preselectedDate || todayISO());
+  const [endDate, setEndDate] = useState(preselectedDate || todayISO());
   const [reason, setReason] = useState("Leave");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -20,8 +21,8 @@ export default function BlockDateDialog({ open, onClose, onSaved, workspaceId, m
   useEffect(() => {
     if (open) {
       setMemberId(preselectedMemberId || "");
-      setStartDate(preselectedDate || "");
-      setEndDate(preselectedDate || "");
+      setStartDate(preselectedDate || todayISO());
+      setEndDate(preselectedDate || todayISO());
       setReason("Leave");
       setError("");
     }

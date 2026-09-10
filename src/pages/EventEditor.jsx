@@ -21,7 +21,7 @@ import QuickClientForm from "@/components/clients/QuickClientForm";
 import { EVENT_STATUS, EVENT_STATUS_ORDER } from "@/constants/statusConfig";
 import { CURRENCY_SYMBOLS } from "@/constants/financeConfig";
 import { getEventTypes, buildAllEventTypes, mergeEventTypes, normalizeEventType } from "@/lib/eventTypeService";
-import { fyForDate } from "@/lib/dates";
+import { fyForDate, todayISO } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import {
   ArrowLeft, Plus, Users, Briefcase, Save, Loader2, AlertCircle,
@@ -101,7 +101,7 @@ export default function EventEditor() {
     if (isEdit) {
       loadEvent();
     } else {
-      setForm(empty);
+      setForm({ ...empty, start_date: todayISO(), end_date: todayISO() });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workspaceId, id]);
