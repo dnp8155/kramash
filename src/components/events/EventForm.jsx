@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription
 } from "@/components/ui/dialog";
+import { useToast } from "@/components/ui/use-toast";
 import Button from "@/components/common/Button";
 import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
@@ -30,6 +31,7 @@ const empty = {
 export default function EventForm({ open, onClose, onSaved, event = null, workspaceId, workspace, term, currency = "INR" }) {
   const t = term || {};
   const { fiscalYears } = useFinancialYear();
+  const { toast } = useToast();
   const [usedEventTypes, setUsedEventTypes] = useState([]);
   const workTypes = buildAllEventTypes(workspace, t.category, usedEventTypes);
   const [form, setForm] = useState(empty);
@@ -143,6 +145,7 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
           }
         } catch { /* non-critical — event is already saved */ }
       }
+      toast({ title: event ? `${t.workItemSingular || "Event"} updated` : `${t.workItemSingular || "Event"} created` });
       onSaved?.(saved);
       onClose?.();
     } catch (err) {
