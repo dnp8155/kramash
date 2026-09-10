@@ -1,44 +1,50 @@
-// Kramashah Service Worker — minimal offline shell caching.
-// Caches the app shell for offline access; network-first for navigations,
-// stale-while-revalidate for static assets.
-const CACHE_VERSION = "kramashah-v1";
-const APP_SHELL = ["/", "/index.html"];
+// Kramasha Service Worker — basic cache-first for static assets,
+// network-first for navigation, with update flow (SKIP_WAITING).
 
+const CACHE_NAME = "kramas-v1";
+const STATIC_ASSETS = ["/", "/index.html", "/manifest.json", "/offline.html"];
+
+// Install: pre-cache core shell.
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_VERSION).then((cache) => cache.addAll(APP_SHELL))
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS)).catch(() => {})
   );
   self.skipWaiting();
 });
 
+// Activate: clear old caches.
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(
-        keys.filter((k) => k !== CACHE_VERSION).map((k) => caches.delete(k))
-      )
+      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
     )
   );
   self.clients.claim();
 });
 
+// Message handler: allow page to trigger skip waiting.
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
+});
+
+// Fetch strategy:
+// - Navigation requests: network-first, fall back to cached shell or offline page.
+// - Static assets (same-origin): cache-first.
+// - API/media (cross-origin): network, cache response if ok.
 self.addEventListener("fetch", (event) => {
   const { request } = event;
-  // Only handle GET requests.
   if (request.method !== "GET") return;
-  const url = new URL(request.url);
-  // Skip cross-origin and API calls — let network handle them.
-  if (url.origin !== self.location.origin) return;
-  if (url.pathname.startsWith("/functions/")) return;
 
-  // Network-first for navigation requests (HTML).
+  // Navigation: network-first.
   if (request.mode === "navigate") {
     event.respondWith(
       fetch(request)
-        .then((response) => {
-          const copy = response.clone();
-          caches.open(CACHE_VERSION).then((cache) => cache.put(request, copy));
-          return response;
+        .then((resp) => {
+          const copy = resp.clone();
+          caches.open(CACHE_NAME).then((c) => c.put(request, copy)).catch(() => {});
+          return resp;
         })
         .catch(() =>
           caches.match(request).then((cached) => cached || caches.match("/index.html"))
@@ -47,23 +53,35 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Stale-while-revalidate for static assets.
-  event.respondWith(
-    caches.match(request).then((cached) => {
-      const fetchPromise = fetch(request)
-        .then((response) => {
-          if (response && response.status === 200) {
-            const copy = response.clone();
-            caches.open(CACHE_VERSION).then((cache) => cache.put(request, copy));
-          }
-          return response;
-        })
-        .catch(() => cached);
-      return cached || fetchPromise;
-    })
-  );
-});
+  const url = new URL(request.url);
 
-self.addEventListener("message", (event) => {
-  if (event.data === "SKIP_WAITING") self.skipWaiting();
+  // Same-origin static assets: cache-first.
+  if (url.origin === self.location.origin) {
+    event.respondWith(
+      caches.match(request).then((cached) =>
+        cached ||
+        fetch(request).then((resp) => {
+          if (resp.ok) {
+            const copy = resp.clone();
+            caches.open(CACHE_NAME).then((c) => c.put(request, copy)).catch(() => {});
+          }
+          return resp;
+        }).catch(() => cached)
+      )
+    );
+    return;
+  }
+
+  // Cross-origin (API, media): network, cache if ok.
+  event.respondWith(
+    fetch(request)
+      .then((resp) => {
+        if (resp.ok && resp.type === "basic") {
+          const copy = resp.clone();
+          caches.open(CACHE_NAME).then((c) => c.put(request, copy)).catch(() => {});
+        }
+        return resp;
+      })
+      .catch(() => caches.match(request))
+  );
 });
