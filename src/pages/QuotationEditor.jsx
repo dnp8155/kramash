@@ -820,6 +820,19 @@ export default function QuotationEditor() {
           setClientId(savedClient.id);
         }}
       />
+
+      <CreateInvoiceDialog
+        open={showCreateInvoiceDialog}
+        onClose={() => setShowCreateInvoiceDialog(false)}
+        quotation={existingQuotation}
+        workspaceId={workspaceId}
+        currency={currency}
+        onCreated={(invId) => {
+          setShowCreateInvoiceDialog(false);
+          invalidateEntities(queryClient, ["Invoice", "InvoiceItem"]);
+          navigate(`/invoices/${invId}`);
+        }}
+      />
     </div>
   );
 }

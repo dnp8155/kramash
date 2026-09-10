@@ -362,9 +362,20 @@ export default function PublicInvoice() {
                 </div>
               )}
               {bank_details.upi_id && (
-                <div className="space-y-1">
+                <div className="space-y-2">
                   <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">UPI</div>
                   <div className="font-mono text-foreground">{bank_details.upi_id}</div>
+                  {(() => {
+                    const upiUri = `upi://pay?pa=${encodeURIComponent(bank_details.upi_id)}${bank_details.account_name ? `&pn=${encodeURIComponent(bank_details.account_name)}` : ""}${invoice.balance_due > 0 ? `&am=${invoice.balance_due}&cu=INR` : ""}`;
+                    return (
+                      <img
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&margin=4&data=${encodeURIComponent(upiUri)}`}
+                        alt="UPI QR Code"
+                        className="w-28 h-28 rounded-lg border border-border"
+                      />
+                    );
+                  })()}
+                  <div className="text-xs text-muted-foreground">Scan to pay{invoice.balance_due > 0 ? ` ${formatMoney(invoice.balance_due, currency)}` : ""}</div>
                 </div>
               )}
             </div>
