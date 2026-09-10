@@ -1,86 +1,113 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 210 40% 99%;
-    --foreground: 222 47% 11%;
+    /* Surfaces — warm beige canvas */
+    --background: 40 43% 97%;
+    --foreground: 220 26% 14%;
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 220 26% 14%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
-    --primary: 245 58% 52%;
+    --popover-foreground: 220 26% 14%;
+
+    /* Brand / actions — deep teal */
+    --primary: 180 39% 18%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 244 56% 96%;
-    --secondary-foreground: 245 40% 35%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
-    --accent: 244 60% 96%;
-    --accent-foreground: 245 40% 35%;
+    --primary-hover: 180 39% 14%;
+    --secondary: 43 35% 94%;
+    --secondary-foreground: 220 26% 14%;
+    --muted: 43 30% 95%;
+    --muted-foreground: 218 17% 35%;
+    --accent: 180 39% 18%;
+    --accent-foreground: 0 0% 100%;
+
+    /* Sidebar — dark teal */
+    --sidebar-background: 180 39% 13%;
+    --sidebar-foreground: 43 35% 94%;
+    --sidebar-muted: 180 15% 55%;
+    --sidebar-primary: 43 35% 94%;
+    --sidebar-primary-foreground: 180 39% 13%;
+    --sidebar-border: 180 20% 20%;
+    --sidebar-hover: 180 30% 18%;
+
+    /* Status — refined, not loud */
+    --success: 152 56% 38%;
+    --success-foreground: 0 0% 100%;
+    --warning: 32 95% 44%;
+    --warning-foreground: 0 0% 100%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-    --success: 142 71% 45%;
-    --success-foreground: 0 0% 100%;
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
-    --info: 199 89% 48%;
-    --info-foreground: 0 0% 100%;
-    --border: 214 32% 91%;
-    --input: 214 32% 88%;
-    --ring: 245 58% 52%;
-    --radius: 0.625rem;
-    --font-heading: 'Inter', ui-sans-serif, system-ui, sans-serif;
-    --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
-    --font-display: 'Inter', ui-sans-serif, system-ui, sans-serif;
-    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 222 47% 11%;
-    --sidebar-primary: 245 58% 52%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 244 60% 96%;
-    --sidebar-accent-foreground: 245 40% 35%;
-    --sidebar-border: 214 32% 91%;
-    --sidebar-ring: 245 58% 52%;
-    --shadow-color: 222 47% 11%;
+
+    --border: 40 25% 90%;
+    --input: 40 25% 90%;
+    --ring: 180 39% 18%;
+
+    /* Toggle */
+    --toggle-on: 152 56% 38%;
+
+    /* Shadows — layered, premium */
+    --shadow-xs: 0 1px 2px 0 rgb(15 23 42 / 0.04);
+    --shadow-sm: 0 1px 3px 0 rgb(15 23 42 / 0.06), 0 1px 2px -1px rgb(15 23 42 / 0.03);
+    --shadow-md: 0 6px 16px -3px rgb(15 23 42 / 0.08), 0 2px 6px -2px rgb(15 23 42 / 0.04);
+    --shadow-lg: 0 16px 40px -8px rgb(15 23 42 / 0.14), 0 4px 12px -4px rgb(15 23 42 / 0.06);
+    --shadow-xl: 0 24px 56px -12px rgb(15 23 42 / 0.18), 0 8px 20px -6px rgb(15 23 42 / 0.08);
+    --shadow-card: 0 1px 3px 0 rgb(15 23 42 / 0.03), 0 1px 2px -1px rgb(15 23 42 / 0.02);
+    --shadow-card-hover: 0 12px 32px -6px rgb(15 23 42 / 0.12), 0 4px 10px -4px rgb(15 23 42 / 0.05);
+    --shadow-glow: 0 0 0 1px rgb(34 84 222 / 0.06), 0 8px 24px -4px rgb(34 84 222 / 0.12);
+
+    /* Accent gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(180 39% 18%), hsl(176 42% 14%));
+    --gradient-success: linear-gradient(135deg, hsl(152 56% 38%), hsl(154 60% 32%));
+    --gradient-warning: linear-gradient(135deg, hsl(32 95% 44%), hsl(28 90% 40%));
+    --gradient-danger: linear-gradient(135deg, hsl(0 72% 51%), hsl(355 70% 45%));
+    --gradient-info: linear-gradient(135deg, hsl(217 91% 60%), hsl(222 47% 35%));
+
+    /* Chart / badges */
+    --badge-upcoming-bg: 180 30% 94%;
+    --badge-upcoming-fg: 180 39% 20%;
+    --badge-progress-bg: 32 95% 94%;
+    --badge-progress-fg: 28 90% 40%;
+    --badge-completed-bg: 152 56% 94%;
+    --badge-completed-fg: 154 60% 30%;
+
+    --radius: 0.5rem;
+
+    --font-heading: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+    --font-body: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+    --font-display: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   }
 
   .dark {
-    --background: 222 47% 7%;
-    --foreground: 210 40% 98%;
-    --card: 222 44% 10%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222 44% 10%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 245 70% 66%;
-    --primary-foreground: 222 47% 11%;
-    --secondary: 222 40% 16%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 222 40% 16%;
-    --muted-foreground: 215 20% 65%;
-    --accent: 222 40% 18%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 63% 45%;
-    --destructive-foreground: 0 0% 100%;
-    --success: 142 64% 48%;
-    --success-foreground: 0 0% 100%;
-    --warning: 38 92% 55%;
-    --warning-foreground: 222 47% 11%;
-    --info: 199 89% 55%;
-    --info-foreground: 0 0% 100%;
-    --border: 222 30% 20%;
-    --input: 222 30% 22%;
-    --ring: 245 70% 66%;
-    --sidebar-background: 222 47% 9%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 245 70% 66%;
-    --sidebar-primary-foreground: 222 47% 11%;
-    --sidebar-accent: 222 40% 16%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 222 30% 20%;
-    --sidebar-ring: 245 70% 66%;
-    --shadow-color: 222 60% 2%;
+    --background: 222 28% 10%;
+    --foreground: 210 16% 93%;
+    --card: 222 24% 14%;
+    --card-foreground: 210 16% 93%;
+    --popover: 222 24% 14%;
+    --popover-foreground: 210 16% 93%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 217 91% 68%;
+    --secondary: 222 18% 20%;
+    --secondary-foreground: 210 16% 93%;
+    --muted: 222 18% 20%;
+    --muted-foreground: 220 10% 62%;
+    --accent: 217 91% 60%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 72% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --success: 152 56% 48%;
+    --warning: 32 95% 55%;
+    --border: 222 18% 22%;
+    --input: 222 18% 22%;
+    --ring: 217 91% 60%;
+    --sidebar-background: 222 32% 7%;
+    --sidebar-hover: 222 22% 14%;
+    --sidebar-border: 222 18% 16%;
   }
 }
 
@@ -90,105 +117,164 @@
   }
 
   body {
-    @apply bg-background text-foreground font-body antialiased;
-  }
-
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-heading tracking-tight;
+    @apply bg-background text-foreground font-body antialiased overflow-x-hidden;
   }
 }
 
-/* ─── Prevent iOS Safari auto-zoom on form control focus ───
-   iOS Safari automatically zooms the viewport when a form control
-   has a font-size below 16px. Many Kramashah inputs use text-sm (14px)
-   for compact desktop styling. This rule enforces 16px on mobile only
-   (≤640px), so the viewport stays stable when the keyboard opens.
-   Desktop is completely unaffected. User pinch-to-zoom is NOT disabled. */
-@media (max-width: 640px) {
-  input,
-  select,
-  textarea {
+@layer utilities {
+  /* Safe area insets for PWA standalone mode */
+  .safe-area-top { padding-top: env(safe-area-inset-top); }
+  .safe-area-bottom { padding-bottom: env(safe-area-inset-bottom); }
+  .safe-area-left { padding-left: env(safe-area-inset-left); }
+  .safe-area-right { padding-right: env(safe-area-inset-right); }
+  .safe-area-mt { margin-top: env(safe-area-inset-top); }
+  .safe-area-mb { margin-bottom: env(safe-area-inset-bottom); }
+
+  /* Dynamic viewport height (handles mobile browser chrome) */
+  .h-dvh { height: 100dvh; }
+  .min-h-dvh { min-height: 100dvh; }
+  .max-h-dvh { max-height: 100dvh; }
+
+  /* Text wrapping for long names/emails/notes */
+  .break-anywhere { overflow-wrap: anywhere; word-break: break-word; }
+
+  /* Minimum touch target for mobile accessibility */
+  .touch-min { min-width: 44px; min-height: 44px; }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 9999px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  /* Premium mesh gradient background */
+  .bg-mesh {
+    background-image:
+      radial-gradient(at 20% 20%, hsl(var(--primary) / 0.06) 0px, transparent 50%),
+      radial-gradient(at 80% 0%, hsl(var(--accent) / 0.05) 0px, transparent 50%),
+      radial-gradient(at 60% 80%, hsl(var(--primary) / 0.04) 0px, transparent 50%);
+  }
+
+  /* Subtle grid pattern */
+  .bg-grid {
+    background-image:
+      linear-gradient(to right, hsl(var(--border) / 0.4) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(var(--border) / 0.4) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+
+  /* Glassmorphism */
+  .glass {
+    background: hsl(var(--card) / 0.7);
+    backdrop-filter: blur(12px) saturate(180%);
+    -webkit-backdrop-filter: blur(12px) saturate(180%);
+  }
+
+  /* Smooth hover lift */
+  .hover-lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .hover-lift:hover {
+    transform: translateY(-2px);
+  }
+
+  /* Premium gradient text */
+  .text-gradient {
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* Refined focus ring */
+  .focus-ring {
+    outline: none;
+    box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--ring) / 0.4);
+  }
+}
+
+/* ---- Mobile Input Zoom Prevention ---- */
+/* iOS Safari auto-zooms when form controls have font-size < 16px.
+   Force 16px on mobile for all text-entry controls; desktop unaffected. */
+@media (max-width: 767px) {
+  input, select, textarea {
     font-size: 16px !important;
   }
 }
 
-@layer base {
-  html {
-    -webkit-text-size-adjust: 100%;
-    text-size-adjust: 100%;
-  }
-
-  /* Prevent horizontal page scroll — individual components should never
-     exceed the viewport, but this catches any edge cases. */
-  html,
-  body {
-    overflow-x: hidden;
-    max-width: 100vw;
-  }
-
-  /* Use dynamic viewport height where 100vh is needed — avoids mobile
-     browser chrome jump. Fallback: vh for older browsers. */
-  .h-dvh {
-    height: 100vh;
-    height: 100dvh;
-  }
-  .min-h-dvh {
-    min-height: 100vh;
-    min-height: 100dvh;
-  }
-  .max-h-dvh {
-    max-height: 100vh;
-    max-height: 100dvh;
-  }
-
-  /* Safe-area insets for PWA standalone / notched devices */
-  .pt-safe {
-    padding-top: env(safe-area-inset-top);
-  }
-  .pb-safe {
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-  .pl-safe {
-    padding-left: env(safe-area-inset-left);
-  }
-  .pr-safe {
-    padding-right: env(safe-area-inset-right);
-  }
-  .pb-safe-bottom {
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-
-  /* Prevent text from breaking layout on long unbroken strings */
-  .text-balance {
-    text-wrap: balance;
-  }
-  .text-pretty {
-    text-wrap: pretty;
-  }
-  .break-anywhere {
-    overflow-wrap: anywhere;
-    word-break: break-word;
-  }
-}
-
-@layer components {
-  .ks-scrollbar::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-  .ks-scrollbar::-webkit-scrollbar-thumb {
-    background: hsl(var(--border));
-    border-radius: 9999px;
-  }
-  .ks-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
-  }
-}
-
-/* Print styles for public quotation page */
+/* ---- Invoice Print ---- */
 @media print {
-  body { background: white !important; }
-  .no-print { display: none !important; }
-  .rounded-2xl { border-radius: 0.25rem !important; box-shadow: none !important; }
-  .shadow-sm { box-shadow: none !important; }
+  body.printing-invoice * {
+    visibility: hidden;
+  }
+  body.printing-invoice .invoice-print-area,
+  body.printing-invoice .invoice-print-area * {
+    visibility: visible;
+  }
+  body.printing-invoice .invoice-print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100% !important;
+    max-width: none !important;
+    box-shadow: none !important;
+  }
+  body.printing-invoice .no-print {
+    display: none !important;
+  }
+  body.printing-invoice {
+    background: white !important;
+  }
+  @page {
+    margin: 12mm;
+  }
+}
+
+/* ---- Job Sheet Print ---- */
+@media print {
+  body.printing-jobsheet .no-print {
+    display: none !important;
+  }
+  body.printing-jobsheet .print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100% !important;
+    max-width: none !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  body.printing-jobsheet {
+    background: white !important;
+  }
+}
+
+/* ---- Quotation Print (URL 2) ---- */
+@media print {
+  body.printing-quotation * {
+    visibility: hidden;
+  }
+  body.printing-quotation .print-area,
+  body.printing-quotation .print-area * {
+    visibility: visible;
+  }
+  body.printing-quotation .print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100% !important;
+    max-width: none !important;
+  }
+  body.printing-quotation .no-print {
+    display: none !important;
+  }
+  body.printing-quotation {
+    background: white !important;
+  }
 }
