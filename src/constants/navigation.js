@@ -1,36 +1,56 @@
 import {
   LayoutDashboard,
   CalendarDays,
-  CalendarRange,
   Users,
-  User,
+  UserCheck,
   Wallet,
   Calculator,
   FileText,
   Receipt,
+  PenLine,
+  SlidersHorizontal,
+  Smartphone,
+  Crown,
+  Grid,
+  ChevronDown,
   Settings,
-  RefreshCw,
+  User,
+  Building2,
+  Palette,
+  Bell,
   CreditCard,
+  KeyRound,
   LifeBuoy,
+  Headphones
 } from "lucide-react";
 
-// Base navigation items. The workItems label is resolved dynamically
-// via useBusinessTerminology() in the Sidebar/MobileNavigation components.
-// The `labelKey` field indicates which terminology key to use.
-export const navItems = [
-  { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard, labelKey: null },
-  { label: "Events", path: "/events", icon: CalendarDays, labelKey: "workItemPlural" },
-  { label: "Progress", path: "/progress", icon: CalendarRange, labelKey: null },
-  { label: "Clients", path: "/clients", icon: User, labelKey: null },
-  { label: "Team", path: "/team", icon: Users, labelKey: null },
-  { label: "Financial", path: "/financial", icon: Wallet, labelKey: null },
-  { label: "Rate Estimator", path: "/rate-estimator", icon: Calculator, labelKey: null },
-  { label: "Quotation & Agreement", path: "/quotation", icon: FileText, labelKey: null },
-  { label: "Invoices", path: "/invoices", icon: Receipt, labelKey: null },
-  { label: "Preferences", path: "/preferences", icon: Settings, labelKey: null },
-  { label: "App & Updates", path: "/app-updates", icon: RefreshCw, labelKey: null },
-  { label: "Your Plan", path: "/plan", icon: CreditCard, labelKey: null },
-  { label: "Help & Support", path: "/help-support", icon: LifeBuoy, labelKey: null },
+export const mainNav = [
+  { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
+  { label: "Events", path: "/events", icon: CalendarDays },
+  { label: "Clients", path: "/clients", icon: Users },
+  { label: "Team", path: "/team", icon: UserCheck },
+  { label: "Financial", path: "/financial", icon: Wallet },
+  { label: "Quotation & Agreement", path: "/quotation", icon: FileText },
+  { label: "Invoices", path: "/invoices", icon: Receipt },
+  { label: "Help & Support", path: "/help", icon: Headphones }
 ];
 
-export const workspaceName = "Kramashah";
+export const moreNav = [
+  { label: "Rate Estimator", path: "/rate-estimator", icon: Calculator },
+  { label: "Sign a PDF", path: "/sign-pdf", icon: PenLine },
+  { label: "Preferences", path: "/preferences", icon: SlidersHorizontal },
+  { label: "App & Updates", path: "/app-updates", icon: Smartphone },
+  { label: "Your Plan", path: "/plan", icon: Crown }
+];
+
+export const settingsNav = [
+  { label: "Profile", path: "/settings/profile", icon: User },
+  { label: "Workspace", path: "/settings/workspace", icon: Building2 },
+  { label: "Appearance", path: "/settings/appearance", icon: Palette },
+  { label: "Notifications", path: "/settings/notifications", icon: Bell },
+  { label: "Billing & Plan", path: "/settings/billing", icon: CreditCard },
+  { label: "Session", path: "/settings/session", icon: KeyRound }
+];
+
+export const moreGroup = { label: "More", icon: Grid, caret: ChevronDown };
+export const settingsGroup = { label: "Settings", icon: Settings, caret: ChevronDown };

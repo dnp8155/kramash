@@ -122,7 +122,7 @@ const TERMINOLOGY = {
     workItemDetailsLabel: "Project Details",
     workItemTitleLabel: "Project Title",
     workItemTypeLabel: "Project Type",
-    locationLabel: "Site",
+    locationLabel: "Project Site",
     locationAddressLabel: "Site Address",
     dateLabel: "Start Date",
     startDateLabel: "Start Date",

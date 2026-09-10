@@ -1,127 +1,142 @@
-import { useEffect, useState, useCallback } from "react";
-import { APP_CONFIG } from "@/constants/app";
+// PWA hooks: install prompt, update detection, offline state.
+import { useState, useEffect, useCallback } from "react";
+import { APP_CONFIG } from "@/lib/appConfig";
 
-// PWA hook: install prompt, install state, update detection, offline state.
-// All values are derived from real browser APIs — no faked states.
-export function usePWA() {
-  const [installPromptEvent, setInstallPromptEvent] = useState(null);
-  const [isInstalled, setIsInstalled] = useState(false);
-  const [updateAvailable, setUpdateAvailable] = useState(false);
-  const [isOffline, setIsOffline] = useState(!navigator.onLine);
-  const [swRegistration, setSwRegistration] = useState(null);
-
-  // Detect if already running as installed PWA.
+// Detects if running as installed PWA.
+export function usePwaDisplayMode() {
+  const [installed, setInstalled] = useState(false);
   useEffect(() => {
-    const standalone =
-      window.matchMedia("(display-mode: standalone)").matches ||
-      window.navigator.standalone === true;
-    setIsInstalled(standalone);
+    const check = () => {
+      setInstalled(
+        window.matchMedia("(display-mode: standalone)").matches ||
+        window.navigator.standalone === true
+      );
+    };
+    check();
+    const mq = window.matchMedia("(display-mode: standalone)");
+    mq.addEventListener?.("change", check);
+    return () => mq.removeEventListener?.("change", check);
   }, []);
+  return installed;
+}
 
-  // Listen for beforeinstallprompt (Chromium browsers).
+// Install prompt: captures beforeinstallprompt, exposes trigger, detects iOS.
+export function useInstallPrompt() {
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [installed, setInstalled] = useState(false);
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
   useEffect(() => {
     const handler = (e) => {
       e.preventDefault();
-      setInstallPromptEvent(e);
+      setDeferredPrompt(e);
     };
     window.addEventListener("beforeinstallprompt", handler);
-    return () => window.removeEventListener("beforeinstallprompt", handler);
-  }, []);
 
-  // Listen for appinstalled event.
-  useEffect(() => {
-    const handler = () => {
-      setIsInstalled(true);
-      setInstallPromptEvent(null);
+    const installedHandler = () => {
+      setInstalled(true);
+      setDeferredPrompt(null);
     };
-    window.addEventListener("appinstalled", handler);
-    return () => window.removeEventListener("appinstalled", handler);
-  }, []);
+    window.addEventListener("appinstalled", installedHandler);
 
-  // Online/offline detection.
-  useEffect(() => {
-    const goOnline = () => setIsOffline(false);
-    const goOffline = () => setIsOffline(true);
-    window.addEventListener("online", goOnline);
-    window.addEventListener("offline", goOffline);
+    // Check if already installed.
+    if (window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true) {
+      setInstalled(true);
+    }
+
     return () => {
-      window.removeEventListener("online", goOnline);
-      window.removeEventListener("offline", goOffline);
+      window.removeEventListener("beforeinstallprompt", handler);
+      window.removeEventListener("appinstalled", installedHandler);
     };
   }, []);
 
-  // Register service worker and detect updates.
+  const promptInstall = useCallback(async () => {
+    if (!deferredPrompt) return false;
+    deferredPrompt.prompt();
+    const choice = await deferredPrompt.userChoice;
+    if (choice.outcome === "accepted") {
+      setInstalled(true);
+    }
+    setDeferredPrompt(null);
+    return choice.outcome === "accepted";
+  }, [deferredPrompt]);
+
+  return {
+    canInstall: !!deferredPrompt && !installed,
+    installed,
+    isIOS,
+    promptInstall,
+    // iOS cannot be auto-prompted — caller should show guidance instead.
+    needsIOSGuidance: isIOS && !installed,
+  };
+}
+
+// Update detection: listens for new service worker, exposes update action.
+export function useServiceWorkerUpdate() {
+  const [updateAvailable, setUpdateAvailable] = useState(false);
+  const [installing, setInstalling] = useState(false);
+
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
+    if (import.meta.env.DEV) return; // Don't register SW in dev — stale caches break HMR
+
     let reg;
-    navigator.serviceWorker
-      .register("/sw.js")
-      .then((registration) => {
-        reg = registration;
-        setSwRegistration(registration);
-        // Check for updates on load.
-        registration.addEventListener("updatefound", () => {
-          const newWorker = registration.installing;
-          if (newWorker) {
-            newWorker.addEventListener("statechange", () => {
-              if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
-                setUpdateAvailable(true);
-              }
-            });
+    navigator.serviceWorker.register(APP_CONFIG.swPath).catch(() => {});
+
+    const checkUpdate = async () => {
+      reg = await navigator.serviceWorker.getRegistration();
+      if (!reg) return;
+      reg.addEventListener("updatefound", () => {
+        const nw = reg.installing;
+        if (!nw) return;
+        nw.addEventListener("statechange", () => {
+          if (nw.state === "installed" && navigator.serviceWorker.controller) {
+            setUpdateAvailable(true);
           }
         });
-      })
-      .catch(() => {
-        // SW registration failed — PWA features unavailable, app still works.
       });
-
-    // Listen for controller change (new SW took over).
-    const controllerChange = () => {
-      // Controller changed — a new SW is active.
     };
+    checkUpdate();
+
+    // Reload when the new SW takes over.
+    const controllerChange = () => window.location.reload();
     navigator.serviceWorker.addEventListener("controllerchange", controllerChange);
+
+    // Periodic check (every 10 min).
+    const interval = setInterval(() => {
+      navigator.serviceWorker.getRegistration().then((r) => r?.update()).catch(() => {});
+    }, 600000);
+
     return () => {
+      clearInterval(interval);
       navigator.serviceWorker.removeEventListener("controllerchange", controllerChange);
     };
   }, []);
 
-  // Trigger the install prompt (Chromium only).
-  const promptInstall = useCallback(async () => {
-    if (!installPromptEvent) return false;
-    installPromptEvent.prompt();
-    const { outcome } = await installPromptEvent.userChoice;
-    setInstallPromptEvent(null);
-    return outcome === "accepted";
-  }, [installPromptEvent]);
-
-  // Activate the waiting service worker and reload.
-  const applyUpdate = useCallback(() => {
-    if (swRegistration && swRegistration.waiting) {
-      swRegistration.waiting.postMessage("SKIP_WAITING");
+  const applyUpdate = useCallback(async () => {
+    setInstalling(true);
+    const reg = await navigator.serviceWorker.getRegistration();
+    if (reg && reg.waiting) {
+      reg.waiting.postMessage({ type: "SKIP_WAITING" });
     }
-    // The controllerchange event will fire; force a reload.
-    navigator.serviceWorker.addEventListener("controllerchange", () => {
-      window.location.reload();
-    });
-  }, [swRegistration]);
+    // controllerchange listener will reload.
+  }, []);
 
-  // Check for updates manually.
-  const checkForUpdates = useCallback(async () => {
-    if (swRegistration) {
-      await swRegistration.update();
-    }
-  }, [swRegistration]);
+  return { updateAvailable, applyUpdate, installing };
+}
 
-  return {
-    isInstalled,
-    canInstall: !!installPromptEvent,
-    promptInstall,
-    updateAvailable,
-    applyUpdate,
-    checkForUpdates,
-    isOffline,
-    swSupported: "serviceWorker" in navigator,
-    version: APP_CONFIG.version,
-    versionLabel: APP_CONFIG.versionLabel,
-  };
+// Online/offline state.
+export function useOnlineStatus() {
+  const [online, setOnline] = useState(navigator.onLine);
+  useEffect(() => {
+    const on = () => setOnline(true);
+    const off = () => setOnline(false);
+    window.addEventListener("online", on);
+    window.addEventListener("offline", off);
+    return () => {
+      window.removeEventListener("online", on);
+      window.removeEventListener("offline", off);
+    };
+  }, []);
+  return online;
 }

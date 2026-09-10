@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { appParams } from '@/lib/app-params';
+import { createAxiosClient } from '@base44/sdk/dist/utils/axios-client';
 
 const AuthContext = createContext();
 
@@ -22,8 +23,19 @@ export const AuthProvider = ({ children }) => {
       setIsLoadingPublicSettings(true);
       setAuthError(null);
       
+      // First, check app public settings (with token if available)
+      // This will tell us if auth is required, user not registered, etc.
+      const appClient = createAxiosClient({
+        baseURL: `${appParams.appBaseUrl || 'https://base44.app'}/api/apps/public`,
+        headers: {
+          'X-App-Id': appParams.appId
+        },
+        token: appParams.token, // Include token if available
+        interceptResponses: true
+      });
+      
       try {
-        const publicSettings = await base44.app.getPublicSettings();
+        const publicSettings = await appClient.get(`/prod/public-settings/by-id/${appParams.appId}`);
         setAppPublicSettings(publicSettings);
         
         // If we got the app public settings successfully, check if user is authenticated
@@ -58,11 +70,12 @@ export const AuthProvider = ({ children }) => {
             });
           }
         } else {
-          setAuthError({
-            type: 'unknown',
-            message: appError.message || 'Failed to load app'
-          });
+            setAuthError({
+              type: 'unknown',
+              message: appError.message || 'Failed to load app'
+            });
         }
+        setAuthChecked(true);
         setIsLoadingPublicSettings(false);
         setIsLoadingAuth(false);
       }
@@ -72,6 +85,7 @@ export const AuthProvider = ({ children }) => {
         type: 'unknown',
         message: error.message || 'An unexpected error occurred'
       });
+      setAuthChecked(true);
       setIsLoadingPublicSettings(false);
       setIsLoadingAuth(false);
     }
@@ -94,6 +108,12 @@ export const AuthProvider = ({ children }) => {
       
       // If user auth fails, it might be an expired token
       if (error.status === 401 || error.status === 403) {
+        try {
+          localStorage.removeItem('base44_access_token');
+          localStorage.removeItem('token');
+        } catch {
+          // ignore
+        }
         setAuthError({
           type: 'auth_required',
           message: 'Authentication required'
@@ -105,19 +125,22 @@ export const AuthProvider = ({ children }) => {
   const logout = (shouldRedirect = true) => {
     setUser(null);
     setIsAuthenticated(false);
+    try {
+      localStorage.removeItem('base44_access_token');
+      localStorage.removeItem('token');
+      localStorage.removeItem('base44_app_base_url');
+    } catch {
+      // ignore
+    }
     
     if (shouldRedirect) {
-      // Use the SDK's logout method which handles token cleanup and redirect
-      base44.auth.logout(window.location.href);
-    } else {
-      // Just remove the token without redirect
-      base44.auth.logout();
+      window.location.href = '/login';
     }
   };
 
   const navigateToLogin = () => {
-    // Use the SDK's redirectToLogin method
-    base44.auth.redirectToLogin(window.location.href);
+    // Redirect to local login route instead of remote Base44 URL
+    window.location.href = '/login';
   };
 
   return (

@@ -1,89 +1,82 @@
-import { createContext, useContext, useEffect, useState, useCallback } from "react";
-import { Navigate } from "react-router-dom";
+import React, { createContext, useState, useContext, useEffect, useCallback, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
-import { setCurrencySymbol } from "@/utils/format";
-import FullScreenSpinner from "@/components/FullScreenSpinner";
 
 const WorkspaceContext = createContext(null);
 
 export const WorkspaceProvider = ({ children }) => {
-  const { user, isAuthenticated } = useAuth();
-  const [loading, setLoading] = useState(true);
+  const { user, isAuthenticated, authChecked } = useAuth();
   const [workspace, setWorkspace] = useState(null);
   const [membership, setMembership] = useState(null);
-  const [ownerName, setOwnerName] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  // Tracks the workspace id we've persisted to the user record this session,
+  // so RLS rules keyed on `user.data.active_workspace_id` scope entity queries.
+  const syncedWorkspaceId = useRef(null);
 
   const resolve = useCallback(async () => {
-    if (!user) {
-      setLoading(false);
+    if (!user?.id) {
       setWorkspace(null);
       setMembership(null);
-      setOwnerName("");
+      setLoading(false);
       return;
     }
     setLoading(true);
+    setError(null);
     try {
-      const members = await base44.entities.WorkspaceMember.filter({ user_id: user.id });
-      if (!members || members.length === 0) {
+      const memberships = await base44.entities.WorkspaceMember.filter({ user_id: user.id });
+      if (!memberships || memberships.length === 0) {
         setWorkspace(null);
         setMembership(null);
-        setOwnerName("");
         setLoading(false);
         return;
       }
-      const activeId = user.active_workspace_id || members[0].workspace_id;
-      const m = members.find((x) => x.workspace_id === activeId) || members[0];
-      const ws = await base44.entities.Workspace.get(m.workspace_id);
-      setCurrencySymbol(ws?.currency);
-      setWorkspace(ws);
-      setMembership(m);
-
-      // Resolve the workspace owner's name for SELF detection.
-      // If the current user IS the owner, use their full_name directly.
-      // Otherwise, fetch the owner's User record (service-role not needed —
-      // User.get is readable by workspace members).
-      let resolvedOwnerName = "";
-      if (ws?.owner_user_id) {
-        if (ws.owner_user_id === user.id) {
-          resolvedOwnerName = user.full_name || "";
-        } else {
+      const activeMembership = memberships[0];
+      setMembership(activeMembership);
+      try {
+        const ws = await base44.entities.Workspace.get(activeMembership.workspace_id);
+        setWorkspace(ws);
+        // Persist active workspace on the user so RLS scopes Client/Event queries.
+        if (ws && syncedWorkspaceId.current !== ws.id) {
           try {
-            const ownerUser = await base44.entities.User.get(ws.owner_user_id);
-            resolvedOwnerName = ownerUser?.full_name || "";
-          } catch {
-            // If the owner User can't be fetched, SELF detection is skipped.
+            await base44.auth.updateMe({ active_workspace_id: ws.id });
+            syncedWorkspaceId.current = ws.id;
+          } catch (e) {
+            /* non-fatal: RLS will fall back to empty results */
           }
         }
+      } catch (e) {
+        setWorkspace(null);
       }
-      setOwnerName(resolvedOwnerName);
-
-      setLoading(false);
     } catch (e) {
+      setError(e.message || "Failed to load workspace");
       setWorkspace(null);
-      setMembership(null);
-      setOwnerName("");
+    } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user?.id]);
 
   useEffect(() => {
-    resolve();
-  }, [user?.id, isAuthenticated]);
-
-  const refresh = useCallback(() => resolve(), [resolve]);
+    if (authChecked && isAuthenticated && user) {
+      resolve();
+    } else if (authChecked && !isAuthenticated) {
+      setWorkspace(null);
+      setMembership(null);
+      setLoading(false);
+    }
+  }, [authChecked, isAuthenticated, user, resolve]);
 
   return (
     <WorkspaceContext.Provider
       value={{
-        currentWorkspace: workspace,
-        workspaceId: workspace?.id || null,
+        workspace,
         membership,
+        workspaceId: workspace?.id || null,
         role: membership?.role || null,
         loading,
-        needsOnboarding: !loading && (!workspace || workspace.onboarding_completed === false),
-        refresh,
-        ownerName,
+        error,
+        refresh: resolve,
+        setWorkspace
       }}
     >
       {children}
@@ -93,14 +86,8 @@ export const WorkspaceProvider = ({ children }) => {
 
 export const useWorkspace = () => {
   const ctx = useContext(WorkspaceContext);
-  if (!ctx) throw new Error("useWorkspace must be used within WorkspaceProvider");
+  if (!ctx) {
+    throw new Error("useWorkspace must be used within a WorkspaceProvider");
+  }
   return ctx;
-};
-
-// Gate for the main application: requires an active workspace.
-export const WorkspaceGate = ({ children }) => {
-  const { loading, needsOnboarding } = useWorkspace();
-  if (loading) return <FullScreenSpinner label="Loading your workspace..." />;
-  if (needsOnboarding) return <Navigate to="/onboarding" replace />;
-  return children;
 };
