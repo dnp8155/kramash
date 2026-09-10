@@ -12,7 +12,7 @@ import { loadTeamMembers, loadAssignments, loadBlockDates, splitAvailability, is
 import { todayISO, isUpcomingDate, formatEventDate } from "@/lib/dates";
 import { formatMoney } from "@/utils/format";
 import { useFinancialYear } from "@/hooks/useFinancialYear";
-import { txInFY, fyDisplayLabel } from "@/lib/financialYearService";
+import { txInFY, fyDisplayLabel, eventInFY } from "@/lib/financialYearService";
 import PageHeader from "@/components/common/PageHeader";
 import StatCard from "@/components/common/StatCard";
 import DashboardStatsSkeleton from "@/components/dashboard/DashboardStatsSkeleton";
@@ -79,27 +79,29 @@ export default function Dashboard() {
   const eventsById = useMemo(() => Object.fromEntries(events.map((e) => [e.id, e])), [events]);
   const clientsById = useMemo(() => Object.fromEntries(clients.map((c) => [c.id, c])), [clients]);
 
+  // FY-scoped events — only events in the selected financial year
+  const fyEvents = useMemo(() => events.filter((e) => eventInFY(e, selectedFY)), [events, selectedFY]);
+
   const stats = useMemo(() => {
-    const today = todayISO();
-    const upcoming = events
+    const upcoming = fyEvents
       .filter((e) => e.status !== "cancelled" && e.status !== "completed" && isUpcomingDate(e.start_date))
       .sort((a, b) => a.start_date.localeCompare(b.start_date));
 
-    const activeTx = activeTransactions(transactions);
+    const fyActiveTx = activeTransactions(transactions).filter((t) => txInFY(t, selectedFY));
     // FY-scoped revenue (selected financial year)
-    const fyRevenue = activeTx
-      .filter((t) => t.transaction_type === "CLIENT_RECEIPT" && txInFY(t, selectedFY))
+    const fyRevenue = fyActiveTx
+      .filter((t) => t.transaction_type === "CLIENT_RECEIPT")
       .reduce((s, t) => s + (Number(t.amount) || 0), 0);
 
-    // Outstanding: sum over non-cancelled events of max(0, contract_value - received)
+    // Outstanding: sum over non-cancelled FY events of max(0, contract_value - received)
     const receivedByEvent = {};
-    for (const t of activeTx) {
+    for (const t of fyActiveTx) {
       if (t.transaction_type !== "CLIENT_RECEIPT") continue;
       receivedByEvent[t.event_id] = (receivedByEvent[t.event_id] || 0) + (Number(t.amount) || 0);
     }
     let outstanding = 0;
     const duesByClient = {};
-    for (const e of events) {
+    for (const e of fyEvents) {
       if (e.status === "cancelled") continue;
       const received = receivedByEvent[e.id] || 0;
       const due = Math.max(0, (Number(e.contract_value) || 0) - received);
@@ -117,7 +119,7 @@ export default function Dashboard() {
     const activeMembers = members.filter((m) => m.status === "active").length;
 
     return { upcoming, fyRevenue, outstanding, topDues, activeMembers };
-  }, [events, transactions, members, clientsById, selectedFY]);
+  }, [fyEvents, transactions, members, clientsById, selectedFY]);
 
   // 6-month revenue trend ending at min(today, FY end)
   const trendData = useMemo(() => {
@@ -142,10 +144,13 @@ export default function Dashboard() {
     return buckets;
   }, [transactions, selectedFY]);
 
-  // Team wages due: agreed (assignments) minus paid (TEAM_PAYMENT) per member
+  // Team wages due: agreed (assignments) minus paid (TEAM_PAYMENT) per member — FY-scoped
   const wagesDue = useMemo(() => {
-    const activeTx = activeTransactions(transactions);
-    const activeAssignments = (assignments || []).filter((a) => a.assignment_status !== "removed");
+    const fyActiveTx = activeTransactions(transactions).filter((t) => txInFY(t, selectedFY));
+    const fyEventIds = new Set(fyEvents.map((e) => e.id));
+    const activeAssignments = (assignments || []).filter(
+      (a) => a.assignment_status !== "removed" && fyEventIds.has(a.event_id)
+    );
     const agreedByMember = {};
     for (const a of activeAssignments) {
       agreedByMember[a.team_member_id] = (agreedByMember[a.team_member_id] || 0) + (Number(a.agreed_rate) || 0);
@@ -158,7 +163,7 @@ export default function Dashboard() {
       if (isSelfMember(m)) continue;
       const agreed = agreedByMember[m.id] || 0;
       if (agreed <= 0) continue;
-      const paid = memberPaidTotal(activeTx, m.id);
+      const paid = memberPaidTotal(fyActiveTx, m.id);
       const due = Math.max(0, agreed - paid);
       if (due > 0) {
         dues.push({ member: m, due });
@@ -167,7 +172,7 @@ export default function Dashboard() {
     }
     dues.sort((a, b) => b.due - a.due);
     return { dues, totalDue };
-  }, [assignments, members]);
+  }, [assignments, members, fyEvents, transactions, selectedFY]);
 
   const todayAvail = useMemo(() => {
     const today = todayISO();

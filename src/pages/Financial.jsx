@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useWorkspace } from "@/lib/WorkspaceContext";
 import { useFinancialYear } from "@/hooks/useFinancialYear";
-import { txInFY, fyHasTransactions, setActiveFY, fyDisplayLabel } from "@/lib/financialYearService";
+import { txInFY, fyHasTransactions, setActiveFY, fyDisplayLabel, eventInFY } from "@/lib/financialYearService";
 import SummaryCard from "@/components/financial/SummaryCard";
 import { TrendingUp, TrendingDown, ArrowDownLeft } from "lucide-react";
 import PaymentTable from "@/components/financial/PaymentTable";
@@ -130,6 +130,9 @@ export default function Financial() {
     if (error) toast({ title: t("Failed to load financial activity"), description: error?.message, variant: "destructive" });
   }, [error, toast]);
 
+  // FY-scoped events — only events in the selected financial year
+  const fyEvents = useMemo(() => events.filter((e) => eventInFY(e, selectedFY)), [events, selectedFY]);
+
   const clientsById = useMemo(() => {
     const m = {}; clients.forEach((c) => { m[c.id] = c; }); return m;
   }, [clients]);
@@ -140,7 +143,21 @@ export default function Financial() {
     const m = {}; events.forEach((e) => { m[e.id] = e; }); return m;
   }, [events]);
 
-  // FY-filtered transactions (active + void, for the activity list; totals use active only).
+  // FY-scoped active transactions — for summary cards and breakdown.
+  // NOT affected by method/type filters — those only filter the table below.
+  const fyActiveTx = useMemo(() => {
+    return allTx.filter((t) => t.status === "ACTIVE" && txInFY(t, selectedFY));
+  }, [allTx, selectedFY]);
+
+  const summary = useMemo(() => ({
+    received: totalReceived(fyActiveTx),
+    paid: totalPaid(fyActiveTx),
+    profit: actualProfit(fyActiveTx)
+  }), [fyActiveTx]);
+
+  const breakdown = useMemo(() => methodBreakdown(fyActiveTx), [fyActiveTx]);
+
+  // FY-scoped transactions with method/type filters — for the activity table only.
   const fyTx = useMemo(() => {
     return allTx.filter((t) => {
       if (!txInFY(t, selectedFY)) return false;
@@ -155,17 +172,6 @@ export default function Financial() {
       return true;
     });
   }, [allTx, selectedFY, method, type]);
-
-  // Active transactions within the selected FY for totals.
-  const activeFyTx = useMemo(() => fyTx.filter((t) => t.status === "ACTIVE"), [fyTx]);
-
-  const summary = useMemo(() => ({
-    received: totalReceived(activeFyTx),
-    paid: totalPaid(activeFyTx),
-    profit: actualProfit(activeFyTx)
-  }), [activeFyTx]);
-
-  const breakdown = useMemo(() => methodBreakdown(activeFyTx), [activeFyTx]);
 
   // Per-FY summary map keyed by FY record id — derived from all active transactions.
   const fySummaryMap = useMemo(() => {
@@ -370,10 +376,10 @@ export default function Financial() {
             onVoid={(t) => setVoiding(t)}
           />
 
-          {/* Outstanding receivables across all events (not FY-filtered) */}
+          {/* Outstanding receivables — scoped to the selected financial year */}
           <OutstandingReceivables
-            events={events}
-            transactions={allTx}
+            events={fyEvents}
+            transactions={fyActiveTx}
             clients={clients}
             currency={currency}
           />

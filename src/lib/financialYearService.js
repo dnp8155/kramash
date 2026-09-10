@@ -105,6 +105,18 @@ export function txInFY(tx, fy) {
   return d >= fy.start_date && d <= fy.end_date;
 }
 
+// Check if an event belongs to a given FY.
+// Uses event.financial_year field if present; falls back to start_date range.
+export function eventInFY(event, fy) {
+  if (!fy) return true;
+  const fyVal = fyRecordValue(fy);  // "2026-27"
+  if (event.financial_year) {
+    const evFY = String(event.financial_year).replace(/^FY\s*/, "").trim();
+    return evFY === fyVal;
+  }
+  return event.start_date >= fy.start_date && event.start_date <= fy.end_date;
+}
+
 // ---- Active FY management ----
 
 // Set one FY as the workspace active/default. Deactivates all others.
