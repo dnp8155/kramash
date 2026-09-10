@@ -36,6 +36,14 @@ const TIMEZONES = [
 ];
 const COUNTRIES = ["India", "United States", "United Kingdom", "United Arab Emirates", "Singapore", "Other"];
 const GST_RATES = [0, 5, 12, 18, 28];
+const DEFAULT_QUOTATION_TERMS = `1. This quotation is valid for 30 days from the date of issue.
+2. An advance payment of 50% of the total is required to confirm the booking.
+3. The balance payment is due on or before the event/project date.
+4. Delivery timeline: 15–30 days from the event/project date, unless otherwise agreed in writing.
+5. The advance payment is non-refundable once the booking is confirmed.
+6. Any changes to the agreed scope must be communicated and confirmed before the event/project date.
+7. Travel, accommodation, and out-of-pocket expenses (if applicable) are billed separately.
+8. The client is responsible for obtaining necessary permissions/permits at the venue/site.`;
 const CATEGORY_OPTIONS = Object.values(BUSINESS_CATEGORIES).map((v) => ({
   value: v,
   label: CATEGORY_LABELS[v],
@@ -96,6 +104,7 @@ export default function Preferences() {
         gst_state: currentWorkspace.gst_state || "",
         default_gst_rate: currentWorkspace.default_gst_rate ?? 18,
         default_quotation_terms: currentWorkspace.default_quotation_terms || "",
+        default_quotation_footer: currentWorkspace.default_quotation_footer || "",
         event_types: currentWorkspace.event_types || [],
         event_statuses: currentWorkspace.event_statuses || [],
         bank_account_name: currentWorkspace.bank_account_name || "",
@@ -144,6 +153,24 @@ export default function Preferences() {
   };
 
   const handleSave = async () => {
+    if (form.gst_enabled) {
+      if (!/^[A-Z0-9]{15}$/.test(form.gstin.trim())) {
+        toast({ title: "GSTIN must be 15 alphanumeric characters", variant: "destructive" });
+        return;
+      }
+      if (!form.gst_business_name.trim()) {
+        toast({ title: "Registered Business Name is required", variant: "destructive" });
+        return;
+      }
+      if (!form.gst_billing_address.trim()) {
+        toast({ title: "GST Billing Address is required", variant: "destructive" });
+        return;
+      }
+      if (!form.gst_state.trim()) {
+        toast({ title: "GST State is required", variant: "destructive" });
+        return;
+      }
+    }
     setSaving(true);
     try {
       await base44.entities.Workspace.update(currentWorkspace.id, {
@@ -163,12 +190,13 @@ export default function Preferences() {
         currency: form.currency,
         timezone: form.timezone,
         gst_enabled: form.gst_enabled,
-        gstin: form.gst_enabled ? form.gstin.trim() : "",
-        gst_business_name: form.gst_enabled ? form.gst_business_name.trim() : "",
-        gst_billing_address: form.gst_enabled ? form.gst_billing_address.trim() : "",
-        gst_state: form.gst_enabled ? form.gst_state.trim() : "",
-        default_gst_rate: form.gst_enabled ? Number(form.default_gst_rate) : null,
+        gstin: form.gstin.trim(),
+        gst_business_name: form.gst_business_name.trim(),
+        gst_billing_address: form.gst_billing_address.trim(),
+        gst_state: form.gst_state.trim(),
+        default_gst_rate: form.gst_enabled ? Number(form.default_gst_rate) : (form.default_gst_rate ?? 18),
         default_quotation_terms: form.default_quotation_terms || "",
+        default_quotation_footer: form.default_quotation_footer || "",
         event_types: form.event_types || [],
         event_statuses: form.event_statuses || [],
         bank_account_name: form.bank_account_name.trim(),
@@ -440,23 +468,44 @@ export default function Preferences() {
         {/* Service Rates */}
         <ServiceManager />
 
-        {/* Default Quotation Terms */}
+        {/* Default Quotation Terms & Footer */}
         <Card className="lg:col-span-2">
-          <CardHeader className="flex items-center gap-2">
-            <FileText className="h-4 w-4 text-primary" />
-            <CardTitle>Default Quotation Terms</CardTitle>
+          <CardHeader className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <FileText className="h-4 w-4 text-primary" />
+              <CardTitle>Default Quotation Terms & Footer</CardTitle>
+            </div>
+            <Button variant="ghost" size="sm" onClick={() => set("default_quotation_terms", DEFAULT_QUOTATION_TERMS)}>
+              Load default terms
+            </Button>
           </CardHeader>
-          <CardBody>
-            <textarea
-              value={form.default_quotation_terms || ""}
-              onChange={(e) => set("default_quotation_terms", e.target.value)}
-              rows={5}
-              placeholder="Default terms and conditions preloaded into new quotations (payment terms, delivery timeline, cancellation policy…)"
-              className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30"
-            />
-            <p className="mt-2 text-xs text-muted-foreground">
-              These terms preload into new quotations. You can edit them per quotation.
-            </p>
+          <CardBody className="space-y-4">
+            <div>
+              <p className="mb-1.5 text-sm font-medium text-foreground">Default Terms & Conditions</p>
+              <textarea
+                value={form.default_quotation_terms || ""}
+                onChange={(e) => set("default_quotation_terms", e.target.value)}
+                rows={6}
+                placeholder="Default terms and conditions preloaded into new quotations (payment terms, delivery timeline, cancellation policy…)"
+                className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30"
+              />
+              <p className="mt-1.5 text-xs text-muted-foreground">
+                These terms preload into new quotations. You can edit them per quotation. Changing defaults here does not modify already-created quotations.
+              </p>
+            </div>
+            <div>
+              <p className="mb-1.5 text-sm font-medium text-foreground">Default Footer Text</p>
+              <textarea
+                value={form.default_quotation_footer || ""}
+                onChange={(e) => set("default_quotation_footer", e.target.value)}
+                rows={2}
+                placeholder="e.g. Thank you for choosing us. We look forward to making your day special."
+                className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30"
+              />
+              <p className="mt-1.5 text-xs text-muted-foreground">
+                Shown at the bottom of quotations and invoices. Leave blank for no footer.
+              </p>
+            </div>
           </CardBody>
         </Card>
 

@@ -146,6 +146,7 @@ function App() {
                   <Route path="/invoices/:id" element={<ErrorBoundary><InvoiceDetail /></ErrorBoundary>} />
                   <Route path="/invoices/:id/edit" element={<ErrorBoundary><InvoiceEditor /></ErrorBoundary>} />
                   <Route path="/preferences" element={<ErrorBoundary><Preferences /></ErrorBoundary>} />
+                  <Route path="/settings/workspace" element={<ErrorBoundary><Preferences /></ErrorBoundary>} />
                   <Route path="/app-updates" element={<ErrorBoundary><AppUpdates /></ErrorBoundary>} />
                   <Route path="/plan" element={<ErrorBoundary><Plan /></ErrorBoundary>} />
                   <Route path="/help-support" element={<ErrorBoundary><HelpSupport /></ErrorBoundary>} />
