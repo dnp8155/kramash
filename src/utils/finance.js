@@ -128,6 +128,21 @@ export function computeEventFinancials({ transactions = [], event, assignments =
   const clientOverpaid = Math.max(0, received - contractValue);
   const profit = received - teamPaid - expenses;
 
+  // Service totals — separate from team. Service payments are transactions
+  // linked via service_assignment_id (CLIENT_RECEIPT for client-provided
+  // services, BUSINESS_EXPENSE for external provider services).
+  const serviceAssignmentIds = new Set(
+    (serviceAssignments || [])
+      .filter((sa) => sa.assignment_status === "Assigned")
+      .map((sa) => sa.id)
+  );
+  const serviceTotal = (serviceAssignments || [])
+    .filter((sa) => sa.assignment_status === "Assigned")
+    .reduce((s, sa) => s + (Number(sa.rate) || 0), 0);
+  const servicePaid = eventTxns
+    .filter((t) => active(t) && t.service_assignment_id && serviceAssignmentIds.has(t.service_assignment_id))
+    .reduce((s, t) => s + (Number(t.amount) || 0), 0);
+
   // Per-assignment paid + remaining.
   const assignmentPayments = assignments
     .filter((a) => a.assignment_status === "Assigned")
@@ -156,6 +171,9 @@ export function computeEventFinancials({ transactions = [], event, assignments =
     teamAgreed,
     teamPaid,
     teamRemaining: Math.max(0, teamAgreed - teamPaid),
+    serviceTotal,
+    servicePaid,
+    serviceRemaining: Math.max(0, serviceTotal - servicePaid),
     expenses,
     profit,
     assignmentPayments,

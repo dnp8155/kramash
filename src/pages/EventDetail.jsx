@@ -51,6 +51,8 @@ import { formatDate, formatCurrency, initials } from "@/utils/format";
 import { toast } from "@/components/ui/use-toast";
 import { base44 } from "@/api/base44Client";
 import SelfBadge from "@/components/common/SelfBadge";
+import FinancialSummaryBar from "@/components/events/FinancialSummaryBar";
+import TeamBookingBoard from "@/components/events/TeamBookingBoard";
 import { useWorkspace } from "@/lib/WorkspaceContext";
 import { isSelfMember } from "@/utils/selfDetection";
 
@@ -426,9 +428,6 @@ export default function EventDetail() {
           <CardHeader className="flex flex-wrap items-center justify-between gap-2">
             <CardTitle>Team</CardTitle>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm text-muted-foreground">
-                Team cost: {formatCurrency(fin.teamAgreed)}
-              </span>
               <Button size="sm" onClick={handleOpenAssignTeam}>
                 <UserPlus className="h-4 w-4" /> Assign Team
               </Button>
@@ -447,7 +446,20 @@ export default function EventDetail() {
                 }
               />
             ) : (
-              <div className="divide-y divide-border">
+              <>
+                <div className="flex flex-col gap-4 px-4 py-3 sm:px-5">
+                  <FinancialSummaryBar
+                    totalRate={fin.teamAgreed}
+                    totalPayments={fin.teamPaid}
+                    totalRemaining={fin.teamRemaining}
+                  />
+                  <TeamBookingBoard
+                    assignments={eventAssignments}
+                    members={members}
+                    ownerName={ownerName}
+                  />
+                </div>
+                <div className="divide-y divide-border border-t border-border">
                 {eventAssignments.map((a) => {
                   const member = members.find((m) => m.id === a.team_member_id);
                   const ap = paidByAssignment[a.id];
@@ -532,7 +544,8 @@ export default function EventDetail() {
                     </div>
                   );
                 })}
-              </div>
+                </div>
+              </>
             )}
           </CardBody>
         </Card>
@@ -558,7 +571,15 @@ export default function EventDetail() {
                 No services assigned yet.
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2">
+              <>
+                <div className="px-4 py-3 sm:px-5">
+                  <FinancialSummaryBar
+                    totalRate={fin.serviceTotal}
+                    totalPayments={fin.servicePaid}
+                    totalRemaining={fin.serviceRemaining}
+                  />
+                </div>
+                <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2">
                 {eventServiceAssignments.map((sa) => (
                   <ServiceAssignmentCard
                     key={sa.id}
@@ -576,7 +597,8 @@ export default function EventDetail() {
                     removingId={removingServiceId}
                   />
                 ))}
-              </div>
+                </div>
+              </>
             )}
           </CardBody>
         </Card>

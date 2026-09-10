@@ -12,6 +12,8 @@ import EventCard from "@/components/events/EventCard";
 import EventForm from "@/components/events/EventForm";
 import { useEvents } from "@/hooks/useEvents";
 import { useClients } from "@/hooks/useClients";
+import { useEventTeamAssignments } from "@/hooks/useEventTeamAssignments";
+import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { usePlan } from "@/lib/PlanContext";
 import PlanLimitReached from "@/components/common/PlanLimitReached";
 import { defaultEventStatuses, defaultEventTypes, eventPeriods } from "@/constants/events";
@@ -24,6 +26,8 @@ import { useWorkspace } from "@/lib/WorkspaceContext";
 export default function Events() {
   const { events, loading, error, refetch, createEvent, updateEvent } = useEvents();
   const { clients, createClient } = useClients();
+  const { assignments } = useEventTeamAssignments();
+  const { members } = useTeamMembers();
   const { canCreateResource, usage, getLimit } = usePlan();
   const t = useBusinessTerminology();
   const { currentWorkspace } = useWorkspace();
@@ -172,6 +176,8 @@ export default function Events() {
               key={event.id}
               event={event}
               clientName={clientMap[event.client_id]?.name}
+              assignments={assignments}
+              members={members}
             />
           ))}
         </div>
