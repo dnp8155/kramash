@@ -4,6 +4,7 @@ import { formatMoney } from "@/utils/format";
 import { formatEventDate } from "@/lib/dates";
 import { base44 } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";
+import MemberTypeTag from "@/components/common/MemberTypeTag";
 import { cn } from "@/lib/utils";
 
 export default function EventAssignmentCard({
@@ -77,16 +78,7 @@ export default function EventAssignmentCard({
           {assignment.role_name_snapshot || member?.profession || "—"}
         </span>
         {assignment.member_type_snapshot && (
-          <span className={cn(
-            "text-[10px] font-semibold px-1.5 py-0.5 rounded",
-            assignment.member_type_snapshot?.toLowerCase().includes("bride")
-              ? "bg-pink-100 text-pink-700"
-              : assignment.member_type_snapshot?.toLowerCase().includes("groom")
-                ? "bg-blue-100 text-blue-700"
-                : "bg-muted text-muted-foreground"
-          )}>
-            {assignment.member_type_snapshot}
-          </span>
+          <MemberTypeTag label={assignment.member_type_snapshot} />
         )}
       </div>
 

@@ -3,6 +3,7 @@ import { TEAM_MEMBER_STATUS, AVAILABILITY_STATUS } from "@/constants/teamConfig"
 import { formatMoney } from "@/utils/format";
 import { memberBookingCount, isSelfMember } from "@/lib/teamService";
 import { formatEventDate, isUpcomingDate, todayISO } from "@/lib/dates";
+import { useDisplayPreferences } from "@/hooks/useDisplayPreferences";
 import { cn } from "@/lib/utils";
 
 // Derive a display status: inactive members show inactive; active members
@@ -17,6 +18,7 @@ export default function TeamMemberCard({ member, assignments = [], transactions 
   const status = displayStatus(member, assignments);
   const bookings = memberBookingCount(member.id, assignments);
   const active = member.status === "active";
+  const { showStatusDots } = useDisplayPreferences();
 
   // Financial: total agreed rate from active assignments, total paid from TEAM_PAYMENT transactions.
   const memberAssignments = assignments.filter(
@@ -49,7 +51,7 @@ export default function TeamMemberCard({ member, assignments = [], transactions 
     <div className="bg-card border border-border rounded-lg p-4">
       {/* Header: status dot + name + SELF badge + role + actions */}
       <div className="flex items-center gap-2">
-        <span className={cn("w-2.5 h-2.5 rounded-full shrink-0", status.dot)} />
+        {showStatusDots && <span className={cn("w-2.5 h-2.5 rounded-full shrink-0", status.dot)} />}
         <button
           onClick={() => onOpen?.(member)}
           className="text-sm font-semibold text-foreground flex items-center gap-1.5 text-left hover:underline min-w-0"

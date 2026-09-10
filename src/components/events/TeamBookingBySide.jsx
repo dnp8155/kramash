@@ -1,16 +1,6 @@
 import { Users } from "lucide-react";
 import { formatAssignedDates } from "@/lib/dates";
-import { cn } from "@/lib/utils";
-
-// Side badge color — driven by the Member Type label configured in Preferences.
-// Bride/Groom are common defaults but any label is supported; unknown labels
-// fall back to a neutral badge.
-function sideBadgeClass(label) {
-  const l = (label || "").toLowerCase();
-  if (l.includes("bride")) return "bg-pink-100 text-pink-700";
-  if (l.includes("groom")) return "bg-blue-100 text-blue-700";
-  return "bg-muted text-muted-foreground";
-}
+import MemberTypeTag from "@/components/common/MemberTypeTag";
 
 // Date-wise team booking visibility: groups active team assignments by their
 // event-specific Member Type / Side and shows each member's name, role and the
@@ -43,10 +33,7 @@ export default function TeamBookingBySide({ assignments = [], membersById = {}, 
         {order.map((side) => (
           <div key={side}>
             <div className="mb-2">
-              <span className={cn(
-                "text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded",
-                sideBadgeClass(side)
-              )}>{side}</span>
+              <MemberTypeTag label={side} className="text-[10px] uppercase tracking-wide px-2 py-0.5" />
             </div>
             <ul className="space-y-1.5">
               {groups[side].map((a) => {
