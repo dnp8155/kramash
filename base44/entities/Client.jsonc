@@ -4,41 +4,44 @@
   "properties": {
     "workspace_id": {
       "type": "string",
-      "description": "Workspace this client belongs to"
+      "title": "Workspace ID"
     },
     "name": {
       "type": "string",
-      "description": "Client name"
+      "title": "Client Name"
     },
     "phone": {
       "type": "string",
-      "description": "Primary mobile number"
+      "title": "Phone"
     },
     "alternate_phone": {
       "type": "string",
-      "description": "Alternate contact number"
+      "title": "Alternate Phone"
     },
     "email": {
       "type": "string",
-      "description": "Contact email"
+      "format": "email",
+      "title": "Email"
     },
     "address": {
       "type": "string",
-      "description": "Street address"
+      "title": "Address"
     },
     "city": {
-      "type": "string"
+      "type": "string",
+      "title": "City"
     },
     "state": {
-      "type": "string"
+      "type": "string",
+      "title": "State"
     },
     "country": {
       "type": "string",
-      "default": "India"
+      "title": "Country"
     },
     "notes": {
       "type": "string",
-      "description": "Free-form notes about the client"
+      "title": "Notes"
     }
   },
   "required": [
@@ -46,52 +49,17 @@
     "name"
   ],
   "rls": {
-    "read": {
-      "$or": [
-        {
-          "data.workspace_id": {
-            "$in": "{{user.data.workspace_ids}}"
-          }
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
     "create": {
-      "data.workspace_id": {
-        "$in": "{{user.data.workspace_ids}}"
-      }
+      "created_by_id": "{{user.id}}"
+    },
+    "read": {
+      "created_by_id": "{{user.id}}"
     },
     "update": {
-      "$or": [
-        {
-          "data.workspace_id": {
-            "$in": "{{user.data.workspace_ids}}"
-          }
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "created_by_id": "{{user.id}}"
     },
     "delete": {
-      "$or": [
-        {
-          "data.workspace_id": {
-            "$in": "{{user.data.workspace_ids}}"
-          }
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "created_by_id": "{{user.id}}"
     }
   }
 }
