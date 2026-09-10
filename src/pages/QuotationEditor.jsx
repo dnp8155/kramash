@@ -562,11 +562,21 @@ export default function QuotationEditor() {
   const applyPackage = (pkg) => {
     const incDates = includedDates(startDate, endDate, excludedDates);
     const newItems = deserializePackageStructure(pkg.structure_json, incDates);
+    if (!newItems.length) {
+      toast({ title: "Package is empty", description: "This package has no items.", variant: "destructive" });
+      return;
+    }
+    if (items.length > 0) {
+      const replace = window.confirm(
+        `Replace current ${items.length} item(s) with ${newItems.length} item(s) from "${pkg.name}"?`
+      );
+      if (!replace) return;
+    }
     setItems(newItems);
     if (pkg.terms_and_conditions && !terms) setTerms(pkg.terms_and_conditions);
     if (pkg.footer_message && !footerMessage) setFooterMessage(pkg.footer_message);
     if (pkg.category) setCategory(pkg.category);
-    toast({ title: "Package applied", description: pkg.name });
+    toast({ title: "Package applied", description: `${pkg.name} — ${newItems.length} items with saved prices` });
   };
 
   if (loading) return <LoadingState label="Loading quotation…" />;
@@ -834,6 +844,7 @@ export default function QuotationEditor() {
         items={items}
         onApplyPackage={applyPackage}
         readOnly={readOnly}
+        currency={currency}
       />
 
       <ClientForm
