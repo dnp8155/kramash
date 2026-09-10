@@ -14,6 +14,7 @@ import { WorkspaceProvider, WorkspaceGate, useWorkspace } from "@/lib/WorkspaceC
 import Dashboard from "@/pages/Dashboard";
 import Landing from "@/pages/Landing";
 import Events from "@/pages/Events";
+import Progress from "@/pages/Progress";
 import Team from "@/pages/Team";
 import Financial from "@/pages/Financial";
 import RateEstimator from "@/pages/RateEstimator";
@@ -131,6 +132,7 @@ function App() {
                   <Route path="/events" element={<ErrorBoundary><Events /></ErrorBoundary>} />
                   <Route path="/events/:id" element={<ErrorBoundary><EventDetail /></ErrorBoundary>} />
                   <Route path="/events/:id/job-sheet" element={<ErrorBoundary><JobSheet /></ErrorBoundary>} />
+                  <Route path="/progress" element={<ErrorBoundary><Progress /></ErrorBoundary>} />
                   <Route path="/clients" element={<ErrorBoundary><Clients /></ErrorBoundary>} />
                   <Route path="/clients/:id" element={<ErrorBoundary><ClientDetail /></ErrorBoundary>} />
                   <Route path="/team" element={<ErrorBoundary><Team /></ErrorBoundary>} />

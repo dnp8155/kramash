@@ -35,6 +35,14 @@
       "default": false,
       "description": "If true, this service amount is added on top of the base contract value (last-minute add-on)"
     },
+    "working_dates": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "format": "date"
+      },
+      "description": "Specific working dates selected from the event's date range. Null/empty means all event dates (backward compat)."
+    },
     "assignment_status": {
       "type": "string",
       "enum": [

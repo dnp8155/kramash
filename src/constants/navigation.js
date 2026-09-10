@@ -1,6 +1,7 @@
 import {
   LayoutDashboard,
   CalendarDays,
+  CalendarRange,
   Users,
   User,
   Wallet,
@@ -19,6 +20,7 @@ import {
 export const navItems = [
   { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard, labelKey: null },
   { label: "Events", path: "/events", icon: CalendarDays, labelKey: "workItemPlural" },
+  { label: "Progress", path: "/progress", icon: CalendarRange, labelKey: null },
   { label: "Clients", path: "/clients", icon: User, labelKey: null },
   { label: "Team", path: "/team", icon: Users, labelKey: null },
   { label: "Financial", path: "/financial", icon: Wallet, labelKey: null },

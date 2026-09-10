@@ -6,8 +6,9 @@ import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
 import ServiceProviderAutocomplete from "@/components/team/ServiceProviderAutocomplete";
 import { todayStr } from "@/utils/team";
+import { dateRange } from "@/utils/dates";
 import { paymentMethods } from "@/constants/finance";
-import { formatCurrency } from "@/utils/format";
+import { formatCurrency, formatDate } from "@/utils/format";
 import { toast } from "@/components/ui/use-toast";
 import SelfBadge from "@/components/common/SelfBadge";
 import { useWorkspace } from "@/lib/WorkspaceContext";
@@ -51,6 +52,7 @@ export default function AssignServiceModal({
   const [serviceId, setServiceId] = useState("");
   const [rate, setRate] = useState("");
   const [isAddon, setIsAddon] = useState(false);
+  const [workingDates, setWorkingDates] = useState([]);
   const [recordPayment, setRecordPayment] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentDate, setPaymentDate] = useState(todayStr());
@@ -59,6 +61,11 @@ export default function AssignServiceModal({
 
   const isEditing = !!editingAssignment;
   const { ownerName } = useWorkspace();
+
+  const eventDates = useMemo(() => {
+    if (!event?.start_date) return [];
+    return dateRange(event.start_date, event.end_date);
+  }, [event?.start_date, event?.end_date]);
 
   // SELF detection: check if the selected provider name matches the owner.
   // Works for both existing members and custom-typed names.
@@ -98,6 +105,7 @@ export default function AssignServiceModal({
       setServiceId(editingAssignment.service_id || "");
       setRate(editingAssignment.rate != null ? String(editingAssignment.rate) : "");
       setIsAddon(!!editingAssignment.is_addon);
+      setWorkingDates(editingAssignment.working_dates || []);
       setRecordPayment(false);
       setPaymentAmount("");
       setPaymentDate(todayStr());
@@ -107,6 +115,7 @@ export default function AssignServiceModal({
       setServiceId("");
       setRate("");
       setIsAddon(false);
+      setWorkingDates([]);
       setRecordPayment(false);
       setPaymentAmount("");
       setPaymentDate(todayStr());
@@ -127,6 +136,14 @@ export default function AssignServiceModal({
     setServiceId(id);
     const service = services.find((s) => s.id === id);
     setRate(service?.default_rate != null ? String(service.default_rate) : "");
+  };
+
+  const handleWorkingDateToggle = (date) => {
+    setWorkingDates((prev) =>
+      prev.includes(date)
+        ? prev.filter((d) => d !== date)
+        : [...prev, date].sort()
+    );
   };
 
   const handleSave = async () => {
@@ -185,6 +202,7 @@ export default function AssignServiceModal({
         provider_name_snapshot: finalProviderName || "",
         rate: amt,
         is_addon: isAddon,
+        working_dates: workingDates.length > 0 ? workingDates : null,
       };
 
       if (isEditing) {
@@ -308,6 +326,38 @@ export default function AssignServiceModal({
             Master service rate is not modified — this override applies only to
             this event.
           </p>
+        )}
+
+        {eventDates.length > 0 && (
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">
+              Working Dates (optional)
+            </label>
+            <p className="mb-2 text-xs text-muted-foreground">
+              Leave empty to apply this service to all event dates. Select
+              specific dates to limit coverage.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {eventDates.map((date) => (
+                <label
+                  key={date}
+                  className={`flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs ${
+                    workingDates.includes(date)
+                      ? "border-primary bg-primary/5 text-primary"
+                      : "border-border text-muted-foreground"
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={workingDates.includes(date)}
+                    onChange={() => handleWorkingDateToggle(date)}
+                    className="h-3.5 w-3.5"
+                  />
+                  {formatDate(date)}
+                </label>
+              ))}
+            </div>
+          </div>
         )}
 
         {!isEditing && isSelfProviderSelected && (
