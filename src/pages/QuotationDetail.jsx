@@ -19,6 +19,7 @@ import LoadingState from "@/components/common/LoadingState";
 import { formatCurrency, formatDate } from "@/utils/format";
 import { generateQuotationPDF } from "@/utils/quotationPdf";
 import { nextQuotationNumber } from "@/utils/quotation";
+import PortalManager from "@/components/quotation/PortalManager";
 
 export default function QuotationDetail() {
   const { id } = useParams();
@@ -493,6 +494,17 @@ export default function QuotationDetail() {
                   Accepted — {t.workItemSingular.toLowerCase()} contract value synced.
                 </p>
               )}
+            </CardBody>
+          </Card>
+
+          <Card className="h-fit">
+            <CardHeader><CardTitle>Client Portal</CardTitle></CardHeader>
+            <CardBody>
+              <PortalManager
+                quotationId={quotation.id}
+                quotation={quotation}
+                onUpdateQuotation={setQuotation}
+              />
             </CardBody>
           </Card>
 

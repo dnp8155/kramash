@@ -60,6 +60,11 @@
       "default": true,
       "description": "Controls client-facing pricing visibility. If false, Qty/Rate/Amount are hidden in PDF and public URL. Admin always retains full data."
     },
+    "hide_team_names": {
+      "type": "boolean",
+      "default": false,
+      "description": "If true, team member names are hidden on the public client portal \u2014 only role and count are shown."
+    },
     "custom_client": {
       "type": "object",
       "description": "Custom client details when no existing Client is selected (does not create a master Client record)",
