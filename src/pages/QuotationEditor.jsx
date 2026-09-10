@@ -210,6 +210,25 @@ export default function QuotationEditor() {
 
   useEffect(() => { load(); }, [load]);
 
+  // Apply workspace quotation defaults (T&C, payment) for new quotations
+  useEffect(() => {
+    if (!isNew || !workspace?.display_preferences) return;
+    try {
+      const prefs = JSON.parse(workspace.display_preferences);
+      if (prefs.defaultTerms) setTerms(prefs.defaultTerms);
+      if (prefs.defaultPaymentMethod || prefs.defaultPaymentInstructions) {
+        setTemplateConfig((prev) => ({
+          ...prev,
+          payment: {
+            ...(prev.payment || {}),
+            method: prefs.defaultPaymentMethod || prev.payment?.method || "",
+            instructions: prefs.defaultPaymentInstructions || prev.payment?.instructions || "",
+          },
+        }));
+      }
+    } catch { /* ignore */ }
+  }, [isNew, workspace?.display_preferences]);
+
   const totals = useMemo(
     () => computeTotals(items, { discountType, discountValue, gstApplicable, gstMode }),
     [items, discountType, discountValue, gstApplicable, gstMode]

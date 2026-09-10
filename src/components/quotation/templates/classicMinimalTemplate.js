@@ -16,6 +16,12 @@ function fmtDateLong(iso) {
   return d.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "long", year: "numeric" });
 }
 
+function parsePrefs(workspace) {
+  try {
+    return workspace?.display_preferences ? JSON.parse(workspace.display_preferences) : {};
+  } catch { return {}; }
+}
+
 const ONES = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten",
   "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"];
 const TENS = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
@@ -28,7 +34,6 @@ function numToWords(n) {
   return "";
 }
 
-// Indian numbering system: Crore, Lakh, Thousand, Hundred
 function amountInWords(amount) {
   let n = Math.round(Math.abs(Number(amount) || 0));
   if (n === 0) return "Zero";
@@ -62,7 +67,6 @@ const CONTEXT_LABELS = {
 
 const TEAM_TYPES = new Set(["team", "role"]);
 
-// Group team item names per day, collapsing duplicates into "+N Name".
 function teamLinesForDay(dayItems) {
   const counts = new Map();
   const order = [];
@@ -83,7 +87,11 @@ function teamLinesForDay(dayItems) {
 }
 
 export function renderClassicMinimal(data) {
-  const { workspace, quotation, client, event, items, currency } = data;
+  const { workspace, quotation, client, event, items, currency, templateConfig } = data;
+  const prefs = parsePrefs(workspace);
+
+  const showLogo = prefs.showLogoOnQuotation !== false;
+  const showWatermark = prefs.showLogoWatermark !== false;
 
   // Header — business contact block
   const bizName = workspace?.name || "Business Name";
@@ -122,7 +130,6 @@ export function renderClassicMinimal(data) {
     const phaseTitle = dayItems.find((it) => it.phase_title)?.phase_title || "";
     const nonTeamNames = dayItems.filter((it) => !TEAM_TYPES.has(it.item_type)).map((it) => it.name).filter(Boolean);
     const teamLines = teamLinesForDay(dayItems);
-    const dateLabel = key !== "_no_date" ? fmtDateLong(key).replace(/,\s*(\d{4})$/, ", $1") : "";
     const dateShort = key !== "_no_date" ? new Date(key + "T00:00:00").toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short", year: "numeric" }) : "";
 
     return `
@@ -138,15 +145,20 @@ export function renderClassicMinimal(data) {
       </div>`;
   }).join("");
 
-  // Includes — from special notes (free text bullet list)
+  // Includes — from special notes
   const includesHtml = textToBullets(quotation?.special_notes);
 
   // Pricing
   const grandTotal = quotation?.grand_total || 0;
   const currencySymbol = currency === "INR" ? "Rs" : (currency || "");
-  const totalWords = `(${currency === "INR" ? "INR " : ""}${amountInWords(grandTotal)}${grandTotal % 1 !== 0 ? "" : ""})`;
+  const totalWords = `(${currency === "INR" ? "INR " : ""}${amountInWords(grandTotal)})`;
 
-  // Notes
+  // Payment — from templateConfig (per-quotation) or workspace defaults
+  const payMethod = templateConfig?.payment?.method || prefs.defaultPaymentMethod || "";
+  const payInstructions = templateConfig?.payment?.instructions || prefs.defaultPaymentInstructions || "";
+  const paymentHtml = [payMethod, payInstructions].filter(Boolean).map((l) => escapeHtml(l)).join("<br>");
+
+  // Notes & T&C
   const notesHtml = textToBullets(quotation?.notes);
   const termsText = quotation?.terms_and_conditions
     ? `<div class="bullet-line">${escapeHtml(quotation.terms_and_conditions)}</div>`
@@ -160,9 +172,16 @@ export function renderClassicMinimal(data) {
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: Arial, Helvetica, sans-serif; background: #fff; color: #1a1a1a; font-size: 14px; line-height: 1.5; }
-    .quotation-page { width: 1000px; max-width: 100%; margin: auto; background: #fff; padding: 40px 46px; }
+    .quotation-page { width: 1000px; max-width: 100%; margin: auto; background: #fff; padding: 40px 46px; position: relative; overflow: hidden; }
+    .watermark {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      width: 380px; height: 380px; opacity: 0.05; z-index: 0; pointer-events: none;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .watermark img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    .content { position: relative; z-index: 1; }
     .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #1a1a1a; padding-bottom: 16px; gap: 20px; }
-    .header-logo { width: 60px; height: 60px; flex-shrink: 0; }
+    .header-logo { width: 64px; height: 64px; flex-shrink: 0; }
     .header-logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
     .header-brand { flex: 1; }
     .header-brand-name { font-size: 18px; font-weight: 800; }
@@ -181,6 +200,7 @@ export function renderClassicMinimal(data) {
     .pricing-box { margin-top: 8px; }
     .total-amount { font-size: 16px; font-weight: 800; margin: 6px 0 4px; }
     .amount-words { font-style: italic; font-size: 13px; color: #444; }
+    .payment-text { font-size: 14px; line-height: 1.6; }
     .signed-block { margin-top: 30px; }
     .footer { margin-top: 40px; border-top: 1px solid #ccc; padding-top: 12px; text-align: center; font-size: 12px; color: #666; }
     @media print {
@@ -192,57 +212,67 @@ export function renderClassicMinimal(data) {
 <body>
   <div class="quotation-page">
 
-    <div class="header">
-      ${logoUrl ? `<div class="header-logo"><img src="${escapeHtml(logoUrl)}" alt="Logo" /></div>` : ""}
-      <div class="header-brand">
-        <div class="header-brand-name">${escapeHtml(bizName)}</div>
+    ${showWatermark && logoUrl ? `<div class="watermark"><img src="${escapeHtml(logoUrl)}" alt="" /></div>` : ""}
+
+    <div class="content">
+
+      <div class="header">
+        ${showLogo && logoUrl ? `<div class="header-logo"><img src="${escapeHtml(logoUrl)}" alt="Logo" /></div>` : ""}
+        <div class="header-brand">
+          <div class="header-brand-name">${escapeHtml(bizName)}</div>
+        </div>
+        <div class="header-contact">
+          ${bizPhone ? `<div>Phone: ${escapeHtml(bizPhone)}</div>` : ""}
+          ${bizEmail ? `<div>Email: ${escapeHtml(bizEmail)}</div>` : ""}
+          ${bizAddress ? `<div>Address: ${escapeHtml(bizAddress)}</div>` : ""}
+        </div>
       </div>
-      <div class="header-contact">
-        ${bizPhone ? `<div>Phone: ${escapeHtml(bizPhone)}</div>` : ""}
-        ${bizEmail ? `<div>Email: ${escapeHtml(bizEmail)}</div>` : ""}
-        ${bizAddress ? `<div>Address: ${escapeHtml(bizAddress)}</div>` : ""}
+
+      <div class="meta-row">
+        <div><strong>Quotation No:</strong> ${escapeHtml(quoteNumber)}</div>
+        <div><strong>Date:</strong> ${escapeHtml(quoteDate)}</div>
       </div>
+
+      <div class="quote-heading">QUOTATION</div>
+
+      <div class="section-title">CLIENT DETAILS</div>
+      <div class="detail-line"><span class="detail-label">Name:</span> ${escapeHtml(clientName)}</div>
+      ${clientAddress ? `<div class="detail-line"><span class="detail-label">Residence Address:</span> ${escapeHtml(clientAddress)}</div>` : ""}
+      ${eventVenue ? `<div class="detail-line"><span class="detail-label">Event Venue:</span> ${escapeHtml(eventVenue)}</div>` : ""}
+      ${clientPhone ? `<div class="detail-line"><span class="detail-label">Contact Number:</span> ${escapeHtml(clientPhone)}</div>` : ""}
+      ${clientEmail ? `<div class="detail-line"><span class="detail-label">Email:</span> ${escapeHtml(clientEmail)}</div>` : ""}
+      ${sideLabel ? `<div class="detail-line"><span class="detail-label">Side(s):</span> ${sideLabel}</div>` : ""}
+      <div class="detail-line"><span class="detail-label">Event Date(s):</span> (${eventDates.length} Day${eventDates.length === 1 ? "" : "s"})</div>
+      ${eventDatesHtml}
+
+      <div class="section-title">EVENT DETAILS</div>
+      ${dayBlocksHtml || `<div class="detail-line">&mdash;</div>`}
+
+      ${includesHtml ? `<div class="section-title">INCLUDES</div>${includesHtml}` : ""}
+
+      <div class="section-title">PRICING</div>
+      <div class="pricing-box">
+        <div class="total-amount">Total Amount: ${escapeHtml(currencySymbol)} ${Number(grandTotal).toLocaleString("en-IN")}</div>
+        <div class="amount-words">${totalWords}</div>
+      </div>
+
+      ${paymentHtml ? `
+      <div class="section-title">PAYMENT</div>
+      <div class="payment-text">${paymentHtml}</div>` : ""}
+
+      ${(notesHtml || termsText) ? `
+      <div class="section-title">NOTES</div>
+      ${notesHtml}
+      ${termsText}` : ""}
+
+      <div class="signed-block">
+        <div class="section-title">ELECTRONICALLY SIGNED &amp; AUTHORIZED BY:</div>
+        <div class="detail-line">${escapeHtml(bizName)} on ${escapeHtml(quoteDate)}</div>
+      </div>
+
+      <div class="footer">${escapeHtml(bizName)}</div>
+
     </div>
-
-    <div class="meta-row">
-      <div><strong>Quotation No:</strong> ${escapeHtml(quoteNumber)}</div>
-      <div><strong>Date:</strong> ${escapeHtml(quoteDate)}</div>
-    </div>
-
-    <div class="quote-heading">QUOTATION</div>
-
-    <div class="section-title">CLIENT DETAILS</div>
-    <div class="detail-line"><span class="detail-label">Name:</span> ${escapeHtml(clientName)}</div>
-    ${clientAddress ? `<div class="detail-line"><span class="detail-label">Residence Address:</span> ${escapeHtml(clientAddress)}</div>` : ""}
-    ${eventVenue ? `<div class="detail-line"><span class="detail-label">Event Venue:</span> ${escapeHtml(eventVenue)}</div>` : ""}
-    ${clientPhone ? `<div class="detail-line"><span class="detail-label">Contact Number:</span> ${escapeHtml(clientPhone)}</div>` : ""}
-    ${clientEmail ? `<div class="detail-line"><span class="detail-label">Email:</span> ${escapeHtml(clientEmail)}</div>` : ""}
-    ${sideLabel ? `<div class="detail-line"><span class="detail-label">Side(s):</span> ${sideLabel}</div>` : ""}
-    <div class="detail-line"><span class="detail-label">Event Date(s):</span> (${eventDates.length} Day${eventDates.length === 1 ? "" : "s"})</div>
-    ${eventDatesHtml}
-
-    <div class="section-title">EVENT DETAILS</div>
-    ${dayBlocksHtml || `<div class="detail-line">&mdash;</div>`}
-
-    ${includesHtml ? `<div class="section-title">INCLUDES</div>${includesHtml}` : ""}
-
-    <div class="section-title">PRICING</div>
-    <div class="pricing-box">
-      <div class="total-amount">Total Amount: ${escapeHtml(currencySymbol)} ${Number(grandTotal).toLocaleString("en-IN")}</div>
-      <div class="amount-words">${totalWords}</div>
-    </div>
-
-    ${(notesHtml || termsText) ? `
-    <div class="section-title">NOTES</div>
-    ${notesHtml}
-    ${termsText}` : ""}
-
-    <div class="signed-block">
-      <div class="section-title">ELECTRONICALLY SIGNED &amp; AUTHORIZED BY:</div>
-      <div class="detail-line">${escapeHtml(bizName)} on ${escapeHtml(quoteDate)}</div>
-    </div>
-
-    <div class="footer">${escapeHtml(bizName)}</div>
   </div>
 </body>
 </html>`;

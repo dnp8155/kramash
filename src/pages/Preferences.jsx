@@ -17,7 +17,7 @@ import ServiceForm from "@/components/services/ServiceForm";
 import { useToast } from "@/components/ui/use-toast";
 import { loadRoles } from "@/lib/teamService";
 import { loadAllServices } from "@/lib/quotationService";
-import { Pencil, Trash2, Plus, Download, Loader2, User, Building2, Briefcase, Tags, Palette, Bell, CreditCard, LogOut } from "lucide-react";
+import { Pencil, Trash2, Plus, Download, Loader2, User, Building2, Briefcase, Tags, Palette, Bell, CreditCard, LogOut, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { exportFinancialCsv } from "@/lib/exportUtils";
 import { loadAllTransactions } from "@/lib/financeService";
@@ -26,6 +26,7 @@ import { txInFY, fyDisplayLabel } from "@/lib/financialYearService";
 import { getIndustryPresets } from "@/constants/industryPresets";
 import TeamMemberTypeManager from "@/components/preferences/TeamMemberTypeManager";
 import EventTypeManager from "@/components/preferences/EventTypeManager";
+import QuotationDefaultsSection from "@/components/settings/QuotationDefaultsSection";
 import { usePlan } from "@/hooks/usePlan";
 
 const sections = [
@@ -33,6 +34,7 @@ const sections = [
   { id: "workspace", label: "Workspace", icon: Building2 },
   { id: "business", label: "Business Setup", icon: Briefcase },
   { id: "types", label: "Types & Display", icon: Tags },
+  { id: "quotation", label: "Quotation", icon: FileText },
   { id: "appearance", label: "Appearance", icon: Palette },
   { id: "notifications", label: "Notifications", icon: Bell },
   { id: "billing", label: "Billing & Plan", icon: CreditCard },
@@ -387,6 +389,9 @@ export default function Preferences() {
           </Card>
         </div>
       )}
+
+      {/* Quotation Defaults */}
+      {activeTab === "quotation" && <QuotationDefaultsSection />}
 
       {/* Appearance */}
       {activeTab === "appearance" && <AppearanceSection />}

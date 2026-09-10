@@ -23,6 +23,12 @@ const DEFAULTS = {
   showMenubarLabels: true,
   // Shared invoice
   showLogo: false,
+  // Quotation defaults (set in Preferences → Quotation tab)
+  defaultTerms: "",
+  defaultPaymentMethod: "",
+  defaultPaymentInstructions: "",
+  showLogoOnQuotation: true,
+  showLogoWatermark: true,
 };
 
 export function useDisplayPreferences() {
