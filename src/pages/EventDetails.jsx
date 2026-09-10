@@ -371,6 +371,16 @@ export default function EventDetails() {
             <DetailField label="Financial Year" value={fyLabel} />
           </div>
 
+          {/* Date chips — directly under Start/End Date */}
+          {allDates.length > 0 && (
+            <div className="mt-4">
+              <div className="text-xs font-medium text-muted-foreground mb-2.5">Event Date(s)</div>
+              <div className="flex flex-wrap gap-2">
+                {allDates.map((d) => <DateChip key={d} date={d} />)}
+              </div>
+            </div>
+          )}
+
           {/* Divider */}
           <div className="my-5 border-t border-border/60" />
 
@@ -382,19 +392,6 @@ export default function EventDetails() {
           <div className="mt-4">
             <DetailField label="Address" value={[client?.address, client?.city].filter(Boolean).join(", ") || "—"} />
           </div>
-
-          {/* Date chips */}
-          {allDates.length > 0 && (
-            <>
-              <div className="my-5 border-t border-border/60" />
-              <div>
-                <div className="text-xs font-medium text-muted-foreground mb-2.5">Event Date(s)</div>
-                <div className="flex flex-wrap gap-2">
-                  {allDates.map((d) => <DateChip key={d} date={d} />)}
-                </div>
-              </div>
-            </>
-          )}
         </Card>
 
         {/* Financial summary — right column */}
