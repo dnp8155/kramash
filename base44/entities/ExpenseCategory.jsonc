@@ -4,19 +4,20 @@
   "properties": {
     "workspace_id": {
       "type": "string",
-      "description": "Workspace this expense category belongs to"
+      "title": "Workspace ID"
     },
     "name": {
       "type": "string",
-      "description": "Category name (e.g. Travel, Hotel, Equipment Rental)"
+      "title": "Category Name"
     },
     "status": {
       "type": "string",
+      "title": "Status",
+      "default": "active",
       "enum": [
         "active",
         "inactive"
-      ],
-      "default": "active"
+      ]
     }
   },
   "required": [
@@ -24,52 +25,17 @@
     "name"
   ],
   "rls": {
-    "read": {
-      "$or": [
-        {
-          "data.workspace_id": {
-            "$in": "{{user.data.workspace_ids}}"
-          }
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
     "create": {
-      "data.workspace_id": {
-        "$in": "{{user.data.workspace_ids}}"
-      }
+      "created_by_id": "{{user.id}}"
+    },
+    "read": {
+      "created_by_id": "{{user.id}}"
     },
     "update": {
-      "$or": [
-        {
-          "data.workspace_id": {
-            "$in": "{{user.data.workspace_ids}}"
-          }
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "created_by_id": "{{user.id}}"
     },
     "delete": {
-      "$or": [
-        {
-          "data.workspace_id": {
-            "$in": "{{user.data.workspace_ids}}"
-          }
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "created_by_id": "{{user.id}}"
     }
   }
 }
