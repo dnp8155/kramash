@@ -4,78 +4,78 @@
   "properties": {
     "workspace_id": {
       "type": "string",
-      "description": "Workspace this assignment belongs to"
+      "title": "Workspace ID"
     },
     "event_id": {
       "type": "string",
-      "description": "Event this team member is assigned to"
+      "title": "Event ID"
     },
     "team_member_id": {
       "type": "string",
-      "description": "Team member assigned to the event"
+      "title": "Team Member ID"
     },
     "role_id": {
       "type": "string",
-      "description": "Role reference at the time of assignment"
+      "title": "Role ID"
     },
     "role_name_snapshot": {
       "type": "string",
-      "description": "Role name snapshot for historical accuracy if the role is later renamed"
+      "title": "Role Name Snapshot"
     },
     "member_type_id": {
       "type": "string",
-      "description": "Member type reference at the time of assignment (e.g. Bride, Groom, Common, Other)"
+      "title": "Member Type ID (e.g. Bride Side / Groom Side)"
     },
     "member_type_snapshot": {
       "type": "string",
-      "description": "Member type label snapshot for historical accuracy if the workspace member-type config changes later"
+      "title": "Member Type Name Snapshot"
     },
     "agreed_rate": {
       "type": "number",
-      "description": "Final agreed rate for this specific assignment (independent of the member's default rate)"
+      "title": "Agreed Rate",
+      "default": 0
     },
     "rate_type": {
       "type": "string",
+      "title": "Rate Type",
+      "default": "Per Event",
       "enum": [
         "Per Event",
         "Per Day",
         "Fixed"
-      ],
-      "default": "Per Event"
+      ]
     },
     "working_dates": {
       "type": "array",
+      "title": "Working Dates (selected event dates)",
       "items": {
         "type": "string",
         "format": "date"
       },
-      "description": "Specific working dates selected from the event's date range. Used for Per Day rate calculation and per-date conflict detection."
+      "default": []
     },
     "booking_start_date": {
       "type": "string",
       "format": "date",
-      "description": "Booking start date for this assignment (date-only, YYYY-MM-DD). Typically the event start_date or the first working date."
+      "title": "Booking Start Date (per-member)"
     },
     "booking_end_date": {
       "type": "string",
       "format": "date",
-      "description": "Booking end date for this assignment (date-only, YYYY-MM-DD). Typically the event end_date or the last working date."
-    },
-    "category_type": {
-      "type": "string",
-      "description": "Color-coded category for this assignment (e.g. Bride, Groom, Other). Legacy field retained for backward compatibility; member_type_snapshot is the canonical snapshot."
+      "title": "Booking End Date (per-member)"
     },
     "assignment_status": {
       "type": "string",
+      "title": "Assignment Status",
+      "default": "assigned",
       "enum": [
-        "Assigned",
-        "Removed"
-      ],
-      "default": "Assigned"
+        "assigned",
+        "removed"
+      ]
     },
     "notes": {
       "type": "string",
-      "description": "Assignment-specific notes (distinct from the team member's general notes)"
+      "title": "Notes"
     }
   },
   "required": [
@@ -84,52 +84,17 @@
     "team_member_id"
   ],
   "rls": {
-    "read": {
-      "$or": [
-        {
-          "data.workspace_id": {
-            "$in": "{{user.data.workspace_ids}}"
-          }
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
     "create": {
-      "data.workspace_id": {
-        "$in": "{{user.data.workspace_ids}}"
-      }
+      "created_by_id": "{{user.id}}"
+    },
+    "read": {
+      "created_by_id": "{{user.id}}"
     },
     "update": {
-      "$or": [
-        {
-          "data.workspace_id": {
-            "$in": "{{user.data.workspace_ids}}"
-          }
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "created_by_id": "{{user.id}}"
     },
     "delete": {
-      "$or": [
-        {
-          "data.workspace_id": {
-            "$in": "{{user.data.workspace_ids}}"
-          }
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "created_by_id": "{{user.id}}"
     }
   }
 }

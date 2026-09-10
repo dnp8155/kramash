@@ -4,90 +4,60 @@
   "properties": {
     "workspace_id": {
       "type": "string",
-      "description": "Workspace this financial year belongs to"
+      "title": "Workspace ID"
     },
-    "name": {
+    "fy_id": {
       "type": "string",
-      "description": "Display label using en-dash format (e.g. FY 2026\u201327)"
+      "title": "Financial Year ID (e.g. FY2026-27)"
+    },
+    "label": {
+      "type": "string",
+      "title": "Label (e.g. April 2026 - March 2027)"
     },
     "start_date": {
       "type": "string",
       "format": "date",
-      "description": "FY start date \u2014 Indian convention: April 1 (YYYY-MM-DD)"
+      "title": "Start Date"
     },
     "end_date": {
       "type": "string",
       "format": "date",
-      "description": "FY end date \u2014 Indian convention: March 31 (YYYY-MM-DD)"
-    },
-    "status": {
-      "type": "string",
-      "enum": [
-        "open",
-        "closed"
-      ],
-      "default": "open",
-      "description": "open = accepts new transactions; closed = read-only for historical reporting"
+      "title": "End Date"
     },
     "is_active": {
       "type": "boolean",
-      "default": false,
-      "description": "Whether this is the workspace's currently selected/default FY. Only one FY per workspace should be active."
+      "title": "Is Active (workspace default FY)",
+      "default": false
+    },
+    "status": {
+      "type": "string",
+      "title": "Period Status",
+      "default": "open",
+      "enum": [
+        "open",
+        "closed"
+      ]
     }
   },
   "required": [
     "workspace_id",
-    "name",
+    "fy_id",
+    "label",
     "start_date",
     "end_date"
   ],
   "rls": {
-    "read": {
-      "$or": [
-        {
-          "data.workspace_id": {
-            "$in": "{{user.data.workspace_ids}}"
-          }
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
     "create": {
-      "data.workspace_id": {
-        "$in": "{{user.data.workspace_ids}}"
-      }
+      "created_by_id": "{{user.id}}"
+    },
+    "read": {
+      "created_by_id": "{{user.id}}"
     },
     "update": {
-      "$or": [
-        {
-          "data.workspace_id": {
-            "$in": "{{user.data.workspace_ids}}"
-          }
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "created_by_id": "{{user.id}}"
     },
     "delete": {
-      "$or": [
-        {
-          "data.workspace_id": {
-            "$in": "{{user.data.workspace_ids}}"
-          }
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "created_by_id": "{{user.id}}"
     }
   }
 }

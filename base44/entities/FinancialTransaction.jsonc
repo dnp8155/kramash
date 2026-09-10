@@ -4,55 +4,66 @@
   "properties": {
     "workspace_id": {
       "type": "string",
-      "description": "Workspace this transaction belongs to"
+      "title": "Workspace ID"
     },
     "financial_year_id": {
       "type": "string",
-      "description": "Financial Year this transaction belongs to (resolved from transaction_date at creation time)"
+      "title": "Financial Year ID"
     },
     "event_id": {
       "type": "string",
-      "description": "Event this transaction relates to (optional for general business expenses)"
+      "title": "Event ID"
     },
     "transaction_type": {
       "type": "string",
+      "title": "Transaction Type",
       "enum": [
         "CLIENT_RECEIPT",
         "TEAM_PAYMENT",
         "BUSINESS_EXPENSE"
-      ],
-      "description": "CLIENT_RECEIPT = money in from client; TEAM_PAYMENT = money out to crew; BUSINESS_EXPENSE = money out for expenses"
+      ]
     },
     "client_id": {
       "type": "string",
-      "description": "Client reference for CLIENT_RECEIPT (derived from the event's client)"
+      "title": "Client ID"
     },
     "team_member_id": {
       "type": "string",
-      "description": "Team member reference for TEAM_PAYMENT or BUSINESS_EXPENSE (service provider)"
+      "title": "Team Member ID"
     },
     "team_assignment_id": {
       "type": "string",
-      "description": "Event team assignment reference for TEAM_PAYMENT (links payment to event + member + agreed rate)"
+      "title": "Team Assignment ID"
     },
     "service_assignment_id": {
       "type": "string",
-      "description": "Event service assignment reference for service payments (links payment to event + service + provider)"
+      "title": "Service Assignment ID"
     },
-    "expense_category_id": {
+    "milestone_id": {
       "type": "string",
-      "description": "Expense category reference for BUSINESS_EXPENSE"
+      "title": "Payment Milestone ID (for CLIENT_RECEIPT linked to a specific milestone due)"
     },
     "invoice_id": {
       "type": "string",
-      "description": "Invoice this payment transaction is linked to (for CLIENT_RECEIPT payments against invoices)"
+      "title": "Invoice ID (for CLIENT_RECEIPT linked to a specific invoice)"
+    },
+    "expense_category_id": {
+      "type": "string",
+      "title": "Expense Category ID"
+    },
+    "expense_category_name_snapshot": {
+      "type": "string",
+      "title": "Expense Category Snapshot"
     },
     "amount": {
       "type": "number",
-      "description": "Transaction amount in the workspace currency (stored as a number; always > 0)"
+      "title": "Amount",
+      "default": 0
     },
     "payment_method": {
       "type": "string",
+      "title": "Payment Method",
+      "default": "Cash",
       "enum": [
         "Cash",
         "UPI",
@@ -60,30 +71,29 @@
         "Card",
         "Cheque",
         "Other"
-      ],
-      "description": "How the money was paid/received"
+      ]
     },
     "transaction_date": {
       "type": "string",
       "format": "date",
-      "description": "Date the transaction occurred (date-only, YYYY-MM-DD)"
+      "title": "Transaction Date"
     },
     "reference_number": {
       "type": "string",
-      "description": "Optional reference (UTR, cheque no, invoice no)"
+      "title": "Reference Number"
     },
     "notes": {
       "type": "string",
-      "description": "Optional notes"
+      "title": "Notes"
     },
     "status": {
       "type": "string",
+      "title": "Status",
+      "default": "ACTIVE",
       "enum": [
         "ACTIVE",
         "VOID"
-      ],
-      "default": "ACTIVE",
-      "description": "VOID transactions are excluded from all financial totals but retained for audit"
+      ]
     }
   },
   "required": [
@@ -93,52 +103,17 @@
     "transaction_date"
   ],
   "rls": {
-    "read": {
-      "$or": [
-        {
-          "data.workspace_id": {
-            "$in": "{{user.data.workspace_ids}}"
-          }
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
     "create": {
-      "data.workspace_id": {
-        "$in": "{{user.data.workspace_ids}}"
-      }
+      "created_by_id": "{{user.id}}"
+    },
+    "read": {
+      "created_by_id": "{{user.id}}"
     },
     "update": {
-      "$or": [
-        {
-          "data.workspace_id": {
-            "$in": "{{user.data.workspace_ids}}"
-          }
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "created_by_id": "{{user.id}}"
     },
     "delete": {
-      "$or": [
-        {
-          "data.workspace_id": {
-            "$in": "{{user.data.workspace_ids}}"
-          }
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "created_by_id": "{{user.id}}"
     }
   }
 }

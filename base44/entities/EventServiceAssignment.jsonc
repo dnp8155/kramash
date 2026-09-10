@@ -4,52 +4,60 @@
   "properties": {
     "workspace_id": {
       "type": "string",
-      "description": "Workspace this assignment belongs to"
+      "title": "Workspace ID"
     },
     "event_id": {
       "type": "string",
-      "description": "Event this service is assigned to"
+      "title": "Event ID"
     },
     "service_id": {
       "type": "string",
-      "description": "Service reference (from workspace Services master)"
+      "title": "Service ID"
     },
     "service_name_snapshot": {
       "type": "string",
-      "description": "Service name snapshot for historical accuracy if the service is later renamed"
+      "title": "Service Name Snapshot"
     },
     "provider_id": {
       "type": "string",
-      "description": "Team member providing the service (optional)"
+      "title": "Provider Team Member ID (optional)"
     },
     "provider_name_snapshot": {
       "type": "string",
-      "description": "Provider name snapshot for historical accuracy"
+      "title": "Provider Name Snapshot"
     },
-    "rate": {
+    "agreed_rate": {
       "type": "number",
-      "description": "Event-specific rate for this service. Does NOT modify the master Service.default_rate."
+      "title": "Agreed Rate (event-specific)",
+      "default": 0
+    },
+    "rate_type": {
+      "type": "string",
+      "title": "Rate Type",
+      "default": "Fixed",
+      "enum": [
+        "Fixed",
+        "Per Day",
+        "Per Unit"
+      ]
     },
     "is_addon": {
       "type": "boolean",
-      "default": false,
-      "description": "If true, this service amount is added on top of the base contract value (last-minute add-on)"
-    },
-    "working_dates": {
-      "type": "array",
-      "items": {
-        "type": "string",
-        "format": "date"
-      },
-      "description": "Specific working dates selected from the event's date range. Null/empty means all event dates (backward compat)."
+      "title": "Is Add-on (last-minute, adds to contract value)",
+      "default": false
     },
     "assignment_status": {
       "type": "string",
+      "title": "Assignment Status",
+      "default": "assigned",
       "enum": [
-        "Assigned",
-        "Removed"
-      ],
-      "default": "Assigned"
+        "assigned",
+        "removed"
+      ]
+    },
+    "notes": {
+      "type": "string",
+      "title": "Notes"
     }
   },
   "required": [
@@ -58,52 +66,17 @@
     "service_id"
   ],
   "rls": {
-    "read": {
-      "$or": [
-        {
-          "data.workspace_id": {
-            "$in": "{{user.data.workspace_ids}}"
-          }
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
     "create": {
-      "data.workspace_id": {
-        "$in": "{{user.data.workspace_ids}}"
-      }
+      "created_by_id": "{{user.id}}"
+    },
+    "read": {
+      "created_by_id": "{{user.id}}"
     },
     "update": {
-      "$or": [
-        {
-          "data.workspace_id": {
-            "$in": "{{user.data.workspace_ids}}"
-          }
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "created_by_id": "{{user.id}}"
     },
     "delete": {
-      "$or": [
-        {
-          "data.workspace_id": {
-            "$in": "{{user.data.workspace_ids}}"
-          }
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "created_by_id": "{{user.id}}"
     }
   }
 }
