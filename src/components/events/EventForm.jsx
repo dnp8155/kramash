@@ -8,10 +8,8 @@ import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { EVENT_STATUS, EVENT_STATUS_ORDER } from "@/constants/statusConfig";
 import { CURRENCY_SYMBOLS } from "@/constants/financeConfig";
 import ClientForm from "@/components/clients/ClientForm";
-import ChipPicker from "@/components/common/ChipPicker";
 import DateRangeChips from "@/components/common/DateRangeChips";
 import { Plus } from "lucide-react";
 import { fyForDate } from "@/lib/dates";
@@ -121,7 +119,6 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
         service_ids: event?.service_ids || [],
         venue: form.venue.trim(),
         venue_address: form.venue_address.trim(),
-        status: form.status,
         contract_value: Number(form.contract_value) || 0,
         description: form.description.trim(),
         notes: form.notes.trim()
@@ -162,9 +159,6 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
       setSaving(false);
     }
   };
-
-  const workTypeOptions = workTypes.map((wt) => ({ value: wt, label: wt }));
-  const statusOptions = EVENT_STATUS_ORDER.map((s) => ({ value: s, label: EVENT_STATUS[s].label }));
 
   return (
     <>
@@ -224,15 +218,6 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
                     />
                   </div>
 
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Status</Label>
-                    <ChipPicker
-                      options={statusOptions}
-                      value={form.status}
-                      onChange={(v) => set("status", v)}
-                      size="sm"
-                    />
-                  </div>
                 </div>
 
                 <div className="space-y-2.5 pt-1">
