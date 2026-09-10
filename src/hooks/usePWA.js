@@ -71,7 +71,7 @@ export function useInstallPrompt() {
   };
 }
 
-// Update detection: listens for new service worker, exposes update action.
+// Update detection: listens for new service worker, auto-applies updates.
 export function useServiceWorkerUpdate() {
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [installing, setInstalling] = useState(false);
@@ -91,7 +91,12 @@ export function useServiceWorkerUpdate() {
         if (!nw) return;
         nw.addEventListener("statechange", () => {
           if (nw.state === "installed" && navigator.serviceWorker.controller) {
+            // New SW is waiting — auto-apply immediately so the user
+            // always gets the latest version without manual interaction.
             setUpdateAvailable(true);
+            if (reg.waiting) {
+              reg.waiting.postMessage({ type: "SKIP_WAITING" });
+            }
           }
         });
       });
@@ -102,10 +107,10 @@ export function useServiceWorkerUpdate() {
     const controllerChange = () => window.location.reload();
     navigator.serviceWorker.addEventListener("controllerchange", controllerChange);
 
-    // Periodic check (every 10 min).
+    // Check for updates on every page load + every 5 min (more frequent than before).
     const interval = setInterval(() => {
       navigator.serviceWorker.getRegistration().then((r) => r?.update()).catch(() => {});
-    }, 600000);
+    }, 300000);
 
     return () => {
       clearInterval(interval);
