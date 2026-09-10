@@ -4,364 +4,259 @@
   "properties": {
     "workspace_id": {
       "type": "string",
-      "description": "Workspace this invoice belongs to"
+      "title": "Workspace ID"
     },
     "invoice_number": {
       "type": "string",
-      "description": "INV-YYYY-XXXX format, workspace-specific, auto-generated, immutable"
+      "title": "Invoice Number"
     },
     "quotation_id": {
       "type": "string",
-      "description": "Optional quotation this invoice was created from"
+      "title": "Source Quotation ID (optional)"
     },
     "client_id": {
       "type": "string",
-      "description": "Client this invoice is for"
+      "title": "Client ID"
     },
     "event_id": {
       "type": "string",
-      "description": "Optional event/project this invoice is linked to"
+      "title": "Event ID"
     },
-    "issue_date": {
+    "invoice_date": {
       "type": "string",
       "format": "date",
-      "description": "Invoice issue date"
+      "title": "Invoice Date"
     },
     "due_date": {
       "type": "string",
       "format": "date",
-      "description": "Calculated from due_date_type or custom date"
+      "title": "Due Date"
     },
     "due_date_type": {
       "type": "string",
+      "title": "Due Date Type",
+      "default": "due_on_receipt",
       "enum": [
         "due_on_receipt",
         "net_15",
         "net_30",
         "custom"
-      ],
-      "default": "due_on_receipt"
+      ]
     },
     "invoice_type": {
       "type": "string",
+      "title": "Invoice Type",
+      "default": "manual",
       "enum": [
         "full",
         "milestone",
         "manual"
-      ],
-      "default": "manual"
+      ]
     },
-    "milestone_index": {
-      "type": "number",
-      "description": "Index of the quotation milestone this invoice covers (for milestone invoices). Null for non-milestone invoices."
+    "milestone_id": {
+      "type": "string",
+      "title": "Payment Milestone ID (for milestone-type invoices)"
     },
     "milestone_tag": {
       "type": "string",
+      "title": "Milestone Tag",
+      "default": "Full Payment",
       "enum": [
         "Advance",
         "Event Day",
         "Final Handover",
         "Full Payment",
         "Custom"
-      ],
-      "description": "Label for milestone invoices"
+      ]
     },
     "status": {
       "type": "string",
+      "title": "Status",
+      "default": "draft",
       "enum": [
-        "Draft",
-        "Due",
-        "Partially Paid",
-        "Paid",
-        "Overdue",
-        "Cancelled"
-      ],
-      "default": "Draft"
+        "draft",
+        "due",
+        "sent",
+        "paid",
+        "partial",
+        "overdue",
+        "cancelled"
+      ]
     },
     "show_itemized_rates": {
       "type": "boolean",
-      "default": true,
-      "description": "Controls client-facing pricing visibility. If false, Qty/Rate/individual line amounts are hidden in PDF and public URL."
-    },
-    "line_items": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "description": {
-            "type": "string"
-          },
-          "deliverables": {
-            "type": "string"
-          },
-          "quantity": {
-            "type": "number"
-          },
-          "unit_rate": {
-            "type": "number"
-          },
-          "line_total": {
-            "type": "number"
-          }
-        }
-      },
-      "description": "Invoice line items (snapshot at creation time)"
-    },
-    "discount_type": {
-      "type": "string",
-      "enum": [
-        "percentage",
-        "flat"
-      ],
-      "default": "percentage"
-    },
-    "discount_value": {
-      "type": "number",
-      "description": "Discount value (percentage or flat amount)"
+      "title": "Show Itemized Rates on PDF & Public Link",
+      "default": true
     },
     "subtotal": {
       "type": "number",
-      "description": "Sum of all line item totals"
+      "title": "Subtotal",
+      "default": 0
+    },
+    "discount_type": {
+      "type": "string",
+      "title": "Discount Type",
+      "default": "percent",
+      "enum": [
+        "percent",
+        "fixed"
+      ]
+    },
+    "discount_value": {
+      "type": "number",
+      "title": "Discount Value",
+      "default": 0
     },
     "discount_amount": {
       "type": "number",
-      "description": "Computed discount amount"
+      "title": "Discount Amount",
+      "default": 0
     },
     "taxable_amount": {
       "type": "number",
-      "description": "Subtotal minus discount"
+      "title": "Taxable Amount",
+      "default": 0
     },
-    "tax_enabled": {
+    "gst_applicable": {
       "type": "boolean",
+      "title": "GST Applicable",
       "default": false
     },
-    "tax_rate": {
+    "gst_rate": {
       "type": "number",
-      "description": "GST rate percentage (e.g. 18)"
+      "title": "GST Rate (%)",
+      "default": 0
     },
-    "tax_mode": {
+    "gst_mode": {
       "type": "string",
+      "title": "GST Mode",
+      "default": "cgst_sgst",
       "enum": [
-        "CGST_SGST",
-        "IGST"
-      ],
-      "default": "CGST_SGST"
+        "cgst_sgst",
+        "igst"
+      ]
     },
     "cgst_amount": {
-      "type": "number"
+      "type": "number",
+      "title": "CGST Amount",
+      "default": 0
     },
     "sgst_amount": {
-      "type": "number"
+      "type": "number",
+      "title": "SGST Amount",
+      "default": 0
     },
     "igst_amount": {
-      "type": "number"
-    },
-    "tax_amount": {
       "type": "number",
-      "description": "Total tax amount (CGST+SGST or IGST)"
+      "title": "IGST Amount",
+      "default": 0
     },
-    "total_amount": {
+    "gst_total": {
       "type": "number",
-      "description": "Final invoice total (taxable + tax)"
+      "title": "GST Total",
+      "default": 0
+    },
+    "grand_total": {
+      "type": "number",
+      "title": "Grand Total",
+      "default": 0
     },
     "amount_paid": {
       "type": "number",
-      "default": 0,
-      "description": "Sum of all valid payment transactions linked to this invoice"
+      "title": "Amount Paid",
+      "default": 0
     },
     "balance_due": {
       "type": "number",
-      "description": "total_amount - amount_paid"
+      "title": "Balance Due",
+      "default": 0
     },
     "amount_in_words": {
       "type": "string",
-      "description": "Total amount in words (e.g. 'Rupees Ten Thousand Only')"
+      "title": "Total Amount in Words"
+    },
+    "payment_schedule_json": {
+      "type": "string",
+      "title": "Payment Schedule (JSON)"
+    },
+    "client_snapshot": {
+      "type": "string",
+      "title": "Client Snapshot (JSON)"
+    },
+    "business_snapshot": {
+      "type": "string",
+      "title": "Business Snapshot (JSON)"
+    },
+    "event_snapshot": {
+      "type": "string",
+      "title": "Event Snapshot (JSON)"
+    },
+    "bank_details_snapshot": {
+      "type": "string",
+      "title": "Bank & UPI Details Snapshot (JSON)"
+    },
+    "social_links_snapshot": {
+      "type": "string",
+      "title": "Social Links Snapshot (JSON)"
+    },
+    "authorized_signatory": {
+      "type": "string",
+      "title": "Authorized Signatory Name"
     },
     "notes": {
       "type": "string",
-      "description": "Internal notes \u2014 never shown on public invoice or PDF"
+      "title": "Internal Notes (never shown to client)"
     },
     "payment_terms": {
       "type": "string",
-      "description": "Client-visible payment terms shown on PDF and public URL"
+      "title": "Payment Terms (client-visible)"
     },
-    "client_snapshot": {
-      "type": "object",
-      "description": "Snapshot of client billing details at issuance",
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "phone": {
-          "type": "string"
-        },
-        "email": {
-          "type": "string"
-        },
-        "address": {
-          "type": "string"
-        },
-        "gstin": {
-          "type": "string"
-        }
-      }
-    },
-    "business_snapshot": {
-      "type": "object",
-      "description": "Snapshot of business details at issuance",
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "logo": {
-          "type": "string"
-        },
-        "address": {
-          "type": "string"
-        },
-        "phone": {
-          "type": "string"
-        },
-        "email": {
-          "type": "string"
-        },
-        "gstin": {
-          "type": "string"
-        },
-        "gst_business_name": {
-          "type": "string"
-        },
-        "gst_billing_address": {
-          "type": "string"
-        },
-        "gst_state": {
-          "type": "string"
-        }
-      }
-    },
-    "event_snapshot": {
-      "type": "object",
-      "description": "Snapshot of event details at issuance",
-      "properties": {
-        "title": {
-          "type": "string"
-        },
-        "start_date": {
-          "type": "string",
-          "format": "date"
-        },
-        "end_date": {
-          "type": "string",
-          "format": "date"
-        },
-        "venue": {
-          "type": "string"
-        },
-        "venue_address": {
-          "type": "string"
-        },
-        "event_type": {
-          "type": "string"
-        }
-      }
-    },
-    "bank_snapshot": {
-      "type": "object",
-      "description": "Snapshot of bank/UPI details at issuance",
-      "properties": {
-        "bank_account_name": {
-          "type": "string"
-        },
-        "bank_name": {
-          "type": "string"
-        },
-        "bank_account_number": {
-          "type": "string"
-        },
-        "bank_ifsc": {
-          "type": "string"
-        },
-        "bank_upi_id": {
-          "type": "string"
-        }
-      }
-    },
-    "public_access_enabled": {
-      "type": "boolean",
-      "default": false,
-      "description": "Master on/off switch for public invoice URL"
+    "terms_and_conditions": {
+      "type": "string",
+      "title": "Terms & Conditions (client-visible)"
     },
     "public_token": {
       "type": "string",
-      "description": "Secure random token for public invoice URL. Not enumerable."
+      "title": "Public Invoice Token (secure random token for public URL)"
     },
-    "view_count": {
+    "public_link_enabled": {
+      "type": "boolean",
+      "title": "Public Link Enabled (admin master control)",
+      "default": false
+    },
+    "portal_view_count": {
       "type": "number",
+      "title": "Portal View Count",
       "default": 0
     },
-    "first_viewed_at": {
+    "portal_first_viewed_at": {
       "type": "string",
-      "format": "date-time"
+      "format": "date-time",
+      "title": "Portal First Viewed At"
     },
-    "last_viewed_at": {
+    "portal_latest_viewed_at": {
       "type": "string",
-      "format": "date-time"
+      "format": "date-time",
+      "title": "Portal Latest Viewed At"
     }
   },
   "required": [
     "workspace_id",
     "invoice_number",
-    "client_id",
-    "issue_date",
-    "status"
+    "invoice_date"
   ],
   "rls": {
-    "read": {
-      "$or": [
-        {
-          "data.workspace_id": {
-            "$in": "{{user.data.workspace_ids}}"
-          }
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
     "create": {
-      "data.workspace_id": {
-        "$in": "{{user.data.workspace_ids}}"
-      }
+      "created_by_id": "{{user.id}}"
+    },
+    "read": {
+      "created_by_id": "{{user.id}}"
     },
     "update": {
-      "$or": [
-        {
-          "data.workspace_id": {
-            "$in": "{{user.data.workspace_ids}}"
-          }
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "created_by_id": "{{user.id}}"
     },
     "delete": {
-      "$or": [
-        {
-          "data.workspace_id": {
-            "$in": "{{user.data.workspace_ids}}"
-          }
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "created_by_id": "{{user.id}}"
     }
   }
 }
