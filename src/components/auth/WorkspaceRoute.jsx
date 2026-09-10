@@ -1,4 +1,4 @@
-import { Outlet } from "react-router-dom";
+import { Outlet, Navigate } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { WorkspaceProvider, useWorkspace } from "@/lib/WorkspaceContext";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
@@ -28,7 +28,7 @@ function WorkspaceGate({ noWorkspaceElement }) {
 }
 
 export default function WorkspaceRoute({ unauthenticatedElement, noWorkspaceElement }) {
-  const { isAuthenticated, isLoadingAuth, authChecked, authError } = useAuth();
+  const { isAuthenticated, isLoadingAuth, authChecked, authError, user } = useAuth();
 
   if (isLoadingAuth || !authChecked) return <Spinner />;
 
@@ -38,6 +38,11 @@ export default function WorkspaceRoute({ unauthenticatedElement, noWorkspaceElem
   }
 
   if (!isAuthenticated) return unauthenticatedElement;
+
+  // Client-role users should never see the workspace app — redirect to their portal
+  if (user?.role === "client") {
+    return <Navigate to="/client-portal" replace />;
+  }
 
   return (
     <WorkspaceProvider>

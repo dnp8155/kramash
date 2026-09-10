@@ -5,7 +5,8 @@
       "description": "The role of the user in the app",
       "enum": [
         "admin",
-        "user"
+        "user",
+        "client"
       ]
     },
     "phone": {
@@ -23,6 +24,16 @@
         "hi",
         "gu"
       ]
+    },
+    "linked_client_id": {
+      "type": "string",
+      "title": "Linked Client ID",
+      "description": "For client-role users: the Client record this user is linked to"
+    },
+    "linked_workspace_id": {
+      "type": "string",
+      "title": "Linked Workspace ID",
+      "description": "For client-role users: the workspace this client belongs to"
     }
   },
   "required": [

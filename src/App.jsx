@@ -52,6 +52,9 @@ import EventTracking from '@/pages/EventTracking';
 import JobSheet from '@/pages/JobSheet';
 import PublicJobSheet from '@/pages/PublicJobSheet';
 import PublicInvoice from '@/pages/PublicInvoice';
+import ClientLogin from '@/pages/ClientLogin';
+import ClientPortal from '@/pages/ClientPortal';
+import ClientRoute from '@/components/auth/ClientRoute';
 // Add page imports here
 
 const AuthenticatedApp = () => {
@@ -102,6 +105,12 @@ const AuthenticatedApp = () => {
 
       {/* Public client-facing invoice */}
       <Route path="/invoice/:token" element={<PublicInvoice />} />
+
+      {/* Client Portal — login + authenticated dashboard for client-role users */}
+      <Route path="/client-login" element={<ClientLogin />} />
+      <Route element={<ClientRoute />}>
+        <Route path="/client-portal" element={<ClientPortal />} />
+      </Route>
 
       {/* Public legal pages */}
       <Route path="/terms" element={<TermsOfService />} />

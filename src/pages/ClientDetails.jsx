@@ -13,9 +13,10 @@ import ClientForm from "@/components/clients/ClientForm";
 import ClientFinancialSummary from "@/components/clients/ClientFinancialSummary";
 import { formatEventDate } from "@/lib/dates";
 import { formatMoney } from "@/utils/format";
-import { ArrowLeft, Pencil, Phone, Mail, MapPin, Calendar, ArrowRight, StickyNote } from "lucide-react";
+import { ArrowLeft, Pencil, Phone, Mail, MapPin, Calendar, ArrowRight, StickyNote, UserPlus, Loader2, CheckCircle2 } from "lucide-react";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
 import { invalidateEntities } from "@/lib/queryInvalidation";
+import { useToast } from "@/components/ui/use-toast";
 
 export default function ClientDetails() {
   const { id } = useParams();
@@ -24,7 +25,38 @@ export default function ClientDetails() {
   const term = useBusinessTerminology();
 
   const [showForm, setShowForm] = useState(false);
+  const [inviting, setInviting] = useState(false);
+  const [invited, setInvited] = useState(false);
   const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const handleInvitePortal = async () => {
+    if (!client?.email) {
+      toast({ title: "Client email required", description: "Add an email address to this client first.", variant: "destructive" });
+      return;
+    }
+    setInviting(true);
+    try {
+      const res = await base44.functions.invoke("inviteClientToPortal", {
+        client_id: client.id,
+        workspace_id: workspaceId,
+        email: client.email
+      });
+      setInvited(true);
+      toast({
+        title: "Client invited to portal",
+        description: res?.data?.message || "They will receive an email to set their password and access the portal."
+      });
+    } catch (e) {
+      toast({
+        title: "Failed to invite client",
+        description: e?.message || e?.data?.error || "Something went wrong",
+        variant: "destructive"
+      });
+    } finally {
+      setInviting(false);
+    }
+  };
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["client", id, workspaceId],
@@ -87,9 +119,24 @@ export default function ClientDetails() {
         <Button variant="ghost" onClick={() => navigate("/clients")} className="-ml-2">
           <ArrowLeft className="w-4 h-4" /> Back to Clients
         </Button>
-        <Button onClick={() => setShowForm(true)}>
-          <Pencil className="w-4 h-4" /> Edit Client
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={handleInvitePortal}
+            disabled={inviting || invited}
+          >
+            {invited ? (
+              <><CheckCircle2 className="w-4 h-4 text-success" /> Invited</>
+            ) : inviting ? (
+              <><Loader2 className="w-4 h-4 animate-spin" /> Inviting…</>
+            ) : (
+              <><UserPlus className="w-4 h-4" /> Invite to Portal</>
+            )}
+          </Button>
+          <Button onClick={() => setShowForm(true)}>
+            <Pencil className="w-4 h-4" /> Edit Client
+          </Button>
+        </div>
       </div>
 
       <Card className="p-5">
