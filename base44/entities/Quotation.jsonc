@@ -177,6 +177,10 @@
       "type": "string",
       "title": "Special Notes (scope-specific: travel, accommodation, revisions, etc.)"
     },
+    "payment_conditions": {
+      "type": "string",
+      "title": "Payment Conditions (shown on quotation PDF)"
+    },
     "notes": {
       "type": "string",
       "title": "Notes (internal)"

@@ -105,6 +105,7 @@ export default function QuotationEditor() {
   const [socialLinks, setSocialLinks] = useState({});
   const [footerMessage, setFooterMessage] = useState(DEFAULT_FOOTER_MESSAGE);
   const [specialNotes, setSpecialNotes] = useState("");
+  const [paymentConditions, setPaymentConditions] = useState("");
 
   // Payment milestones
   const [milestones, setMilestones] = useState([]);
@@ -191,6 +192,7 @@ export default function QuotationEditor() {
         setGstMode(q.gst_mode || "cgst_sgst");
         setTerms(q.terms_and_conditions || "");
         setSpecialNotes(q.special_notes || "");
+        setPaymentConditions(q.payment_conditions || "");
         setNotes(q.notes || "");
         setFooterMessage(q.footer_message || DEFAULT_FOOTER_MESSAGE);
         setTemplateId(q.template_id || "black_premium");
@@ -211,12 +213,13 @@ export default function QuotationEditor() {
 
   useEffect(() => { load(); }, [load]);
 
-  // Apply workspace quotation defaults (T&C, payment) for new quotations
+  // Apply workspace quotation defaults (T&C, payment, bank, social) for new quotations
   useEffect(() => {
     if (!isNew || !workspace?.display_preferences) return;
     try {
       const prefs = JSON.parse(workspace.display_preferences);
       if (prefs.defaultTerms) setTerms(prefs.defaultTerms);
+      if (prefs.defaultPaymentConditions) setPaymentConditions(prefs.defaultPaymentConditions);
       if (prefs.defaultPaymentMethod || prefs.defaultPaymentInstructions) {
         setTemplateConfig((prev) => ({
           ...prev,
@@ -226,6 +229,23 @@ export default function QuotationEditor() {
             instructions: prefs.defaultPaymentInstructions || prev.payment?.instructions || "",
           },
         }));
+      }
+      if (prefs.bank_account_name || prefs.bank_name || prefs.bank_account_number || prefs.bank_ifsc || prefs.bank_upi_id) {
+        setBankDetails({
+          account_name: prefs.bank_account_name || "",
+          bank_name: prefs.bank_name || "",
+          account_number: prefs.bank_account_number || "",
+          ifsc: prefs.bank_ifsc || "",
+          upi_id: prefs.bank_upi_id || ""
+        });
+      }
+      if (prefs.social_instagram || prefs.social_youtube || prefs.social_website || prefs.social_portfolio) {
+        setSocialLinks({
+          instagram: prefs.social_instagram || "",
+          youtube: prefs.social_youtube || "",
+          website: prefs.social_website || "",
+          portfolio: prefs.social_portfolio || ""
+        });
       }
     } catch { /* ignore */ }
   }, [isNew, workspace?.display_preferences]);
@@ -281,6 +301,7 @@ export default function QuotationEditor() {
     gst_mode: gstMode,
     terms_and_conditions: terms,
     special_notes: specialNotes,
+    payment_conditions: paymentConditions,
     notes,
     payment_schedule_json: JSON.stringify(milestones.filter((m) => m.name || m.value)),
     footer_message: footerMessage,
@@ -767,6 +788,16 @@ export default function QuotationEditor() {
           rows={4}
           className="w-full bg-card border border-border rounded-md p-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
         />
+        <Field label="Payment Conditions (shown on PDF)">
+          <textarea
+            value={paymentConditions}
+            onChange={(e) => setPaymentConditions(e.target.value)}
+            disabled={readOnly}
+            rows={3}
+            placeholder="e.g. 50% advance to confirm booking. Balance due on or before event day."
+            className="w-full bg-card border border-border rounded-md p-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
+          />
+        </Field>
         <Field label="Notes (internal)">
           <textarea
             value={notes}

@@ -121,6 +121,32 @@ export function renderBlackPremium(data) {
   const paymentMethod = cfg.payment_method || "Bank Transfer / UPI / Cheque\nDetails will be shared upon confirmation.";
   const paymentHtml = paymentMethod.split("\n").map((l) => escapeHtml(l)).join("<br>");
 
+  // Payment Conditions
+  const paymentConditionsHtml = textToBulletList(quotation?.payment_conditions);
+
+  // Bank Details (from snapshot)
+  let bankDetails = {};
+  try { bankDetails = quotation?.bank_details_snapshot ? JSON.parse(quotation.bank_details_snapshot) : {}; } catch (e) {}
+  const hasBankDetails = bankDetails.account_name || bankDetails.bank_name || bankDetails.account_number || bankDetails.ifsc || bankDetails.upi_id;
+  const bankRowsHtml = [
+    bankDetails.account_name ? `<div class="bank-row"><span class="bank-label">Account Name</span><span class="bank-val">${escapeHtml(bankDetails.account_name)}</span></div>` : "",
+    bankDetails.bank_name ? `<div class="bank-row"><span class="bank-label">Bank Name</span><span class="bank-val">${escapeHtml(bankDetails.bank_name)}</span></div>` : "",
+    bankDetails.account_number ? `<div class="bank-row"><span class="bank-label">Account No.</span><span class="bank-val">${escapeHtml(bankDetails.account_number)}</span></div>` : "",
+    bankDetails.ifsc ? `<div class="bank-row"><span class="bank-label">IFSC</span><span class="bank-val">${escapeHtml(bankDetails.ifsc)}</span></div>` : "",
+    bankDetails.upi_id ? `<div class="bank-row"><span class="bank-label">UPI ID</span><span class="bank-val">${escapeHtml(bankDetails.upi_id)}</span></div>` : "",
+  ].filter(Boolean).join("");
+
+  // Social Links (from snapshot)
+  let socialLinks = {};
+  try { socialLinks = quotation?.social_links_snapshot ? JSON.parse(quotation.social_links_snapshot) : {}; } catch (e) {}
+  const socialItems = [];
+  if (socialLinks.instagram) socialItems.push({ label: "ig", url: socialLinks.instagram });
+  if (socialLinks.youtube) socialItems.push({ label: "yt", url: socialLinks.youtube });
+  if (socialLinks.website) socialItems.push({ label: "web", url: socialLinks.website });
+  if (socialLinks.portfolio) socialItems.push({ label: "★", url: socialLinks.portfolio });
+  const socialHtml = socialItems.map((s) => `<a href="${escapeHtml(s.url)}" class="social-circle">${escapeHtml(s.label)}</a>`).join("");
+  const hasSocial = socialItems.length > 0;
+
   // Footer
   const thankYou = cfg.thank_you || "Thank you!";
   const footerMessage = cfg.footer_message || "We appreciate the opportunity to work with you.\nLooking forward to building something great together.";
@@ -200,6 +226,12 @@ export function renderBlackPremium(data) {
     .payment-method { margin-top: 18px; padding-left: 2px; }
     .payment-head { display: flex; align-items: center; gap: 10px; color: var(--accent); font-size: 14px; font-weight: 800; }
     .payment-text { margin: 7px 0 0 42px; font-size: 13px; line-height: 1.45; }
+    .bank-details { margin-top: 16px; }
+    .bank-rows { margin: 7px 0 0 42px; }
+    .bank-row { display: flex; justify-content: space-between; gap: 12px; padding: 4px 0; font-size: 12px; border-bottom: 1px dotted #eee; }
+    .bank-row:last-child { border-bottom: 0; }
+    .bank-label { font-weight: 600; color: #555; min-width: 90px; }
+    .bank-val { text-align: right; font-weight: 600; }
     .footer-top { margin-top: 18px; border-top: 1px solid #d5d5d5; display: grid; grid-template-columns: 160px 1fr 140px; gap: 20px; align-items: center; padding: 14px 4px; }
     .thank-you { color: var(--accent); font-size: 24px; font-family: Georgia, serif; font-style: italic; }
     .footer-msg { border-left: 1px solid #bbb; padding-left: 22px; font-size: 12px; line-height: 1.45; }
@@ -322,6 +354,15 @@ ${itemRows}
           </div>
           <div class="editable-list">${termsHtml}</div>
         </div>` : ""}
+
+        ${paymentConditionsHtml ? `
+        <div class="info-block">
+          <div class="info-heading">
+            <div class="round-icon">&#8377;</div>
+            <span>PAYMENT CONDITIONS</span>
+          </div>
+          <div class="editable-list">${paymentConditionsHtml}</div>
+        </div>` : ""}
       </div>
 
       <div>
@@ -352,6 +393,15 @@ ${itemRows}
           </div>
           <div class="payment-text">${paymentHtml}</div>
         </div>
+
+        ${hasBankDetails ? `
+        <div class="bank-details">
+          <div class="payment-head">
+            <div class="round-icon">&#127974;</div>
+            <span>BANK DETAILS</span>
+          </div>
+          <div class="bank-rows">${bankRowsHtml}</div>
+        </div>` : ""}
       </div>
     </section>
 
@@ -359,13 +409,7 @@ ${itemRows}
       <div class="thank-you">${escapeHtml(thankYou)}</div>
       <div class="footer-msg">${footerHtml}</div>
       <div class="social">
-        <div class="social-title">Follow Us</div>
-        <div class="social-icons">
-          <div class="social-circle">f</div>
-          <div class="social-circle">in</div>
-          <div class="social-circle">ig</div>
-          <div class="social-circle">&bull;</div>
-        </div>
+        ${hasSocial ? `<div class="social-title">Follow Us</div><div class="social-icons">${socialHtml}</div>` : ""}
       </div>
     </section>
 
