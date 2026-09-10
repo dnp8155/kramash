@@ -163,7 +163,7 @@ export default function AdminPlans() {
   };
 
   if (loading) return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto space-y-6">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-xl font-bold text-foreground">Plans & Pricing</h1>
@@ -179,7 +179,7 @@ export default function AdminPlans() {
   );
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
@@ -205,13 +205,13 @@ export default function AdminPlans() {
               key={plan.id}
               className={cn(
                 "bg-card border rounded-xl shadow-card overflow-hidden",
-                isFree ? "border-border" : "border-amber-300"
+                isFree ? "border-border" : "border-amber-200"
               )}
             >
               {/* Card header */}
               <div className={cn(
                 "px-5 py-4 flex items-center gap-3 border-b border-border",
-                isFree ? "bg-muted/40" : "bg-amber-50"
+                isFree ? "bg-muted/40" : "bg-amber-50/50"
               )}>
                 <div className={cn(
                   "w-10 h-10 rounded-lg flex items-center justify-center",
@@ -224,7 +224,7 @@ export default function AdminPlans() {
                     <h2 className="text-base font-bold text-foreground truncate">{plan.name}</h2>
                     <span className={cn(
                       "text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0",
-                      isFree ? "bg-muted text-muted-foreground" : "bg-amber-200 text-amber-800"
+                      isFree ? "bg-muted text-muted-foreground" : "bg-amber-100 text-amber-700"
                     )}>
                       {plan.code}
                     </span>
