@@ -1,40 +1,32 @@
-import { Lock, ArrowUpCircle } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Crown, Lock } from "lucide-react";
 import Button from "@/components/common/Button";
-import { usePlan } from "@/lib/PlanContext";
+import { Link } from "react-router-dom";
 
-// Reusable upgrade/limit-reached state shown when a Free workspace hits a plan limit.
 export default function PlanLimitReached({
   resource = "resource",
   currentUsage = 0,
   limit = 0,
   requiredPlan = "Pro",
-  title,
-  description,
-  showActions = true,
+  featureLabel
 }) {
-  const navigate = useNavigate();
-  const { planName } = usePlan();
-
-  const defaultTitle = title || `You've reached the ${planName} plan ${resource} limit`;
-  const defaultDesc =
-    description ||
-    `You're using ${currentUsage} of ${limit >= 999999 ? "∞" : limit} ${resource}. Upgrade to Kramashah ${requiredPlan} to create more.`;
-
   return (
-    <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-border bg-accent/30 px-6 py-10 text-center">
-      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-        <Lock className="h-6 w-6" />
+    <div className="flex flex-col items-center text-center p-6 rounded-lg border border-amber-200 bg-amber-50/60">
+      <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center mb-3">
+        {featureLabel ? <Lock className="w-6 h-6 text-amber-600" /> : <Crown className="w-6 h-6 text-amber-600" />}
       </div>
-      <div>
-        <p className="text-sm font-semibold text-foreground">{defaultTitle}</p>
-        <p className="mt-1 max-w-sm text-xs text-muted-foreground">{defaultDesc}</p>
-      </div>
-      {showActions && (
-        <Button size="sm" onClick={() => navigate("/plan")} className="mt-1">
-          <ArrowUpCircle className="h-4 w-4" /> View {requiredPlan} Plans
-        </Button>
-      )}
+      <h3 className="text-base font-semibold text-foreground">
+        {featureLabel
+          ? `${featureLabel} is a ${requiredPlan} feature`
+          : `You've reached the Free Plan ${resource} limit`}
+      </h3>
+      <p className="text-sm text-muted-foreground mt-1 max-w-sm">
+        {featureLabel
+          ? `Upgrade to Kramasha ${requiredPlan} to access ${featureLabel.toLowerCase()}.`
+          : `${currentUsage} / ${limit} ${resource} used. Upgrade to Kramasha ${requiredPlan} to create more ${resource}.`}
+      </p>
+      <Link to="/plan" className="mt-4">
+        <Button variant="primary" size="sm">View Pro Plans</Button>
+      </Link>
     </div>
   );
 }

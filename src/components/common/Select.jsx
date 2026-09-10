@@ -1,26 +1,22 @@
 import { cn } from "@/lib/utils";
 
-export default function Select({ label, className, id, children, error, ...props }) {
-  const selectId = id || props.name;
+const sizes = {
+  sm: "h-8 text-base md:text-xs px-2.5",
+  md: "h-9 text-base md:text-sm px-3"
+};
+
+export default function Select({ className, size = "md", children, ...props }) {
   return (
-    <div className="flex flex-col gap-1.5">
-      {label && (
-        <label htmlFor={selectId} className="text-sm font-medium text-foreground">
-          {label}
-        </label>
+    <select
+      className={cn(
+        "bg-card border border-border rounded-lg text-foreground transition-all",
+        "focus:outline-none focus:ring-2 focus:ring-ring/40 focus:border-primary/40 hover:border-border/80 cursor-pointer",
+        sizes[size],
+        className
       )}
-      <select
-        id={selectId}
-        className={cn(
-          "h-10 w-full rounded-lg border border-input bg-card px-3 text-sm text-foreground transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30 disabled:opacity-50",
-          error && "border-destructive",
-          className
-        )}
-        {...props}
-      >
-        {children}
-      </select>
-      {error && <p className="text-xs text-destructive">{error}</p>}
-    </div>
+      {...props}
+    >
+      {children}
+    </select>
   );
 }

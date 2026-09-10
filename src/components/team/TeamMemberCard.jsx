@@ -1,68 +1,136 @@
-import { Link } from "react-router-dom";
-import { Mail, Phone, ArrowRight, Pencil } from "lucide-react";
-import Card, { CardBody } from "@/components/common/Card";
-import StatusBadge from "@/components/common/StatusBadge";
-import SelfBadge from "@/components/common/SelfBadge";
-import { initials } from "@/utils/format";
-import { useWorkspace } from "@/lib/WorkspaceContext";
-import { isSelfMember } from "@/utils/selfDetection";
+import { Pencil, Trash2, ExternalLink, Archive, RotateCcw, Calendar, Crown } from "lucide-react";
+import { TEAM_MEMBER_STATUS, AVAILABILITY_STATUS } from "@/constants/teamConfig";
+import { formatMoney } from "@/utils/format";
+import { memberBookingCount, isSelfMember } from "@/lib/teamService";
+import { formatEventDate, isUpcomingDate, todayISO } from "@/lib/dates";
+import { cn } from "@/lib/utils";
 
-export default function TeamMemberCard({ member, roleName, assignmentCount, onEdit }) {
-  const { ownerName } = useWorkspace();
-  const isSelf = isSelfMember(member.name, ownerName);
+// Derive a display status: inactive members show inactive; active members
+// with current/upcoming bookings show "booked", otherwise "available".
+function displayStatus(member, assignments) {
+  if (member.status === "inactive") return AVAILABILITY_STATUS.inactive;
+  const count = memberBookingCount(member.id, assignments);
+  return count > 0 ? AVAILABILITY_STATUS.booked : AVAILABILITY_STATUS.available;
+}
+
+export default function TeamMemberCard({ member, assignments = [], transactions = [], eventsById = {}, currentUser, currency = "INR", onEdit, onArchive, onDelete, onOpen }) {
+  const status = displayStatus(member, assignments);
+  const bookings = memberBookingCount(member.id, assignments);
+  const active = member.status === "active";
+
+  // Financial: total agreed rate from active assignments, total paid from TEAM_PAYMENT transactions.
+  const memberAssignments = assignments.filter(
+    (a) => a.team_member_id === member.id && a.assignment_status !== "removed"
+  );
+  const totalRate = memberAssignments.reduce((s, a) => s + (Number(a.agreed_rate) || 0), 0);
+  const totalPaid = (transactions || [])
+    .filter((t) => t.team_member_id === member.id)
+    .reduce((s, t) => s + (Number(t.amount) || 0), 0);
+  const remaining = Math.max(0, totalRate - totalPaid);
+
+  // Next upcoming booking with per-member dates
+  const today = todayISO();
+  const upcomingBookings = memberAssignments
+    .map((a) => {
+      const ev = eventsById[a.event_id];
+      if (!ev || ev.status === "cancelled") return null;
+      const start = a.booking_start_date || ev.start_date;
+      const end = a.booking_end_date || ev.end_date || start;
+      if (end < today) return null;
+      return { a, ev, start, end };
+    })
+    .filter(Boolean)
+    .sort((x, y) => x.start.localeCompare(y.start));
+  const nextBooking = upcomingBookings[0] || null;
+
+  const isSelf = isSelfMember(member);
+
   return (
-    <Card className="flex h-full flex-col transition-shadow hover:shadow-md">
-      <CardBody className="flex flex-1 flex-col gap-3">
-        <div className="flex items-center gap-3">
-          <Link to={`/team/${member.id}`} className="flex min-w-0 flex-1 items-center gap-3">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/10 text-base font-semibold text-primary">
-              {initials(member.name)}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-foreground hover:text-primary">
-                {member.name}
-                {isSelf && <SelfBadge className="ml-1.5" />}
-              </p>
-              <p className="truncate text-xs text-muted-foreground">
-                {roleName || member.profession || "—"}
-              </p>
-            </div>
-          </Link>
-          <div className="flex shrink-0 items-center gap-1.5">
-            <StatusBadge status={member.status} />
-            {onEdit && (
-              <button
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit(); }}
-                className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                title="Edit member"
-                aria-label="Edit member"
-              >
-                <Pencil className="h-4 w-4" />
-              </button>
-            )}
+    <div className="bg-card border border-border rounded-lg p-4">
+      {/* Header: status dot + name + SELF badge + role + actions */}
+      <div className="flex items-center gap-2">
+        <span className={cn("w-2.5 h-2.5 rounded-full shrink-0", status.dot)} />
+        <button
+          onClick={() => onOpen?.(member)}
+          className="text-sm font-semibold text-foreground flex items-center gap-1.5 text-left hover:underline min-w-0"
+        >
+          <span className="truncate">{member.name}</span>
+          {isSelf && (
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-primary text-primary-foreground shrink-0">
+              <Crown className="w-2.5 h-2.5" /> Self
+            </span>
+          )}
+        </button>
+        <span className="text-xs text-muted-foreground ml-auto truncate hidden sm:block">
+          {member.profession || "—"}
+        </span>
+        <button onClick={() => onEdit?.(member)} className="text-muted-foreground hover:text-foreground shrink-0 p-1.5 rounded-md hover:bg-muted transition-colors" aria-label="Edit">
+          <Pencil className="w-3.5 h-3.5" />
+        </button>
+        <button
+          onClick={() => onArchive?.(member)}
+          className="text-muted-foreground hover:text-warning shrink-0 p-1.5 rounded-md hover:bg-muted transition-colors"
+          aria-label={active ? "Archive" : "Reactivate"}
+          title={active ? "Set inactive" : "Set active"}
+        >
+          {active ? <Archive className="w-3.5 h-3.5" /> : <RotateCcw className="w-3.5 h-3.5" />}
+        </button>
+        <button onClick={() => onDelete?.(member)} className="text-muted-foreground hover:text-destructive shrink-0 p-1.5 rounded-md hover:bg-destructive/5 transition-colors" aria-label="Delete">
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
+      </div>
+
+      {/* Next booking date — clearly visible */}
+      {nextBooking ? (
+        <div className="mt-2.5 flex items-center gap-1.5 text-sm">
+          <Calendar className="w-3.5 h-3.5 text-primary shrink-0" />
+          <span className="text-xs text-muted-foreground">Next:</span>
+          <button onClick={() => onOpen?.(member)} className="text-foreground font-medium hover:underline">
+            {formatEventDate(nextBooking.start, nextBooking.end)}
+          </button>
+          <span className="text-xs text-muted-foreground truncate hidden sm:inline">· {nextBooking.ev.title}</span>
+        </div>
+      ) : (
+        <div className="mt-2.5 flex items-center gap-1.5 text-sm">
+          <span className="text-xs text-muted-foreground">Bookings:</span>
+          <button onClick={() => onOpen?.(member)} className="text-foreground font-medium hover:underline flex items-center gap-1">
+            {bookings}
+            {bookings > 0 && <ExternalLink className="w-3 h-3 text-muted-foreground" />}
+          </button>
+        </div>
+      )}
+
+      {/* Financial footer: RATE / PAID / REMAINING (SELF → Share, not a liability) */}
+      <div className="mt-3 grid grid-cols-3 gap-2 pt-3 border-t border-border">
+        <div>
+          <div className="text-xs text-muted-foreground font-medium">{isSelf ? "Share" : "Rate"}</div>
+          <div className="text-sm font-bold text-foreground tabular-nums mt-0.5">{formatMoney(totalRate, currency)}</div>
+        </div>
+        <div>
+          <div className="text-xs text-muted-foreground font-medium">{isSelf ? "Owner" : "Paid"}</div>
+          <div className={cn(
+            "text-sm font-bold tabular-nums mt-0.5",
+            !isSelf && totalPaid >= totalRate && totalRate > 0 ? "text-success" : "text-foreground"
+          )}>
+            {isSelf ? "—" : formatMoney(totalPaid, currency)}
           </div>
         </div>
-        <div className="flex flex-col gap-1.5 text-sm text-muted-foreground">
-          {member.email && (
-            <p className="flex items-center gap-2 truncate">
-              <Mail className="h-4 w-4 shrink-0" /> {member.email}
-            </p>
-          )}
-          {member.phone && (
-            <p className="flex items-center gap-2">
-              <Phone className="h-4 w-4 shrink-0" /> {member.phone}
-            </p>
-          )}
+        <div>
+          <div className="text-xs text-muted-foreground font-medium">{isSelf ? "Internal" : "Remaining"}</div>
+          <div className={cn(
+            "text-sm font-bold tabular-nums mt-0.5",
+            isSelf ? "text-primary" : remaining > 0 ? "text-warning" : "text-success"
+          )}>
+            {isSelf ? "Share" : formatMoney(remaining, currency)}
+          </div>
         </div>
-        <Link to={`/team/${member.id}`} className="mt-auto flex items-center justify-between border-t border-border pt-3">
-          <span className="text-xs text-muted-foreground">
-            {assignmentCount} event{assignmentCount === 1 ? "" : "s"} assigned
-          </span>
-          <span className="flex items-center gap-1 text-sm font-medium text-primary">
-            View <ArrowRight className="h-4 w-4" />
-          </span>
-        </Link>
-      </CardBody>
-    </Card>
+      </div>
+
+      {!active && (
+        <div className="mt-2 text-xs font-medium text-destructive">
+          {TEAM_MEMBER_STATUS.inactive.label}
+        </div>
+      )}
+    </div>
   );
 }

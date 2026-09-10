@@ -1,265 +1,338 @@
-import { useEffect, useState } from "react";
-import { Loader2, UserPlus } from "lucide-react";
-import Modal from "@/components/common/Modal";
+import { useState, useEffect } from "react";
+import { base44 } from "@/api/base44Client";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription
+} from "@/components/ui/dialog";
 import Button from "@/components/common/Button";
 import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { EVENT_STATUS, EVENT_STATUS_ORDER } from "@/constants/statusConfig";
+import { CURRENCY_SYMBOLS } from "@/constants/financeConfig";
 import ClientForm from "@/components/clients/ClientForm";
+import ChipPicker from "@/components/common/ChipPicker";
+import DateRangeChips from "@/components/common/DateRangeChips";
+import { Plus } from "lucide-react";
+import { fyForDate } from "@/lib/dates";
+import { useFinancialYear } from "@/hooks/useFinancialYear";
+import { fyDisplayLabel, fyRecordValue } from "@/lib/financialYearService";
+import { getEventTypes, buildAllEventTypes, normalizeEventType, mergeEventTypes } from "@/lib/eventTypeService";
 import EventTypeAutocomplete from "@/components/events/EventTypeAutocomplete";
-import { defaultEventTypes, defaultEventStatuses } from "@/constants/events";
-import { useBusinessTerminology } from "@/lib/BusinessTerminology";
-import { useWorkspace } from "@/lib/WorkspaceContext";
-import { eventTypeExists, addEventType } from "@/utils/eventTypes";
-import { base44 } from "@/api/base44Client";
-import { toast } from "@/components/ui/use-toast";
 
 const empty = {
-  title: "",
-  client_id: "",
-  event_type: "",
-  start_date: "",
-  end_date: "",
-  venue: "",
-  venue_address: "",
-  status: "Pending",
-  description: "",
-  notes: "",
+  client_id: "", title: "", event_type: "",
+  start_date: "", end_date: "", event_dates: [],
+  financial_year: "",
+  team_member_ids: [], service_ids: [],
+  venue: "", venue_address: "",
+  status: "upcoming", contract_value: 0, description: "", notes: ""
 };
 
-export default function EventForm({
-  open,
-  onClose,
-  event,
-  clients,
-  onSave,
-  onCreateClient,
-}) {
+export default function EventForm({ open, onClose, onSaved, event = null, workspaceId, workspace, term, currency = "INR" }) {
+  const t = term || {};
+  const { fiscalYears } = useFinancialYear();
+  const [usedEventTypes, setUsedEventTypes] = useState([]);
+  const workTypes = buildAllEventTypes(workspace, t.category, usedEventTypes);
   const [form, setForm] = useState(empty);
+  const [clients, setClients] = useState([]);
+  const [loadingClients, setLoadingClients] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [clientModalOpen, setClientModalOpen] = useState(false);
-  const t = useBusinessTerminology();
-  const { currentWorkspace, refresh } = useWorkspace();
-  const eventTypes = currentWorkspace?.event_types?.length
-    ? currentWorkspace.event_types
-    : defaultEventTypes;
-  const eventStatuses = currentWorkspace?.event_statuses?.length
-    ? currentWorkspace.event_statuses
-    : defaultEventStatuses;
+  const [error, setError] = useState("");
+  const [showClientForm, setShowClientForm] = useState(false);
 
   useEffect(() => {
     if (open) {
-      setForm(
-        event
-          ? {
-              ...empty,
-              ...event,
-              start_date: event.start_date || "",
-              end_date: event.end_date || "",
-            }
-          : empty
-      );
+      setError("");
+      const base = event ? { ...empty, ...event } : empty;
+      // Backfill event_dates from legacy start_date when editing old events.
+      if (event && (!base.event_dates || base.event_dates.length === 0) && base.start_date) {
+        base.event_dates = [base.start_date];
+      }
+      setForm(base);
+      loadClients();
+      loadUsedEventTypes();
     }
-  }, [open, event?.id]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, event]);
+
+  const loadClients = async () => {
+    if (!workspaceId) return;
+    setLoadingClients(true);
+    try {
+      const list = await base44.entities.Client.filter({ workspace_id: workspaceId }, "name", 200);
+      setClients(list || []);
+    } catch (e) {
+      setClients([]);
+    } finally {
+      setLoadingClients(false);
+    }
+  };
+
+  const loadUsedEventTypes = async () => {
+    if (!workspaceId) return;
+    try {
+      const events = await base44.entities.Event.filter({ workspace_id: workspaceId }, "-created_date", 200);
+      const types = (events || []).map((e) => e.event_type).filter(Boolean);
+      setUsedEventTypes([...new Set(types)]);
+    } catch {
+      setUsedEventTypes([]);
+    }
+  };
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
-  const handleSave = async () => {
-    if (!form.title.trim()) {
-      toast({ title: `${t.workItemSingular} title is required`, variant: "destructive" });
-      return;
-    }
-    if (!form.client_id) {
-      toast({ title: "Please select a client", variant: "destructive" });
-      return;
-    }
-    if (!form.start_date) {
-      toast({ title: "Start date is required", variant: "destructive" });
-      return;
-    }
-    if (form.end_date && form.end_date < form.start_date) {
-      toast({
-        title: "End date cannot be before start date",
-        variant: "destructive",
-      });
-      return;
-    }
+  // event_dates = selected shoot days within the start/end range.
+  const setEventDates = (dates) => {
+    setForm((f) => ({ ...f, event_dates: dates }));
+  };
+
+  const validate = () => {
+    const workLabel = t.workItemSingular || "Event";
+    if (!form.title.trim()) return `${workLabel} title is required.`;
+    if (!form.client_id) return "Please select a client.";
+    if (!form.start_date) return "Pick a start date.";
+    if (!form.end_date) return "Pick an end date.";
+    if ((form.event_dates || []).length === 0) return "Select at least one shoot day from the range.";
+    return "";
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const v = validate();
+    if (v) { setError(v); return; }
     setSaving(true);
+    setError("");
     try {
-      await onSave({
-        title: form.title.trim(),
+      const dates = (form.event_dates || []).slice().sort();
+      const startDate = form.start_date;
+      const endDate = form.end_date || startDate;
+      const fy = form.financial_year || fyForDate(startDate) || "";
+      const payload = {
+        workspace_id: workspaceId,
         client_id: form.client_id,
-        event_type: form.event_type.trim(),
-        start_date: form.start_date,
-        end_date: form.end_date || null,
+        title: form.title.trim(),
+        event_type: form.event_type,
+        start_date: startDate,
+        end_date: endDate,
+        event_dates: dates,
+        financial_year: fy,
+        team_member_ids: event?.team_member_ids || [],
+        service_ids: event?.service_ids || [],
         venue: form.venue.trim(),
         venue_address: form.venue_address.trim(),
         status: form.status,
+        contract_value: Number(form.contract_value) || 0,
         description: form.description.trim(),
-        notes: form.notes.trim(),
-      });
-
-      // Auto-add new event type to workspace suggestions (case-insensitive dedup).
-      // Non-critical: if this fails, the event is still saved successfully.
-      const trimmedType = form.event_type.trim();
-      if (trimmedType && !eventTypeExists(trimmedType, currentWorkspace?.event_types)) {
-        try {
-          const updatedTypes = addEventType(currentWorkspace?.event_types || [], trimmedType);
-          await base44.entities.Workspace.update(currentWorkspace.id, {
-            event_types: updatedTypes,
-          });
-          await refresh();
-        } catch {
-          // Workspace update failed — event was saved, so don't block.
-        }
+        notes: form.notes.trim()
+      };
+      let saved;
+      if (event?.id) {
+        saved = await base44.entities.Event.update(event.id, payload);
+      } else {
+        const res = await base44.functions.invoke("createEvent", payload);
+        saved = res.data || res;
       }
-
-      onClose();
-    } catch (e) {
-      toast({ title: "Save failed", description: e?.message, variant: "destructive" });
+      // Auto-add new event type to workspace config for future suggestions
+      const eventType = normalizeEventType(form.event_type);
+      if (eventType) {
+        try {
+          const currentTypes = getEventTypes(workspace, t.category);
+          const updatedTypes = mergeEventTypes(currentTypes, eventType);
+          if (updatedTypes.length !== currentTypes.length) {
+            await base44.entities.Workspace.update(workspaceId, {
+              event_types: JSON.stringify(updatedTypes)
+            });
+          }
+        } catch { /* non-critical — event is already saved */ }
+      }
+      onSaved?.(saved);
+      onClose?.();
+    } catch (err) {
+      const data = err?.response?.data || err;
+      if (data?.error === "PLAN_LIMIT_REACHED") {
+        const wl = (t.workItemSingular || "event").toLowerCase();
+        setError(`You've reached the Free Plan ${wl} limit (${data.current}/${data.limit}). Upgrade to Pro to create more ${wl}s.`);
+      } else if (data?.error === "This workspace is suspended. Please contact support.") {
+        setError(data.error);
+      } else {
+        setError(err?.message || `Failed to save ${t.workItemSingular?.toLowerCase() || "event"}. Please try again.`);
+      }
     } finally {
       setSaving(false);
     }
   };
 
-  const handleCreateClient = async (data) => {
-    const c = await onCreateClient(data);
-    set("client_id", c.id);
-    return c;
-  };
+  const workTypeOptions = workTypes.map((wt) => ({ value: wt, label: wt }));
+  const statusOptions = EVENT_STATUS_ORDER.map((s) => ({ value: s, label: EVENT_STATUS[s].label }));
 
   return (
     <>
-      <Modal
-        open={open}
-        onClose={onClose}
-        title={event ? t.editWorkItemLabel : t.createWorkItemLabel}
-        size="lg"
-        footer={
-          <>
-            <Button variant="outline" onClick={onClose} disabled={saving}>
-              Cancel
-            </Button>
-            <Button onClick={handleSave} disabled={saving}>
-              {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-              {event ? "Save Changes" : `Create ${t.workItemSingular}`}
-            </Button>
-          </>
-        }
-      >
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Input
-            label={`${t.workItemSingular} Title`}
-            name="title"
-            value={form.title}
-            onChange={(e) => set("title", e.target.value)}
-            placeholder={`e.g. ${t.workItemSingular === "Event" ? "Sharma Wedding" : "Residential Villa"}`}
-            className="sm:col-span-2"
-          />
-          <div className="sm:col-span-2">
-            <label className="mb-1.5 block text-sm font-medium text-foreground">
-              Client
-            </label>
-            <div className="flex gap-2">
-              <Select
-                value={form.client_id}
-                onChange={(e) => set("client_id", e.target.value)}
-                className="flex-1"
-              >
-                <option value="">Select a client…</option>
-                {clients.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </Select>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setClientModalOpen(true)}
-              >
-                <UserPlus className="h-4 w-4" /> New
-              </Button>
+      <Dialog open={open && !showClientForm} onOpenChange={(o) => !o && onClose?.()}>
+        <DialogContent className="max-w-3xl max-h-[90dvh] overflow-y-auto p-0 gap-0">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-muted/30">
+            <div>
+              <DialogTitle className="text-lg font-bold tracking-tight">{event ? t.editWorkItemLabel || "Edit Event" : t.addWorkItemLabel || "Add Event"}</DialogTitle>
+              <DialogDescription className="text-xs mt-0.5">
+                {event ? `Update ${t.workItemSingular?.toLowerCase() || "event"} details.` : `Create a new ${t.workItemSingular?.toLowerCase() || "event"} for a client.`}
+              </DialogDescription>
             </div>
           </div>
-          <EventTypeAutocomplete
-            label="Type"
-            value={form.event_type}
-            onChange={(val) => set("event_type", val)}
-            suggestions={eventTypes}
-            placeholder="Select or type a new type…"
-          />
-          <Select
-            label="Status"
-            value={form.status}
-            onChange={(e) => set("status", e.target.value)}
-          >
-            {eventStatuses.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </Select>
-          <Input
-            label={t.startDateLabel}
-            name="start_date"
-            type="date"
-            value={form.start_date}
-            onChange={(e) => set("start_date", e.target.value)}
-          />
-          <Input
-            label={t.endDateLabel}
-            name="end_date"
-            type="date"
-            value={form.end_date}
-            min={form.start_date || undefined}
-            onChange={(e) => set("end_date", e.target.value)}
-          />
-          <Input
-            label={t.locationLabel}
-            name="venue"
-            value={form.venue}
-            onChange={(e) => set("venue", e.target.value)}
-            placeholder={`${t.locationLabel} name`}
-            className="sm:col-span-2"
-          />
-          <Input
-            label={t.locationAddressLabel}
-            name="venue_address"
-            value={form.venue_address}
-            onChange={(e) => set("venue_address", e.target.value)}
-            className="sm:col-span-2"
-          />
-          <div className="sm:col-span-2">
-            <label className="mb-1.5 block text-sm font-medium text-foreground">
-              Description
-            </label>
-            <textarea
-              value={form.description}
-              onChange={(e) => set("description", e.target.value)}
-              rows={3}
-              placeholder={`Brief about the ${t.workItemSingular.toLowerCase()}…`}
-              className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30"
-            />
-          </div>
-          <div className="sm:col-span-2">
-            <label className="mb-1.5 block text-sm font-medium text-foreground">
-              Notes
-            </label>
-            <textarea
-              value={form.notes}
-              onChange={(e) => set("notes", e.target.value)}
-              rows={2}
-              placeholder="Internal notes…"
-              className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30"
-            />
-          </div>
-        </div>
-      </Modal>
+
+          <form onSubmit={handleSubmit}>
+            <div className="px-6 py-5 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+              {/* Left column — core details */}
+              <div className="space-y-4">
+                <div className="space-y-2.5">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">Project Details</p>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">{t.workItemTitleLabel || "Event Title"} <span className="text-destructive">*</span></Label>
+                    <Input value={form.title} onChange={(e) => set("title", e.target.value)} placeholder={t.category === "ARCHITECTURE" || t.category === "OTHER" ? "e.g. Riverside Villa Project" : "e.g. Meera & Dev"} autoFocus />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs">Client <span className="text-destructive">*</span></Label>
+                      <button type="button" onClick={() => setShowClientForm(true)} className="text-xs text-primary font-medium hover:underline flex items-center gap-1">
+                        <Plus className="w-3 h-3" /> New Client
+                      </button>
+                    </div>
+                    {clients.length === 0 && !loadingClients ? (
+                      <div className="rounded-md border border-dashed border-border p-3 text-center">
+                        <p className="text-xs text-muted-foreground mb-2">No clients yet. Add a client to create an event.</p>
+                        <Button type="button" variant="outline" size="sm" onClick={() => setShowClientForm(true)}>
+                          <Plus className="w-3.5 h-3.5" /> Add Client
+                        </Button>
+                      </div>
+                    ) : (
+                      <Select value={form.client_id} onChange={(e) => set("client_id", e.target.value)} className="w-full">
+                        <option value="">{loadingClients ? "Loading clients…" : "Select a client"}</option>
+                        {clients.map((c) => (
+                          <option key={c.id} value={c.id}>{c.name}</option>
+                        ))}
+                      </Select>
+                    )}
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">{t.workItemTypeLabel || "Event Type"}</Label>
+                    <EventTypeAutocomplete
+                      value={form.event_type}
+                      onChange={(v) => set("event_type", v)}
+                      suggestions={workTypes}
+                      placeholder="Type or select an event type"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Status</Label>
+                    <ChipPicker
+                      options={statusOptions}
+                      value={form.status}
+                      onChange={(v) => set("status", v)}
+                      size="sm"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2.5 pt-1">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">Financials & Location</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Contract Value ({CURRENCY_SYMBOLS[currency] || currency})</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={form.contract_value ?? ""}
+                        onChange={(e) => set("contract_value", e.target.value)}
+                        placeholder="0"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">{t.locationLabel || "Venue"}</Label>
+                      <Input value={form.venue} onChange={(e) => set("venue", e.target.value)} placeholder={t.locationLabel || "Venue"} />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">{t.locationAddressLabel || "Venue Address"}</Label>
+                    <Textarea value={form.venue_address} onChange={(e) => set("venue_address", e.target.value)} placeholder={`Full ${(t.locationLabel || "venue").toLowerCase()} address`} rows={2} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Right column — schedule & team */}
+              <div className="space-y-4">
+                <div className="space-y-2.5">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">Schedule</p>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Dates <span className="text-destructive">*</span></Label>
+                    <DateRangeChips
+                      startDate={form.start_date}
+                      endDate={form.end_date}
+                      value={form.event_dates || []}
+                      onChange={setEventDates}
+                      onStartChange={(v) => set("start_date", v)}
+                      onEndChange={(v) => set("end_date", v)}
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Financial Year</Label>
+                    <Select
+                      value={form.financial_year || fyForDate(form.start_date) || ""}
+                      onChange={(e) => set("financial_year", e.target.value)}
+                      className="w-full"
+                    >
+                      <option value="">Auto (from date)</option>
+                      {fiscalYears.map((fy) => (
+                        <option key={fy.id} value={fyRecordValue(fy)}>{fyDisplayLabel(fy)}</option>
+                      ))}
+                    </Select>
+                    <p className="text-[11px] text-muted-foreground">
+                      For future-year bookings. Defaults to the FY of the start date.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-2.5 pt-1">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">Additional Info</p>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Description</Label>
+                    <Textarea value={form.description} onChange={(e) => set("description", e.target.value)} placeholder={`${t.workItemSingular || "Event"} description`} rows={2} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Notes</Label>
+                    <Textarea value={form.notes} onChange={(e) => set("notes", e.target.value)} placeholder="Internal notes" rows={2} />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {error && (
+              <div className="mx-6 mb-3 p-2.5 rounded-md bg-destructive/8 text-destructive text-sm border border-destructive/15">
+                {error}
+              </div>
+            )}
+
+            <DialogFooter className="px-6 py-4 border-t border-border bg-muted/30 flex-row-reverse gap-2">
+              <Button type="submit" disabled={saving}>
+                {saving ? "Saving…" : event ? "Save Changes" : t.addWorkItemLabel || "Add Event"}
+              </Button>
+              <Button type="button" variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       <ClientForm
-        open={clientModalOpen}
-        onClose={() => setClientModalOpen(false)}
-        onSave={handleCreateClient}
+        open={showClientForm}
+        onClose={() => setShowClientForm(false)}
+        workspaceId={workspaceId}
+        onSaved={async (savedClient) => {
+          await loadClients();
+          set("client_id", savedClient.id);
+        }}
       />
     </>
   );

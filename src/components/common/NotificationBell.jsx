@@ -1,106 +1,110 @@
-import { useState } from "react";
-import { Bell, Check, Calendar, CreditCard, AlertTriangle, Info, X } from "lucide-react";
+// Notification bell with dropdown — shows in-app notifications.
+import { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Bell, Check, X, Calendar, Crown, AlertCircle, Wallet } from "lucide-react";
 import { useNotifications } from "@/hooks/useNotifications";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
-import { formatDistanceToNow } from "@/utils/notificationFormat";
+import { cn } from "@/lib/utils";
 
-const TYPE_ICONS = {
-  EVENT_UPCOMING: Calendar,
-  PAYMENT_PENDING: CreditCard,
-  SUBSCRIPTION_EXPIRING: AlertTriangle,
-  SUBSCRIPTION_EXPIRED: AlertTriangle,
-  TEAM_CONFLICT: AlertTriangle,
-  SYSTEM: Info,
+const ICONS = {
+  event_reminder: Calendar,
+  payment_due: Wallet,
+  subscription_expiring: Crown,
+  subscription_expired: AlertCircle,
+  team_conflict: AlertCircle,
+  general: Bell
 };
 
 const TYPE_COLORS = {
-  EVENT_UPCOMING: "text-info",
-  PAYMENT_PENDING: "text-warning",
-  SUBSCRIPTION_EXPIRING: "text-warning",
-  SUBSCRIPTION_EXPIRED: "text-destructive",
-  TEAM_CONFLICT: "text-destructive",
-  SYSTEM: "text-muted-foreground",
+  event_reminder: "text-primary",
+  payment_due: "text-success",
+  subscription_expiring: "text-warning",
+  subscription_expired: "text-destructive",
+  team_conflict: "text-destructive",
+  general: "text-muted-foreground"
 };
 
 export default function NotificationBell() {
-  const { notifications, unreadCount, markAllAsRead, markAsRead, loading } = useNotifications();
+  const { notifications, unreadCount, markRead, markAllRead } = useNotifications();
   const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const handleClick = (n) => {
+    markRead(n.id);
+    if (n.related_entity_type === "event" && n.related_entity_id) {
+      navigate(`/events/${n.related_entity_id}`);
+    } else if (n.related_entity_type === "subscription") {
+      navigate("/plan");
+    }
+    setOpen(false);
+  };
 
   return (
-    <DropdownMenu open={open} onOpenChange={setOpen}>
-      <DropdownMenuTrigger asChild>
-        <button
-          className="relative rounded-md p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          aria-label="Notifications"
-        >
-          <Bell className="h-5 w-5" />
-          {unreadCount > 0 && (
-            <span className="absolute right-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
-              {unreadCount > 9 ? "9+" : unreadCount}
-            </span>
-          )}
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-80">
-        <div className="flex items-center justify-between px-3 py-2">
-          <span className="text-sm font-semibold text-foreground">Notifications</span>
-          {unreadCount > 0 && (
-            <button
-              onClick={markAllAsRead}
-              className="flex items-center gap-1 text-xs text-primary hover:underline"
-            >
-              <Check className="h-3 w-3" /> Mark all read
-            </button>
-          )}
-        </div>
-        <DropdownMenuSeparator />
-        {loading ? (
-          <div className="px-3 py-6 text-center text-sm text-muted-foreground">Loading…</div>
-        ) : notifications.length === 0 ? (
-          <div className="px-3 py-8 text-center">
-            <Bell className="mx-auto h-6 w-6 text-muted-foreground/50" />
-            <p className="mt-2 text-sm text-muted-foreground">No notifications</p>
-          </div>
-        ) : (
-          <div className="max-h-80 overflow-y-auto ks-scrollbar">
-            {notifications.slice(0, 20).map((n) => {
-              const Icon = TYPE_ICONS[n.type] || Info;
-              const color = TYPE_COLORS[n.type] || "text-muted-foreground";
-              return (
-                <div
-                  key={n.id}
-                  className={`flex gap-3 border-b border-border px-3 py-3 last:border-0 ${!n.read ? "bg-accent/30" : ""}`}
-                >
-                  <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${color}`} />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-foreground">{n.title}</p>
-                    <p className="mt-0.5 text-xs text-muted-foreground">{n.message}</p>
-                    <p className="mt-1 text-[11px] text-muted-foreground/70">
-                      {formatDistanceToNow(n.created_date)}
-                    </p>
-                  </div>
-                  {!n.read && (
-                    <button
-                      onClick={() => markAsRead(n.id)}
-                      className="shrink-0 text-muted-foreground hover:text-foreground"
-                      aria-label="Mark as read"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="relative p-1.5 rounded-md hover:bg-muted transition-colors"
+        aria-label="Notifications"
+      >
+        <Bell className="w-5 h-5 text-foreground" />
+        {unreadCount > 0 && (
+          <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 flex items-center justify-center text-[10px] font-bold text-white bg-destructive rounded-full">
+            {unreadCount > 9 ? "9+" : unreadCount}
+          </span>
         )}
-      </DropdownMenuContent>
-    </DropdownMenu>
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-full mt-2 w-80 max-w-[calc(100vw-2rem)] bg-card border border-border rounded-lg shadow-lg z-50 animate-fade-in">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+            <h3 className="text-sm font-semibold">Notifications</h3>
+            {unreadCount > 0 && (
+              <button
+                onClick={markAllRead}
+                className="text-xs text-primary hover:underline flex items-center gap-1"
+              >
+                <Check className="w-3 h-3" /> Mark all read
+              </button>
+            )}
+          </div>
+          <div className="max-h-80 overflow-y-auto scrollbar-thin">
+            {notifications.length === 0 ? (
+              <div className="p-6 text-center text-sm text-muted-foreground">
+                No notifications yet.
+              </div>
+            ) : (
+              notifications.map((n) => {
+                const Icon = ICONS[n.type] || Bell;
+                return (
+                  <button
+                    key={n.id}
+                    onClick={() => handleClick(n)}
+                    className={cn(
+                      "w-full flex items-start gap-3 px-4 py-3 border-b border-border last:border-0 hover:bg-muted/40 transition-colors text-left",
+                      !n.read && "bg-primary/5"
+                    )}
+                  >
+                    <Icon className={cn("w-4 h-4 mt-0.5 shrink-0", TYPE_COLORS[n.type] || "text-muted-foreground")} />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-foreground truncate">{n.title}</div>
+                      <div className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{n.message}</div>
+                    </div>
+                    {!n.read && <span className="w-2 h-2 rounded-full bg-primary shrink-0 mt-1.5" />}
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

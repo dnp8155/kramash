@@ -1,31 +1,55 @@
 import { cn } from "@/lib/utils";
-import { formatCurrency } from "@/utils/format";
 
-export default function StatCard({ label, value, icon: Icon, trend, accent = "primary", isCurrency }) {
-  const accents = {
-    primary: "bg-primary/10 text-primary",
-    success: "bg-success/10 text-success",
-    warning: "bg-warning/10 text-warning",
-    info: "bg-info/10 text-info",
-    destructive: "bg-destructive/10 text-destructive",
-  };
+const toneDot = {
+  primary: "bg-primary",
+  success: "bg-success",
+  warning: "bg-warning",
+  danger: "bg-destructive",
+  info: "bg-accent",
+  muted: "bg-muted-foreground"
+};
+
+const toneIcon = {
+  primary: "text-primary",
+  success: "text-success",
+  warning: "text-warning",
+  danger: "text-destructive",
+  info: "text-accent",
+  muted: "text-muted-foreground"
+};
+
+export default function StatCard({ label, value, icon: Icon, tone = "primary", sub, className }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-sm text-muted-foreground">{label}</p>
-          <p className="mt-1.5 text-xl font-bold text-foreground sm:text-2xl">
-            {isCurrency ? formatCurrency(value) : value}
-          </p>
+    <div
+      className={cn(
+        "relative bg-card border border-border rounded-xl p-4 sm:p-5 shadow-card overflow-hidden",
+        className
+      )}
+    >
+      {/* Label row */}
+      <div className="flex items-center gap-2">
+        <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", toneDot[tone] || toneDot.primary)} />
+        <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.08em] truncate">
+          {label}
         </div>
         {Icon && (
-          <div className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-lg", accents[accent])}>
-            <Icon className="h-5 w-5" />
-          </div>
+          <Icon
+            className={cn("w-3.5 h-3.5 ml-auto shrink-0", toneIcon[tone] || toneIcon.primary)}
+            strokeWidth={2}
+          />
         )}
       </div>
-      {trend && (
-        <p className="mt-2 text-xs font-medium text-muted-foreground">{trend}</p>
+
+      {/* Value */}
+      <div className="mt-3 text-2xl sm:text-[1.625rem] font-mono font-semibold tabular-nums text-foreground leading-none tracking-tight truncate">
+        {value}
+      </div>
+
+      {/* Sub */}
+      {sub && (
+        <div className="mt-2 text-xs text-muted-foreground truncate">
+          {sub}
+        </div>
       )}
     </div>
   );

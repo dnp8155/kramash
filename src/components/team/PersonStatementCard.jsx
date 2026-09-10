@@ -1,125 +1,154 @@
-import { Link } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
-import Card, { CardBody } from "@/components/common/Card";
-import SelfBadge from "@/components/common/SelfBadge";
-import { formatCurrency, initials } from "@/utils/format";
+import { Crown, Wallet, Users, Briefcase, TrendingUp, Clock } from "lucide-react";
+import { formatMoney } from "@/utils/format";
+import { cn } from "@/lib/utils";
 
-// Consolidated financial statement card for a single person across both
-// Team/Role assignments and Service Provider assignments.
+// Consolidated per-person financial statement card.
+// Shows Roles Total, Services Total, Total Paid, Due Now, and Future Amount Due
+// across both Team/Role and Service Provider assignments.
 //
-// Shows: Due Now (overdue from completed events), Roles Total, Services Total
-// (hidden if person has no service assignments), Total Paid, and Future Amount Due.
-// SELF/Owner cards show the amounts but are marked as internal share, not
-// external payable.
-//
-// Responsive: stacks cleanly on 320px+, no horizontal overflow, amounts wrap
-// correctly. Uses existing Kramashah design tokens.
-export default function PersonStatementCard({ statement }) {
+// Responsive: works from 320px up. No horizontal overflow or text clipping.
+export default function PersonStatementCard({ statement, currency = "INR" }) {
   const {
+    name,
     member,
-    isSelf,
-    rolesTotal,
-    servicesTotal,
-    totalObligation,
-    totalPaid,
-    futureDue,
-    dueNow,
-    teamAssignmentCount,
-    serviceAssignmentCount,
-    hasServiceAssignments,
+    rolesTotal = 0,
+    servicesTotal = 0,
+    combinedTotal = 0,
+    totalPaid = 0,
+    dueNow = 0,
+    futureDue = 0
   } = statement;
 
-  const hasActivity = totalObligation > 0 || totalPaid > 0;
+  const hasTeam = rolesTotal > 0 || (member && statement.teamAssignments?.length > 0);
+  const hasService = servicesTotal > 0 || statement.serviceAssignments?.length > 0;
+  const isFullySettled = futureDue === 0 && combinedTotal > 0;
+  const hasOverdue = dueNow > 0;
 
   return (
-    <Card className="flex h-full flex-col transition-shadow hover:shadow-md">
-      <CardBody className="flex flex-1 flex-col gap-4">
-        {/* Header: avatar + name + SELF badge */}
-        <div className="flex items-center gap-3">
-          <Link
-            to={`/team/${member.id}`}
-            className="flex min-w-0 flex-1 items-center gap-3"
-          >
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
-              {initials(member.name)}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-foreground hover:text-primary">
-                {member.name}
-                {isSelf && <SelfBadge className="ml-1.5" />}
-              </p>
-              <p className="truncate text-xs text-muted-foreground">
-                {teamAssignmentCount > 0 && `${teamAssignmentCount} role${teamAssignmentCount === 1 ? "" : "s"}`}
-                {teamAssignmentCount > 0 && serviceAssignmentCount > 0 && " · "}
-                {serviceAssignmentCount > 0 && `${serviceAssignmentCount} service${serviceAssignmentCount === 1 ? "" : "s"}`}
-                {teamAssignmentCount === 0 && serviceAssignmentCount === 0 && "No assignments"}
-              </p>
-            </div>
-          </Link>
-        </div>
-
-        {/* Due Now — prominent, top of statement */}
-        <div className="rounded-lg border border-border bg-muted/30 px-4 py-3">
-          <p className="text-xs font-medium text-muted-foreground">
-            Due Now (Till Now)
-          </p>
-          <p
-            className={`mt-0.5 text-2xl font-bold ${
-              dueNow > 0 ? "text-destructive" : "text-foreground"
-            }`}
-          >
-            {isSelf ? "—" : formatCurrency(dueNow)}
-          </p>
-        </div>
-
-        {/* Breakdown rows */}
-        <div className="flex flex-col gap-2.5 border-t border-border pt-3">
-          <StatementRow
-            label="Team / Roles Total"
-            value={formatCurrency(rolesTotal)}
-          />
-          {hasServiceAssignments && (
-            <StatementRow
-              label="Services Total"
-              value={formatCurrency(servicesTotal)}
-            />
+    <div className="bg-card border border-border rounded-xl p-4 flex flex-col gap-3 hover:shadow-card-hover hover-lift transition-all">
+      {/* Header */}
+      <div>
+        <div className="flex items-center gap-1.5">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+            Statement for
+          </span>
+          {member?.is_self && (
+            <span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide bg-primary text-primary-foreground">
+              <Crown className="w-2 h-2" /> Self
+            </span>
           )}
-          <StatementRow
-            label="Total Paid"
-            value={isSelf ? "—" : formatCurrency(totalPaid)}
-            valueClass="text-success"
-          />
-          <div className="border-t border-border pt-2.5">
-            <StatementRow
-              label="Future Amount Due"
-              value={isSelf ? "—" : formatCurrency(futureDue)}
-              valueClass={
-                futureDue > 0 ? "text-warning font-bold" : "text-foreground font-bold"
-              }
-            />
-          </div>
         </div>
+        <h3 className="text-base font-bold text-foreground mt-0.5 break-anywhere leading-tight">
+          {name}
+        </h3>
+      </div>
 
-        {/* Footer link */}
-        {hasActivity && (
-          <Link
-            to={`/team/${member.id}`}
-            className="mt-auto flex items-center justify-between border-t border-border pt-3 text-sm font-medium text-primary"
-          >
-            <span>View Details</span>
-            <ArrowRight className="h-4 w-4" />
-          </Link>
+      {/* Due Now — prominent */}
+      <div
+        className={cn(
+          "rounded-lg px-3 py-2.5 border",
+          hasOverdue
+            ? "bg-warning/10 border-warning/20"
+            : "bg-muted/40 border-border"
         )}
-      </CardBody>
-    </Card>
+      >
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <Clock
+              className={cn(
+                "w-3.5 h-3.5 shrink-0",
+                hasOverdue ? "text-warning" : "text-muted-foreground"
+              )}
+            />
+            <span className="text-xs font-medium text-muted-foreground truncate">
+              Due Now (Till Now)
+            </span>
+          </div>
+          <span
+            className={cn(
+              "text-lg font-bold tabular-nums whitespace-nowrap",
+              hasOverdue ? "text-warning" : "text-foreground"
+            )}
+          >
+            {formatMoney(dueNow, currency)}
+          </span>
+        </div>
+      </div>
+
+      {/* Separator */}
+      <div className="border-t border-border" />
+
+      {/* Breakdown rows */}
+      <div className="space-y-2">
+        {hasTeam && (
+          <StatementRow
+            icon={Users}
+            label="Team / Roles Total"
+            amount={rolesTotal}
+            currency={currency}
+          />
+        )}
+        {hasService && (
+          <StatementRow
+            icon={Briefcase}
+            label="Services Total"
+            amount={servicesTotal}
+            currency={currency}
+          />
+        )}
+        <StatementRow
+          icon={Wallet}
+          label="Total Paid"
+          amount={totalPaid}
+          currency={currency}
+          tone={totalPaid > 0 ? "success" : "neutral"}
+        />
+        <StatementRow
+          icon={TrendingUp}
+          label="Future Amount Due"
+          amount={futureDue}
+          currency={currency}
+          tone={
+            futureDue > 0 ? (hasOverdue ? "warning" : "foreground") : "success"
+          }
+          emphasize
+        />
+      </div>
+
+      {/* Settled badge */}
+      {isFullySettled && (
+        <div className="text-xs font-medium text-success flex items-center gap-1 pt-1">
+          <span className="w-1.5 h-1.5 rounded-full bg-success" />
+          Fully settled
+        </div>
+      )}
+    </div>
   );
 }
 
-function StatementRow({ label, value, valueClass = "text-foreground" }) {
+function StatementRow({ icon: Icon, label, amount, currency, tone = "neutral", emphasize = false }) {
+  const toneClass = {
+    neutral: "text-foreground",
+    success: "text-success",
+    warning: "text-warning",
+    foreground: "text-foreground"
+  }[tone];
+
   return (
     <div className="flex items-center justify-between gap-2">
-      <span className="text-xs text-muted-foreground">{label}</span>
-      <span className={`text-sm font-semibold ${valueClass}`}>{value}</span>
+      <div className="flex items-center gap-1.5 min-w-0">
+        <Icon className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+        <span className="text-xs text-muted-foreground truncate">{label}</span>
+      </div>
+      <span
+        className={cn(
+          "tabular-nums whitespace-nowrap",
+          emphasize ? "text-sm font-bold" : "text-sm font-semibold",
+          toneClass
+        )}
+      >
+        {formatMoney(amount, currency)}
+      </span>
     </div>
   );
 }

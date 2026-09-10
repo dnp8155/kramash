@@ -1,19 +1,16 @@
 import { Inbox } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { useT } from "@/hooks/useT";
 
-export default function EmptyState({ title, description, icon: Icon = Inbox, action, className }) {
+export default function EmptyState({ title = "Nothing here yet", description, action }) {
+  const t = useT();
   return (
-    <div className={cn("flex flex-col items-center justify-center gap-3 px-6 py-16 text-center", className)}>
-      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
-        <Icon className="h-7 w-7 text-muted-foreground" />
+    <div className="flex flex-col items-center justify-center text-center py-12 px-4">
+      <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3">
+        <Inbox className="w-6 h-6 text-muted-foreground" />
       </div>
-      <div>
-        <p className="text-sm font-semibold text-foreground">{title}</p>
-        {description && (
-          <p className="mt-1 text-sm text-muted-foreground">{description}</p>
-        )}
-      </div>
-      {action}
+      <h3 className="text-sm font-semibold text-foreground">{t(title)}</h3>
+      {description && <p className="text-sm text-muted-foreground mt-1 max-w-sm">{t(description)}</p>}
+      {action && <div className="mt-4">{action}</div>}
     </div>
   );
 }

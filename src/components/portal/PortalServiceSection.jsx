@@ -1,38 +1,23 @@
 import { Package } from "lucide-react";
 
-export default function PortalServiceSection({ serviceAssignments, quotationItems }) {
-  const hasEventServices = serviceAssignments && serviceAssignments.length > 0;
-  const serviceItems = (quotationItems || []).filter((i) => i.item_type === "service");
-
-  if (!hasEventServices && serviceItems.length === 0) return null;
-
-  // Build service name list
-  let services = [];
-  if (hasEventServices) {
-    services = serviceAssignments.map((a) => a.service_name);
-  } else {
-    services = serviceItems.map((i) => i.name);
-  }
-
-  // Deduplicate
-  const uniqueServices = [...new Set(services.filter(Boolean))];
-
-  if (uniqueServices.length === 0) return null;
+// Displays included services from the quotation items.
+export default function PortalServiceSection({ services }) {
+  if (!services || services.length === 0) return null;
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-      <div className="flex items-center gap-2">
-        <Package className="h-5 w-5 text-primary" />
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Services</h3>
+    <div className="bg-card border border-border rounded-xl p-5">
+      <div className="flex items-center gap-2 mb-4">
+        <Package className="w-4 h-4 text-muted-foreground" />
+        <h3 className="text-sm font-semibold text-foreground">Services</h3>
       </div>
-      <div className="mt-4 flex flex-wrap gap-2">
-        {uniqueServices.map((name, idx) => (
-          <span
-            key={idx}
-            className="rounded-lg bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary"
-          >
-            {name}
-          </span>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {services.map((s, idx) => (
+          <div key={idx} className="py-1.5">
+            <div className="text-sm font-medium text-foreground">{s.name}</div>
+            {s.description && (
+              <div className="text-xs text-muted-foreground mt-0.5">{s.description}</div>
+            )}
+          </div>
         ))}
       </div>
     </div>

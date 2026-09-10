@@ -1,57 +1,80 @@
 import { Users } from "lucide-react";
 
-export default function PortalTeamSection({ teamAssignments, quotationItems, hideTeamNames }) {
-  // Use event team assignments if available; otherwise fall back to quotation role items
-  const hasEventTeam = teamAssignments && teamAssignments.length > 0;
+// Displays roles first, names second.
+// If hideTeamNames is true, shows only role + quantity (e.g. "1× Lead Videographer").
+export default function PortalTeamSection({ team }) {
+  if (!team || team.length === 0) return null;
 
-  const roleItems = (quotationItems || []).filter((i) => i.item_type === "role");
-
-  if (!hasEventTeam && roleItems.length === 0) return null;
-
-  // Build display list: role first, name second
-  let displayList = [];
-  if (hasEventTeam) {
-    displayList = teamAssignments.map((a) => ({
-      role: a.role_name || "Team Member",
-      name: hideTeamNames ? null : a.member_name,
-    }));
-  } else {
-    // Group role items by name (role) and count
-    const roleMap = {};
-    roleItems.forEach((item) => {
-      const role = item.name || "Team Member";
-      if (!roleMap[role]) roleMap[role] = { role, count: 0 };
-      roleMap[role].count += item.quantity || 1;
-    });
-    displayList = Object.values(roleMap).map((r) => ({
-      role: r.role,
-      name: hideTeamNames ? null : null, // no names from quotation items
-      count: r.count,
-    }));
+  // Group by member_type if any exist
+  const hasMemberTypes = team.some((t) => t.member_type);
+  const groups = {};
+  if (hasMemberTypes) {
+    for (const t of team) {
+      const key = t.member_type || "Team";
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(t);
+    }
   }
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-      <div className="flex items-center gap-2">
-        <Users className="h-5 w-5 text-primary" />
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Team</h3>
+    <div className="bg-card border border-border rounded-xl p-5">
+      <div className="flex items-center gap-2 mb-4">
+        <Users className="w-4 h-4 text-muted-foreground" />
+        <h3 className="text-sm font-semibold text-foreground">Team</h3>
       </div>
-      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {displayList.map((entry, idx) => (
-          <div key={idx} className="rounded-lg bg-muted/40 px-4 py-3">
-            <p className="text-sm font-semibold text-foreground">{entry.role}</p>
-            {entry.name ? (
-              <p className="mt-0.5 text-sm text-muted-foreground">{entry.name}</p>
-            ) : entry.count > 1 ? (
-              <p className="mt-0.5 text-sm text-muted-foreground">{entry.count}× {entry.role}</p>
-            ) : hideTeamNames ? (
-              <p className="mt-0.5 text-sm text-muted-foreground">1× {entry.role}</p>
-            ) : (
-              <p className="mt-0.5 text-sm text-muted-foreground">—</p>
-            )}
+
+      {hasMemberTypes ? (
+        <div className="space-y-4">
+          {Object.entries(groups).map(([type, members]) => (
+            <div key={type}>
+              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                {formatMemberType(type)}
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {members.map((t, idx) => (
+                  <TeamMemberRow key={idx} member={t} />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {team.map((t, idx) => (
+            <TeamMemberRow key={idx} member={t} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TeamMemberRow({ member }) {
+  return (
+    <div className="flex items-baseline gap-2 py-1.5">
+      <div className="min-w-0 flex-1">
+        <div className="text-sm font-medium text-foreground">{member.role || "Team Member"}</div>
+        {member.hide ? (
+          <div className="text-xs text-muted-foreground">
+            {member.quantity > 1 ? `${member.quantity}× ` : "1× "}
+            {member.role || "Assigned"}
           </div>
-        ))}
+        ) : (
+          member.name && (
+            <div className="text-xs text-muted-foreground">{member.name}</div>
+          )
+        )}
       </div>
     </div>
   );
+}
+
+function formatMemberType(type) {
+  const map = {
+    bride_side: "Bride Side",
+    groom_side: "Groom Side",
+    common: "Common",
+    other: "Others"
+  };
+  return map[type] || type;
 }

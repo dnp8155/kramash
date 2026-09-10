@@ -1,133 +1,207 @@
-import { NavLink } from "react-router-dom";
-import { navItems } from "@/constants/navigation";
-import { useWorkspace } from "@/lib/WorkspaceContext";
-import { usePlan } from "@/lib/PlanContext";
+import { useState } from "react";
+import { NavLink, useLocation } from "react-router-dom";
+import { mainNav, moreNav, moreGroup, settingsNav, settingsGroup } from "@/constants/navigation";
 import { useAuth } from "@/lib/AuthContext";
-import { useBusinessTerminology } from "@/lib/BusinessTerminology";
-import { Camera, X, Shield } from "lucide-react";
+import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
+import { useT } from "@/hooks/useT";
+import { ChevronDown, ChevronUp, Settings, Info, X, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Image } from "@/components/ui/image";
+import WorkspaceSwitcher from "@/components/layout/WorkspaceSwitcher";
 
-export default function Sidebar({ open, onClose }) {
-  const { currentWorkspace } = useWorkspace();
-  const { planName, isPro } = usePlan();
-  const { user } = useAuth();
-  const t = useBusinessTerminology();
-  const isAdmin = user?.role === "admin";
-  const planLabel = `${planName} Plan`;
+export default function Sidebar({ mobile = false, onClose, collapsed = false, onToggleCollapse }) {
+  const location = useLocation();
+  const { user, logout } = useAuth();
+  const term = useBusinessTerminology();
+  const t = useT();
+  const moreActive = moreNav.some((item) => location.pathname === item.path);
+  const [moreOpen, setMoreOpen] = useState(moreActive);
+  const settingsActive = settingsNav.some((item) => location.pathname === item.path);
+  const [settingsOpen, setSettingsOpen] = useState(settingsActive);
 
-  const resolveLabel = (item) => {
-    if (item.labelKey && t[item.labelKey]) return t[item.labelKey];
-    return item.label;
+  // Resolve a dynamic label for a nav item (Events -> Projects for Architecture/Other).
+  const navLabel = (item) => t(item.path === "/events" ? term.workItemPlural : item.label);
+
+  const itemClass = ({ isActive }) =>
+    cn(
+      "relative flex items-center rounded-lg text-sm transition-all",
+      collapsed ? "justify-center px-0 py-2 mx-auto w-10" : "gap-3 px-3 py-2",
+      isActive
+        ? "bg-primary/10 text-primary font-semibold shadow-sm"
+        : "text-muted-foreground font-medium hover:bg-muted hover:text-foreground"
+    );
+
+  const renderItem = (item) => {
+    const Icon = item.icon;
+    return (
+      <NavLink key={item.path} to={item.path} className={itemClass} title={collapsed ? navLabel(item) : undefined}>
+        {({ isActive }) => (
+          <>
+            {isActive && !collapsed && (
+              <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-1 rounded-r-full bg-primary" />
+            )}
+            <Icon className="w-4 h-4 shrink-0" />
+            {!collapsed && <span>{navLabel(item)}</span>}
+          </>
+        )}
+      </NavLink>
+    );
   };
 
-  return (
-    <>
-      {/* Mobile overlay */}
-      <div
-        className={cn(
-          "fixed inset-0 z-40 bg-foreground/40 backdrop-blur-sm transition-opacity lg:hidden",
-          open ? "opacity-100" : "pointer-events-none opacity-0"
-        )}
-        onClick={onClose}
-        aria-hidden
-      />
-
-      <aside
-        className={cn(
-          "fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-sidebar-border bg-sidebar-background pt-safe transition-transform lg:translate-x-0",
-          open ? "translate-x-0" : "-translate-x-full"
-        )}
-      >
-        {/* Brand */}
-        <div className="flex h-16 items-center justify-between gap-2 border-b border-sidebar-border px-5">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
-              <Camera className="h-5 w-5" />
+  if (collapsed) {
+    return (
+      <div className="flex h-full flex-col bg-card text-foreground border-r border-border w-16">
+        <WorkspaceSwitcher mobile={mobile} collapsed onToggleCollapse={onToggleCollapse} />
+        <div className="h-px bg-border" />
+        <nav className="flex-1 overflow-y-auto scrollbar-thin px-2 py-3 space-y-1 flex flex-col items-center">
+          {mainNav.map((item) => renderItem(item))}
+          <button
+            onClick={() => setMoreOpen((v) => !v)}
+            className="w-10 h-10 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+            title={t(moreGroup.label)}
+          >
+            <moreGroup.icon className="w-4 h-4 shrink-0" />
+          </button>
+          {moreOpen && (
+            <div className="space-y-1 w-full flex flex-col items-center">
+              {moreNav.map((item) => renderItem(item))}
             </div>
-            <div className="leading-tight">
-              <p className="max-w-[150px] truncate text-base font-bold tracking-tight text-foreground">
-                {currentWorkspace?.name || "Kramashah"}
-              </p>
-              <p className="text-[11px] text-muted-foreground">{t.sidebarSubtitle}</p>
+          )}
+          <button
+            onClick={() => setSettingsOpen((v) => !v)}
+            className="w-10 h-10 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+            title={t(settingsGroup.label)}
+          >
+            <settingsGroup.icon className="w-4 h-4 shrink-0" />
+          </button>
+          {settingsOpen && (
+            <div className="space-y-1 w-full flex flex-col items-center">
+              {settingsNav.map((item) => renderItem(item))}
             </div>
+          )}
+        </nav>
+        <div className="px-2 py-2 space-y-1 flex flex-col items-center">
+          {user?.role === "admin" && (
+            <NavLink to="/admin" className="w-10 h-10 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" title={t("SaaS Admin")}>
+              <Settings className="w-3.5 h-3.5" />
+            </NavLink>
+          )}
+          <NavLink to="/app-updates" className="w-10 h-10 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" title={t("About & Legal")}>
+            <Info className="w-3.5 h-3.5" />
+          </NavLink>
+        </div>
+        <div className="h-px bg-border" />
+        <div className="flex flex-col items-center gap-2 px-2 py-3">
+          <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center text-foreground font-semibold text-sm overflow-hidden border border-border">
+            {user?.data?.profile_image || user?.profile_image
+              ? <Image src={user.data?.profile_image || user.profile_image} alt="Profile" fittingType="fill" className="w-full h-full" />
+              : (user?.full_name || user?.email || "K").charAt(0).toUpperCase()}
           </div>
           <button
-            onClick={onClose}
-            className="rounded-md p-1.5 text-muted-foreground hover:bg-muted lg:hidden"
-            aria-label="Close menu"
+            onClick={() => logout()}
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-colors"
+            aria-label={t("Log out")}
+            title={t("Log out")}
           >
-            <X className="h-5 w-5" />
+            <LogOut className="w-4 h-4" />
           </button>
         </div>
+      </div>
+    );
+  }
 
-        {/* Nav */}
-        <nav className="ks-scrollbar flex-1 overflow-y-auto px-3 py-4">
-          <p className="px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Menu
-          </p>
-          <ul className="flex flex-col gap-1">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <li key={item.path}>
-                  <NavLink
-                    to={item.path}
-                    end={item.path === "/dashboard"}
-                    onClick={onClose}
-                    className={({ isActive }) =>
-                      cn(
-                        "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                        isActive
-                          ? "bg-primary text-primary-foreground shadow-sm"
-                          : "text-sidebar-foreground hover:bg-sidebar-accent"
-                      )
-                    }
-                  >
-                    <Icon className="h-[18px] w-[18px] shrink-0" />
-                    <span className="truncate">{resolveLabel(item)}</span>
-                  </NavLink>
-                </li>
-              );
-            })}
-            {isAdmin && (
-              <li>
-                <NavLink
-                  to="/admin"
-                  onClick={onClose}
-                  className={({ isActive }) =>
-                    cn(
-                      "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                      isActive
-                        ? "bg-primary text-primary-foreground shadow-sm"
-                        : "text-sidebar-foreground hover:bg-sidebar-accent"
-                    )
-                  }
-                >
-                  <Shield className="h-[18px] w-[18px] shrink-0" />
-                  <span className="truncate">SaaS Admin</span>
-                </NavLink>
-              </li>
-            )}
-          </ul>
-        </nav>
+  return (
+    <div className="relative flex h-full flex-col bg-card text-foreground border-r border-border">
+      {/* Workspace switcher */}
+      <WorkspaceSwitcher mobile={mobile} onClose={onClose} onToggleCollapse={onToggleCollapse} />
+      {mobile && (
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3 w-8 h-8 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+          aria-label="Close"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      )}
 
-        {/* Footer */}
-        <div className="border-t border-sidebar-border p-4">
-          <div className="rounded-lg bg-accent px-3 py-3">
-            <p className="text-xs font-semibold text-foreground">{planLabel}</p>
-            <p className="mt-0.5 text-[11px] text-muted-foreground">
-              {isPro ? "Pro subscription" : "Free plan"}
-            </p>
-            <NavLink
-              to="/plan"
-              onClick={onClose}
-              className="mt-2 block text-[11px] font-medium text-primary hover:underline"
-            >
-              Manage plan →
-            </NavLink>
+      <div className="h-px bg-border" />
+
+      {/* Nav */}
+      <nav className="flex-1 overflow-y-auto scrollbar-thin px-3 py-3 space-y-1">
+        {mainNav.map((item) => renderItem(item))}
+
+        <button
+          onClick={() => setMoreOpen((v) => !v)}
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+        >
+          <moreGroup.icon className="w-4 h-4 shrink-0" />
+          <span className="flex-1 text-left">{t(moreGroup.label)}</span>
+          {moreOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+        </button>
+
+        {moreOpen && (
+          <div className="space-y-1 pl-3 border-l border-border ml-3">
+            {moreNav.map((item) => renderItem(item))}
           </div>
+        )}
+
+        <button
+          onClick={() => setSettingsOpen((v) => !v)}
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+        >
+          <settingsGroup.icon className="w-4 h-4 shrink-0" />
+          <span className="flex-1 text-left">{t(settingsGroup.label)}</span>
+          {settingsOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+        </button>
+
+        {settingsOpen && (
+          <div className="space-y-1 pl-3 border-l border-border ml-3">
+            {settingsNav.map((item) => renderItem(item))}
+          </div>
+        )}
+      </nav>
+
+      {/* Footer */}
+      <div className="px-3 py-2 space-y-1">
+        {user?.role === "admin" && (
+          <NavLink
+            to="/admin"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+          >
+            <Settings className="w-3.5 h-3.5" />
+            {t("SaaS Admin")}
+          </NavLink>
+        )}
+        <NavLink
+          to="/app-updates"
+          className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+        >
+          <Info className="w-3.5 h-3.5" />
+          {t("About & Legal")}
+        </NavLink>
+      </div>
+
+      <div className="h-px bg-border" />
+
+      <div className="flex items-center gap-3 px-3 py-3">
+        <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center text-foreground font-semibold text-sm shrink-0 overflow-hidden border border-border">
+          {user?.data?.profile_image || user?.profile_image
+            ? <Image src={user.data?.profile_image || user.profile_image} alt="Profile" fittingType="fill" className="w-full h-full" />
+            : (user?.full_name || user?.email || "K").charAt(0).toUpperCase()}
         </div>
-      </aside>
-    </>
+        <div className="flex-1 min-w-0">
+          <div className="text-sm font-semibold truncate">{user?.full_name || t("User")}</div>
+          <div className="text-xs text-muted-foreground truncate">{user?.email || "—"}</div>
+        </div>
+        <button
+          onClick={() => logout()}
+          className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-colors shrink-0"
+          aria-label={t("Log out")}
+          title={t("Log out")}
+        >
+          <LogOut className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
   );
 }

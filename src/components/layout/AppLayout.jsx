@@ -1,51 +1,66 @@
-import { useEffect, useState } from "react";
-import { Outlet, useLocation } from "react-router-dom";
-import Sidebar from "./Sidebar";
-import TopHeader from "./TopHeader";
-import MobileNavigation from "./MobileNavigation";
+import { useState, useEffect } from "react";
+import { Outlet } from "react-router-dom";
+import Sidebar from "@/components/layout/Sidebar";
+import TopHeader from "@/components/layout/TopHeader";
+import MobileNavigation from "@/components/layout/MobileNavigation";
+import InstallPrompt from "@/components/common/InstallPrompt";
+import ErrorBoundary from "@/components/common/ErrorBoundary";
 import OfflineBanner from "@/components/common/OfflineBanner";
-import { navItems } from "@/constants/navigation";
-import { usePlan } from "@/lib/PlanContext";
-import { useBusinessTerminology } from "@/lib/BusinessTerminology";
+import UpdateBanner from "@/components/common/UpdateBanner";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 
 export default function AppLayout() {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const location = useLocation();
-  const { isSuspended } = usePlan();
-  const t = useBusinessTerminology();
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
+  // Keep all pages in sync: when any entity changes server-side (create/update/delete),
+  // invalidate every query cache that depends on it so dashboards, lists, and detail
+  // pages refresh automatically — including changes made from other devices/sessions.
+  useRealtimeSync();
+
+  // Lock body scroll when mobile drawer is open
   useEffect(() => {
-    setSidebarOpen(false);
-  }, [location.pathname]);
-
-  const current = navItems.find((n) =>
-    n.path === "/dashboard" ? location.pathname === "/dashboard" : location.pathname.startsWith(n.path)
-  );
-  const headerTitle = current
-    ? (current.labelKey && t[current.labelKey] ? t[current.labelKey] : current.label)
-    : "Dashboard";
+    if (mobileOpen) {
+      document.body.style.overflow = "hidden";
+      return () => { document.body.style.overflow = ""; };
+    }
+  }, [mobileOpen]);
 
   return (
-    <div className="min-h-dvh bg-background">
-      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+    <div className="flex h-[100dvh] overflow-hidden bg-background">
+      {/* Desktop sidebar */}
+      <aside
+        className={`hidden lg:block shrink-0 transition-[width] duration-200 ease-in-out overflow-hidden ${
+          sidebarCollapsed ? "w-16" : "w-64"
+        }`}
+      >
+        <Sidebar collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed((v) => !v)} />
+      </aside>
 
-      <div className="lg:pl-64">
-        <TopHeader onMenuClick={() => setSidebarOpen(true)} title={headerTitle} />
+      {/* Mobile drawer */}
+      {mobileOpen && (
+        <div className="lg:hidden fixed inset-0 z-40 flex">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
+          <div className="relative w-64 h-full safe-area-left">
+            <Sidebar mobile onClose={() => setMobileOpen(false)} />
+          </div>
+        </div>
+      )}
+
+      {/* Main */}
+      <div className="flex-1 flex flex-col min-w-0">
+        <UpdateBanner />
         <OfflineBanner />
-        {isSuspended && (
-          <div className="border-b border-destructive/20 bg-destructive/10 px-4 py-2.5 text-center">
-            <p className="text-sm font-medium text-destructive">
-              This workspace is currently suspended. Please contact support.
-            </p>
-          </div>
-        )}
-        <main className="ks-scrollbar min-h-[calc(100dvh-4rem)] overflow-y-auto px-4 py-6 pb-24 sm:px-6 lg:pb-8">
-          <div className="mx-auto w-full max-w-7xl">
+        <TopHeader onMenuClick={() => setMobileOpen(true)} />
+        <main className="flex-1 overflow-y-auto scrollbar-thin pb-24 lg:pb-0">
+          <ErrorBoundary>
             <Outlet />
-          </div>
+          </ErrorBoundary>
         </main>
-        <MobileNavigation />
       </div>
+
+      <MobileNavigation />
+      <InstallPrompt />
     </div>
   );
 }

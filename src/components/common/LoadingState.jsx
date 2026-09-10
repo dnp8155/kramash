@@ -1,11 +1,13 @@
-import { Loader2 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { useT } from "@/hooks/useT";
 
-export default function LoadingState({ label = "Loading…", className }) {
+export default function LoadingState({ label = "Loading…" }) {
+  const t = useT();
   return (
-    <div className={cn("flex items-center justify-center gap-3 py-16 text-muted-foreground", className)}>
-      <Loader2 className="h-5 w-5 animate-spin text-primary" />
-      <span className="text-sm">{label}</span>
+    <div className="flex items-center justify-center py-16">
+      <div className="flex items-center gap-3 text-muted-foreground">
+        <div className="w-5 h-5 border-2 border-muted border-t-primary rounded-full animate-spin" />
+        <span className="text-sm">{t(label)}</span>
+      </div>
     </div>
   );
 }
