@@ -17,7 +17,7 @@ import ServiceForm from "@/components/services/ServiceForm";
 import { useToast } from "@/components/ui/use-toast";
 import { loadRoles } from "@/lib/teamService";
 import { loadAllServices } from "@/lib/quotationService";
-import { Pencil, Trash2, Plus, Download, Loader2, User, Building2, Briefcase, Tags, Palette, Bell, CreditCard, LogOut, FileText } from "lucide-react";
+import { Pencil, Trash2, Plus, Download, Loader2, User, Building2, Briefcase, Tags, Palette, Bell, CreditCard, LogOut, FileText, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { exportFinancialCsv } from "@/lib/exportUtils";
 import { loadAllTransactions } from "@/lib/financeService";
@@ -292,6 +292,7 @@ export default function Preferences() {
                 ) : (
                   roles.map((r) => (
                     <div key={r.id} className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-muted/40">
+                      <Users className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                       <span className={`w-2 h-2 rounded-full shrink-0 ${r.status === "active" ? "bg-[#10b981]" : "bg-[#ef4444]"}`} />
                       <span className={cn("text-sm flex-1 min-w-0 truncate", r.status === "inactive" && "text-muted-foreground line-through")}>{r.name}</span>
                       <span className="text-sm text-muted-foreground whitespace-nowrap">{formatINR(r.default_rate)}</span>
@@ -317,6 +318,7 @@ export default function Preferences() {
                 ) : (
                   serviceList.map((s) => (
                     <div key={s.id} className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-muted/40">
+                      <Briefcase className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                       <span className={`w-2 h-2 rounded-full shrink-0 ${s.status === "active" ? "bg-[#10b981]" : "bg-[#ef4444]"}`} />
                       <span className={cn("text-sm flex-1 min-w-0 truncate", s.status === "inactive" && "text-muted-foreground line-through")}>{s.name}</span>
                       <span className="text-sm text-muted-foreground whitespace-nowrap">{formatINR(s.default_rate)}</span>
