@@ -1,10 +1,13 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 
 // Workspace admin invites a client to the Client Portal.
-// 1. Invites the user via Base44 (role "user" — only accepted value).
-// 2. Finds the newly created User by email.
-// 3. Updates role to "client" and links to the Client + Workspace records.
-// The client receives an invite email to set their password, then logs in at /client-login.
+// Instead of calling inviteUser (which pre-creates the user and blocks self-registration),
+// we send a custom email with a registration link that has the client's email pre-filled.
+// The client clicks the link → lands on /client-register?email=... → sets password → portal.
+// getClientPortalData auto-links them by matching email to a Client record on first login.
+//
+// If SendEmail to non-registered users is unavailable (no custom domain),
+// the registration link is returned so the admin can share it manually.
 export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
@@ -23,63 +26,70 @@ export default async function(req) {
       return Response.json({ error: 'Only admins can invite clients' }, { status: 403 });
     }
 
-    // 1. Invite the user — Base44 creates a User record and sends an invite email
+    // Build the registration link with email pre-filled
+    const origin = req.headers.get('origin') || req.headers.get('referer')?.replace(/\/$/, '') || '';
+    const registerUrl = `${origin}/client-register?email=${encodeURIComponent(email)}`;
+
+    // Fetch workspace + client info for the email content
+    let workspace = null;
+    let client = null;
     try {
-      await base44.users.inviteUser(email, 'user');
-    } catch (inviteErr) {
-      // If already invited/registered, continue — we'll just update the role
-      const msg = (inviteErr?.message || '').toLowerCase();
-      if (!msg.includes('already') && !msg.includes('exists') && !msg.includes('registered')) {
-        throw inviteErr;
-      }
-    }
+      workspace = await base44.asServiceRole.entities.Workspace.get(workspace_id);
+    } catch (e) { /* continue */ }
+    try {
+      client = await base44.asServiceRole.entities.Client.get(client_id);
+    } catch (e) { /* continue */ }
 
-    // 2. Find the User by email — try both user-scoped and service-role access.
-    //    Retry a few times since the record may not be immediately queryable
-    //    right after inviteUser creates it.
-    let portalUser = null;
-    for (let attempt = 0; attempt < 3; attempt++) {
-      // Try user-scoped first (admin is authenticated)
-      try {
-        const users = await base44.entities.User.filter({ email }, '-created_date', 10);
-        if (users && users.length > 0) {
-          portalUser = users[0];
-          break;
-        }
-      } catch (e) { /* try service role next */ }
+    const workspaceName = workspace?.name || 'your service provider';
+    const clientName = client?.name || 'there';
 
-      // Try service-role
-      try {
-        const users = await base44.asServiceRole.entities.User.filter({ email }, '-created_date', 10);
-        if (users && users.length > 0) {
-          portalUser = users[0];
-          break;
-        }
-      } catch (e) { /* try again */ }
-
-      // Wait 300ms before retrying
-      await new Promise((resolve) => setTimeout(resolve, 300));
-    }
-
-    if (!portalUser) {
-      return Response.json({
-        success: true,
-        pending: true,
-        message: 'Invitation email sent. The client will be linked to the portal automatically when they log in for the first time.'
+    // Try to send a custom email with the registration link
+    let emailSent = false;
+    let emailError = null;
+    try {
+      await base44.asServiceRole.integrations.Core.SendEmail({
+        to: email,
+        subject: `You're invited to access your project portal — ${workspaceName}`,
+        html: `
+          <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
+            <h2 style="color: #18302D;">Hi ${clientName},</h2>
+            <p style="font-size: 15px; color: #444; line-height: 1.6;">
+              <strong>${workspaceName}</strong> has invited you to access your project portal.
+              You can view your projects, quotations, invoices, and payment history in one place.
+            </p>
+            <p style="font-size: 15px; color: #444; line-height: 1.6;">
+              Click the button below to set your password and activate your account:
+            </p>
+            <p style="text-align: center; margin: 32px 0;">
+              <a href="${registerUrl}" style="background: #18302D; color: #fff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px;">
+                Set My Password
+              </a>
+            </p>
+            <p style="font-size: 13px; color: #888;">
+              Or copy this link: <br>
+              <span style="word-break: break-all;">${registerUrl}</span>
+            </p>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;">
+            <p style="font-size: 12px; color: #aaa;">
+              If you didn't expect this invitation, you can safely ignore this email.
+            </p>
+          </div>
+        `,
+        text: `Hi ${clientName}, ${workspaceName} has invited you to access your project portal. Set your password here: ${registerUrl}`
       });
+      emailSent = true;
+    } catch (e) {
+      emailError = e?.message || 'Failed to send email';
     }
-
-    // 3. Update role to "client" and link to Client + Workspace
-    await base44.asServiceRole.entities.User.update(portalUser.id, {
-      role: 'client',
-      linked_client_id: client_id,
-      linked_workspace_id: workspace_id
-    });
 
     return Response.json({
       success: true,
-      message: 'Client invited to portal. They will receive an email to set their password.',
-      user_id: portalUser.id
+      email_sent: emailSent,
+      email_error: emailError,
+      register_url: registerUrl,
+      message: emailSent
+        ? 'Invitation email sent! The client can click the link to set their password.'
+        : 'Email could not be sent automatically. Share the registration link with the client manually.'
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });

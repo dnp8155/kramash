@@ -53,6 +53,7 @@ import JobSheet from '@/pages/JobSheet';
 import PublicJobSheet from '@/pages/PublicJobSheet';
 import PublicInvoice from '@/pages/PublicInvoice';
 import ClientLogin from '@/pages/ClientLogin';
+import ClientRegister from '@/pages/ClientRegister';
 import ClientPortal from '@/pages/ClientPortal';
 import ClientRoute from '@/components/auth/ClientRoute';
 // Add page imports here
@@ -108,6 +109,7 @@ const AuthenticatedApp = () => {
 
       {/* Client Portal — login + authenticated dashboard for client-role users */}
       <Route path="/client-login" element={<ClientLogin />} />
+      <Route path="/client-register" element={<ClientRegister />} />
       <Route element={<ClientRoute />}>
         <Route path="/client-portal" element={<ClientPortal />} />
       </Route>

@@ -27,6 +27,8 @@ export default function ClientDetails() {
   const [showForm, setShowForm] = useState(false);
   const [inviting, setInviting] = useState(false);
   const [invited, setInvited] = useState(false);
+  const [inviteResult, setInviteResult] = useState(null);
+  const [copied, setCopied] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -43,10 +45,19 @@ export default function ClientDetails() {
         email: client.email
       });
       setInvited(true);
-      toast({
-        title: "Client invited to portal",
-        description: res?.data?.message || "They will receive an email to set their password and access the portal."
-      });
+      setInviteResult(res);
+      if (res?.email_sent) {
+        toast({
+          title: "Invitation email sent!",
+          description: "The client will receive an email with a link to set their password."
+        });
+      } else {
+        toast({
+          title: "Invitation link ready",
+          description: "Email could not be sent automatically. Share the link below with your client.",
+          variant: "default"
+        });
+      }
     } catch (e) {
       toast({
         title: "Failed to invite client",
@@ -56,6 +67,14 @@ export default function ClientDetails() {
     } finally {
       setInviting(false);
     }
+  };
+
+  const copyInviteLink = () => {
+    if (!inviteResult?.register_url) return;
+    navigator.clipboard.writeText(inviteResult.register_url).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
   };
 
   const { data, isLoading, error } = useQuery({
@@ -123,10 +142,10 @@ export default function ClientDetails() {
           <Button
             variant="outline"
             onClick={handleInvitePortal}
-            disabled={inviting || invited}
+            disabled={inviting}
           >
             {invited ? (
-              <><CheckCircle2 className="w-4 h-4 text-success" /> Invited</>
+              <><CheckCircle2 className="w-4 h-4 text-success" /> Invite Sent</>
             ) : inviting ? (
               <><Loader2 className="w-4 h-4 animate-spin" /> Inviting…</>
             ) : (
@@ -138,6 +157,31 @@ export default function ClientDetails() {
           </Button>
         </div>
       </div>
+
+      {/* Registration link sharing panel — shown after invite if email wasn't sent */}
+      {invited && inviteResult && !inviteResult.email_sent && (
+        <Card className="p-4 bg-amber-50/50 border-amber-200">
+          <div className="flex items-start gap-3">
+            <div className="text-xs font-semibold text-amber-800 uppercase tracking-wide pt-0.5">Share Invitation Link</div>
+          </div>
+          <p className="text-sm text-muted-foreground mt-1 mb-3">
+            The email couldn't be sent automatically. Copy this link and share it with your client (via WhatsApp, SMS, etc.).
+            Their email is already pre-filled — they just need to set a password.
+          </p>
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              readOnly
+              value={inviteResult.register_url || ""}
+              className="flex-1 px-3 py-2 text-sm bg-card border border-border rounded-lg text-foreground"
+              onClick={(e) => e.target.select()}
+            />
+            <Button size="sm" onClick={copyInviteLink} className="shrink-0">
+              {copied ? <><CheckCircle2 className="w-3.5 h-3.5" /> Copied!</> : "Copy Link"}
+            </Button>
+          </div>
+        </Card>
+      )}
 
       <Card className="p-5">
         <h1 className="text-xl font-semibold text-foreground">{client.name}</h1>
