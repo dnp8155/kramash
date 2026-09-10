@@ -36,6 +36,7 @@ export default function EventsTable({ events, clients, teamMap = {}, serviceMap 
 
   const weekEvents = events.filter((e) => isThisWeek(e.start_date));
   const laterEvents = events.filter((e) => !isThisWeek(e.start_date));
+  const groupEvents = prefs.groupUpcoming !== false;
 
   return (
     <div className="bg-card border border-border rounded-xl shadow-card overflow-hidden">
@@ -48,26 +49,34 @@ export default function EventsTable({ events, clients, teamMap = {}, serviceMap 
         <span />
       </div>
 
-      {weekEvents.length > 0 && (
+      {groupEvents ? (
         <>
-          <div className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide bg-muted/30">
-            {weekEvents.length} {t.workItemSingular || "Event"}{weekEvents.length > 1 ? "s" : ""} This Week
-          </div>
-          {weekEvents.map((e) => (
-            <Row key={e.id} event={e} term={t} prefs={prefs} clientName={clientName(e.client_id)} teamMap={teamMap} serviceMap={serviceMap} assignmentsByEvent={assignmentsByEvent} onClick={() => onEventClick(e)} onEdit={() => onEditEvent(e)} />
-          ))}
-        </>
-      )}
+          {weekEvents.length > 0 && (
+            <>
+              <div className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide bg-muted/30">
+                {weekEvents.length} {t.workItemSingular || "Event"}{weekEvents.length > 1 ? "s" : ""} This Week
+              </div>
+              {weekEvents.map((e) => (
+                <Row key={e.id} event={e} term={t} prefs={prefs} clientName={clientName(e.client_id)} teamMap={teamMap} serviceMap={serviceMap} assignmentsByEvent={assignmentsByEvent} onClick={() => onEventClick(e)} onEdit={() => onEditEvent(e)} />
+              ))}
+            </>
+          )}
 
-      {laterEvents.length > 0 && (
-        <>
-          <div className={cn("px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide bg-muted/30", weekEvents.length > 0 && "border-t border-border")}>
-            All {t.workItemPlural || "Events"}
-          </div>
-          {laterEvents.map((e) => (
-            <Row key={e.id} event={e} term={t} prefs={prefs} clientName={clientName(e.client_id)} teamMap={teamMap} serviceMap={serviceMap} assignmentsByEvent={assignmentsByEvent} onClick={() => onEventClick(e)} onEdit={() => onEditEvent(e)} />
-          ))}
+          {laterEvents.length > 0 && (
+            <>
+              <div className={cn("px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide bg-muted/30", weekEvents.length > 0 && "border-t border-border")}>
+                All {t.workItemPlural || "Events"}
+              </div>
+              {laterEvents.map((e) => (
+                <Row key={e.id} event={e} term={t} prefs={prefs} clientName={clientName(e.client_id)} teamMap={teamMap} serviceMap={serviceMap} assignmentsByEvent={assignmentsByEvent} onClick={() => onEventClick(e)} onEdit={() => onEditEvent(e)} />
+              ))}
+            </>
+          )}
         </>
+      ) : (
+        events.map((e) => (
+          <Row key={e.id} event={e} term={t} prefs={prefs} clientName={clientName(e.client_id)} teamMap={teamMap} serviceMap={serviceMap} assignmentsByEvent={assignmentsByEvent} onClick={() => onEventClick(e)} onEdit={() => onEditEvent(e)} />
+        ))
       )}
     </div>
   );
@@ -88,7 +97,7 @@ function Row({ event, clientName, teamMap, serviceMap, assignmentsByEvent, onCli
       >
         <span className="text-sm text-muted-foreground font-medium hidden sm:block">{shortId}</span>
         <div className="flex items-center gap-2.5 min-w-0">
-          {prefs?.showProgressIndicators && (
+          {prefs?.showStatusDots && (
             <span className={cn("w-2 h-2 rounded-full shrink-0", EVENT_STATUS[event.status]?.dot)} />
           )}
           <div className="min-w-0">

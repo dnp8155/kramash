@@ -1,6 +1,7 @@
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
 import { useT } from "@/hooks/useT";
+import { useDisplayPreferences } from "@/hooks/useDisplayPreferences";
 import { cn } from "@/lib/utils";
 import { Plus, MoreHorizontal, CalendarDays, UserCheck, Wallet } from "lucide-react";
 
@@ -15,6 +16,7 @@ export default function MobileNavigation() {
   const navigate = useNavigate();
   const term = useBusinessTerminology();
   const t = useT();
+  const { showMenubarLabels } = useDisplayPreferences();
 
   const isActive = (path) => location.pathname === path;
   const labelFor = (key) => (key === "events" ? term.workItemPlural : t(key.charAt(0).toUpperCase() + key.slice(1)));
@@ -43,7 +45,7 @@ export default function MobileNavigation() {
                 )}
               >
                 <Icon className="w-[18px] h-[18px] shrink-0" />
-                <span className="text-[10px] font-semibold leading-none truncate w-full text-center">{label}</span>
+                {showMenubarLabels && <span className="text-[10px] font-semibold leading-none truncate w-full text-center">{label}</span>}
               </NavLink>
             );
           })}

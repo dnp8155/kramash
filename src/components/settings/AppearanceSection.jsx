@@ -16,9 +16,6 @@ export default function AppearanceSection() {
     if (typeof window === "undefined") return "Contact Sheet";
     return localStorage.getItem("app-theme") || "Contact Sheet";
   });
-  // Local-only toggles (not persisted to workspace — UI-level preferences)
-  const [groupUpcoming, setGroupUpcoming] = useState(true);
-  const [menubarLabels, setMenubarLabels] = useState(true);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -60,11 +57,11 @@ export default function AppearanceSection() {
       <div className="pt-4 border-t border-border">
         <h3 className="text-sm font-semibold mb-3">Display</h3>
         <div className="space-y-3">
-          <ToggleRow label="Show progress indicators" hint="Event status colors (Upcoming, In Progress, Completed, Cancelled)" checked={prefs.showProgressIndicators} onChange={setPref("showProgressIndicators")} />
+          <ToggleRow label="Show event status" hint="Event status colors (Upcoming, In Progress, Completed, Cancelled)" checked={prefs.showProgressIndicators} onChange={setPref("showProgressIndicators")} />
           <ToggleRow label="Show member type colors" hint="Color-code team member type tags (Bride Side, Groom Side, etc.)" checked={prefs.showMemberTypeColors} onChange={setPref("showMemberTypeColors")} />
-          <ToggleRow label="Show status dots" hint="Colored dot before team member names (active, inactive, booked)" checked={prefs.showStatusDots} onChange={setPref("showStatusDots")} />
-          <ToggleRow label="Group upcoming events" checked={groupUpcoming} onChange={setGroupUpcoming} />
-          <ToggleRow label="Show menubar labels" checked={menubarLabels} onChange={setMenubarLabels} />
+          <ToggleRow label="Show status dots" hint="Colored dots before event & team names — turn off to remove all dots" checked={prefs.showStatusDots} onChange={setPref("showStatusDots")} />
+          <ToggleRow label="Group upcoming events" hint="Show events grouped by This Week / All, or as a flat list" checked={prefs.groupUpcoming} onChange={setPref("groupUpcoming")} />
+          <ToggleRow label="Show menubar labels" hint="Show text labels under icons in the mobile bottom navigation" checked={prefs.showMenubarLabels} onChange={setPref("showMenubarLabels")} />
         </div>
       </div>
     </div>

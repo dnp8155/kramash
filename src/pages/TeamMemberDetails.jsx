@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useWorkspace } from "@/lib/WorkspaceContext";
+import { useDisplayPreferences } from "@/hooks/useDisplayPreferences";
 import Card from "@/components/common/Card";
 import Button from "@/components/common/Button";
 import StatusBadge from "@/components/common/StatusBadge";
@@ -23,6 +24,7 @@ import { isSelfMember } from "@/lib/teamService";
 export default function TeamMemberDetails() {
   const { id } = useParams();
   const { workspaceId, workspace } = useWorkspace();
+  const { showStatusDots } = useDisplayPreferences();
   const navigate = useNavigate();
 
   const [showForm, setShowForm] = useState(false);
@@ -127,7 +129,7 @@ export default function TeamMemberDetails() {
       {/* Profile */}
       <Card className="p-5">
         <div className="flex items-center gap-3 flex-wrap">
-          <span className={`w-3 h-3 rounded-full ${TEAM_MEMBER_STATUS[member.status]?.dot}`} />
+          {showStatusDots && <span className={`w-3 h-3 rounded-full ${TEAM_MEMBER_STATUS[member.status]?.dot}`} />}
           <h1 className="text-xl font-semibold text-foreground flex items-center gap-1.5">
             {member.name}
             {selfMember && (

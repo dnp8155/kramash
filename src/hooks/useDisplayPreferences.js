@@ -9,7 +9,7 @@ const DEFAULTS = {
   showProgressIndicators: true,
   // Feature 2 — member type tag colors (Bride Side / Groom Side / Common, etc.)
   showMemberTypeColors: true,
-  // Feature 3 — person status dots before team/client names
+  // Feature 3 — ALL status dots (event status dots + person status dots)
   showStatusDots: true,
   // Feature 4 — team / services lists on event detail page (and event cards)
   showTeam: true,
@@ -17,6 +17,10 @@ const DEFAULTS = {
   // Feature 5 — Pro-only: address/venue and services on compact cards & tables
   showAddressOnCards: false,
   showServicesOnCards: false,
+  // Group upcoming events in the events list (This Week / All) vs flat list
+  groupUpcoming: true,
+  // Show text labels under icons in the mobile/PWA bottom navigation
+  showMenubarLabels: true,
   // Shared invoice
   showLogo: false,
 };

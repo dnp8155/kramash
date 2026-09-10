@@ -346,7 +346,7 @@ export default function EventDetails() {
           </div>
           <p className="text-sm text-muted-foreground ml-6">
             <span className="inline-flex items-center gap-1.5">
-              {prefs.showProgressIndicators && (
+              {prefs.showStatusDots && (
                 <span className={cn("w-1.5 h-1.5 rounded-full", statusDot)} />
               )}
               <span className="capitalize">{event.status}</span>

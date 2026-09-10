@@ -1,9 +1,11 @@
 import EmptyState from "@/components/common/EmptyState";
 import { UserCheck, ArrowRight, Ban } from "lucide-react";
 import { useT } from "@/hooks/useT";
+import { useDisplayPreferences } from "@/hooks/useDisplayPreferences";
 
 export default function TeamAvailabilityWidget({ avail = {}, isLoading, onSeeAll }) {
   const t = useT();
+  const { showStatusDots } = useDisplayPreferences();
   const { available = [], booked = [], blocked = [] } = avail;
 
   return (
@@ -29,9 +31,9 @@ export default function TeamAvailabilityWidget({ avail = {}, isLoading, onSeeAll
           <EmptyState title="No active team" description="Add team members to track availability." />
         ) : (
           <>
-            <AvailRow label={t("Available")} count={available.length} tone="success" members={available} />
-            <AvailRow label={t("Booked")} count={booked.length} tone="primary" members={booked.map((b) => b.member)} />
-            <AvailRow label={t("On leave")} count={blocked.length} tone="muted" members={blocked.map((b) => b.member)} icon={Ban} />
+            <AvailRow label={t("Available")} count={available.length} tone="success" members={available} showDot={showStatusDots} />
+            <AvailRow label={t("Booked")} count={booked.length} tone="primary" members={booked.map((b) => b.member)} showDot={showStatusDots} />
+            <AvailRow label={t("On leave")} count={blocked.length} tone="muted" members={blocked.map((b) => b.member)} icon={Ban} showDot={showStatusDots} />
           </>
         )}
       </div>
@@ -39,7 +41,7 @@ export default function TeamAvailabilityWidget({ avail = {}, isLoading, onSeeAll
   );
 }
 
-function AvailRow({ label, count, tone, members = [], icon: Icon }) {
+function AvailRow({ label, count, tone, members = [], icon: Icon, showDot = true }) {
   const dot = {
     success: "bg-success",
     primary: "bg-primary",
@@ -56,7 +58,7 @@ function AvailRow({ label, count, tone, members = [], icon: Icon }) {
     <div>
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <span className={`w-2 h-2 rounded-full ${dot}`} />
+          {showDot && <span className={`w-2 h-2 rounded-full ${dot}`} />}
           <span className="text-xs font-medium text-foreground">{label}</span>
         </div>
         <span className={`text-sm font-bold tabular-nums ${text}`}>{count}</span>
