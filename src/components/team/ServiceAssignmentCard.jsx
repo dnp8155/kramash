@@ -69,12 +69,13 @@ export default function ServiceAssignmentCard({
           : "border-border bg-card"
       }`}
     >
-      {/* Header: Provider + Service + Add-on badge */}
+      {/* Header: Provider (primary) + Service (secondary) + Add-on badge */}
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <p className="text-sm font-semibold text-foreground">
-              {assignment.service_name_snapshot || "Service"}
+              {assignment.provider_name_snapshot || "—"}
+              {isSelf && <SelfBadge className="ml-1.5" />}
             </p>
             {assignment.is_addon && (
               <span className="rounded bg-warning/20 px-1.5 py-0.5 text-[10px] font-semibold text-warning">
@@ -83,8 +84,7 @@ export default function ServiceAssignmentCard({
             )}
           </div>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Provider: {assignment.provider_name_snapshot || "—"}
-            {isSelf && <SelfBadge className="ml-1.5" />}
+            {assignment.service_name_snapshot || "Service"}
           </p>
         </div>
         <div className="text-right">
@@ -99,7 +99,7 @@ export default function ServiceAssignmentCard({
       <div className="mt-3 grid grid-cols-3 gap-2 border-t border-border pt-3">
         <div>
           <p className="text-xs text-muted-foreground">
-            {isSelf ? "Owner Share" : isClientProvider ? "Received" : "Paid"}
+            {isSelf ? "Owner Share" : isClientProvider ? "Total Received" : "Total Payment"}
           </p>
           <p className="text-sm font-semibold text-foreground">
             {formatCurrency(summary.totalPaid)}
@@ -107,7 +107,7 @@ export default function ServiceAssignmentCard({
         </div>
         <div>
           <p className="text-xs text-muted-foreground">
-            {isSelf ? "Owner Share" : "Remaining"}
+            {isSelf ? "Owner Share" : "Remaining Payment"}
           </p>
           <p
             className={`text-sm font-semibold ${
@@ -163,7 +163,7 @@ export default function ServiceAssignmentCard({
             </>
           ) : (
             <>
-              <Trash2 className="h-3.5 w-3.5" /> Remove
+              <Trash2 className="h-3.5 w-3.5" /> Delete
             </>
           )}
         </Button>
