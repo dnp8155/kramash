@@ -80,11 +80,27 @@ export default function QuotationDetail() {
   // Use snapshots for finalized quotations, live data for drafts
   const isFinalized = ["Finalized", "Accepted", "Rejected"].includes(quotation.status);
   const displayClient = isFinalized && quotation.client_snapshot
-    ? { ...client, name: quotation.client_snapshot.name || client?.name }
+    ? { name: quotation.client_snapshot.name, phone: quotation.client_snapshot.phone, email: quotation.client_snapshot.email }
+    : quotation.custom_client
+    ? { name: quotation.custom_client.name, phone: quotation.custom_client.phone, email: quotation.custom_client.email, address: quotation.custom_client.address, venue: quotation.custom_client.venue }
     : client;
   const displayEvent = isFinalized && quotation.event_snapshot
     ? { ...event, title: quotation.event_snapshot.title || event?.title }
     : event;
+
+  // Group items by day_date for display
+  const itemsByDay = {};
+  const ungroupedItems = [];
+  (items || []).forEach((item) => {
+    if (item.day_date) {
+      const key = `${item.day_date}|||${item.phase_title || ""}`;
+      if (!itemsByDay[key]) itemsByDay[key] = [];
+      itemsByDay[key].push(item);
+    } else {
+      ungroupedItems.push(item);
+    }
+  });
+  const dayKeys = Object.keys(itemsByDay).sort();
 
   const handleDownloadPDF = async () => {
     if (!canUseFeature("pdf_export_enabled")) {
@@ -176,7 +192,15 @@ export default function QuotationDetail() {
       const dup = await createQuotation({
         quotation_number: newNum,
         client_id: quotation.client_id,
+        custom_client: quotation.custom_client || null,
         event_id: quotation.event_id || null,
+        category: quotation.category,
+        context_side: quotation.context_side || null,
+        property_type: quotation.property_type || null,
+        project_start_date: quotation.project_start_date || null,
+        project_end_date: quotation.project_end_date || null,
+        excluded_dates: quotation.excluded_dates || null,
+        show_item_pricing: quotation.show_item_pricing !== false,
         quotation_date: quotation.quotation_date,
         valid_until: quotation.valid_until || null,
         status: "Draft",
@@ -193,6 +217,7 @@ export default function QuotationDetail() {
         gst_total: quotation.gst_total,
         grand_total: quotation.grand_total,
         terms_and_conditions: quotation.terms_and_conditions,
+        special_notes: quotation.special_notes,
         notes: quotation.notes,
       });
       if (items.length > 0) {
@@ -210,6 +235,9 @@ export default function QuotationDetail() {
             line_total: item.line_total,
             gst_rate: item.gst_rate ?? null,
             sac_code: item.sac_code || "",
+            day_date: item.day_date || null,
+            phase_title: item.phase_title || "",
+            member_side: item.member_side || "",
             sort_order: idx,
           }))
         );
@@ -276,44 +304,136 @@ export default function QuotationDetail() {
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Valid Until</p>
                 <p className="mt-1 text-sm text-foreground">{quotation.valid_until ? formatDate(quotation.valid_until) : "—"}</p>
               </div>
+              {quotation.category && (
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Category</p>
+                  <p className="mt-1 text-sm text-foreground">
+                    {quotation.category === "PHOTOGRAPHY_VIDEOGRAPHY" ? "Photography / Videography" :
+                     quotation.category === "EVENT_MANAGEMENT" ? "Event Management" :
+                     quotation.category === "ARCHITECTURE_INTERIOR" ? "Architecture / Interior Design" : "Other Services"}
+                  </p>
+                </div>
+              )}
+              {quotation.context_side && (
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Side</p>
+                  <p className="mt-1 text-sm text-foreground">{quotation.context_side}</p>
+                </div>
+              )}
+              {quotation.property_type && (
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Property Type</p>
+                  <p className="mt-1 text-sm text-foreground">{quotation.property_type}</p>
+                </div>
+              )}
+              {quotation.project_start_date && (
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Project Dates</p>
+                  <p className="mt-1 text-sm text-foreground">
+                    {formatDate(quotation.project_start_date)}
+                    {quotation.project_end_date ? ` → ${formatDate(quotation.project_end_date)}` : ""}
+                  </p>
+                </div>
+              )}
+              {quotation.show_item_pricing === false && (
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Pricing Visibility</p>
+                  <p className="mt-1 text-sm text-warning">Hidden from client</p>
+                </div>
+              )}
             </CardBody>
           </Card>
 
-          {/* Items */}
+          {/* Items — grouped by day/phase */}
           <Card>
             <CardHeader><CardTitle>Items</CardTitle></CardHeader>
             <CardBody className="p-0">
               {items.length === 0 ? (
                 <p className="py-8 text-center text-sm text-muted-foreground">No items</p>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-border bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
-                        <th className="px-5 py-3 font-semibold">#</th>
-                        <th className="px-5 py-3 font-semibold">Description</th>
-                        <th className="px-5 py-3 font-semibold">Qty</th>
-                        <th className="px-5 py-3 font-semibold">Days</th>
-                        <th className="px-5 py-3 font-semibold text-right">Rate</th>
-                        <th className="px-5 py-3 font-semibold text-right">Amount</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
-                      {items.map((item, idx) => (
-                        <tr key={item.id || idx} className="hover:bg-muted/30">
-                          <td className="px-5 py-3 text-muted-foreground">{idx + 1}</td>
-                          <td className="px-5 py-3">
-                            <p className="font-medium text-foreground">{item.name}</p>
-                            {item.description && <p className="text-xs text-muted-foreground">{item.description}</p>}
-                          </td>
-                          <td className="px-5 py-3 text-muted-foreground">{item.quantity}</td>
-                          <td className="px-5 py-3 text-muted-foreground">{item.days && item.days > 1 ? item.days : "—"}</td>
-                          <td className="px-5 py-3 text-right text-muted-foreground">{formatCurrency(item.unit_rate)}</td>
-                          <td className="px-5 py-3 text-right font-semibold text-foreground">{formatCurrency(item.line_total)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div className="divide-y divide-border">
+                  {dayKeys.map((key) => {
+                    const [date, phaseTitle] = key.split("|||");
+                    const dayItems = itemsByDay[key];
+                    const dayTotal = dayItems.reduce((s, i) => s + (i.line_total || 0), 0);
+                    return (
+                      <div key={key} className="px-5 py-3">
+                        <div className="mb-2 flex items-center gap-2">
+                          <span className="rounded bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+                            {formatDate(date)}
+                          </span>
+                          {phaseTitle && (
+                            <span className="text-sm font-semibold text-foreground">{phaseTitle}</span>
+                          )}
+                          <span className="ml-auto text-xs font-medium text-muted-foreground">
+                            {formatCurrency(dayTotal)}
+                          </span>
+                        </div>
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-sm">
+                            <tbody className="divide-y divide-border/50">
+                              {dayItems.map((item, idx) => (
+                                <tr key={item.id || idx} className="hover:bg-muted/30">
+                                  <td className="py-2 pr-3 font-medium text-foreground">
+                                    {item.name}
+                                    {item.member_side && (
+                                      <span className="ml-1.5 rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                                        {item.member_side}
+                                      </span>
+                                    )}
+                                    {item.description && (
+                                      <p className="text-xs text-muted-foreground">{item.description}</p>
+                                    )}
+                                  </td>
+                                  {quotation.show_item_pricing !== false ? (
+                                    <>
+                                      <td className="py-2 px-2 text-right text-muted-foreground">{item.quantity}</td>
+                                      <td className="py-2 px-2 text-right text-muted-foreground">{item.days && item.days > 1 ? `${item.days}d` : "—"}</td>
+                                      <td className="py-2 px-2 text-right text-muted-foreground">{formatCurrency(item.unit_rate)}</td>
+                                      <td className="py-2 pl-2 text-right font-semibold text-foreground">{formatCurrency(item.line_total)}</td>
+                                    </>
+                                  ) : (
+                                    <td className="py-2 pl-2 text-right text-xs text-muted-foreground">Included</td>
+                                  )}
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {ungroupedItems.length > 0 && (
+                    <div className="px-5 py-3">
+                      {dayKeys.length > 0 && (
+                        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Other Items</p>
+                      )}
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <tbody className="divide-y divide-border/50">
+                            {ungroupedItems.map((item, idx) => (
+                              <tr key={item.id || idx} className="hover:bg-muted/30">
+                                <td className="py-2 pr-3 font-medium text-foreground">
+                                  {item.name}
+                                  {item.description && <p className="text-xs text-muted-foreground">{item.description}</p>}
+                                </td>
+                                {quotation.show_item_pricing !== false ? (
+                                  <>
+                                    <td className="py-2 px-2 text-right text-muted-foreground">{item.quantity}</td>
+                                    <td className="py-2 px-2 text-right text-muted-foreground">{item.days && item.days > 1 ? `${item.days}d` : "—"}</td>
+                                    <td className="py-2 px-2 text-right text-muted-foreground">{formatCurrency(item.unit_rate)}</td>
+                                    <td className="py-2 pl-2 text-right font-semibold text-foreground">{formatCurrency(item.line_total)}</td>
+                                  </>
+                                ) : (
+                                  <td className="py-2 pl-2 text-right text-xs text-muted-foreground">Included</td>
+                                )}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </CardBody>
@@ -325,6 +445,15 @@ export default function QuotationDetail() {
               <CardHeader><CardTitle>Terms & Conditions</CardTitle></CardHeader>
               <CardBody>
                 <p className="whitespace-pre-wrap text-sm text-muted-foreground">{quotation.terms_and_conditions}</p>
+              </CardBody>
+            </Card>
+          )}
+
+          {quotation.special_notes && (
+            <Card>
+              <CardHeader><CardTitle>Special Notes</CardTitle></CardHeader>
+              <CardBody>
+                <p className="whitespace-pre-wrap text-sm text-muted-foreground">{quotation.special_notes}</p>
               </CardBody>
             </Card>
           )}

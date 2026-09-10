@@ -35,14 +35,14 @@ export default function Quotation() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [pdfLoadingId, setPdfLoadingId] = useState(null);
 
-  const clientName = (id) => clients.find((c) => c.id === id)?.name || "—";
+  const clientName = (q) => q.custom_client?.name || clients.find((c) => c.id === q.client_id)?.name || "—";
   const eventTitle = (id) => events.find((e) => e.id === id)?.title || "—";
 
   const filtered = useMemo(() => {
     return quotations.filter((q) => {
       const matchesSearch =
         !search ||
-        [q.quotation_number, clientName(q.client_id), eventTitle(q.event_id)]
+        [q.quotation_number, clientName(q), eventTitle(q.event_id)]
           .some((f) => f.toLowerCase().includes(search.toLowerCase()));
       const matchesStatus = statusFilter === "all" || q.status === statusFilter;
       return matchesSearch && matchesStatus;
@@ -145,7 +145,7 @@ export default function Quotation() {
                       onClick={() => navigate(`/quotation/${q.id}`)}
                     >
                       <td className="px-5 py-3 font-medium text-foreground">{q.quotation_number}</td>
-                      <td className="px-5 py-3 text-foreground">{clientName(q.client_id)}</td>
+                      <td className="px-5 py-3 text-foreground">{clientName(q)}</td>
                       <td className="px-5 py-3 text-muted-foreground">{eventTitle(q.event_id)}</td>
                       <td className="px-5 py-3 font-semibold text-foreground">{formatCurrency(q.grand_total)}</td>
                       <td className="px-5 py-3 text-muted-foreground">{formatDate(q.quotation_date)}</td>

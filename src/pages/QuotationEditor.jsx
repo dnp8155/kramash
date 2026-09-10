@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Save, FileCheck, Loader2, AlertCircle } from "lucide-react";
+import { ArrowLeft, Save, FileCheck, Loader2, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useWorkspace } from "@/lib/WorkspaceContext";
 import { useClients } from "@/hooks/useClients";
@@ -16,8 +16,9 @@ import Button from "@/components/common/Button";
 import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
 import LoadingState from "@/components/common/LoadingState";
-import QuotationItemEditor from "@/components/quotation/QuotationItemEditor";
-import { computeQuotationTotals, nextQuotationNumber, lineTotal, isValidGstinFormat, buildClientSnapshot, buildBusinessSnapshot, buildEventSnapshot } from "@/utils/quotation";
+import QuotationDayBuilder from "@/components/quotation/QuotationDayBuilder";
+import { computeQuotationTotals, nextQuotationNumber, lineTotal, buildClientSnapshot, buildBusinessSnapshot, buildEventSnapshot } from "@/utils/quotation";
+import { dateRange } from "@/utils/dates";
 import { formatCurrency } from "@/utils/format";
 
 function todayStr() {
@@ -26,6 +27,16 @@ function todayStr() {
   const day = String(d.getDate()).padStart(2, "0");
   return `${d.getFullYear()}-${m}-${day}`;
 }
+
+const CATEGORIES = [
+  { value: "PHOTOGRAPHY_VIDEOGRAPHY", label: "Photography / Videography" },
+  { value: "EVENT_MANAGEMENT", label: "Event Management" },
+  { value: "ARCHITECTURE_INTERIOR", label: "Architecture / Interior Design" },
+  { value: "OTHER", label: "Other Services" },
+];
+
+const EVENT_SIDES = ["Bride Side", "Groom Side", "Common", "Others"];
+const PROPERTY_TYPES = ["Residential", "Commercial", "Office", "Renovation", "Interior", "Other"];
 
 export default function QuotationEditor() {
   const { id } = useParams();
@@ -51,7 +62,6 @@ export default function QuotationEditor() {
 
   useEffect(() => {
     if (isEdit && workspaceId && quotations.length >= 0) {
-      // Load quotation + items
       (async () => {
         setLoading(true);
         try {
@@ -67,7 +77,16 @@ export default function QuotationEditor() {
           }, "sort_order", 500);
           setForm({
             client_id: q.client_id || "",
+            use_custom_client: !q.client_id && !!q.custom_client,
+            custom_client: q.custom_client || { name: "", phone: "", email: "", address: "", venue: "" },
             event_id: q.event_id || "",
+            category: q.category || "PHOTOGRAPHY_VIDEOGRAPHY",
+            context_side: q.context_side || "",
+            property_type: q.property_type || "",
+            project_start_date: q.project_start_date || "",
+            project_end_date: q.project_end_date || "",
+            excluded_dates: q.excluded_dates || [],
+            show_item_pricing: q.show_item_pricing !== false,
             quotation_date: q.quotation_date || todayStr(),
             valid_until: q.valid_until || "",
             status: q.status,
@@ -76,6 +95,7 @@ export default function QuotationEditor() {
             gst_applicable: !!q.gst_applicable,
             gst_mode: q.gst_mode || "cgst_sgst",
             terms_and_conditions: q.terms_and_conditions || "",
+            special_notes: q.special_notes || "",
             notes: q.notes || "",
           });
           setItems(qItems || []);
@@ -86,9 +106,7 @@ export default function QuotationEditor() {
         }
       })();
     } else if (!isEdit && currentWorkspace) {
-      // New quotation — pre-fill defaults
       const defaultTerms = currentWorkspace.default_quotation_terms || "";
-      // Check for estimator items passed via sessionStorage (from Rate Estimator)
       let estimateItems = [];
       try {
         const stored = sessionStorage.getItem("estimateItems");
@@ -96,12 +114,19 @@ export default function QuotationEditor() {
           estimateItems = JSON.parse(stored);
           sessionStorage.removeItem("estimateItems");
         }
-      } catch {
-        // ignore parse errors
-      }
+      } catch { }
       setForm({
         client_id: "",
+        use_custom_client: false,
+        custom_client: { name: "", phone: "", email: "", address: "", venue: "" },
         event_id: "",
+        category: "PHOTOGRAPHY_VIDEOGRAPHY",
+        context_side: "",
+        property_type: "",
+        project_start_date: "",
+        project_end_date: "",
+        excluded_dates: [],
+        show_item_pricing: true,
         quotation_date: todayStr(),
         valid_until: "",
         status: "Draft",
@@ -110,17 +135,22 @@ export default function QuotationEditor() {
         gst_applicable: gstEnabled,
         gst_mode: "cgst_sgst",
         terms_and_conditions: defaultTerms,
+        special_notes: "",
         notes: "",
       });
       setItems(estimateItems);
     }
   }, [id, workspaceId, currentWorkspace?.id]);
 
-  // Filter events by selected client (must be before early returns — rules of hooks)
   const clientEvents = useMemo(
     () => events.filter((e) => !form?.client_id || e.client_id === form?.client_id),
     [events, form?.client_id]
   );
+
+  const allDates = useMemo(() => {
+    if (!form?.project_start_date) return [];
+    return dateRange(form.project_start_date, form.project_end_date);
+  }, [form?.project_start_date, form?.project_end_date]);
 
   if (loading || !form) {
     return <LoadingState label="Loading quotation…" />;
@@ -138,6 +168,18 @@ export default function QuotationEditor() {
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
+  const toggleDate = (date) => {
+    setForm((f) => {
+      const excluded = f.excluded_dates.includes(date);
+      return {
+        ...f,
+        excluded_dates: excluded
+          ? f.excluded_dates.filter((d) => d !== date)
+          : [...f.excluded_dates, date],
+      };
+    });
+  };
+
   const totals = computeQuotationTotals({
     items,
     discount_type: form.discount_type,
@@ -146,8 +188,12 @@ export default function QuotationEditor() {
     gst_mode: form.gst_mode,
   });
 
+  const isEventCategory = form.category === "PHOTOGRAPHY_VIDEOGRAPHY" || form.category === "EVENT_MANAGEMENT";
+  const isArchCategory = form.category === "ARCHITECTURE_INTERIOR";
+
   const validate = () => {
-    if (!form.client_id) return "Please select a client";
+    if (!form.client_id && !form.use_custom_client) return "Please select a client or enter custom client details";
+    if (form.use_custom_client && !form.custom_client?.name?.trim()) return "Enter the custom client name";
     if (!form.quotation_date) return "Quotation date is required";
     if (items.length === 0) return "Add at least one line item";
     for (const item of items) {
@@ -155,10 +201,10 @@ export default function QuotationEditor() {
       if (Number(item.quantity) < 1) return "Quantity must be at least 1";
       if (Number(item.unit_rate) < 0) return "Rate cannot be negative";
     }
+    if (form.discount_type === "percentage" && Number(form.discount_value) > 100) return "Discount percentage cannot exceed 100%";
+    if (form.discount_type === "fixed" && Number(form.discount_value) > totals.subtotal) return "Fixed discount cannot exceed subtotal";
     if (form.gst_applicable && gstEnabled) {
-      if (!currentWorkspace.gstin) {
-        return "GST is enabled but your workspace has no GSTIN. Add it in Preferences or disable GST for this quotation.";
-      }
+      if (!currentWorkspace.gstin) return "GST is enabled but your workspace has no GSTIN. Add it in Preferences or disable GST for this quotation.";
     }
     return null;
   };
@@ -169,8 +215,16 @@ export default function QuotationEditor() {
       form.quotation_date
     );
     const data = {
-      client_id: form.client_id,
+      client_id: form.use_custom_client ? null : (form.client_id || null),
+      custom_client: form.use_custom_client ? form.custom_client : null,
       event_id: form.event_id || null,
+      category: form.category,
+      context_side: isEventCategory ? form.context_side || null : null,
+      property_type: isArchCategory ? form.property_type || null : null,
+      project_start_date: form.project_start_date || null,
+      project_end_date: form.project_end_date || null,
+      excluded_dates: form.excluded_dates.length > 0 ? form.excluded_dates : null,
+      show_item_pricing: form.show_item_pricing,
       quotation_date: form.quotation_date,
       valid_until: form.valid_until || null,
       status,
@@ -187,6 +241,7 @@ export default function QuotationEditor() {
       gst_total: totals.gst_total,
       grand_total: totals.grand_total,
       terms_and_conditions: form.terms_and_conditions,
+      special_notes: form.special_notes,
       notes: form.notes,
     };
     if (!isEdit) data.quotation_number = qNum;
@@ -194,7 +249,6 @@ export default function QuotationEditor() {
   };
 
   const saveItems = async (quotationId) => {
-    // For edits: delete old items, then create new (simple approach for Beta)
     if (isEdit) {
       const oldItems = await base44.entities.QuotationItem.filter({
         workspace_id: workspaceId,
@@ -221,6 +275,9 @@ export default function QuotationEditor() {
           line_total: lineTotal(item),
           gst_rate: item.gst_rate ?? null,
           sac_code: item.sac_code || "",
+          day_date: item.day_date || null,
+          phase_title: item.phase_title || "",
+          member_side: item.member_side || "",
           sort_order: idx,
         }))
       );
@@ -265,8 +322,10 @@ export default function QuotationEditor() {
       const client = clients.find((c) => c.id === form.client_id);
       const event = form.event_id ? events.find((e) => e.id === form.event_id) : null;
       const data = buildQuotationData("Finalized");
-      // Attach snapshots for historical integrity
-      data.client_snapshot = buildClientSnapshot(client);
+      // Use custom_client as the snapshot source when no existing client is selected
+      data.client_snapshot = form.use_custom_client
+        ? { name: form.custom_client.name, phone: form.custom_client.phone, email: form.custom_client.email, address: form.custom_client.address }
+        : buildClientSnapshot(client);
       data.business_snapshot = buildBusinessSnapshot(currentWorkspace);
       data.event_snapshot = buildEventSnapshot(event);
 
@@ -301,58 +360,170 @@ export default function QuotationEditor() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Main column */}
         <div className="flex flex-col gap-6 lg:col-span-2">
-          {/* Client + Event + Dates */}
+          {/* Client + Category + Dates */}
           <Card>
             <CardHeader><CardTitle>Quotation Details</CardTitle></CardHeader>
-            <CardBody className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <CardBody className="space-y-4">
+              {/* Client selection */}
+              <div className="flex flex-wrap items-center gap-2">
+                <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-foreground">
+                  <input
+                    type="radio"
+                    checked={!form.use_custom_client}
+                    onChange={() => set("use_custom_client", false)}
+                    className="h-4 w-4"
+                  />
+                  Existing Client
+                </label>
+                <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-foreground">
+                  <input
+                    type="radio"
+                    checked={form.use_custom_client}
+                    onChange={() => set("use_custom_client", true)}
+                    className="h-4 w-4"
+                  />
+                  Custom Client
+                </label>
+              </div>
+
+              {form.use_custom_client ? (
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <Input
+                    label="Client Name"
+                    value={form.custom_client.name}
+                    onChange={(e) => set("custom_client", { ...form.custom_client, name: e.target.value })}
+                  />
+                  <Input
+                    label="Contact Number"
+                    value={form.custom_client.phone}
+                    onChange={(e) => set("custom_client", { ...form.custom_client, phone: e.target.value })}
+                  />
+                  <Input
+                    label="Email"
+                    type="email"
+                    value={form.custom_client.email}
+                    onChange={(e) => set("custom_client", { ...form.custom_client, email: e.target.value })}
+                  />
+                  <Input
+                    label="Residence / Billing Address"
+                    value={form.custom_client.address}
+                    onChange={(e) => set("custom_client", { ...form.custom_client, address: e.target.value })}
+                  />
+                  <Input
+                    label="Event / Site Venue"
+                    value={form.custom_client.venue}
+                    onChange={(e) => set("custom_client", { ...form.custom_client, venue: e.target.value })}
+                  />
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <Select
+                    label="Client"
+                    value={form.client_id}
+                    onChange={(e) => { set("client_id", e.target.value); set("event_id", ""); }}
+                  >
+                    <option value="">Select client…</option>
+                    {clients.map((c) => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </Select>
+                  <Select
+                    label={`${t.workItemSingular} (optional)`}
+                    value={form.event_id}
+                    onChange={(e) => set("event_id", e.target.value)}
+                    disabled={!form.client_id}
+                  >
+                    <option value="">No {t.workItemSingular.toLowerCase()}</option>
+                    {clientEvents.map((e) => (
+                      <option key={e.id} value={e.id}>{e.title}</option>
+                    ))}
+                  </Select>
+                </div>
+              )}
+
+              {/* Category */}
               <Select
-                label="Client"
-                value={form.client_id}
-                onChange={(e) => {
-                  set("client_id", e.target.value);
-                  set("event_id", "");
-                }}
+                label="Quotation Category"
+                value={form.category}
+                onChange={(e) => set("category", e.target.value)}
               >
-                <option value="">Select client…</option>
-                {clients.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
+                {CATEGORIES.map((c) => (
+                  <option key={c.value} value={c.value}>{c.label}</option>
                 ))}
               </Select>
-              <Select
-                label={`${t.workItemSingular} (optional)`}
-                value={form.event_id}
-                onChange={(e) => set("event_id", e.target.value)}
-                disabled={!form.client_id}
-              >
-                <option value="">No {t.workItemSingular.toLowerCase()}</option>
-                {clientEvents.map((e) => (
-                  <option key={e.id} value={e.id}>{e.title}</option>
-                ))}
-              </Select>
-              <Input
-                label="Quotation Date"
-                type="date"
-                value={form.quotation_date}
-                onChange={(e) => set("quotation_date", e.target.value)}
-              />
-              <Input
-                label="Valid Until (optional)"
-                type="date"
-                value={form.valid_until}
-                onChange={(e) => set("valid_until", e.target.value)}
-              />
+
+              {/* Dynamic context based on category */}
+              {isEventCategory && (
+                <Select
+                  label="Side / Context (optional)"
+                  value={form.context_side}
+                  onChange={(e) => set("context_side", e.target.value)}
+                >
+                  <option value="">No specific side</option>
+                  {EVENT_SIDES.map((s) => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </Select>
+              )}
+              {isArchCategory && (
+                <Select
+                  label="Property / Project Type"
+                  value={form.property_type}
+                  onChange={(e) => set("property_type", e.target.value)}
+                >
+                  <option value="">Select type…</option>
+                  {PROPERTY_TYPES.map((p) => (
+                    <option key={p} value={p}>{p}</option>
+                  ))}
+                </Select>
+              )}
+
+              {/* Project dates */}
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <Input
+                  label="Project / Event Start Date"
+                  type="date"
+                  value={form.project_start_date}
+                  onChange={(e) => set("project_start_date", e.target.value)}
+                />
+                <Input
+                  label="Project / Event End Date"
+                  type="date"
+                  value={form.project_end_date}
+                  onChange={(e) => set("project_end_date", e.target.value)}
+                />
+              </div>
+
+              {/* Quotation dates */}
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <Input
+                  label="Quotation Date"
+                  type="date"
+                  value={form.quotation_date}
+                  onChange={(e) => set("quotation_date", e.target.value)}
+                />
+                <Input
+                  label="Valid Until (optional)"
+                  type="date"
+                  value={form.valid_until}
+                  onChange={(e) => set("valid_until", e.target.value)}
+                />
+              </div>
             </CardBody>
           </Card>
 
-          {/* Line Items */}
+          {/* Day/Phase Builder */}
           <Card>
-            <CardHeader><CardTitle>Deliverables & Items</CardTitle></CardHeader>
+            <CardHeader><CardTitle>Deliverables & Day/Phase Builder</CardTitle></CardHeader>
             <CardBody>
-              <QuotationItemEditor
+              <QuotationDayBuilder
                 items={items}
                 services={services}
                 roles={roles}
                 gstEnabled={gstEnabled}
+                allDates={allDates}
+                excludedDates={form.excluded_dates}
+                onToggleDate={toggleDate}
                 onChange={setItems}
               />
             </CardBody>
@@ -360,8 +531,28 @@ export default function QuotationEditor() {
 
           {/* Terms & Notes */}
           <Card>
-            <CardHeader><CardTitle>Terms & Notes</CardTitle></CardHeader>
+            <CardHeader><CardTitle>Terms, Notes & Settings</CardTitle></CardHeader>
             <CardBody className="space-y-4">
+              {/* Item rate visibility */}
+              <label className="flex cursor-pointer items-center justify-between rounded-lg border border-border bg-muted/40 px-3 py-2.5 text-sm">
+                <span className="flex items-center gap-2 font-medium text-foreground">
+                  {form.show_item_pricing ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                  Show Qty, Rate & Amount to Client
+                </span>
+                <button
+                  type="button"
+                  onClick={() => set("show_item_pricing", !form.show_item_pricing)}
+                  className={`relative h-6 w-11 rounded-full transition-colors ${form.show_item_pricing ? "bg-primary" : "bg-border"}`}
+                  role="switch"
+                  aria-checked={form.show_item_pricing}
+                >
+                  <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${form.show_item_pricing ? "translate-x-5" : "translate-x-0.5"}`} />
+                </button>
+              </label>
+              <p className="-mt-2 text-xs text-muted-foreground">
+                When off, the client sees only the day/event scope and final total. Admin always retains full pricing data.
+              </p>
+
               <div>
                 <label className="text-sm font-medium text-foreground">Terms & Conditions</label>
                 <textarea
@@ -373,12 +564,22 @@ export default function QuotationEditor() {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-foreground">Notes</label>
+                <label className="text-sm font-medium text-foreground">Special Notes</label>
+                <textarea
+                  value={form.special_notes}
+                  onChange={(e) => set("special_notes", e.target.value)}
+                  rows={3}
+                  placeholder="Travel, accommodation, revision limits, client requirements…"
+                  className="mt-1.5 w-full rounded-lg border border-input bg-card px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-foreground">Internal Notes</label>
                 <textarea
                   value={form.notes}
                   onChange={(e) => set("notes", e.target.value)}
                   rows={2}
-                  placeholder="Optional internal or client-facing notes"
+                  placeholder="Internal notes (not shown to client)"
                   className="mt-1.5 w-full rounded-lg border border-input bg-card px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30"
                 />
               </div>
@@ -406,6 +607,16 @@ export default function QuotationEditor() {
                 value={form.discount_value}
                 onChange={(e) => set("discount_value", Number(e.target.value) || 0)}
               />
+              {form.discount_type === "percentage" && Number(form.discount_value) > 100 && (
+                <p className="flex items-start gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                  <AlertCircle className="h-4 w-4 shrink-0" /> Discount cannot exceed 100%
+                </p>
+              )}
+              {form.discount_type === "fixed" && Number(form.discount_value) > totals.subtotal && (
+                <p className="flex items-start gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                  <AlertCircle className="h-4 w-4 shrink-0" /> Fixed discount cannot exceed subtotal
+                </p>
+              )}
             </CardBody>
           </Card>
 

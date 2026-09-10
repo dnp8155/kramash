@@ -12,11 +12,74 @@
     },
     "client_id": {
       "type": "string",
-      "description": "Client this quotation is for"
+      "description": "Existing client this quotation is for (null when using custom_client)"
     },
     "event_id": {
       "type": "string",
       "description": "Optional event this quotation is linked to"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "PHOTOGRAPHY_VIDEOGRAPHY",
+        "EVENT_MANAGEMENT",
+        "ARCHITECTURE_INTERIOR",
+        "OTHER"
+      ],
+      "default": "PHOTOGRAPHY_VIDEOGRAPHY",
+      "description": "Quotation category \u2014 drives dynamic context fields (side vs property type)"
+    },
+    "context_side": {
+      "type": "string",
+      "description": "Event-side context for event categories (e.g. Bride Side, Groom Side, Common, Others)"
+    },
+    "property_type": {
+      "type": "string",
+      "description": "Property/project type for architecture/interior categories (e.g. Residential, Commercial, Office, Renovation, Interior, Other)"
+    },
+    "project_start_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Project/event start date (date-only, YYYY-MM-DD). Drives the date chip engine."
+    },
+    "project_end_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Project/event end date (date-only, YYYY-MM-DD). Null for single-day projects."
+    },
+    "excluded_dates": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "format": "date"
+      },
+      "description": "Dates within the project range that are excluded from the quotation scope"
+    },
+    "show_item_pricing": {
+      "type": "boolean",
+      "default": true,
+      "description": "Controls client-facing pricing visibility. If false, Qty/Rate/Amount are hidden in PDF and public URL. Admin always retains full data."
+    },
+    "custom_client": {
+      "type": "object",
+      "description": "Custom client details when no existing Client is selected (does not create a master Client record)",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "phone": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "address": {
+          "type": "string"
+        },
+        "venue": {
+          "type": "string"
+        }
+      }
     },
     "quotation_date": {
       "type": "string",
@@ -99,9 +162,13 @@
       "type": "string",
       "description": "Quotation terms and conditions text"
     },
+    "special_notes": {
+      "type": "string",
+      "description": "Scope-specific notes (travel, accommodation, revision limits, client requirements)"
+    },
     "notes": {
       "type": "string",
-      "description": "Optional internal or client-facing notes"
+      "description": "Optional internal notes"
     },
     "client_snapshot": {
       "type": "object",
@@ -179,7 +246,6 @@
   "required": [
     "workspace_id",
     "quotation_number",
-    "client_id",
     "quotation_date",
     "status"
   ],
