@@ -9,7 +9,7 @@ export const TEAM_ROLE_PRESETS = {
     { name: "Photographer", default_rate: 5000, rate_type: "Per Event" },
     { name: "Videographer", default_rate: 6000, rate_type: "Per Event" },
     { name: "Drone Operator", default_rate: 7000, rate_type: "Per Event" },
-    { name: "Editor", default_rate: 3000, rate_type: "Fixed" },
+    { name: "Editor", default_rate: 3000, rate_type: "Per Event" },
     { name: "Assistant", default_rate: 2000, rate_type: "Per Event" },
   ],
   EVENT_MANAGEMENT: [

@@ -85,6 +85,7 @@ export default function Onboarding() {
   const [form, setForm] = useState({
     business_category: "",
     custom_business_type: "",
+    owner_name: user?.full_name || "",
     name: "",
     email: user?.email || "",
     phone: "",
@@ -107,12 +108,17 @@ export default function Onboarding() {
   const canNext = () => {
     if (step === 0) return !!form.business_category;
     if (step === 1) {
+      if (!form.owner_name.trim()) return false;
       if (!form.name.trim()) return false;
       if (form.business_category === BUSINESS_CATEGORIES.OTHER && !form.custom_business_type.trim()) return false;
       return true;
     }
     if (step === 2) return form.city.trim() && form.country;
-    if (step === 3) return !form.gst_enabled || (form.gstin.trim() && form.gst_business_name.trim());
+    if (step === 3) {
+      if (!form.gst_enabled) return true;
+      const gstinValid = /^[A-Z0-9]{15}$/.test(form.gstin.trim());
+      return !!(gstinValid && form.gst_business_name.trim() && form.gst_billing_address.trim() && form.gst_state.trim());
+    }
     return true;
   };
 
@@ -128,7 +134,7 @@ export default function Onboarding() {
           ? form.custom_business_type.trim()
           : CATEGORY_LABELS[form.business_category],
         owner_user_id: user.id,
-        owner_name: user.full_name || form.name.trim(),
+        owner_name: form.owner_name.trim() || user.full_name || form.name.trim(),
         is_active: true,
         onboarding_completed: true,
         email: form.email.trim(),
@@ -229,7 +235,7 @@ export default function Onboarding() {
         <div className="mb-6 flex items-center justify-between">
           {STEPS.map((s, i) => {
             const Icon = s.icon;
-            const done = step > i;
+            const done = step === "review" || step > i;
             const active = step === i;
             return (
               <div key={s.key} className="flex flex-1 items-center">
@@ -307,6 +313,16 @@ export default function Onboarding() {
               <div>
                 <h2 className="text-lg font-semibold text-foreground">Tell us about your business</h2>
                 <p className="text-sm text-muted-foreground">This becomes your workspace name in Kramashah.</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="owner_name">Your Name</Label>
+                <Input
+                  id="owner_name"
+                  value={form.owner_name}
+                  onChange={(e) => set("owner_name", e.target.value)}
+                  placeholder="Krishna Shah"
+                  autoFocus
+                />
               </div>
               {form.business_category === BUSINESS_CATEGORIES.OTHER && (
                 <div className="space-y-2">
@@ -421,6 +437,9 @@ export default function Onboarding() {
                   <div className="space-y-2">
                     <Label htmlFor="gstin">GSTIN</Label>
                     <Input id="gstin" value={form.gstin} onChange={(e) => set("gstin", e.target.value.toUpperCase())} placeholder="22AAAAA0000A1Z5" maxLength={15} />
+                    {form.gstin && !/^[A-Z0-9]{15}$/.test(form.gstin.trim()) && (
+                      <p className="text-xs text-destructive">GSTIN should be 15 alphanumeric characters.</p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="gst_business_name">Registered Business Name</Label>
@@ -428,7 +447,14 @@ export default function Onboarding() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="gst_billing_address">GST Billing Address</Label>
-                    <Input id="gst_billing_address" value={form.gst_billing_address} onChange={(e) => set("gst_billing_address", e.target.value)} placeholder="123 Business Park, Mumbai" />
+                    <textarea
+                      id="gst_billing_address"
+                      value={form.gst_billing_address}
+                      onChange={(e) => set("gst_billing_address", e.target.value)}
+                      placeholder="123 Business Park, Mumbai"
+                      rows={2}
+                      className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30"
+                    />
                   </div>
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
@@ -449,21 +475,78 @@ export default function Onboarding() {
             </div>
           )}
 
+          {/* Review state */}
+          {step === "review" && (
+            <div className="space-y-5">
+              <div>
+                <h2 className="text-lg font-semibold text-foreground">Review your workspace</h2>
+                <p className="text-sm text-muted-foreground">Confirm the details below before creating your workspace.</p>
+              </div>
+
+              <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-4">
+                <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                  <Briefcase className="h-4 w-4 text-primary" /> Business
+                </div>
+                <dl className="grid grid-cols-1 gap-x-4 gap-y-2 text-sm sm:grid-cols-2">
+                  <div><dt className="text-muted-foreground">Category</dt><dd className="font-medium text-foreground">{CATEGORY_LABELS[form.business_category]}</dd></div>
+                  {form.business_category === BUSINESS_CATEGORIES.OTHER && form.custom_business_type && (
+                    <div><dt className="text-muted-foreground">Industry</dt><dd className="font-medium text-foreground">{form.custom_business_type}</dd></div>
+                  )}
+                  <div><dt className="text-muted-foreground">Owner name</dt><dd className="font-medium text-foreground">{form.owner_name}</dd></div>
+                  <div><dt className="text-muted-foreground">Business name</dt><dd className="font-medium text-foreground">{form.name}</dd></div>
+                  {form.phone && <div><dt className="text-muted-foreground">Phone</dt><dd className="font-medium text-foreground">{form.phone}</dd></div>}
+                  {form.email && <div><dt className="text-muted-foreground">Email</dt><dd className="font-medium text-foreground">{form.email}</dd></div>}
+                </dl>
+              </div>
+
+              <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-4">
+                <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                  <MapPin className="h-4 w-4 text-primary" /> Location
+                </div>
+                <dl className="grid grid-cols-1 gap-x-4 gap-y-2 text-sm sm:grid-cols-2">
+                  <div><dt className="text-muted-foreground">City</dt><dd className="font-medium text-foreground">{form.city}</dd></div>
+                  {form.state && <div><dt className="text-muted-foreground">State</dt><dd className="font-medium text-foreground">{form.state}</dd></div>}
+                  <div><dt className="text-muted-foreground">Country</dt><dd className="font-medium text-foreground">{form.country}</dd></div>
+                  <div><dt className="text-muted-foreground">Currency</dt><dd className="font-medium text-foreground">{form.currency}</dd></div>
+                  <div><dt className="text-muted-foreground">Timezone</dt><dd className="font-medium text-foreground">{form.timezone}</dd></div>
+                </dl>
+              </div>
+
+              <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-4">
+                <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                  <Receipt className="h-4 w-4 text-primary" /> GST
+                </div>
+                <dl className="grid grid-cols-1 gap-x-4 gap-y-2 text-sm sm:grid-cols-2">
+                  <div><dt className="text-muted-foreground">GST registered</dt><dd className="font-medium text-foreground">{form.gst_enabled ? "Yes" : "No"}</dd></div>
+                  {form.gst_enabled && (
+                    <>
+                      <div><dt className="text-muted-foreground">GSTIN</dt><dd className="font-medium text-foreground">{form.gstin}</dd></div>
+                      <div><dt className="text-muted-foreground">Registered name</dt><dd className="font-medium text-foreground">{form.gst_business_name}</dd></div>
+                      <div className="sm:col-span-2"><dt className="text-muted-foreground">Billing address</dt><dd className="font-medium text-foreground">{form.gst_billing_address}</dd></div>
+                      <div><dt className="text-muted-foreground">State</dt><dd className="font-medium text-foreground">{form.gst_state}</dd></div>
+                      <div><dt className="text-muted-foreground">Default rate</dt><dd className="font-medium text-foreground">{form.default_gst_rate}%</dd></div>
+                    </>
+                  )}
+                </dl>
+              </div>
+            </div>
+          )}
+
           {/* Footer nav */}
           <div className="mt-6 flex items-center justify-between gap-3">
-            {step > 0 ? (
+            {step === "review" ? (
+              <Button variant="outline" onClick={() => setStep(3)} disabled={saving}>
+                <ArrowLeft className="h-4 w-4" /> Back
+              </Button>
+            ) : step > 0 ? (
               <Button variant="outline" onClick={() => setStep((s) => Math.max(0, s - 1))} disabled={saving}>
                 <ArrowLeft className="h-4 w-4" /> Back
               </Button>
             ) : (
               <span />
             )}
-            {step < 3 ? (
-              <Button onClick={() => setStep((s) => s + 1)} disabled={!canNext()}>
-                Continue <ArrowRight className="h-4 w-4" />
-              </Button>
-            ) : (
-              <Button onClick={handleCreate} disabled={!canNext() || saving}>
+            {step === "review" ? (
+              <Button onClick={handleCreate} disabled={saving}>
                 {saving ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Creating...
@@ -473,6 +556,14 @@ export default function Onboarding() {
                     Create Workspace <Check className="h-4 w-4" />
                   </>
                 )}
+              </Button>
+            ) : step < 3 ? (
+              <Button onClick={() => setStep((s) => s + 1)} disabled={!canNext()}>
+                Continue <ArrowRight className="h-4 w-4" />
+              </Button>
+            ) : (
+              <Button onClick={() => setStep("review")} disabled={!canNext()}>
+                Review & Create <ArrowRight className="h-4 w-4" />
               </Button>
             )}
           </div>
