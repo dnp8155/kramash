@@ -1,0 +1,97 @@
+{
+  "name": "SupportTicket",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "title": "Workspace ID"
+    },
+    "user_id": {
+      "type": "string",
+      "title": "User ID"
+    },
+    "user_name": {
+      "type": "string",
+      "title": "User Name (snapshot)"
+    },
+    "user_email": {
+      "type": "string",
+      "title": "User Email (snapshot)"
+    },
+    "subject": {
+      "type": "string",
+      "title": "Subject"
+    },
+    "message": {
+      "type": "string",
+      "title": "Message"
+    },
+    "category": {
+      "type": "string",
+      "title": "Category",
+      "default": "general",
+      "enum": [
+        "bug",
+        "feature_request",
+        "billing",
+        "account",
+        "general"
+      ]
+    },
+    "priority": {
+      "type": "string",
+      "title": "Priority",
+      "default": "medium",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "urgent"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "default": "open",
+      "enum": [
+        "open",
+        "in_progress",
+        "resolved",
+        "closed"
+      ]
+    },
+    "admin_response": {
+      "type": "string",
+      "title": "Admin Response"
+    },
+    "resolved_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Resolved At"
+    }
+  },
+  "required": [
+    "workspace_id",
+    "user_id",
+    "subject",
+    "message"
+  ],
+  "rls": {
+    "read": {
+      "data.user_id": "{{user.id}}"
+    },
+    "create": {
+      "data.user_id": "{{user.id}}"
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

@@ -4,95 +4,51 @@
   "properties": {
     "workspace_id": {
       "type": "string",
-      "description": "Workspace this membership belongs to"
-    },
-    "workspace_owner_id": {
-      "type": "string",
-      "description": "Owner user id of the workspace (denormalized for access control)"
+      "title": "Workspace ID"
     },
     "user_id": {
       "type": "string",
-      "description": "User that is a member"
+      "title": "User ID"
     },
     "role": {
       "type": "string",
+      "title": "Role",
+      "default": "owner",
       "enum": [
         "owner",
         "admin",
         "accountant",
         "manager",
         "staff"
-      ],
-      "default": "owner",
-      "description": "Member role within this workspace. owner = full control; admin = manage all data; accountant = financial access; manager = operational access; staff = limited access."
+      ]
     },
     "status": {
       "type": "string",
+      "title": "Status",
+      "default": "active",
       "enum": [
         "active",
-        "inactive",
         "invited",
         "removed"
-      ],
-      "default": "active",
-      "description": "Membership status. active = can access workspace; inactive = disabled but retained; invited = pending acceptance; removed = revoked."
-    },
-    "joined_at": {
-      "type": "string",
-      "format": "date-time",
-      "description": "When the user joined this workspace (set at membership creation)"
+      ]
     }
   },
   "required": [
     "workspace_id",
-    "user_id",
-    "role"
+    "user_id"
   ],
   "rls": {
     "read": {
-      "$or": [
-        {
-          "data.user_id": "{{user.id}}"
-        },
-        {
-          "data.workspace_owner_id": "{{user.id}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "data.user_id": "{{user.id}}"
     },
     "create": {
       "data.user_id": "{{user.id}}"
     },
     "update": {
-      "$or": [
-        {
-          "data.user_id": "{{user.id}}"
-        },
-        {
-          "data.workspace_owner_id": "{{user.id}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "data.user_id": "{{user.id}}"
     },
     "delete": {
-      "$or": [
-        {
-          "data.workspace_owner_id": "{{user.id}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "data.user_id": "{{user.id}}"
     }
   }
 }

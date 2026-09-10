@@ -4,20 +4,28 @@
   "properties": {
     "plan_id": {
       "type": "string",
-      "description": "Plan this limit belongs to"
+      "title": "Plan ID"
     },
     "limit_key": {
       "type": "string",
-      "description": "Limit identifier (e.g. max_events, max_team_members, max_services, pdf_export_enabled, quotation_enabled, advanced_theme_enabled, reminders_enabled)"
+      "title": "Limit Key",
+      "enum": [
+        "max_events",
+        "max_team_members",
+        "max_services",
+        "max_storage_gb",
+        "pdf_export_enabled",
+        "reminders_enabled"
+      ]
     },
     "limit_value": {
-      "type": "number",
-      "description": "Limit value. For resource limits: max count (999999 = unlimited). For feature flags: 1 = enabled, 0 = disabled."
+      "type": "string",
+      "title": "Limit Value (number or 'true'/'false')"
     },
     "enabled": {
       "type": "boolean",
-      "default": true,
-      "description": "Whether this limit entry is active. If false, the limit is not enforced."
+      "title": "Enabled",
+      "default": true
     }
   },
   "required": [

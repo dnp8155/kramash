@@ -4,360 +4,281 @@
   "properties": {
     "workspace_id": {
       "type": "string",
-      "description": "Workspace this quotation belongs to"
+      "title": "Workspace ID"
     },
     "quotation_number": {
       "type": "string",
-      "description": "Unique workspace-level quotation number (e.g. QT-2026-0001)"
+      "title": "Quotation Number"
     },
     "client_id": {
       "type": "string",
-      "description": "Existing client this quotation is for (null when using custom_client)"
+      "title": "Client ID"
     },
     "event_id": {
       "type": "string",
-      "description": "Optional event this quotation is linked to"
-    },
-    "category": {
-      "type": "string",
-      "enum": [
-        "PHOTOGRAPHY_VIDEOGRAPHY",
-        "EVENT_MANAGEMENT",
-        "ARCHITECTURE_INTERIOR",
-        "OTHER"
-      ],
-      "default": "PHOTOGRAPHY_VIDEOGRAPHY",
-      "description": "Quotation category \u2014 drives dynamic context fields (side vs property type)"
-    },
-    "context_side": {
-      "type": "string",
-      "description": "Event-side context for event categories (e.g. Bride Side, Groom Side, Common, Others)"
-    },
-    "property_type": {
-      "type": "string",
-      "description": "Property/project type for architecture/interior categories (e.g. Residential, Commercial, Office, Renovation, Interior, Other)"
-    },
-    "project_start_date": {
-      "type": "string",
-      "format": "date",
-      "description": "Project/event start date (date-only, YYYY-MM-DD). Drives the date chip engine."
-    },
-    "project_end_date": {
-      "type": "string",
-      "format": "date",
-      "description": "Project/event end date (date-only, YYYY-MM-DD). Null for single-day projects."
-    },
-    "excluded_dates": {
-      "type": "array",
-      "items": {
-        "type": "string",
-        "format": "date"
-      },
-      "description": "Dates within the project range that are excluded from the quotation scope"
-    },
-    "show_item_pricing": {
-      "type": "boolean",
-      "default": true,
-      "description": "Controls client-facing pricing visibility. If false, Qty/Rate/Amount are hidden in PDF and public URL. Admin always retains full data."
-    },
-    "hide_team_names": {
-      "type": "boolean",
-      "default": false,
-      "description": "If true, team member names are hidden on the public client portal \u2014 only role and count are shown."
-    },
-    "is_package": {
-      "type": "boolean",
-      "default": false,
-      "description": "Package/Lump-Sum mode. When true, individual item pricing (Qty/Rate/Amount) is hidden on the public quotation and only the consolidated package total is shown."
-    },
-    "package_name": {
-      "type": "string",
-      "description": "Package title for lump-sum mode (e.g. Wedding Package, Complete Coverage)"
-    },
-    "package_inclusions": {
-      "type": "string",
-      "description": "Deliverables and inclusions summary text for package mode"
-    },
-    "milestones": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "label": {
-            "type": "string",
-            "description": "Milestone label (e.g. Advance on Signing, Event Day, Handover)"
-          },
-          "percentage": {
-            "type": "number",
-            "description": "Percentage of grand total this milestone represents (e.g. 50)"
-          },
-          "amount": {
-            "type": "number",
-            "description": "Computed amount for this milestone in workspace currency"
-          }
-        }
-      },
-      "description": "Payment milestone schedule shown on the public quotation (e.g. 50% Advance, 30% Event Day, 20% Handover)"
-    },
-    "custom_client": {
-      "type": "object",
-      "description": "Custom client details when no existing Client is selected (does not create a master Client record)",
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "phone": {
-          "type": "string"
-        },
-        "email": {
-          "type": "string"
-        },
-        "address": {
-          "type": "string"
-        },
-        "venue": {
-          "type": "string"
-        }
-      }
+      "title": "Event ID"
     },
     "quotation_date": {
       "type": "string",
       "format": "date",
-      "description": "Quotation date (date-only, YYYY-MM-DD)"
+      "title": "Quotation Date"
     },
     "valid_until": {
       "type": "string",
       "format": "date",
-      "description": "Optional validity date (date-only, YYYY-MM-DD)"
+      "title": "Valid Until"
     },
     "status": {
       "type": "string",
+      "title": "Status",
+      "default": "draft",
       "enum": [
-        "Draft",
-        "Finalized",
-        "Accepted",
-        "Rejected"
-      ],
-      "default": "Draft"
+        "draft",
+        "finalized",
+        "accepted",
+        "rejected",
+        "expired",
+        "cancelled"
+      ]
+    },
+    "category": {
+      "type": "string",
+      "title": "Quotation Category",
+      "default": "PHOTOGRAPHY",
+      "enum": [
+        "PHOTOGRAPHY",
+        "EVENT_MANAGEMENT",
+        "ARCHITECTURE",
+        "OTHER"
+      ]
+    },
+    "context_type": {
+      "type": "string",
+      "title": "Context Type (e.g. bride_side, groom_side, common, residential, commercial)"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Project/Event Start Date"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Project/Event End Date"
+    },
+    "excluded_dates": {
+      "type": "array",
+      "title": "Excluded Dates (not part of quotation scope)",
+      "items": {
+        "type": "string",
+        "format": "date"
+      },
+      "default": []
+    },
+    "show_pricing": {
+      "type": "boolean",
+      "title": "Show Qty, Rate & Amount to Client",
+      "default": true
+    },
+    "template_id": {
+      "type": "string",
+      "title": "PDF Template ID",
+      "default": "gold_premium"
+    },
+    "template_config": {
+      "type": "string",
+      "title": "Template Custom Config (JSON)"
+    },
+    "project_title": {
+      "type": "string",
+      "title": "Project / Scope Title"
+    },
+    "project_summary": {
+      "type": "string",
+      "title": "Project Summary"
     },
     "subtotal": {
       "type": "number",
-      "description": "Sum of all line item totals"
+      "title": "Subtotal",
+      "default": 0
     },
     "discount_type": {
       "type": "string",
+      "title": "Discount Type",
+      "default": "percent",
       "enum": [
-        "percentage",
+        "percent",
         "fixed"
-      ],
-      "default": "percentage"
+      ]
     },
     "discount_value": {
       "type": "number",
-      "description": "Discount value (percentage or fixed amount)"
+      "title": "Discount Value",
+      "default": 0
     },
     "discount_amount": {
       "type": "number",
-      "description": "Computed discount amount in currency"
+      "title": "Discount Amount",
+      "default": 0
     },
     "taxable_amount": {
       "type": "number",
-      "description": "Subtotal minus discount"
+      "title": "Taxable Amount",
+      "default": 0
     },
     "gst_applicable": {
       "type": "boolean",
-      "default": false,
-      "description": "Whether GST is applied to this quotation"
+      "title": "GST Applicable",
+      "default": false
     },
     "gst_mode": {
       "type": "string",
+      "title": "GST Mode",
+      "default": "cgst_sgst",
       "enum": [
         "cgst_sgst",
         "igst"
-      ],
-      "default": "cgst_sgst"
+      ]
     },
     "cgst_amount": {
       "type": "number",
-      "description": "CGST amount (same-state)"
+      "title": "CGST Amount",
+      "default": 0
     },
     "sgst_amount": {
       "type": "number",
-      "description": "SGST amount (same-state)"
+      "title": "SGST Amount",
+      "default": 0
     },
     "igst_amount": {
       "type": "number",
-      "description": "IGST amount (inter-state)"
+      "title": "IGST Amount",
+      "default": 0
     },
     "gst_total": {
       "type": "number",
-      "description": "Total GST amount"
+      "title": "GST Total",
+      "default": 0
     },
     "grand_total": {
       "type": "number",
-      "description": "Final total payable (taxable + GST)"
+      "title": "Grand Total",
+      "default": 0
+    },
+    "payment_schedule_json": {
+      "type": "string",
+      "title": "Payment Milestones (JSON)"
     },
     "terms_and_conditions": {
       "type": "string",
-      "description": "Quotation terms and conditions text"
+      "title": "Terms & Conditions"
     },
     "special_notes": {
       "type": "string",
-      "description": "Scope-specific notes (travel, accommodation, revision limits, client requirements)"
+      "title": "Special Notes (scope-specific: travel, accommodation, revisions, etc.)"
     },
     "notes": {
       "type": "string",
-      "description": "Optional internal notes"
+      "title": "Notes (internal)"
+    },
+    "bank_details_snapshot": {
+      "type": "string",
+      "title": "Bank & UPI Details Snapshot (JSON)"
+    },
+    "social_links_snapshot": {
+      "type": "string",
+      "title": "Social Links Snapshot (JSON)"
+    },
+    "footer_message": {
+      "type": "string",
+      "title": "Footer / Thank You Message"
+    },
+    "client_snapshot": {
+      "type": "string",
+      "title": "Client Snapshot (JSON)"
+    },
+    "business_snapshot": {
+      "type": "string",
+      "title": "Business Snapshot (JSON)"
+    },
+    "event_snapshot": {
+      "type": "string",
+      "title": "Event Snapshot (JSON)"
+    },
+    "client_signature": {
+      "type": "string",
+      "title": "Client Signature (data URL)"
+    },
+    "signed_by_name": {
+      "type": "string",
+      "title": "Signed By (client name)"
     },
     "signed_at": {
       "type": "string",
       "format": "date-time",
-      "description": "Timestamp when the client electronically signed/accepted the quotation via the public portal"
+      "title": "Signed At"
     },
-    "signed_by_name": {
+    "client_access_password": {
       "type": "string",
-      "description": "Legal name entered by the client at the time of electronic signing"
+      "title": "Client Access Password (optional gate for online quotation link)"
     },
-    "signature_data": {
+    "public_token": {
       "type": "string",
-      "description": "Base64 data URL of the drawn signature image, or the typed legal name"
+      "title": "Public Portal Token (secure random token for client project portal URL)"
     },
-    "signature_type": {
+    "public_link_enabled": {
+      "type": "boolean",
+      "title": "Public Link Enabled (admin master control)",
+      "default": false
+    },
+    "hide_team_names": {
+      "type": "boolean",
+      "title": "Hide Team Names on Public Portal",
+      "default": false
+    },
+    "portal_first_viewed_at": {
       "type": "string",
-      "enum": [
-        "drawn",
-        "typed"
-      ],
-      "description": "Whether the client's signature was drawn on canvas or typed as a legal name"
+      "format": "date-time",
+      "title": "Portal First Viewed At"
     },
-    "client_snapshot": {
-      "type": "object",
-      "description": "Snapshot of client details at finalization for historical accuracy",
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "phone": {
-          "type": "string"
-        },
-        "email": {
-          "type": "string"
-        },
-        "address": {
-          "type": "string"
-        }
-      }
+    "portal_latest_viewed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Portal Latest Viewed At"
     },
-    "business_snapshot": {
-      "type": "object",
-      "description": "Snapshot of workspace/business details at finalization for historical accuracy",
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "logo": {
-          "type": "string"
-        },
-        "address": {
-          "type": "string"
-        },
-        "phone": {
-          "type": "string"
-        },
-        "email": {
-          "type": "string"
-        },
-        "gst_business_name": {
-          "type": "string"
-        },
-        "gstin": {
-          "type": "string"
-        },
-        "gst_billing_address": {
-          "type": "string"
-        },
-        "gst_state": {
-          "type": "string"
-        }
-      }
+    "portal_view_count": {
+      "type": "number",
+      "title": "Portal View Count",
+      "default": 0
     },
-    "event_snapshot": {
-      "type": "object",
-      "description": "Snapshot of event details at finalization for historical accuracy",
-      "properties": {
-        "title": {
-          "type": "string"
-        },
-        "start_date": {
-          "type": "string",
-          "format": "date"
-        },
-        "end_date": {
-          "type": "string",
-          "format": "date"
-        },
-        "venue": {
-          "type": "string"
-        },
-        "venue_address": {
-          "type": "string"
-        }
-      }
+    "sync_pending": {
+      "type": "boolean",
+      "title": "Sync Pending (accepted quotation needs Event+Financial sync)",
+      "default": false
+    },
+    "sync_completed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Sync Completed At"
     }
   },
   "required": [
     "workspace_id",
     "quotation_number",
-    "quotation_date",
-    "status"
+    "quotation_date"
   ],
   "rls": {
-    "read": {
-      "$or": [
-        {
-          "data.workspace_id": {
-            "$in": "{{user.data.workspace_ids}}"
-          }
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
     "create": {
-      "data.workspace_id": {
-        "$in": "{{user.data.workspace_ids}}"
-      }
+      "created_by_id": "{{user.id}}"
+    },
+    "read": {
+      "created_by_id": "{{user.id}}"
     },
     "update": {
-      "$or": [
-        {
-          "data.workspace_id": {
-            "$in": "{{user.data.workspace_ids}}"
-          }
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "created_by_id": "{{user.id}}"
     },
     "delete": {
-      "$or": [
-        {
-          "data.workspace_id": {
-            "$in": "{{user.data.workspace_ids}}"
-          }
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "created_by_id": "{{user.id}}"
     }
   }
 }

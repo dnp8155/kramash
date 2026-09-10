@@ -4,109 +4,100 @@
   "properties": {
     "workspace_id": {
       "type": "string",
-      "description": "Workspace this milestone belongs to"
+      "title": "Workspace ID"
     },
     "quotation_id": {
       "type": "string",
-      "description": "Quotation this milestone was created from"
+      "title": "Source Quotation ID"
     },
     "event_id": {
       "type": "string",
-      "description": "Event this milestone is linked to (for payment allocation)"
+      "title": "Event ID"
     },
-    "label": {
+    "client_id": {
       "type": "string",
-      "description": "Milestone label (e.g. Advance on Signing, Event Day, Handover)"
+      "title": "Client ID"
     },
-    "percentage": {
-      "type": "number",
-      "description": "Percentage of grand total this milestone represents (e.g. 50)"
+    "name": {
+      "type": "string",
+      "title": "Milestone Name"
     },
-    "amount": {
+    "description": {
+      "type": "string",
+      "title": "Description"
+    },
+    "sort_order": {
       "type": "number",
-      "description": "Due amount for this milestone in workspace currency"
+      "title": "Sort Order",
+      "default": 0
+    },
+    "milestone_type": {
+      "type": "string",
+      "title": "Milestone Type",
+      "enum": [
+        "percent",
+        "fixed"
+      ],
+      "default": "percent"
+    },
+    "milestone_value": {
+      "type": "number",
+      "title": "Milestone Value (% or fixed amount)",
+      "default": 0
+    },
+    "due_amount": {
+      "type": "number",
+      "title": "Due Amount (calculated from quotation total)",
+      "default": 0
     },
     "paid_amount": {
       "type": "number",
-      "default": 0,
-      "description": "Amount paid toward this milestone, allocated from CLIENT_RECEIPT transactions in sort order. Not set on acceptance \u2014 only updated when an actual payment is recorded."
+      "title": "Paid Amount (from linked CLIENT_RECEIPT transactions)",
+      "default": 0
+    },
+    "due_condition": {
+      "type": "string",
+      "title": "Due Condition (e.g. On signing, On event day, On handover)"
     },
     "due_date": {
       "type": "string",
       "format": "date",
-      "description": "When this milestone payment is due (optional, set by admin). Drives overdue/due status computation."
-    },
-    "sort_order": {
-      "type": "number",
-      "default": 0,
-      "description": "Display and payment allocation order. Milestones are paid in this sequence."
+      "title": "Due Date (if applicable)"
     },
     "status": {
       "type": "string",
+      "title": "Status",
+      "default": "upcoming",
       "enum": [
         "upcoming",
         "due",
         "partially_paid",
         "paid",
         "overdue"
-      ],
-      "default": "upcoming",
-      "description": "Computed from paid_amount and due_date. upcoming = no payment, due date not near; due = no payment, due within 7 days; partially_paid = some payment but less than amount; paid = fully paid; overdue = no/partial payment, due date passed."
+      ]
+    },
+    "financial_year_id": {
+      "type": "string",
+      "title": "Financial Year ID"
     }
   },
   "required": [
     "workspace_id",
     "quotation_id",
-    "label",
-    "amount"
+    "name"
   ],
   "rls": {
-    "read": {
-      "$or": [
-        {
-          "data.workspace_id": {
-            "$in": "{{user.data.workspace_ids}}"
-          }
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
     "create": {
-      "data.workspace_id": {
-        "$in": "{{user.data.workspace_ids}}"
-      }
+      "created_by_id": "{{user.id}}"
+    },
+    "read": {
+      "created_by_id": "{{user.id}}"
     },
     "update": {
-      "$or": [
-        {
-          "data.workspace_id": {
-            "$in": "{{user.data.workspace_ids}}"
-          }
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "created_by_id": "{{user.id}}"
     },
     "delete": {
-      "$or": [
-        {
-          "data.workspace_id": {
-            "$in": "{{user.data.workspace_ids}}"
-          }
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "created_by_id": "{{user.id}}"
     }
   }
 }

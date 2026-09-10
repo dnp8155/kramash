@@ -4,143 +4,124 @@
   "properties": {
     "workspace_id": {
       "type": "string",
-      "description": "Workspace this quotation item belongs to"
+      "title": "Workspace ID"
     },
     "quotation_id": {
       "type": "string",
-      "description": "Quotation this item belongs to"
+      "title": "Quotation ID"
     },
     "item_type": {
       "type": "string",
+      "title": "Item Type",
       "enum": [
         "service",
         "role",
+        "team",
         "custom"
       ],
-      "default": "service",
-      "description": "Whether this item references a Service, a Team Role, or a custom line"
+      "default": "custom"
     },
     "reference_id": {
       "type": "string",
-      "description": "Service or TeamRole id (null for custom items)"
+      "title": "Reference ID (service_id, role_id, or team_member_id)"
     },
     "team_member_id": {
       "type": "string",
-      "description": "Team member assigned to this role item. On quotation acceptance, syncs to EventTeamAssignment. Null for unassigned roles."
+      "title": "Team Member ID (for team-type items)"
     },
-    "provider_id": {
+    "team_member_name_snapshot": {
       "type": "string",
-      "description": "Team member providing this service item. On quotation acceptance, syncs to EventServiceAssignment.provider_id. Null when no specific provider."
+      "title": "Team Member Name Snapshot"
     },
-    "is_addon": {
-      "type": "boolean",
-      "default": false,
-      "description": "For service items: whether this is an add-on on top of the base contract value"
-    },
-    "name": {
+    "member_type": {
       "type": "string",
-      "description": "Snapshot of the item name at creation time"
-    },
-    "description": {
-      "type": "string",
-      "description": "Snapshot of the item description"
-    },
-    "quantity": {
-      "type": "number",
-      "description": "Quantity of this item"
-    },
-    "days": {
-      "type": "number",
-      "description": "Number of days (for Per Day rate type). Defaults to 1 if not applicable."
-    },
-    "unit_rate": {
-      "type": "number",
-      "description": "Rate per unit (may be overridden from the service/role default)"
-    },
-    "line_total": {
-      "type": "number",
-      "description": "Computed total for this line (quantity \u00d7 days \u00d7 unit_rate)"
-    },
-    "gst_rate": {
-      "type": "number",
-      "description": "GST rate percentage snapshot for this item"
-    },
-    "sac_code": {
-      "type": "string",
-      "description": "SAC code snapshot for this item"
+      "title": "Member Type / Side (bride_side, groom_side, common, other)"
     },
     "day_date": {
       "type": "string",
       "format": "date",
-      "description": "Date this item belongs to within the quotation's project date range (null for ungrouped items)"
+      "title": "Day Date (which day/phase this item belongs to)"
     },
     "phase_title": {
       "type": "string",
-      "description": "Function/phase title for this day (e.g. Haldi, Sangeet, Site Measurement). Custom text \u2014 not restricted to predefined values."
+      "title": "Function / Phase Title (e.g. Haldi, Sangeet, Site Measurement)"
     },
-    "member_side": {
+    "is_addon": {
+      "type": "boolean",
+      "title": "Is Add-on (last-minute service)",
+      "default": false
+    },
+    "name": {
       "type": "string",
-      "description": "Event-specific member side/type for team assignments (e.g. Bride Side, Groom Side, Common, Others). Not stored in Team Master."
+      "title": "Name"
+    },
+    "description": {
+      "type": "string",
+      "title": "Description"
+    },
+    "quantity": {
+      "type": "number",
+      "title": "Quantity",
+      "default": 1
+    },
+    "days": {
+      "type": "number",
+      "title": "Days",
+      "default": 1
+    },
+    "unit_rate": {
+      "type": "number",
+      "title": "Unit Rate",
+      "default": 0
+    },
+    "rate_type": {
+      "type": "string",
+      "title": "Rate Type",
+      "default": "Fixed",
+      "enum": [
+        "Fixed",
+        "Per Day",
+        "Per Unit",
+        "Per Event"
+      ]
+    },
+    "line_total": {
+      "type": "number",
+      "title": "Line Total",
+      "default": 0
+    },
+    "gst_rate": {
+      "type": "number",
+      "title": "GST Rate (%)",
+      "default": 0
+    },
+    "sac_code": {
+      "type": "string",
+      "title": "SAC Code"
     },
     "sort_order": {
       "type": "number",
-      "default": 0,
-      "description": "Display order within the quotation"
+      "title": "Sort Order",
+      "default": 0
     }
   },
   "required": [
     "workspace_id",
     "quotation_id",
-    "item_type",
     "name"
   ],
   "rls": {
-    "read": {
-      "$or": [
-        {
-          "data.workspace_id": {
-            "$in": "{{user.data.workspace_ids}}"
-          }
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
     "create": {
-      "data.workspace_id": {
-        "$in": "{{user.data.workspace_ids}}"
-      }
+      "created_by_id": "{{user.id}}"
+    },
+    "read": {
+      "created_by_id": "{{user.id}}"
     },
     "update": {
-      "$or": [
-        {
-          "data.workspace_id": {
-            "$in": "{{user.data.workspace_ids}}"
-          }
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "created_by_id": "{{user.id}}"
     },
     "delete": {
-      "$or": [
-        {
-          "data.workspace_id": {
-            "$in": "{{user.data.workspace_ids}}"
-          }
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "created_by_id": "{{user.id}}"
     }
   }
 }

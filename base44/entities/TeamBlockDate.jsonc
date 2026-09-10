@@ -4,35 +4,35 @@
   "properties": {
     "workspace_id": {
       "type": "string",
-      "description": "Workspace this block date belongs to"
+      "title": "Workspace ID"
     },
     "team_member_id": {
       "type": "string",
-      "description": "Team member this block date applies to"
+      "title": "Team Member ID"
     },
     "start_date": {
       "type": "string",
       "format": "date",
-      "description": "Block start date (date-only, YYYY-MM-DD). Required."
+      "title": "Start Date"
     },
     "end_date": {
       "type": "string",
       "format": "date",
-      "description": "Block end date (date-only, YYYY-MM-DD). Defaults to start_date for single-day blocks."
+      "title": "End Date"
     },
     "reason": {
       "type": "string",
-      "default": "Leave",
-      "description": "Reason for the block (e.g. Leave, Personal, Unavailable, Holiday, Other)"
+      "title": "Reason",
+      "default": "Leave"
     },
     "status": {
       "type": "string",
+      "title": "Status",
+      "default": "active",
       "enum": [
         "active",
         "cancelled"
-      ],
-      "default": "active",
-      "description": "active = member is unavailable during this range; cancelled = block was cancelled, member is available again."
+      ]
     }
   },
   "required": [
@@ -41,52 +41,17 @@
     "start_date"
   ],
   "rls": {
-    "read": {
-      "$or": [
-        {
-          "data.workspace_id": {
-            "$in": "{{user.data.workspace_ids}}"
-          }
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
     "create": {
-      "data.workspace_id": {
-        "$in": "{{user.data.workspace_ids}}"
-      }
+      "created_by_id": "{{user.id}}"
+    },
+    "read": {
+      "created_by_id": "{{user.id}}"
     },
     "update": {
-      "$or": [
-        {
-          "data.workspace_id": {
-            "$in": "{{user.data.workspace_ids}}"
-          }
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "created_by_id": "{{user.id}}"
     },
     "delete": {
-      "$or": [
-        {
-          "data.workspace_id": {
-            "$in": "{{user.data.workspace_ids}}"
-          }
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "created_by_id": "{{user.id}}"
     }
   }
 }

@@ -1,0 +1,4 @@
+{
+  "name": "toggleInvoicePublicLink",
+  "entry": "entry.ts"
+}

@@ -10,22 +10,19 @@
     },
     "phone": {
       "type": "string",
-      "description": "User contact phone (E.164 format)"
+      "title": "Phone Number",
+      "description": "Phone number for OTP login (E.164 format, e.g. +91...)"
     },
-    "avatar": {
+    "language": {
       "type": "string",
-      "description": "URL to the user's avatar image"
-    },
-    "workspace_ids": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
-      "description": "IDs of workspaces the user belongs to (multi-tenant scoping)"
-    },
-    "active_workspace_id": {
-      "type": "string",
-      "description": "Currently active workspace id for the user"
+      "title": "App Language",
+      "description": "Preferred UI language code (en, hi, gu)",
+      "default": "en",
+      "enum": [
+        "en",
+        "hi",
+        "gu"
+      ]
     }
   },
   "required": [

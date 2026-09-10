@@ -4,191 +4,133 @@
   "properties": {
     "name": {
       "type": "string",
-      "description": "Business / workspace name"
+      "title": "Business / Workspace Name"
+    },
+    "business_type": {
+      "type": "string",
+      "title": "Business Type"
     },
     "business_category": {
       "type": "string",
+      "title": "Business Category",
+      "default": "OTHER",
       "enum": [
         "PHOTOGRAPHY",
         "EVENT_MANAGEMENT",
         "ARCHITECTURE",
         "OTHER"
-      ],
-      "description": "Primary business category \u2014 drives UI terminology and preset suggestions"
-    },
-    "business_type": {
-      "type": "string",
-      "description": "Legacy free-text business type (retained for compatibility). For OTHER category, prefer custom_business_type."
+      ]
     },
     "custom_business_type": {
       "type": "string",
-      "description": "Custom industry name when business_category is OTHER (e.g. Interior Design, Consulting)"
+      "title": "Custom Business Type (for OTHER category)"
     },
     "custom_work_label_singular": {
       "type": "string",
-      "description": "Optional custom singular label for work items (e.g. Job, Assignment). Overrides the category default."
+      "title": "Custom Work Item Label (Singular)"
     },
     "custom_work_label_plural": {
       "type": "string",
-      "description": "Optional custom plural label for work items (e.g. Jobs, Assignments). Overrides the category default."
+      "title": "Custom Work Item Label (Plural)"
     },
     "owner_user_id": {
       "type": "string",
-      "description": "User id of the workspace owner"
-    },
-    "owner_name": {
-      "type": "string",
-      "description": "Display name of the workspace owner (denormalized for portal/branding use)"
+      "title": "Owner User ID"
     },
     "email": {
       "type": "string",
-      "description": "Business contact email"
+      "title": "Business Email"
     },
     "phone": {
       "type": "string",
-      "description": "Business contact phone"
+      "title": "Business Phone"
     },
     "logo": {
       "type": "string",
-      "description": "URL of the workspace logo"
+      "title": "Workspace Logo URL"
     },
     "address": {
       "type": "string",
-      "description": "Street address"
+      "title": "Business Address"
     },
     "city": {
-      "type": "string"
+      "type": "string",
+      "title": "City"
     },
     "state": {
-      "type": "string"
+      "type": "string",
+      "title": "State"
     },
     "country": {
-      "type": "string"
+      "type": "string",
+      "title": "Country"
     },
     "currency": {
       "type": "string",
+      "title": "Currency",
       "default": "INR"
     },
     "timezone": {
       "type": "string",
+      "title": "Timezone",
       "default": "Asia/Kolkata"
     },
     "plan_type": {
       "type": "string",
+      "title": "Plan Type",
+      "default": "free",
       "enum": [
         "free",
-        "pro",
-        "studio"
-      ],
-      "default": "free"
+        "pro"
+      ]
     },
     "plan_status": {
       "type": "string",
+      "title": "Plan Status",
+      "default": "active",
       "enum": [
         "active",
         "suspended",
-        "cancelled",
-        "trial"
-      ],
-      "default": "active"
-    },
-    "member_user_ids": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
-      "description": "User ids that belong to this workspace (denormalized for access control)"
+        "cancelled"
+      ]
     },
     "gst_enabled": {
       "type": "boolean",
+      "title": "GST Enabled",
       "default": false
     },
     "gstin": {
       "type": "string",
-      "description": "GST Identification Number"
+      "title": "GSTIN"
     },
     "gst_business_name": {
       "type": "string",
-      "description": "Registered legal business name for GST"
+      "title": "GST Registered Business Name"
     },
     "gst_billing_address": {
-      "type": "string"
+      "type": "string",
+      "title": "GST Billing Address"
     },
     "gst_state": {
-      "type": "string"
+      "type": "string",
+      "title": "GST State"
     },
     "default_gst_rate": {
       "type": "number",
-      "default": 18,
-      "description": "Default GST rate percentage (e.g. 18). Allowed: 0, 5, 12, 18, 28."
+      "title": "Default GST Rate (%)",
+      "default": 18
+    },
+    "team_member_types": {
+      "type": "string",
+      "title": "Team Member Types (JSON)"
     },
     "event_types": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
-      "description": "Workspace-configured event/project types (e.g. Wedding, Corporate, Architecture). Drives the EventForm type dropdown. Null/empty falls back to category defaults."
-    },
-    "event_statuses": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
-      "description": "Workspace-configured event/project statuses (e.g. Confirmed, In Progress, Completed). Drives the EventForm status dropdown. Null/empty falls back to defaults. Status is NEVER auto-derived from payments or dates."
-    },
-    "default_quotation_terms": {
       "type": "string",
-      "description": "Default terms and conditions preloaded into new quotations"
+      "title": "Event / Work Types (JSON array of strings)"
     },
-    "default_quotation_footer": {
+    "display_preferences": {
       "type": "string",
-      "description": "Default footer text shown at the bottom of quotations and invoices"
-    },
-    "active_financial_year_id": {
-      "type": "string",
-      "description": "Reference to the currently active FinancialYear for this workspace"
-    },
-    "is_active": {
-      "type": "boolean",
-      "default": true,
-      "description": "Whether this workspace is active. Inactive workspaces are read-only."
-    },
-    "onboarding_completed": {
-      "type": "boolean",
-      "default": false,
-      "description": "Whether the workspace owner has completed the onboarding flow. False until the workspace is fully created and configured. Used to route users to onboarding vs dashboard."
-    },
-    "bank_account_name": {
-      "type": "string",
-      "description": "Bank account holder name for client payments"
-    },
-    "bank_name": {
-      "type": "string",
-      "description": "Bank name"
-    },
-    "bank_account_number": {
-      "type": "string",
-      "description": "Bank account number"
-    },
-    "bank_ifsc": {
-      "type": "string",
-      "description": "Bank IFSC code"
-    },
-    "bank_upi_id": {
-      "type": "string",
-      "description": "UPI ID for receiving payments"
-    },
-    "social_instagram": {
-      "type": "string",
-      "description": "Instagram profile URL"
-    },
-    "social_website": {
-      "type": "string",
-      "description": "Business website URL"
-    },
-    "social_youtube": {
-      "type": "string",
-      "description": "YouTube channel URL"
+      "title": "Display Preferences (JSON)"
     }
   },
   "required": [
@@ -197,46 +139,16 @@
   ],
   "rls": {
     "read": {
-      "$or": [
-        {
-          "data.owner_user_id": "{{user.id}}"
-        },
-        {
-          "data.member_user_ids": "{{user.id}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "data.owner_user_id": "{{user.id}}"
     },
     "create": {
       "data.owner_user_id": "{{user.id}}"
     },
     "update": {
-      "$or": [
-        {
-          "data.owner_user_id": "{{user.id}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "data.owner_user_id": "{{user.id}}"
     },
     "delete": {
-      "$or": [
-        {
-          "data.owner_user_id": "{{user.id}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "data.owner_user_id": "{{user.id}}"
     }
   }
 }

@@ -4,57 +4,58 @@
   "properties": {
     "workspace_id": {
       "type": "string",
-      "description": "Workspace requesting the upgrade"
+      "title": "Workspace ID"
     },
-    "requested_plan_id": {
+    "requested_plan": {
       "type": "string",
-      "description": "Plan the workspace wants to upgrade to"
+      "title": "Requested Plan Code",
+      "default": "PRO"
     },
     "requested_pricing_id": {
       "type": "string",
-      "description": "PlanPricing the workspace wants (null for Free downgrade requests)"
+      "title": "Requested Pricing ID"
     },
     "status": {
       "type": "string",
+      "title": "Status",
+      "default": "PENDING",
       "enum": [
         "PENDING",
         "APPROVED",
         "REJECTED"
-      ],
-      "default": "PENDING",
-      "description": "Review status"
+      ]
     },
     "requested_at": {
       "type": "string",
-      "format": "date",
-      "description": "Date the request was submitted (date-only, YYYY-MM-DD)"
+      "format": "date-time",
+      "title": "Requested At"
     },
     "reviewed_at": {
       "type": "string",
-      "format": "date",
-      "description": "Date the request was reviewed (date-only, YYYY-MM-DD)"
+      "format": "date-time",
+      "title": "Reviewed At"
     },
     "reviewed_by": {
       "type": "string",
-      "description": "Admin user id who reviewed the request"
+      "title": "Reviewed By (user id)"
     },
-    "notes": {
+    "note": {
       "type": "string",
-      "description": "Optional notes from the requester or admin"
+      "title": "Note"
     }
   },
   "required": [
     "workspace_id",
-    "requested_plan_id",
     "status"
   ],
   "rls": {
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
     "read": {
       "$or": [
         {
-          "data.workspace_id": {
-            "$in": "{{user.data.workspace_ids}}"
-          }
+          "created_by_id": "{{user.id}}"
         },
         {
           "user_condition": {
@@ -62,11 +63,6 @@
           }
         }
       ]
-    },
-    "create": {
-      "data.workspace_id": {
-        "$in": "{{user.data.workspace_ids}}"
-      }
     },
     "update": {
       "user_condition": {

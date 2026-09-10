@@ -4,99 +4,66 @@
   "properties": {
     "workspace_id": {
       "type": "string",
-      "description": "Workspace this notification belongs to"
+      "title": "Workspace ID"
     },
     "user_id": {
       "type": "string",
-      "description": "User this notification is for (null = all workspace members)"
+      "title": "User ID"
     },
     "type": {
       "type": "string",
+      "title": "Notification Type",
       "enum": [
-        "EVENT_UPCOMING",
-        "PAYMENT_PENDING",
-        "SUBSCRIPTION_EXPIRING",
-        "SUBSCRIPTION_EXPIRED",
-        "TEAM_CONFLICT",
-        "SYSTEM"
-      ],
-      "description": "Notification type"
+        "event_reminder",
+        "payment_due",
+        "subscription_expiring",
+        "subscription_expired",
+        "team_conflict",
+        "general"
+      ]
     },
     "title": {
       "type": "string",
-      "description": "Notification title"
+      "title": "Title"
     },
     "message": {
       "type": "string",
-      "description": "Notification body text"
+      "title": "Message"
     },
     "related_entity_type": {
       "type": "string",
-      "description": "Type of related entity (e.g. Event, WorkspaceSubscription)"
+      "title": "Related Entity Type"
     },
     "related_entity_id": {
       "type": "string",
-      "description": "ID of related entity"
+      "title": "Related Entity ID"
     },
     "read": {
       "type": "boolean",
-      "default": false,
-      "description": "Whether the user has read this notification"
+      "title": "Read",
+      "default": false
     }
   },
   "required": [
     "workspace_id",
+    "user_id",
     "type",
-    "title",
-    "message"
+    "title"
   ],
   "rls": {
     "read": {
-      "$or": [
-        {
-          "data.workspace_id": {
-            "$in": "{{user.data.workspace_ids}}"
-          }
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "data.user_id": "{{user.id}}"
     },
     "create": {
-      "data.workspace_id": {
-        "$in": "{{user.data.workspace_ids}}"
+      "user_condition": {
+        "role": "admin"
       }
     },
     "update": {
-      "$or": [
-        {
-          "data.workspace_id": {
-            "$in": "{{user.data.workspace_ids}}"
-          }
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "data.user_id": "{{user.id}}"
     },
     "delete": {
-      "$or": [
-        {
-          "data.workspace_id": {
-            "$in": "{{user.data.workspace_ids}}"
-          }
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "data.user_id": "{{user.id}}"
     }
   }
 }

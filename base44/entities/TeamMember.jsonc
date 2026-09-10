@@ -4,62 +4,65 @@
   "properties": {
     "workspace_id": {
       "type": "string",
-      "description": "Workspace this team member belongs to"
+      "title": "Workspace ID"
     },
     "name": {
       "type": "string",
-      "description": "Team member name"
+      "title": "Name"
     },
     "phone": {
       "type": "string",
-      "description": "Primary contact number"
+      "title": "Phone"
     },
     "email": {
       "type": "string",
-      "description": "Contact email"
-    },
-    "profession": {
-      "type": "string",
-      "description": "Profession / role label (snapshot of role name, or free text)"
+      "format": "email",
+      "title": "Email"
     },
     "role_id": {
       "type": "string",
-      "description": "Reference to TeamRole"
+      "title": "Role ID"
+    },
+    "profession": {
+      "type": "string",
+      "title": "Profession"
     },
     "is_self": {
       "type": "boolean",
-      "default": false,
-      "description": "Whether this member represents the workspace owner / business operator. SELF members are excluded from external team wage obligations."
+      "title": "Is Self (workspace owner's own roster entry)",
+      "default": false
     },
     "member_type_id": {
       "type": "string",
-      "description": "Optional reference to a workspace member-type configuration (e.g. Bride Side, Groom Side, Common). Free-text ID; not a separate entity."
+      "title": "Team Member Type ID (legacy \u2014 event-specific, use assignments)"
     },
     "default_rate": {
       "type": "number",
-      "default": 0,
-      "description": "Default rate for this team member. Used as a suggestion when assigning to events; does NOT overwrite existing assignment agreed_rate."
+      "title": "Default Rate (legacy \u2014 rate comes from Role in Preferences)",
+      "default": 0
     },
     "rate_type": {
       "type": "string",
+      "title": "Rate Type (legacy \u2014 rate comes from Role in Preferences)",
+      "default": "Per Event",
       "enum": [
         "Per Event",
         "Per Day",
         "Fixed"
-      ],
-      "default": "Per Event"
+      ]
     },
     "notes": {
       "type": "string",
-      "description": "Free-form notes about this team member"
+      "title": "Notes"
     },
     "status": {
       "type": "string",
+      "title": "Status",
+      "default": "active",
       "enum": [
-        "Active",
-        "Inactive"
-      ],
-      "default": "Active"
+        "active",
+        "inactive"
+      ]
     }
   },
   "required": [
@@ -67,52 +70,15 @@
     "name"
   ],
   "rls": {
+    "create": {},
     "read": {
-      "$or": [
-        {
-          "data.workspace_id": {
-            "$in": "{{user.data.workspace_ids}}"
-          }
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
-    "create": {
-      "data.workspace_id": {
-        "$in": "{{user.data.workspace_ids}}"
-      }
+      "created_by_id": "{{user.id}}"
     },
     "update": {
-      "$or": [
-        {
-          "data.workspace_id": {
-            "$in": "{{user.data.workspace_ids}}"
-          }
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "created_by_id": "{{user.id}}"
     },
     "delete": {
-      "$or": [
-        {
-          "data.workspace_id": {
-            "$in": "{{user.data.workspace_ids}}"
-          }
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "created_by_id": "{{user.id}}"
     }
   }
 }

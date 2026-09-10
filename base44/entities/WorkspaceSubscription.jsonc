@@ -4,72 +4,69 @@
   "properties": {
     "workspace_id": {
       "type": "string",
-      "description": "Workspace this subscription belongs to"
+      "title": "Workspace ID"
     },
     "plan_id": {
       "type": "string",
-      "description": "Plan assigned to this workspace"
+      "title": "Plan ID"
     },
     "pricing_id": {
       "type": "string",
-      "description": "PlanPricing reference (null for Free plan)"
+      "title": "Pricing ID"
     },
     "status": {
       "type": "string",
+      "title": "Status",
+      "default": "ACTIVE",
       "enum": [
         "ACTIVE",
         "EXPIRED",
         "CANCELLED",
         "SUSPENDED"
-      ],
-      "default": "ACTIVE",
-      "description": "Current subscription status"
+      ]
     },
     "started_at": {
       "type": "string",
       "format": "date",
-      "description": "Subscription start date (date-only, YYYY-MM-DD)"
+      "title": "Start Date"
     },
     "expires_at": {
       "type": "string",
       "format": "date",
-      "description": "Subscription expiry date (date-only, YYYY-MM-DD). Null for Free plan."
+      "title": "Expiry Date"
     },
     "auto_renew": {
       "type": "boolean",
-      "default": false,
-      "description": "Whether the subscription auto-renews (Phase 8 \u2014 payment gateway)"
+      "title": "Auto Renew",
+      "default": false
     },
     "source": {
       "type": "string",
+      "title": "Source",
+      "default": "ADMIN",
       "enum": [
         "ADMIN",
         "PAYMENT_GATEWAY",
         "PROMOTIONAL",
         "ONBOARDING"
-      ],
-      "default": "ONBOARDING",
-      "description": "How the subscription was activated"
+      ]
     },
     "assigned_price": {
       "type": "number",
-      "description": "Snapshot of the price at assignment for historical accuracy"
+      "title": "Assigned Price (snapshot)",
+      "default": 0
     },
     "billing_cycle_snapshot": {
       "type": "string",
-      "description": "Snapshot of billing cycle (MONTHLY, SIX_MONTHS, ANNUAL, or FREE)"
-    },
-    "plan_code_snapshot": {
-      "type": "string",
-      "description": "Snapshot of plan code (FREE or PRO) for quick resolution without joins"
+      "title": "Billing Cycle (snapshot)"
     },
     "updated_by": {
       "type": "string",
-      "description": "Admin user id who last modified this subscription"
+      "title": "Updated By (user id)"
     },
-    "reason": {
+    "note": {
       "type": "string",
-      "description": "Optional admin note for this subscription change"
+      "title": "Note / Reason"
     }
   },
   "required": [
@@ -78,12 +75,15 @@
     "status"
   ],
   "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
     "read": {
       "$or": [
         {
-          "data.workspace_id": {
-            "$in": "{{user.data.workspace_ids}}"
-          }
+          "created_by_id": "{{user.id}}"
         },
         {
           "user_condition": {
@@ -91,11 +91,6 @@
           }
         }
       ]
-    },
-    "create": {
-      "user_condition": {
-        "role": "admin"
-      }
     },
     "update": {
       "user_condition": {
