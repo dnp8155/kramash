@@ -1,5 +1,6 @@
 import { renderGoldPremium } from "@/components/quotation/templates/goldPremiumTemplate";
 import { renderNavyGold } from "@/components/quotation/templates/navyGoldTemplate";
+import { renderClassicMinimal } from "@/components/quotation/templates/classicMinimalTemplate";
 
 // Quotation PDF template registry.
 // Each template has: id, name, description, render(data) -> HTML string.
@@ -16,6 +17,12 @@ export const QUOTATION_TEMPLATES = [
     name: "Navy Gold",
     description: "Professional navy & gold corporate quotation with bank details",
     render: renderNavyGold
+  },
+  {
+    id: "classic_minimal",
+    name: "Classic Minimal",
+    description: "Simple black & white day-wise layout with client details, team lists and pricing",
+    render: renderClassicMinimal
   }
 ];
 
