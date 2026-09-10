@@ -76,13 +76,13 @@ export default function ClientQuotationView() {
       if (creds?.password) payload.password = creds.password;
       if (isPreview) payload.skip_tracking = true;
       const res = await base44.functions.invoke("clientViewQuotation", payload);
-      if (res.data.requires_auth) {
+      if (res.requires_auth) {
         setAuthRequired(true);
         setData(null);
       } else {
         setAuthRequired(false);
-        setData(res.data);
-        if (res.data.quotation.status === "accepted" && res.data.quotation.client_signature) {
+        setData(res);
+        if (res.quotation.status === "accepted" && res.quotation.client_signature) {
           setSigned(true);
         }
       }
@@ -128,7 +128,7 @@ export default function ClientQuotationView() {
       if (authPassword) signPayload.password = authPassword;
       const res = await base44.functions.invoke("signQuotation", signPayload);
       setSigned(true);
-      setData((d) => ({ ...d, quotation: { ...d.quotation, ...res.data.quotation } }));
+      setData((d) => ({ ...d, quotation: { ...d.quotation, ...res.quotation } }));
       toast({ title: "Quotation accepted", description: "Your signature has been recorded." });
     } catch (e) {
       toast({ title: "Could not sign", description: e?.message || "Please try again.", variant: "destructive" });

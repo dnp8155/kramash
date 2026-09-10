@@ -14,7 +14,7 @@ export default function PublicJobSheet() {
     const fetchData = async () => {
       try {
         const response = await base44.functions.invoke("getPublicJobSheet", { public_token: token });
-        const result = response.data;
+        const result = response?.data || response;
         if (result.unavailable) {
           setUnavailable(true);
           setData(result);

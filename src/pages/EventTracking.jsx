@@ -44,7 +44,7 @@ export default function EventTracking() {
       setError("");
       try {
         const res = await base44.functions.invoke("getPublicEventData", { event_id: id });
-        setData(res.data);
+        setData(res?.data || res);
       } catch (e) {
         setError(e?.message || "Failed to load event details");
       } finally {
