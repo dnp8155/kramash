@@ -11,9 +11,9 @@ import EmptyState from "@/components/common/EmptyState";
 import { StatGridSkeleton, TableSkeleton } from "@/components/common/Skeletons";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatMoney } from "@/utils/format";
-import { loadInvoices, deleteInvoice } from "@/lib/invoiceService";
+import { loadInvoices, deleteInvoice, duplicateInvoice } from "@/lib/invoiceService";
 import { base44 } from "@/api/base44Client";
-import { Plus, Search, Trash2, FileText, IndianRupee, CheckCircle2, Clock, Printer } from "lucide-react";
+import { Plus, Search, Trash2, FileText, IndianRupee, CheckCircle2, Clock, Printer, Copy } from "lucide-react";
 import PageHeader from "@/components/common/PageHeader";
 import StatCard from "@/components/common/StatCard";
 import { cn } from "@/lib/utils";
@@ -108,6 +108,17 @@ export default function Invoices() {
     }
   };
 
+  const onCopy = async (inv) => {
+    try {
+      const copy = await duplicateInvoice(workspaceId, inv.id);
+      toast({ title: "Invoice copied", description: `Created ${copy.invoice_number}` });
+      invalidateEntities(queryClient, ["Invoice", "InvoiceItem"]);
+      navigate(`/invoices/${copy.id}`);
+    } catch (e) {
+      toast({ title: "Copy failed", description: e?.message, variant: "destructive" });
+    }
+  };
+
   const onPrint = async (inv) => {
     try {
       const result = await loadInvoice(workspaceId, inv.id);
@@ -194,6 +205,9 @@ export default function Invoices() {
                       <button onClick={(e) => { e.stopPropagation(); onPrint(inv); }} className="text-muted-foreground hover:text-foreground p-1" title="View / Print">
                         <Printer className="w-4 h-4" />
                       </button>
+                      <button onClick={(e) => { e.stopPropagation(); onCopy(inv); }} className="text-muted-foreground hover:text-foreground p-1" title="Copy Invoice">
+                        <Copy className="w-4 h-4" />
+                      </button>
                       <button onClick={(e) => { e.stopPropagation(); onDelete(inv); }} className="text-muted-foreground hover:text-destructive p-1" title="Delete">
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -240,6 +254,9 @@ export default function Invoices() {
                           <div className="flex items-center gap-1">
                             <button onClick={() => onPrint(inv)} className="text-muted-foreground hover:text-foreground p-1.5 rounded-md hover:bg-muted transition-colors" title="View / Print">
                               <Printer className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => onCopy(inv)} className="text-muted-foreground hover:text-foreground p-1.5 rounded-md hover:bg-muted transition-colors" title="Copy Invoice">
+                              <Copy className="w-4 h-4" />
                             </button>
                             <button onClick={() => onDelete(inv)} className="text-muted-foreground hover:text-destructive p-1.5 rounded-md hover:bg-muted transition-colors" title="Delete">
                               <Trash2 className="w-4 h-4" />

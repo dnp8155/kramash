@@ -5,6 +5,8 @@ import { formatEventDate } from "@/lib/dates";
 import { base44 } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";
 import MemberTypeTag from "@/components/common/MemberTypeTag";
+import { getMemberColor } from "@/lib/teamColors";
+import EditTransactionDialog from "@/components/financial/EditTransactionDialog";
 import { cn } from "@/lib/utils";
 
 export default function EventAssignmentCard({
@@ -23,6 +25,7 @@ export default function EventAssignmentCard({
   const [showHistory, setShowHistory] = useState(false);
   const [showFinancials, setShowFinancials] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
+  const [editingTx, setEditingTx] = useState(null);
   const { toast } = useToast();
 
   const paymentHistory = transactions.filter(
@@ -53,11 +56,16 @@ export default function EventAssignmentCard({
     }
   };
 
+  const memberColor = getMemberColor(member);
+
   return (
-    <div className="bg-card border border-border rounded-lg p-4">
+    <div className="bg-card border border-border rounded-lg p-4 relative overflow-hidden">
+      {/* Team color accent bar */}
+      <div className="absolute left-0 top-0 bottom-0 w-1" style={{ backgroundColor: memberColor }} />
       {/* Header */}
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-3 pl-1">
         <h4 className="text-sm font-semibold text-foreground truncate flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: memberColor }} />
           <span className="truncate">{member?.name || "Unknown member"}</span>
           {isSelf && (
             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-primary text-primary-foreground shrink-0">
@@ -195,6 +203,13 @@ export default function EventAssignmentCard({
                     {formatMoney(t.amount, currency)}
                   </span>
                   <button
+                    onClick={() => setEditingTx(t)}
+                    className="w-6 h-6 flex items-center justify-center rounded-full bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors"
+                    aria-label="Edit payment"
+                  >
+                    <Pencil className="w-3 h-3" />
+                  </button>
+                  <button
                     onClick={() => handleDeletePayment(t.id)}
                     disabled={deletingId === t.id}
                     className="w-6 h-6 flex items-center justify-center rounded-full bg-destructive text-white hover:opacity-80 transition-opacity disabled:opacity-50"
@@ -208,6 +223,19 @@ export default function EventAssignmentCard({
           </div>
         )}
       </div>
+      )}
+
+      {editingTx && (
+        <EditTransactionDialog
+          open={!!editingTx}
+          transaction={editingTx}
+          currency={currency}
+          onClose={() => setEditingTx(null)}
+          onSaved={() => {
+            setEditingTx(null);
+            onRefresh?.();
+          }}
+        />
       )}
     </div>
   );

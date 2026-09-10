@@ -13,6 +13,7 @@ import { TEAM_MEMBER_STATUS } from "@/constants/teamConfig";
 import { loadActiveRoles, clearOtherSelfMembers } from "@/lib/teamService";
 import { useAuth } from "@/lib/AuthContext";
 import { Crown } from "lucide-react";
+import { TEAM_COLOR_PALETTE, getMemberColor } from "@/lib/teamColors";
 
 // Master Team Member form — identity + role + contact + status + notes only.
 // Rate and Member Type are NOT collected here:
@@ -23,6 +24,7 @@ const empty = {
   name: "", phone: "", email: "",
   role_id: "", profession: "",
   is_self: false,
+  color: "",
   status: "active", notes: ""
 };
 
@@ -105,6 +107,7 @@ export default function TeamMemberForm({ open, onClose, onSaved, member = null, 
         role_id: form.role_id || "",
         profession: form.profession.trim(),
         is_self: !!form.is_self,
+        color: form.color || "",
         status: form.status,
         notes: form.notes.trim()
       };
@@ -145,6 +148,23 @@ export default function TeamMemberForm({ open, onClose, onSaved, member = null, 
           <div className="space-y-1.5">
             <Label>Name <span className="text-destructive">*</span></Label>
             <Input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="Enter team member name" autoFocus />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Color (for calendar & cards)</Label>
+            <div className="flex items-center gap-2 flex-wrap">
+              {TEAM_COLOR_PALETTE.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => set("color", c)}
+                  className={`w-7 h-7 rounded-full border-2 transition-all ${form.color === c ? "border-foreground scale-110" : "border-border"}`}
+                  style={{ backgroundColor: c }}
+                  aria-label={`Color ${c}`}
+                />
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground">Used to identify this member across the calendar, bookings, and event cards.</p>
           </div>
 
           <div className="space-y-1.5">

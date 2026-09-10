@@ -36,6 +36,11 @@
       "type": "string",
       "title": "Team Member Type ID (legacy \u2014 event-specific, use assignments)"
     },
+    "color": {
+      "type": "string",
+      "title": "Color (hex code for visual identification across calendar/cards)",
+      "default": "#0d9488"
+    },
     "default_rate": {
       "type": "number",
       "title": "Default Rate (legacy \u2014 rate comes from Role in Preferences)",

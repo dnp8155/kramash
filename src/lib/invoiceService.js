@@ -405,6 +405,61 @@ export async function deleteInvoice(workspaceId, invoiceId) {
   return base44.entities.Invoice.delete(invoiceId);
 }
 
+// Duplicate an existing invoice: copies all fields + line items with a new number.
+// Resets payment tracking (amount_paid=0, balance_due=grand_total, status=draft).
+export async function duplicateInvoice(workspaceId, invoiceId) {
+  if (!workspaceId || !invoiceId) throw new Error("Missing invoice to copy.");
+  const source = await loadInvoice(workspaceId, invoiceId);
+  if (!source?.invoice) throw new Error("Could not load source invoice.");
+  const { invoice: src, items: srcItems } = source;
+  const newNumber = await generateInvoiceNumber(workspaceId);
+  const copyPayload = {
+    workspace_id: workspaceId,
+    invoice_number: newNumber,
+    quotation_id: "",
+    client_id: src.client_id || "",
+    event_id: src.event_id || "",
+    invoice_date: new Date().toISOString().slice(0, 10),
+    due_date: src.due_date || "",
+    due_date_type: src.due_date_type || "due_on_receipt",
+    invoice_type: src.invoice_type || "manual",
+    milestone_id: "",
+    milestone_tag: src.milestone_tag || "Full Payment",
+    status: "draft",
+    show_itemized_rates: src.show_itemized_rates !== false,
+    subtotal: src.subtotal || 0,
+    discount_type: src.discount_type || "percent",
+    discount_value: src.discount_value || 0,
+    discount_amount: src.discount_amount || 0,
+    taxable_amount: src.taxable_amount || 0,
+    gst_applicable: !!src.gst_applicable,
+    gst_rate: src.gst_rate || 0,
+    gst_mode: src.gst_mode || "cgst_sgst",
+    cgst_amount: src.cgst_amount || 0,
+    sgst_amount: src.sgst_amount || 0,
+    igst_amount: src.igst_amount || 0,
+    gst_total: src.gst_total || 0,
+    grand_total: src.grand_total || 0,
+    amount_paid: 0,
+    balance_due: src.grand_total || 0,
+    amount_in_words: src.amount_in_words || "",
+    payment_schedule_json: src.payment_schedule_json || "",
+    client_snapshot: src.client_snapshot || "",
+    business_snapshot: src.business_snapshot || "",
+    event_snapshot: src.event_snapshot || "",
+    bank_details_snapshot: src.bank_details_snapshot || "",
+    social_links_snapshot: src.social_links_snapshot || "",
+    authorized_signatory: src.authorized_signatory || "",
+    notes: src.notes || "",
+    payment_terms: src.payment_terms || "",
+    terms_and_conditions: src.terms_and_conditions || ""
+  };
+  const newInv = await base44.entities.Invoice.create(copyPayload);
+  const itemPayloads = (srcItems || []).map((it, i) => toItemPayload(it, workspaceId, newInv.id, i));
+  if (itemPayloads.length) await base44.entities.InvoiceItem.bulkCreate(itemPayloads);
+  return newInv;
+}
+
 // ---- Legacy: Create from quotation (client-side) ----
 // Kept for backward compatibility with Quotation.jsx.
 // Prefer createInvoiceFromQuotation (backend) for race-condition protection.

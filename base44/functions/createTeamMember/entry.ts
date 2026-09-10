@@ -37,6 +37,14 @@ export default async function (req) {
         { status: 403 }
       );
     }
+    // Auto-assign a team color if not provided
+    if (!payload.color) {
+      const palette = ["#0d9488","#6366f1","#ec4899","#f59e0b","#8b5cf6","#ef4444","#14b8a6","#f97316","#3b82f6","#84cc16","#a855f7","#06b6d4"];
+      const existing = await base44.entities.TeamMember.filter({ workspace_id }, "name", 500);
+      const usedColors = new Set((existing || []).map((m) => m.color).filter(Boolean));
+      const available = palette.find((c) => !usedColors.has(c));
+      payload.color = available || palette[(existing?.length || 0) % palette.length];
+    }
     const created = await base44.entities.TeamMember.create({ ...payload, workspace_id });
     return Response.json(created);
   } catch (error) {
