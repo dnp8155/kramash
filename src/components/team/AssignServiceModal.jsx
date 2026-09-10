@@ -4,6 +4,7 @@ import Modal from "@/components/common/Modal";
 import Button from "@/components/common/Button";
 import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
+import ServiceProviderAutocomplete from "@/components/team/ServiceProviderAutocomplete";
 import { todayStr } from "@/utils/team";
 import { paymentMethods } from "@/constants/finance";
 import { formatCurrency } from "@/utils/format";
@@ -13,12 +14,19 @@ import { useWorkspace } from "@/lib/WorkspaceContext";
 import { isSelfMember } from "@/utils/selfDetection";
 
 // Assign/Edit Service modal — creates or updates an EventServiceAssignment.
+//
+// Service Provider is an autocomplete field: existing workspace Team Members
+// and the event's Client appear as suggestions. Custom provider names can be
+// typed freely — on save, a new TeamMember record is created so the provider
+// appears in future suggestions. Deduplication is case-insensitive.
+//
 // Rate auto-populates from the master Service.default_rate but is editable
 // (event-specific override — does NOT modify the master service).
 //
-// Provider can be "Client" (the event's client) or any active Team Member.
+// Provider can be "Client" (the event's client) or any Team Member.
 // When provider is "Client", payments are CLIENT_RECEIPT (money in).
 // When provider is a Team Member, payments are BUSINESS_EXPENSE (money out).
+// When provider is SELF (workspace owner), no external payment is created.
 export default function AssignServiceModal({
   open,
   onClose,
@@ -31,9 +39,15 @@ export default function AssignServiceModal({
   onAssign,
   onUpdate,
   onRecordPayment,
+  onCreateProvider,
   selfAlreadyAssigned = false,
 }) {
-  const [providerId, setProviderId] = useState("");
+  // Provider resolution: { providerId, providerName, isCustom }
+  const [provider, setProvider] = useState({
+    providerId: null,
+    providerName: "",
+    isCustom: false,
+  });
   const [serviceId, setServiceId] = useState("");
   const [rate, setRate] = useState("");
   const [isAddon, setIsAddon] = useState(false);
@@ -45,14 +59,42 @@ export default function AssignServiceModal({
 
   const isEditing = !!editingAssignment;
   const { ownerName } = useWorkspace();
-  const selectedProvider = members.find((m) => m.id === providerId);
-  const isSelfProviderSelected =
-    !!providerId && providerId !== "client" && isSelfMember(selectedProvider?.name, ownerName);
 
+  // SELF detection: check if the selected provider name matches the owner.
+  // Works for both existing members and custom-typed names.
+  const isSelfProviderSelected =
+    !!provider.providerId &&
+    provider.providerId !== "client" &&
+    isSelfMember(provider.providerName, ownerName);
+
+  // Initialize form state when modal opens or editingAssignment changes.
   useEffect(() => {
     if (!open) return;
     if (isEditing && editingAssignment) {
-      setProviderId(editingAssignment.provider_id || "");
+      // Resolve the provider from the assignment's stored data.
+      if (editingAssignment.provider_id === "client") {
+        setProvider({
+          providerId: "client",
+          providerName: client?.name || editingAssignment.provider_name_snapshot || "Client",
+          isCustom: false,
+        });
+      } else if (editingAssignment.provider_id) {
+        const member = members.find((m) => m.id === editingAssignment.provider_id);
+        setProvider({
+          providerId: editingAssignment.provider_id,
+          providerName: member?.name || editingAssignment.provider_name_snapshot || "",
+          isCustom: false,
+        });
+      } else if (editingAssignment.provider_name_snapshot) {
+        // Legacy custom provider with no member record — treat as custom.
+        setProvider({
+          providerId: null,
+          providerName: editingAssignment.provider_name_snapshot,
+          isCustom: true,
+        });
+      } else {
+        setProvider({ providerId: null, providerName: "", isCustom: false });
+      }
       setServiceId(editingAssignment.service_id || "");
       setRate(editingAssignment.rate != null ? String(editingAssignment.rate) : "");
       setIsAddon(!!editingAssignment.is_addon);
@@ -61,7 +103,7 @@ export default function AssignServiceModal({
       setPaymentDate(todayStr());
       setPaymentMethod("Cash");
     } else {
-      setProviderId("");
+      setProvider({ providerId: null, providerName: "", isCustom: false });
       setServiceId("");
       setRate("");
       setIsAddon(false);
@@ -70,23 +112,10 @@ export default function AssignServiceModal({
       setPaymentDate(todayStr());
       setPaymentMethod("Cash");
     }
-  }, [open, editingAssignment, event?.id]);
-
-  const activeMembers = useMemo(
-    () =>
-      members.filter(
-        (m) =>
-          m.status === "Active" &&
-          // Don't show SELF as a provider if already assigned to this event.
-          // In edit mode, allow the current assignment's provider to remain selectable.
-          !(selfAlreadyAssigned && isSelfMember(m.name, ownerName) && !(isEditing && editingAssignment?.provider_id === m.id))
-      ),
-    [members, selfAlreadyAssigned, ownerName, isEditing, editingAssignment]
-  );
+  }, [open, editingAssignment, event?.id, members, client]);
 
   const availableServices = useMemo(() => {
     if (isEditing) {
-      // In edit mode, show all active services (including the currently assigned one)
       return services.filter((s) => s.status === "active");
     }
     return services.filter(
@@ -96,8 +125,6 @@ export default function AssignServiceModal({
 
   const handleServiceChange = (id) => {
     setServiceId(id);
-    // Always auto-populate rate from the selected service's master default.
-    // The user can then override it — the master rate is never modified.
     const service = services.find((s) => s.id === id);
     setRate(service?.default_rate != null ? String(service.default_rate) : "");
   };
@@ -113,7 +140,6 @@ export default function AssignServiceModal({
       return;
     }
 
-    // Validate payment fields if Record Payment is ON (add mode only)
     const payAmt = Number(paymentAmount);
     if (!isEditing && recordPayment) {
       if (!paymentAmount || Number.isNaN(payAmt) || payAmt <= 0) {
@@ -127,17 +153,36 @@ export default function AssignServiceModal({
     }
 
     const service = services.find((s) => s.id === serviceId);
-    const provider = providerId === "client"
-      ? { name: client?.name || "Client" }
-      : members.find((m) => m.id === providerId);
 
     setSaving(true);
     try {
+      // Resolve the final provider ID and name.
+      // If a custom provider was typed, create a TeamMember record first so
+      // it persists in the workspace and appears in future suggestions.
+      let finalProviderId = provider.providerId;
+      let finalProviderName = provider.providerName;
+
+      if (provider.isCustom && finalProviderName && onCreateProvider) {
+        try {
+          const newMember = await onCreateProvider({ name: finalProviderName });
+          finalProviderId = newMember.id;
+          finalProviderName = newMember.name;
+        } catch (createErr) {
+          toast({
+            title: "Could not create provider",
+            description: createErr?.message,
+            variant: "destructive",
+          });
+          setSaving(false);
+          return;
+        }
+      }
+
       const payload = {
         service_id: serviceId,
         service_name_snapshot: service?.name || "",
-        provider_id: providerId || null,
-        provider_name_snapshot: provider?.name || "",
+        provider_id: finalProviderId || null,
+        provider_name_snapshot: finalProviderName || "",
         rate: amt,
         is_addon: isAddon,
       };
@@ -149,21 +194,23 @@ export default function AssignServiceModal({
         return;
       }
 
-      // Create the service assignment first
+      // Create the service assignment first.
       const assignment = await onAssign(payload);
 
-      // Then create payment if Record Payment is ON.
-      // If payment fails (e.g. no FY for the date), the assignment is already
-      // saved — show a specific error so the user knows the assignment succeeded.
+      // Then create payment if Record Payment is ON (add mode only, non-SELF).
       if (recordPayment && onRecordPayment && assignment) {
-        const txnType = providerId === "client" ? "CLIENT_RECEIPT" : "BUSINESS_EXPENSE";
+        const txnType =
+          finalProviderId === "client" ? "CLIENT_RECEIPT" : "BUSINESS_EXPENSE";
         try {
           await onRecordPayment({
             transaction_type: txnType,
             event_id: event.id,
             service_assignment_id: assignment.id,
-            client_id: providerId === "client" ? event.client_id : null,
-            team_member_id: providerId !== "client" && providerId ? providerId : null,
+            client_id: finalProviderId === "client" ? event.client_id : null,
+            team_member_id:
+              finalProviderId !== "client" && finalProviderId
+                ? finalProviderId
+                : null,
             amount: payAmt,
             payment_method: paymentMethod,
             transaction_date: paymentDate,
@@ -181,7 +228,11 @@ export default function AssignServiceModal({
       }
       onClose();
     } catch (e) {
-      toast({ title: isEditing ? "Update failed" : "Assignment failed", description: e?.message, variant: "destructive" });
+      toast({
+        title: isEditing ? "Update failed" : "Assignment failed",
+        description: e?.message,
+        variant: "destructive",
+      });
     } finally {
       setSaving(false);
     }
@@ -206,23 +257,17 @@ export default function AssignServiceModal({
       }
     >
       <div className="grid grid-cols-1 gap-4">
-        <Select
+        <ServiceProviderAutocomplete
           label="Service Provider"
-          value={providerId}
-          onChange={(e) => setProviderId(e.target.value)}
-        >
-          <option value="">Select a provider…</option>
-          {client && (
-            <option value="client">Client — {client.name}</option>
-          )}
-          {activeMembers.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.name}
-              {m.profession ? ` — ${m.profession}` : ""}
-              {isSelfMember(m.name, ownerName) ? " — SELF" : ""}
-            </option>
-          ))}
-        </Select>
+          value={provider}
+          onChange={setProvider}
+          members={members}
+          client={client}
+          ownerName={ownerName}
+          selfAlreadyAssigned={selfAlreadyAssigned}
+          isEditing={isEditing}
+          editingProviderId={editingAssignment?.provider_id}
+        />
         {!isEditing && selfAlreadyAssigned && (
           <p className="-mt-2 text-xs text-muted-foreground">
             Owner / Self is already assigned to this event.

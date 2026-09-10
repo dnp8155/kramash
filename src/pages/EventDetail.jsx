@@ -58,7 +58,7 @@ export default function EventDetail() {
   const { id } = useParams();
   const { events, updateEvent } = useEvents();
   const { clients, createClient } = useClients();
-  const { members } = useTeamMembers();
+  const { members, createMember } = useTeamMembers();
   const { ownerName } = useWorkspace();
   const { roles } = useTeamRoles();
   const { assignments, createAssignment, updateAssignment, removeAssignment } =
@@ -133,6 +133,15 @@ export default function EventDetail() {
 
   const existingMemberIds = eventAssignments.map((a) => a.team_member_id);
 
+  const eventServiceAssignments = useMemo(
+    () =>
+      serviceAssignments.filter(
+        (sa) => sa.event_id === id && sa.assignment_status === "Assigned"
+      ),
+    [serviceAssignments, id]
+  );
+  const existingServiceIds = eventServiceAssignments.map((sa) => sa.service_id);
+
   // SELF detection: find the owner's team member record and check if SELF
   // is already assigned to this event (across both team and service assignments).
   // Used to filter SELF from the "Add" modals — one SELF per event.
@@ -150,15 +159,6 @@ export default function EventDetail() {
     },
     [selfMemberId, eventAssignments, eventServiceAssignments]
   );
-
-  const eventServiceAssignments = useMemo(
-    () =>
-      serviceAssignments.filter(
-        (sa) => sa.event_id === id && sa.assignment_status === "Assigned"
-      ),
-    [serviceAssignments, id]
-  );
-  const existingServiceIds = eventServiceAssignments.map((sa) => sa.service_id);
 
   // Add-on total: sum of add-on service rates (added on top of contract value)
   const addonTotal = eventServiceAssignments
@@ -683,6 +683,7 @@ export default function EventDetail() {
         onAssign={handleCreateServiceAssignment}
         onUpdate={handleUpdateServiceAssignment}
         onRecordPayment={handleCreateTxn}
+        onCreateProvider={createMember}
         selfAlreadyAssigned={selfAlreadyAssignedToEvent}
       />
 

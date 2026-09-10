@@ -136,6 +136,16 @@ export default function ServiceAssignmentCard({
             Owner share — no payment required
           </span>
         )}
+        {summary.payments.length > 0 && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => onShareInvoice(summary.payments[0])}
+            title="Share latest payment invoice"
+          >
+            <Share2 className="h-3.5 w-3.5" /> Share
+          </Button>
+        )}
         <Button
           size="sm"
           variant="ghost"
