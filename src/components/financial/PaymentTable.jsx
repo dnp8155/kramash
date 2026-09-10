@@ -43,21 +43,17 @@ export default function PaymentTable({
     return "Transaction";
   };
 
-  // Secondary line: associated entity · date.
-  const secondaryFor = (t) => {
-    let entity = "";
+  // Secondary line: client name (prominent) + date (subtle).
+  const clientNameFor = (t) => {
     if (t.transaction_type === "CLIENT_RECEIPT") {
-      entity = clientsById[t.client_id]?.name || "";
-    } else {
-      const ev = eventsById[t.event_id];
-      if (ev) entity = clientsById[ev.client_id]?.name || "";
-      if (!entity && t.transaction_type === "BUSINESS_EXPENSE") {
-        entity = t.expense_category_name_snapshot || "";
-      }
-      if (!entity) entity = "Misc";
+      return clientsById[t.client_id]?.name || "";
     }
-    const date = formatEventDate(t.transaction_date);
-    return entity ? `${entity} · ${date}` : date;
+    const ev = eventsById[t.event_id];
+    if (ev) return clientsById[ev.client_id]?.name || "";
+    if (t.transaction_type === "BUSINESS_EXPENSE") {
+      return t.expense_category_name_snapshot || "";
+    }
+    return "";
   };
 
   return (
@@ -75,7 +71,7 @@ export default function PaymentTable({
               isVoid && "opacity-50"
             )}
           >
-            {/* Left: particular + entity·date */}
+            {/* Left: particular + client name */}
             <div className="min-w-0 flex-1">
               <div className="text-sm font-medium text-foreground truncate flex items-center gap-2">
                 {particularFor(t)}
@@ -85,8 +81,10 @@ export default function PaymentTable({
                   </span>
                 )}
               </div>
-              <div className="text-xs text-muted-foreground truncate mt-0.5">
-                {secondaryFor(t)}
+              <div className="text-xs text-muted-foreground truncate mt-0.5 flex items-center gap-1.5">
+                <span className="font-medium text-foreground/70">{clientNameFor(t)}</span>
+                <span className="text-muted-foreground/60">·</span>
+                <span>{formatEventDate(t.transaction_date)}</span>
               </div>
             </div>
 
