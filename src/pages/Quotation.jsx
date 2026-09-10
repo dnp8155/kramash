@@ -1,186 +1,351 @@
-import { useMemo, useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, FileText, Eye, Download, Loader2 } from "lucide-react";
-import PageHeader from "@/components/common/PageHeader";
-import Card, { CardBody, CardHeader, CardTitle } from "@/components/common/Card";
-import StatusBadge from "@/components/common/StatusBadge";
-import SearchInput from "@/components/common/SearchInput";
-import FilterControl from "@/components/common/FilterControl";
-import Button from "@/components/common/Button";
-import EmptyState from "@/components/common/EmptyState";
-import LoadingState from "@/components/common/LoadingState";
-import ErrorState from "@/components/common/ErrorState";
-import { useQuotations } from "@/hooks/useQuotations";
-import { useClients } from "@/hooks/useClients";
-import { useEvents } from "@/hooks/useEvents";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useWorkspace } from "@/lib/WorkspaceContext";
-import { usePlan } from "@/lib/PlanContext";
-import { useBusinessTerminology } from "@/lib/BusinessTerminology";
+import { useToast } from "@/components/ui/use-toast";
+import Button from "@/components/common/Button";
+import Input from "@/components/common/Input";
+import Select from "@/components/common/Select";
+import LoadingState from "@/components/common/LoadingState";
+import EmptyState from "@/components/common/EmptyState";
+import { StatGridSkeleton, TableSkeleton } from "@/components/common/Skeletons";
+import { Skeleton } from "@/components/ui/skeleton";
+import { formatMoney } from "@/utils/format";
+import { loadQuotations, deleteQuotation, loadQuotationItems } from "@/lib/quotationService";
+import { createFromQuotation } from "@/lib/invoiceService";
+import { QUOTATION_STATUSES, QUOTATION_STATUS_META } from "@/constants/quotationConfig";
+import { generateQuotationPdf } from "@/lib/quotationPdf";
 import { base44 } from "@/api/base44Client";
-import { toast } from "@/components/ui/use-toast";
-import { formatCurrency, formatDate } from "@/utils/format";
-import { generateQuotationPDF } from "@/utils/quotationPdf";
+import { Plus, Search, Trash2, FileDown, Eye, FileText, IndianRupee, CheckCircle2, Pencil, Receipt } from "lucide-react";
+import PdfPreviewModal from "@/components/common/PdfPreviewModal";
+import PageHeader from "@/components/common/PageHeader";
+import StatCard from "@/components/common/StatCard";
+import { cn } from "@/lib/utils";
+import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
+import { invalidateEntities } from "@/lib/queryInvalidation";
 
-const QUOTATION_STATUSES = ["Draft", "Finalized", "Accepted", "Rejected"];
+const fmtDate = (iso) => {
+  if (!iso) return "—";
+  const d = new Date(iso + "T00:00:00");
+  if (isNaN(d)) return iso;
+  return d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+};
 
 export default function Quotation() {
   const navigate = useNavigate();
-  const { currentWorkspace, workspaceId } = useWorkspace();
-  const { canUseFeature } = usePlan();
-  const { quotations, loading, error, refetch } = useQuotations();
-  const { clients } = useClients();
-  const { events } = useEvents();
-  const t = useBusinessTerminology();
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [pdfLoadingId, setPdfLoadingId] = useState(null);
+  const { workspaceId, workspace } = useWorkspace();
+  const { toast } = useToast();
+  const currency = workspace?.currency || "INR";
+  const term = useBusinessTerminology();
 
-  const clientName = (q) => q.custom_client?.name || clients.find((c) => c.id === q.client_id)?.name || "—";
-  const eventTitle = (id) => events.find((e) => e.id === id)?.title || "—";
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [generatingId, setGeneratingId] = useState("");
+  const [preview, setPreview] = useState({ url: "", filename: "", open: false, loading: false });
+  const queryClient = useQueryClient();
+
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ["quotations", workspaceId],
+    queryFn: async () => {
+      const [qs, cl, ev] = await Promise.all([
+        loadQuotations(workspaceId),
+        base44.entities.Client.filter({ workspace_id: workspaceId }, "name", 500),
+        base44.entities.Event.filter({ workspace_id: workspaceId }, "-start_date", 500)
+      ]);
+      return { quotations: qs || [], clients: cl || [], events: ev || [] };
+    },
+    enabled: !!workspaceId,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true
+  });
+
+  // Belt-and-suspenders: force refetch whenever workspaceId changes or page is navigated to.
+  useEffect(() => {
+    if (workspaceId) refetch();
+  }, [workspaceId, refetch]);
+  const quotations = data?.quotations || [];
+  const clients = data?.clients || [];
+  const events = data?.events || [];
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ["quotations", workspaceId] });
+    // Accepting/deleting a quotation can change an event's contract value, which
+    // affects the dashboard, events list, event details, and financial totals.
+    invalidateEntities(queryClient, ["Quotation", "QuotationItem", "Event", "FinancialTransaction"]);
+  };
+
+  useEffect(() => {
+    if (error) toast({ title: "Failed to load quotations", description: error?.message, variant: "destructive" });
+  }, [error, toast]);
+
+  const clientsById = useMemo(() => {
+    const m = {};
+    for (const c of clients) m[c.id] = c;
+    return m;
+  }, [clients]);
+  const eventsById = useMemo(() => {
+    const m = {};
+    for (const e of events) m[e.id] = e;
+    return m;
+  }, [events]);
 
   const filtered = useMemo(() => {
-    return quotations.filter((q) => {
-      const matchesSearch =
-        !search ||
-        [q.quotation_number, clientName(q), eventTitle(q.event_id)]
-          .some((f) => f.toLowerCase().includes(search.toLowerCase()));
-      const matchesStatus = statusFilter === "all" || q.status === statusFilter;
-      return matchesSearch && matchesStatus;
+    const q = search.trim().toLowerCase();
+    return quotations.filter((qt) => {
+      if (statusFilter !== "All" && qt.status !== statusFilter) return false;
+      if (!q) return true;
+      const cl = clientsById[qt.client_id];
+      const ev = eventsById[qt.event_id];
+      const hay = [qt.quotation_number, cl?.name || "", ev?.title || "", qt.status].join(" ").toLowerCase();
+      return hay.includes(q);
     });
-  }, [quotations, search, statusFilter, clients, events]);
+  }, [quotations, search, statusFilter, clientsById, eventsById]);
 
-  const handleQuickPDF = async (q) => {
-    if (!canUseFeature("pdf_export_enabled")) {
-      toast({ title: "PDF export is a Pro feature", description: "Upgrade to Kramashah Pro to export branded PDFs.", variant: "destructive" });
-      return;
-    }
-    setPdfLoadingId(q.id);
+  const stats = useMemo(() => {
+    const totalValue = quotations.reduce((s, q) => s + (Number(q.grand_total) || 0), 0);
+    const draftCount = quotations.filter((q) => q.status === "draft").length;
+    const finalizedCount = quotations.filter((q) => q.status === "finalized").length;
+    const acceptedCount = quotations.filter((q) => q.status === "accepted").length;
+    return { totalValue, draftCount, finalizedCount, acceptedCount };
+  }, [quotations]);
+
+  const onDelete = async (qt) => {
+    if (!window.confirm(`Delete quotation ${qt.quotation_number}? This cannot be undone.`)) return;
     try {
-      const qItems = await base44.entities.QuotationItem.filter(
-        { workspace_id: workspaceId, quotation_id: q.id },
-        "sort_order", 500
-      );
-      const client = clients.find((c) => c.id === q.client_id);
-      const event = q.event_id ? events.find((e) => e.id === q.event_id) : null;
-      await generateQuotationPDF({
-        quotation: q,
-        items: qItems || [],
-        workspace: currentWorkspace,
-        client,
-        event,
-        terminology: t,
-      });
+      await deleteQuotation(workspaceId, qt.id);
+      toast({ title: "Quotation deleted" });
+      invalidate();
     } catch (e) {
-      toast({ title: "PDF failed", description: e?.message, variant: "destructive" });
-    } finally {
-      setPdfLoadingId(null);
+      toast({ title: "Delete failed", description: e?.message, variant: "destructive" });
     }
   };
 
-  if (loading) return <LoadingState label="Loading quotations…" />;
-  if (error) return <ErrorState message={error} onRetry={refetch} />;
+  const createInvoice = async (qt) => {
+    try {
+      const items = await loadQuotationItems(workspaceId, qt.id);
+      const inv = await createFromQuotation(workspaceId, qt, items);
+      invalidateEntities(queryClient, ["Invoice", "InvoiceItem"]);
+      toast({ title: "Invoice created", description: inv.invoice_number });
+      navigate(`/invoices/${inv.id}`);
+    } catch (e) {
+      toast({ title: "Failed to create invoice", description: e?.message, variant: "destructive" });
+    }
+  };
+
+  const downloadPdf = async (qt) => {
+    setGeneratingId(qt.id);
+    try {
+      const items = await loadQuotationItems(workspaceId, qt.id);
+      const client = clientsById[qt.client_id];
+      const event = eventsById[qt.event_id];
+      await generateQuotationPdf({ quotation: qt, items, workspace, client, event, currency });
+    } catch (e) {
+      toast({ title: "PDF generation failed", description: e?.message, variant: "destructive" });
+    } finally {
+      setGeneratingId("");
+    }
+  };
+
+  const previewPdf = async (qt) => {
+    setGeneratingId(qt.id);
+    setPreview({ url: "", filename: "", open: true, loading: true });
+    try {
+      const items = await loadQuotationItems(workspaceId, qt.id);
+      const client = clientsById[qt.client_id];
+      const event = eventsById[qt.event_id];
+      const result = await generateQuotationPdf({ quotation: qt, items, workspace, client, event, currency, returnBlob: true });
+      setPreview({ url: result.url, filename: result.filename, open: true, loading: false });
+    } catch (e) {
+      toast({ title: "Preview failed", description: e?.message, variant: "destructive" });
+      setPreview({ url: "", filename: "", open: false, loading: false });
+    } finally {
+      setGeneratingId("");
+    }
+  };
+
+  if (isLoading) return (
+    <div className="p-4 sm:p-6 space-y-5 max-w-[1200px] mx-auto">
+      <PageHeader eyebrow="Sales" title="Quotations" subtitle="Create, track and finalize client quotations.">
+        <Button onClick={() => navigate("/quotation/new")}>
+          <Plus className="w-4 h-4" /> Create Quotation
+        </Button>
+      </PageHeader>
+      <StatGridSkeleton count={4} />
+      <div className="flex flex-col sm:flex-row gap-3">
+        <Skeleton className="h-9 flex-1 rounded-md" />
+        <Skeleton className="h-9 sm:w-44 rounded-md" />
+      </div>
+      <TableSkeleton />
+    </div>
+  );
 
   return (
-    <div className="flex flex-col gap-6">
-      <PageHeader
-        title="Quotation & Agreement"
-        description="Create, send, and track quotations and signed agreements."
-        actions={
-          <Button onClick={() => navigate("/quotation/new")}>
-            <Plus className="h-4 w-4" /> New Quotation
-          </Button>
-        }
-      />
+    <div className="p-4 sm:p-6 space-y-5 max-w-[1200px] mx-auto">
+      <PageHeader eyebrow="Sales" title="Quotations" subtitle="Create, track and finalize client quotations.">
+        <Button onClick={() => navigate("/quotation/new")}>
+          <Plus className="w-4 h-4" /> Create Quotation
+        </Button>
+      </PageHeader>
 
-      <Card>
-        <CardBody className="flex flex-col gap-3 sm:flex-row sm:items-end">
-          <SearchInput
+      {/* Stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <StatCard label="Total Quotations" value={quotations.length} icon={FileText} tone="primary" />
+        <StatCard label="Total Value" value={formatMoney(stats.totalValue, currency)} icon={IndianRupee} tone="success" />
+        <StatCard label="Accepted" value={stats.acceptedCount} icon={CheckCircle2} tone="success" />
+        <StatCard label="Drafts" value={stats.draftCount} icon={Pencil} tone="muted" />
+      </div>
+
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+          <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder={`Search by quotation #, client, ${t.workItemSingular.toLowerCase()}…`}
-            className="flex-1"
+            placeholder={`Search by number, client, ${term.workItemSingular.toLowerCase()}…`}
+            className="pl-9"
           />
-          <FilterControl
-            label="Status"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            options={QUOTATION_STATUSES}
-          />
-        </CardBody>
-      </Card>
+        </div>
+        <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="sm:w-44">
+          <option value="All">All statuses</option>
+          {QUOTATION_STATUSES.map((s) => <option key={s} value={s}>{QUOTATION_STATUS_META[s].label}</option>)}
+        </Select>
+      </div>
 
-      <Card>
-        <CardHeader><CardTitle>Quotations</CardTitle></CardHeader>
-        {filtered.length === 0 ? (
-          <EmptyState
-            title="No quotations created yet"
-            description={`Create a quotation for your next ${t.workItemSingular.toLowerCase()}.`}
-            icon={FileText}
-            action={
-              <Button onClick={() => navigate("/quotation/new")}>
-                <Plus className="h-4 w-4" /> New Quotation
-              </Button>
-            }
-          />
-        ) : (
-          <CardBody className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
-                    <th className="px-5 py-3 font-semibold">Quotation #</th>
-                    <th className="px-5 py-3 font-semibold">Client</th>
-                    <th className="px-5 py-3 font-semibold">{t.workItemSingular}</th>
-                    <th className="px-5 py-3 font-semibold">Amount</th>
-                    <th className="px-5 py-3 font-semibold">Date</th>
-                    <th className="px-5 py-3 font-semibold">Status</th>
-                    <th className="px-5 py-3 font-semibold text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {filtered.map((q) => (
+      {filtered.length === 0 ? (
+        <EmptyState
+          title={quotations.length === 0 ? "No quotations created yet" : "No quotations match your search"}
+          description={quotations.length === 0 ? `Create a quotation for your next ${term.workItemSingular.toLowerCase()}.` : "Try a different search or filter."}
+          action={quotations.length === 0 ? <Button onClick={() => navigate("/quotation/new")}><Plus className="w-4 h-4" /> Create Quotation</Button> : null}
+        />
+      ) : (
+        <>
+        {/* Mobile cards */}
+        <div className="sm:hidden space-y-3">
+          {filtered.map((qt) => {
+            const cl = clientsById[qt.client_id];
+            const ev = eventsById[qt.event_id];
+            return (
+              <div key={qt.id} className="bg-card border border-border rounded-xl p-4 shadow-card cursor-pointer hover:shadow-card-hover hover:border-border/80 transition-shadow" onClick={() => navigate(`/quotation/${qt.id}`)}>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-mono font-medium text-foreground">{qt.quotation_number}</span>
+                  <span className={cn("text-xs px-2 py-1 rounded font-medium uppercase tracking-wide", QUOTATION_STATUS_META[qt.status]?.className)}>
+                    {QUOTATION_STATUS_META[qt.status]?.label || qt.status}
+                  </span>
+                </div>
+                <div className="mt-2 text-sm text-foreground">{cl?.name || "—"}</div>
+                <div className="text-xs text-muted-foreground">{ev?.title || "—"} · {fmtDate(qt.quotation_date)}</div>
+                <div className="mt-3 flex items-center justify-between">
+                  <span className="text-sm font-semibold text-foreground">{formatMoney(qt.grand_total, currency)}</span>
+                  <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                    {qt.status === "accepted" && (
+                      <button onClick={() => createInvoice(qt)} className="text-primary hover:bg-primary/10 p-1 rounded-md" title="Create Invoice"><Receipt className="w-4 h-4" /></button>
+                    )}
+                    {(qt.status === "finalized" || qt.status === "accepted") && (
+                      <>
+                        <button onClick={() => previewPdf(qt)} disabled={generatingId === qt.id} className="text-muted-foreground hover:text-primary p-1" title="Preview PDF"><Eye className="w-4 h-4" /></button>
+                        <button onClick={() => downloadPdf(qt)} disabled={generatingId === qt.id} className="text-muted-foreground hover:text-primary p-1" title="Download PDF"><FileDown className="w-4 h-4" /></button>
+                      </>
+                    )}
+                    <button onClick={() => onDelete(qt)} className="text-muted-foreground hover:text-destructive p-1" title="Delete"><Trash2 className="w-4 h-4" /></button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Desktop table */}
+        <div className="hidden sm:block bg-card border border-border rounded-xl overflow-hidden shadow-card">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[720px]">
+              <thead className="bg-muted/40 text-[11px] text-muted-foreground uppercase tracking-[0.08em] border-b border-border">
+                <tr>
+                  <th className="text-left px-4 py-3 font-semibold">Quotation No</th>
+                  <th className="text-left px-4 py-3 font-semibold">Client</th>
+                  <th className="text-left px-4 py-3 font-semibold">{term.workItemSingular}</th>
+                  <th className="text-left px-4 py-3 font-semibold">Date</th>
+                  <th className="text-right px-4 py-3 font-semibold">Total</th>
+                  <th className="text-left px-4 py-3 font-semibold">Status</th>
+                  <th className="px-4 py-3 font-semibold w-20"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((qt) => {
+                  const cl = clientsById[qt.client_id];
+                  const ev = eventsById[qt.event_id];
+                  return (
                     <tr
-                      key={q.id}
-                      className="cursor-pointer transition-colors hover:bg-muted/30"
-                      onClick={() => navigate(`/quotation/${q.id}`)}
+                      key={qt.id}
+                      className="border-b border-border last:border-0 hover:bg-muted/30 cursor-pointer transition-colors"
+                      onClick={() => navigate(`/quotation/${qt.id}`)}
                     >
-                      <td className="px-5 py-3 font-medium text-foreground">{q.quotation_number}</td>
-                      <td className="px-5 py-3 text-foreground">{clientName(q)}</td>
-                      <td className="px-5 py-3 text-muted-foreground">{eventTitle(q.event_id)}</td>
-                      <td className="px-5 py-3 font-semibold text-foreground">{formatCurrency(q.grand_total)}</td>
-                      <td className="px-5 py-3 text-muted-foreground">{formatDate(q.quotation_date)}</td>
-                      <td className="px-5 py-3"><StatusBadge status={q.status} /></td>
-                      <td className="px-5 py-3" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center justify-end gap-1">
+                      <td className="px-4 py-3.5 font-mono font-medium text-foreground">{qt.quotation_number}</td>
+                      <td className="px-4 py-3.5 text-foreground">{cl?.name || "—"}</td>
+                      <td className="px-4 py-3.5 text-muted-foreground">{ev?.title || "—"}</td>
+                      <td className="px-4 py-3.5 text-muted-foreground">{fmtDate(qt.quotation_date)}</td>
+                      <td className="px-4 py-3.5 text-right font-mono font-medium tabular-nums text-foreground">{formatMoney(qt.grand_total, currency)}</td>
+                      <td className="px-4 py-3.5">
+                        <span className={cn("text-[11px] px-2 py-1 rounded-md font-semibold uppercase tracking-wide", QUOTATION_STATUS_META[qt.status]?.className)}>
+                          {QUOTATION_STATUS_META[qt.status]?.label || qt.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center gap-1 justify-end">
+                          {qt.status === "accepted" && (
+                            <button
+                              onClick={() => createInvoice(qt)}
+                              className="text-primary hover:bg-primary/10 p-1.5 rounded-md transition-colors"
+                              title="Create Invoice"
+                            >
+                              <Receipt className="w-4 h-4" />
+                            </button>
+                          )}
+                          {(qt.status === "finalized" || qt.status === "accepted") && (
+                            <>
+                              <button
+                                onClick={() => previewPdf(qt)}
+                                disabled={generatingId === qt.id}
+                                className="text-muted-foreground hover:text-primary p-1.5 rounded-md hover:bg-muted transition-colors"
+                                title="Preview PDF"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => downloadPdf(qt)}
+                                disabled={generatingId === qt.id}
+                                className="text-muted-foreground hover:text-primary p-1.5 rounded-md hover:bg-muted transition-colors"
+                                title="Download PDF"
+                              >
+                                <FileDown className="w-4 h-4" />
+                              </button>
+                            </>
+                          )}
                           <button
-                            className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-                            aria-label="View"
-                            onClick={() => navigate(`/quotation/${q.id}`)}
+                            onClick={() => onDelete(qt)}
+                            className="text-muted-foreground hover:text-destructive p-1.5 rounded-md hover:bg-muted transition-colors"
+                            title="Delete"
                           >
-                            <Eye className="h-4 w-4" />
-                          </button>
-                          <button
-                            className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
-                            aria-label="Download PDF"
-                            disabled={pdfLoadingId === q.id}
-                            onClick={() => handleQuickPDF(q)}
-                          >
-                            {pdfLoadingId === q.id ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <Download className="h-4 w-4" />
-                            )}
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardBody>
-        )}
-      </Card>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        </>
+      )}
+
+      <PdfPreviewModal
+        url={preview.url}
+        filename={preview.filename}
+        open={preview.open}
+        loading={preview.loading}
+        onClose={() => setPreview((p) => ({ ...p, open: false }))}
+      />
     </div>
   );
 }

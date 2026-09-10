@@ -1,188 +1,270 @@
-import { useEffect, useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useWorkspace } from "@/lib/WorkspaceContext";
-import PageHeader from "@/components/common/PageHeader";
+import { useToast } from "@/components/ui/use-toast";
 import Button from "@/components/common/Button";
-import Card from "@/components/common/Card";
+import Input from "@/components/common/Input";
+import Select from "@/components/common/Select";
 import LoadingState from "@/components/common/LoadingState";
 import EmptyState from "@/components/common/EmptyState";
-import SearchInput from "@/components/common/SearchInput";
-import InvoiceStatusBadge from "@/components/invoice/InvoiceStatusBadge";
-import { Plus, Eye, Pencil, Download, FileText } from "lucide-react";
-import { formatCurrency, formatDate } from "@/utils/format";
-import { generateInvoicePDF } from "@/utils/invoicePdf";
+import { StatGridSkeleton, TableSkeleton } from "@/components/common/Skeletons";
+import { Skeleton } from "@/components/ui/skeleton";
+import { formatMoney } from "@/utils/format";
+import { loadInvoices, deleteInvoice } from "@/lib/invoiceService";
+import { base44 } from "@/api/base44Client";
+import { Plus, Search, Trash2, FileText, IndianRupee, CheckCircle2, Clock, Printer } from "lucide-react";
+import PageHeader from "@/components/common/PageHeader";
+import StatCard from "@/components/common/StatCard";
+import { cn } from "@/lib/utils";
+import { invalidateEntities } from "@/lib/queryInvalidation";
+import { loadInvoice } from "@/lib/invoiceService";
+import InvoicePrintView from "@/components/invoice/InvoicePrintView";
+
+const fmtDate = (iso) => {
+  if (!iso) return "—";
+  const d = new Date(iso + "T00:00:00");
+  if (isNaN(d)) return iso;
+  return d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+};
+
+const INVOICE_STATUSES = ["draft", "sent", "paid", "partial", "cancelled"];
+const INVOICE_STATUS_META = {
+  draft: { label: "Draft", className: "bg-muted text-muted-foreground" },
+  sent: { label: "Sent", className: "bg-badge-upcoming-bg text-badge-upcoming-fg" },
+  paid: { label: "Paid", className: "bg-badge-completed-bg text-badge-completed-fg" },
+  partial: { label: "Partial", className: "bg-badge-progress-bg text-badge-progress-fg" },
+  cancelled: { label: "Cancelled", className: "bg-destructive/10 text-destructive" }
+};
 
 export default function Invoices() {
   const navigate = useNavigate();
-  const { workspaceId } = useWorkspace();
-  const [invoices, setInvoices] = useState([]);
-  const [clients, setClients] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { workspaceId, workspace } = useWorkspace();
+  const { toast } = useToast();
+  const currency = workspace?.currency || "INR";
+  const queryClient = useQueryClient();
+
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [pdfLoading, setPdfLoading] = useState(null);
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [printInvoice, setPrintInvoice] = useState(null);
+  const [printItems, setPrintItems] = useState([]);
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["invoices", workspaceId],
+    queryFn: async () => {
+      const [invs, cl, ev] = await Promise.all([
+        loadInvoices(workspaceId),
+        base44.entities.Client.filter({ workspace_id: workspaceId }, "name", 500),
+        base44.entities.Event.filter({ workspace_id: workspaceId }, "-start_date", 500)
+      ]);
+      return { invoices: invs || [], clients: cl || [], events: ev || [] };
+    },
+    enabled: !!workspaceId,
+    staleTime: 0,
+    refetchOnMount: "always"
+  });
+
+  const invoices = data?.invoices || [];
+  const clients = data?.clients || [];
+  const events = data?.events || [];
 
   useEffect(() => {
-    if (!workspaceId) return;
-    (async () => {
-      setLoading(true);
-      try {
-        const [invList, clientList] = await Promise.all([
-          base44.entities.Invoice.filter({ workspace_id: workspaceId }, "-issue_date", 500),
-          base44.entities.Client.filter({ workspace_id: workspaceId }, "name", 500),
-        ]);
-        setInvoices(invList || []);
-        setClients(clientList || []);
-      } catch {} finally {
-        setLoading(false);
-      }
-    })();
-  }, [workspaceId]);
+    if (error) toast({ title: "Failed to load invoices", description: error?.message, variant: "destructive" });
+  }, [error, toast]);
 
-  const clientName = (clientId) => clients.find((c) => c.id === clientId)?.name || "—";
+  const clientsById = useMemo(() => {
+    const m = {};
+    for (const c of clients) m[c.id] = c;
+    return m;
+  }, [clients]);
 
   const filtered = useMemo(() => {
-    return (invoices || []).filter((inv) => {
-      if (statusFilter !== "all" && inv.status !== statusFilter) return false;
-      if (search) {
-        const q = search.toLowerCase();
-        const cn = clientName(inv.client_id).toLowerCase();
-        if (!inv.invoice_number?.toLowerCase().includes(q) && !cn.includes(q)) return false;
-      }
-      return true;
+    const q = search.trim().toLowerCase();
+    return invoices.filter((inv) => {
+      if (statusFilter !== "All" && inv.status !== statusFilter) return false;
+      if (!q) return true;
+      const cl = clientsById[inv.client_id];
+      const hay = [inv.invoice_number, cl?.name || "", inv.status].join(" ").toLowerCase();
+      return hay.includes(q);
     });
-  }, [invoices, search, statusFilter, clients]);
+  }, [invoices, search, statusFilter, clientsById]);
 
-  const handlePDF = async (inv) => {
-    setPdfLoading(inv.id);
+  const stats = useMemo(() => {
+    const totalValue = invoices.reduce((s, i) => s + (Number(i.grand_total) || 0), 0);
+    const draftCount = invoices.filter((i) => i.status === "draft").length;
+    const sentCount = invoices.filter((i) => i.status === "sent").length;
+    const paidCount = invoices.filter((i) => i.status === "paid").length;
+    return { totalValue, draftCount, sentCount, paidCount };
+  }, [invoices]);
+
+  const onDelete = async (inv) => {
+    if (!window.confirm(`Delete invoice ${inv.invoice_number}? This cannot be undone.`)) return;
     try {
-      const ws = await base44.entities.Workspace.get(inv.workspace_id);
-      await generateInvoicePDF({ invoice: inv, workspace: ws });
-    } catch {} finally {
-      setPdfLoading(null);
+      await deleteInvoice(workspaceId, inv.id);
+      toast({ title: "Invoice deleted" });
+      invalidateEntities(queryClient, ["Invoice", "InvoiceItem"]);
+    } catch (e) {
+      toast({ title: "Delete failed", description: e?.message, variant: "destructive" });
     }
   };
 
-  if (loading) return <LoadingState label="Loading invoices…" />;
+  const onPrint = async (inv) => {
+    try {
+      const result = await loadInvoice(workspaceId, inv.id);
+      if (!result) { toast({ title: "Could not load invoice", variant: "destructive" }); return; }
+      setPrintInvoice(result.invoice);
+      setPrintItems(result.items || []);
+    } catch (e) {
+      toast({ title: "Failed to load invoice", variant: "destructive" });
+    }
+  };
+
+  if (isLoading) return (
+    <div className="p-4 sm:p-6 space-y-5 max-w-[1200px] mx-auto">
+      <PageHeader eyebrow="Sales" title="Invoices" subtitle="Create and track client invoices.">
+        <Button onClick={() => navigate("/invoices/new")}><Plus className="w-4 h-4" /> Create Invoice</Button>
+      </PageHeader>
+      <StatGridSkeleton count={4} />
+      <div className="flex flex-col sm:flex-row gap-3">
+        <Skeleton className="h-9 flex-1 rounded-md" />
+        <Skeleton className="h-9 sm:w-44 rounded-md" />
+      </div>
+      <TableSkeleton />
+    </div>
+  );
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Invoices"
-        description="Create, track, and manage client invoices"
-        actions={
-          <Button onClick={() => navigate("/invoices/new")}>
-            <Plus className="h-4 w-4" /> New Invoice
-          </Button>
-        }
-      />
+    <div className="p-4 sm:p-6 space-y-5 max-w-[1200px] mx-auto">
+      <PageHeader eyebrow="Sales" title="Invoices" subtitle="Create and track client invoices from approved quotations.">
+        <Button onClick={() => navigate("/invoices/new")}><Plus className="w-4 h-4" /> Create Invoice</Button>
+      </PageHeader>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <SearchInput value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search invoice # or client…" className="flex-1" />
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="h-10 rounded-lg border border-input bg-card px-3 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30"
-        >
-          <option value="all">All Statuses</option>
-          <option value="Draft">Draft</option>
-          <option value="Due">Due</option>
-          <option value="Partially Paid">Partially Paid</option>
-          <option value="Paid">Paid</option>
-          <option value="Overdue">Overdue</option>
-          <option value="Cancelled">Cancelled</option>
-        </select>
+      {/* Stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <StatCard label="Total Invoices" value={invoices.length} icon={FileText} tone="primary" />
+        <StatCard label="Total Value" value={formatMoney(stats.totalValue, currency)} icon={IndianRupee} tone="success" />
+        <StatCard label="Paid" value={stats.paidCount} icon={CheckCircle2} tone="success" />
+        <StatCard label="Outstanding" value={stats.sentCount + stats.draftCount} icon={Clock} tone="muted" />
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by number, client…"
+            className="pl-9"
+          />
+        </div>
+        <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="sm:w-44">
+          <option value="All">All statuses</option>
+          {INVOICE_STATUSES.map((s) => (
+            <option key={s} value={s}>{INVOICE_STATUS_META[s].label}</option>
+          ))}
+        </Select>
       </div>
 
       {filtered.length === 0 ? (
         <EmptyState
-          icon={FileText}
-          title="No invoices found"
-          description="Create your first invoice to start tracking payments."
-          action={<Button onClick={() => navigate("/invoices/new")}><Plus className="h-4 w-4" /> New Invoice</Button>}
+          title={invoices.length === 0 ? "No invoices yet" : "No invoices match your search"}
+          description={invoices.length === 0 ? "Create an invoice from an approved quotation or from scratch." : "Try a different search or filter."}
+          action={invoices.length === 0 ? <Button onClick={() => navigate("/invoices/new")}><Plus className="w-4 h-4" /> Create Invoice</Button> : null}
         />
       ) : (
         <>
-          {/* Desktop table */}
-          <div className="hidden overflow-x-auto sm:block">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
-                  <th className="px-4 py-3 font-semibold">Invoice #</th>
-                  <th className="px-4 py-3 font-semibold">Client</th>
-                  <th className="px-4 py-3 font-semibold">Milestone</th>
-                  <th className="px-4 py-3 font-semibold">Issue Date</th>
-                  <th className="px-4 py-3 font-semibold">Due Date</th>
-                  <th className="px-4 py-3 font-semibold text-right">Total</th>
-                  <th className="px-4 py-3 font-semibold text-right">Balance</th>
-                  <th className="px-4 py-3 font-semibold">Status</th>
-                  <th className="px-4 py-3 font-semibold text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {filtered.map((inv) => (
-                  <tr key={inv.id} className="hover:bg-muted/30">
-                    <td className="px-4 py-3 font-medium text-foreground">{inv.invoice_number}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{clientName(inv.client_id)}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{inv.milestone_tag || "—"}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{formatDate(inv.issue_date)}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{inv.due_date ? formatDate(inv.due_date) : "—"}</td>
-                    <td className="px-4 py-3 text-right font-semibold text-foreground">{formatCurrency(inv.total_amount || 0)}</td>
-                    <td className="px-4 py-3 text-right font-medium text-foreground">{formatCurrency(inv.balance_due || 0)}</td>
-                    <td className="px-4 py-3"><InvoiceStatusBadge status={inv.status} /></td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-end gap-1">
-                        <button onClick={() => navigate(`/invoices/${inv.id}`)} className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground" title="View">
-                          <Eye className="h-4 w-4" />
-                        </button>
-                        {inv.status === "Draft" && (
-                          <button onClick={() => navigate(`/invoices/${inv.id}/edit`)} className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground" title="Edit">
-                            <Pencil className="h-4 w-4" />
-                          </button>
-                        )}
-                        <button onClick={() => handlePDF(inv)} disabled={pdfLoading === inv.id} className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground" title="PDF">
-                          <Download className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          {/* Mobile cards */}
+          <div className="sm:hidden space-y-3">
+            {filtered.map((inv) => {
+              const cl = clientsById[inv.client_id];
+              return (
+                <div key={inv.id} className="bg-card border border-border rounded-xl p-4 shadow-card cursor-pointer hover:shadow-card-hover transition-shadow" onClick={() => navigate(`/invoices/${inv.id}`)}>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm font-mono font-medium text-foreground">{inv.invoice_number}</span>
+                    <span className={cn("text-xs px-2 py-1 rounded font-medium uppercase tracking-wide", INVOICE_STATUS_META[inv.status]?.className)}>
+                      {INVOICE_STATUS_META[inv.status]?.label || inv.status}
+                    </span>
+                  </div>
+                  <div className="mt-2 text-sm text-foreground">{cl?.name || "—"}</div>
+                  <div className="text-xs text-muted-foreground">{fmtDate(inv.invoice_date)}</div>
+                  <div className="mt-3 flex items-center justify-between">
+                    <span className="text-sm font-semibold text-foreground">{formatMoney(inv.grand_total, currency)}</span>
+                    <div className="flex items-center gap-1">
+                      <button onClick={(e) => { e.stopPropagation(); onPrint(inv); }} className="text-muted-foreground hover:text-foreground p-1" title="View / Print">
+                        <Printer className="w-4 h-4" />
+                      </button>
+                      <button onClick={(e) => { e.stopPropagation(); onDelete(inv); }} className="text-muted-foreground hover:text-destructive p-1" title="Delete">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
-          {/* Mobile cards */}
-          <div className="space-y-3 sm:hidden">
-            {filtered.map((inv) => (
-              <Card key={inv.id} className="p-4">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="font-semibold text-foreground">{inv.invoice_number}</p>
-                    <p className="text-sm text-muted-foreground">{clientName(inv.client_id)}</p>
-                    {inv.milestone_tag && <p className="text-xs text-muted-foreground">{inv.milestone_tag}</p>}
-                  </div>
-                  <InvoiceStatusBadge status={inv.status} />
-                </div>
-                <div className="mt-3 flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Issued {formatDate(inv.issue_date)}</span>
-                  <span className="font-semibold text-foreground">{formatCurrency(inv.total_amount || 0)}</span>
-                </div>
-                {(inv.balance_due || 0) > 0 && (
-                  <p className="mt-1 text-xs text-muted-foreground">Balance: {formatCurrency(inv.balance_due)}</p>
-                )}
-                <div className="mt-3 flex gap-2">
-                  <Button size="sm" variant="outline" className="flex-1" onClick={() => navigate(`/invoices/${inv.id}`)}>
-                    <Eye className="h-3.5 w-3.5" /> View
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => handlePDF(inv)} disabled={pdfLoading === inv.id}>
-                    <Download className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              </Card>
-            ))}
+          {/* Desktop table */}
+          <div className="hidden sm:block bg-card border border-border rounded-xl overflow-hidden shadow-card">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm min-w-[680px]">
+                <thead className="bg-muted/40 text-[11px] text-muted-foreground uppercase tracking-[0.08em] border-b border-border">
+                  <tr>
+                    <th className="text-left px-4 py-3 font-semibold">Invoice No</th>
+                    <th className="text-left px-4 py-3 font-semibold">Client</th>
+                    <th className="text-left px-4 py-3 font-semibold">Date</th>
+                    <th className="text-right px-4 py-3 font-semibold">Total</th>
+                    <th className="text-left px-4 py-3 font-semibold">Status</th>
+                    <th className="px-4 py-3 font-semibold w-20"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((inv) => {
+                    const cl = clientsById[inv.client_id];
+                    return (
+                      <tr
+                        key={inv.id}
+                        className="border-b border-border last:border-0 hover:bg-muted/30 cursor-pointer transition-colors"
+                        onClick={() => navigate(`/invoices/${inv.id}`)}
+                      >
+                        <td className="px-4 py-3.5 font-mono font-medium text-foreground">{inv.invoice_number}</td>
+                        <td className="px-4 py-3.5 text-foreground">{cl?.name || "—"}</td>
+                        <td className="px-4 py-3.5 text-muted-foreground">{fmtDate(inv.invoice_date)}</td>
+                        <td className="px-4 py-3.5 text-right font-mono font-medium tabular-nums text-foreground">{formatMoney(inv.grand_total, currency)}</td>
+                        <td className="px-4 py-3.5">
+                          <span className={cn("text-[11px] px-2 py-1 rounded-md font-semibold uppercase tracking-wide", INVOICE_STATUS_META[inv.status]?.className)}>
+                            {INVOICE_STATUS_META[inv.status]?.label || inv.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3.5" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center gap-1">
+                            <button onClick={() => onPrint(inv)} className="text-muted-foreground hover:text-foreground p-1.5 rounded-md hover:bg-muted transition-colors" title="View / Print">
+                              <Printer className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => onDelete(inv)} className="text-muted-foreground hover:text-destructive p-1.5 rounded-md hover:bg-muted transition-colors" title="Delete">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         </>
+      )}
+
+      {printInvoice && (
+        <InvoicePrintView
+          open={!!printInvoice}
+          onClose={() => { setPrintInvoice(null); setPrintItems([]); }}
+          invoice={printInvoice}
+          items={printItems}
+          workspace={workspace}
+          currency={currency}
+        />
       )}
     </div>
   );

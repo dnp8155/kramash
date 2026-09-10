@@ -1,790 +1,830 @@
-import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Save, FileCheck, Loader2, AlertCircle, Eye, EyeOff, Package } from "lucide-react";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { useNavigate, useLocation, useParams } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useWorkspace } from "@/lib/WorkspaceContext";
-import { useClients } from "@/hooks/useClients";
-import { useEvents } from "@/hooks/useEvents";
-import { useServices } from "@/hooks/useServices";
-import { useTeamRoles } from "@/hooks/useTeamRoles";
-import { useTeamMembers } from "@/hooks/useTeamMembers";
-import { useQuotations } from "@/hooks/useQuotations";
-import { useBusinessTerminology } from "@/lib/BusinessTerminology";
-import { toast } from "@/components/ui/use-toast";
-import PageHeader from "@/components/common/PageHeader";
-import Card, { CardBody, CardHeader, CardTitle } from "@/components/common/Card";
+import { useToast } from "@/components/ui/use-toast";
+import { invalidateEntities } from "@/lib/queryInvalidation";
 import Button from "@/components/common/Button";
 import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
 import LoadingState from "@/components/common/LoadingState";
+import EmptyState from "@/components/common/EmptyState";
+import { formatMoney } from "@/utils/format";
+import { computeTotals, subtotalsByType, includedDates } from "@/lib/quotationCalc";
+import {
+  loadServices, loadQuotation, loadTeamMembers, loadRoles,
+  generateQuotationNumber, createQuotation, updateQuotation,
+  duplicateQuotation, deleteQuotation, acceptQuotation,
+  verifyQuotationRefs, buildClientSnapshot, buildBusinessSnapshot, buildEventSnapshot,
+  buildBankDetailsSnapshot, buildSocialLinksSnapshot, parseSnapshot,
+  deserializePackageStructure, generatePublicToken
+} from "@/lib/quotationService";
+import { createFromQuotation } from "@/lib/invoiceService";
+import { syncAcceptedQuotation } from "@/lib/milestoneService";
+import { generateQuotationPdf, generateJobSheetPdf } from "@/lib/quotationPdf";
+import { DEFAULT_QUOTATION_TERMS, DEFAULT_FOOTER_MESSAGE, QUOTATION_STATUS_META } from "@/constants/quotationConfig";
+import { ArrowLeft, AlertTriangle, FileText, Plus, Receipt, Package } from "lucide-react";
+import PdfPreviewModal from "@/components/common/PdfPreviewModal";
+import { cn } from "@/lib/utils";
+import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
+import QuotationPricingPanel from "@/components/quotation/QuotationPricingPanel";
+import QuotationActions from "@/components/quotation/QuotationActions";
+import QuotationCategoryContext from "@/components/quotation/QuotationCategoryContext";
+import QuotationDateEngine from "@/components/quotation/QuotationDateEngine";
 import QuotationDayBuilder from "@/components/quotation/QuotationDayBuilder";
-import MilestoneEditor from "@/components/quotation/MilestoneEditor";
-import { computeQuotationTotals, nextQuotationNumber, lineTotal, buildClientSnapshot, buildBusinessSnapshot, buildEventSnapshot } from "@/utils/quotation";
-import { dateRange } from "@/utils/dates";
-import { formatCurrency } from "@/utils/format";
+import QuotationPackageDialog from "@/components/quotation/QuotationPackageDialog";
+import QuotationMilestonesEditor from "@/components/quotation/QuotationMilestonesEditor";
+import QuotationPresentationSection from "@/components/quotation/QuotationPresentationSection";
+import { Section, Field } from "@/components/quotation/QuotationParts";
+import { QUOTATION_TEMPLATES, renderTemplate } from "@/constants/quotationTemplates";
+import QuotationTemplatePreview from "@/components/quotation/QuotationTemplatePreview";
+import QuotationTemplateSettings from "@/components/quotation/QuotationTemplateSettings";
+import PublicLinkPanel from "@/components/quotation/PublicLinkPanel";
+import { Textarea } from "@/components/ui/textarea";
+import ClientForm from "@/components/clients/ClientForm";
 
-function todayStr() {
-  const d = new Date();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${d.getFullYear()}-${m}-${day}`;
-}
-
-const CATEGORIES = [
-  { value: "PHOTOGRAPHY_VIDEOGRAPHY", label: "Photography / Videography" },
-  { value: "EVENT_MANAGEMENT", label: "Event Management" },
-  { value: "ARCHITECTURE_INTERIOR", label: "Architecture / Interior Design" },
-  { value: "OTHER", label: "Other Services" },
-];
-
-const EVENT_SIDES = ["Bride Side", "Groom Side", "Common", "Others"];
-const PROPERTY_TYPES = ["Residential", "Commercial", "Office", "Renovation", "Interior", "Other"];
+const today = () => new Date().toISOString().slice(0, 10);
 
 export default function QuotationEditor() {
   const { id } = useParams();
-  const isEdit = !!id;
+  const isNew = !id || id === "new";
   const navigate = useNavigate();
-  const { currentWorkspace, workspaceId } = useWorkspace();
-  const { clients, loading: clientsLoading } = useClients();
-  const { events, loading: eventsLoading } = useEvents();
-  const { services } = useServices();
-  const { roles } = useTeamRoles();
-  const { members: teamMembers } = useTeamMembers();
-  const { quotations, createQuotation, updateQuotation } = useQuotations();
-  const t = useBusinessTerminology();
+  const location = useLocation();
+  const { workspaceId, workspace } = useWorkspace();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const currency = workspace?.currency || "INR";
+  const gstWorkspaceEnabled = !!workspace?.gst_enabled;
+  const term = useBusinessTerminology();
 
-  const [loading, setLoading] = useState(isEdit);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
   const [saving, setSaving] = useState(false);
   const [finalizing, setFinalizing] = useState(false);
-  const [err, setErr] = useState("");
+  const [accepting, setAccepting] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [preview, setPreview] = useState({ url: "", filename: "", open: false, loading: false });
+  const [error, setError] = useState("");
+  const [showPackageDialog, setShowPackageDialog] = useState(false);
+  const [showTemplatePreview, setShowTemplatePreview] = useState(false);
+  const [templatePreviewHtml, setTemplatePreviewHtml] = useState("");
+  const [showClientForm, setShowClientForm] = useState(false);
+  const [customClientMode, setCustomClientMode] = useState(false);
 
-  const [form, setForm] = useState(null);
+  // Quotation meta
+  const [quotationNumber, setQuotationNumber] = useState("");
+  const [quotationDate, setQuotationDate] = useState(today());
+  const [validUntil, setValidUntil] = useState("");
+  const [clientId, setClientId] = useState("");
+  const [eventId, setEventId] = useState("");
+  const [status, setStatus] = useState("draft");
   const [items, setItems] = useState([]);
 
-  const gstEnabled = !!currentWorkspace?.gst_enabled;
+  // Category & context
+  const [category, setCategory] = useState("PHOTOGRAPHY");
+  const [contextType, setContextType] = useState("");
 
-  useEffect(() => {
-    if (isEdit && workspaceId && quotations.length >= 0) {
-      (async () => {
-        setLoading(true);
-        try {
-          const q = await base44.entities.Quotation.get(id);
-          if (!q || q.workspace_id !== workspaceId) {
-            setErr("Quotation not found");
-            setLoading(false);
-            return;
+  // Date engine
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [excludedDates, setExcludedDates] = useState([]);
+
+  // Pricing
+  const [discountType, setDiscountType] = useState("percent");
+  const [discountValue, setDiscountValue] = useState(0);
+  const [gstApplicable, setGstApplicable] = useState(false);
+  const [gstMode, setGstMode] = useState("cgst_sgst");
+
+  // Presentation
+  const [showPricing, setShowPricing] = useState(true);
+  const [bankDetails, setBankDetails] = useState({});
+  const [socialLinks, setSocialLinks] = useState({});
+  const [footerMessage, setFooterMessage] = useState(DEFAULT_FOOTER_MESSAGE);
+  const [specialNotes, setSpecialNotes] = useState("");
+
+  // Payment milestones
+  const [milestones, setMilestones] = useState([]);
+
+  // Terms & notes
+  const [terms, setTerms] = useState(DEFAULT_QUOTATION_TERMS);
+  const [notes, setNotes] = useState("");
+  const [accessPassword, setAccessPassword] = useState("");
+
+  // Template
+  const [templateId, setTemplateId] = useState("gold_premium");
+  const [templateConfig, setTemplateConfig] = useState({});
+  const [projectTitle, setProjectTitle] = useState("");
+  const [projectSummary, setProjectSummary] = useState("");
+
+  // Data
+  const [clients, setClients] = useState([]);
+  const [events, setEvents] = useState([]);
+  const [services, setServices] = useState([]);
+  const [teamMembers, setTeamMembers] = useState([]);
+  const [roles, setRoles] = useState([]);
+  const [existingQuotation, setExistingQuotation] = useState(null);
+
+  const isFinalized = status === "finalized" || status === "accepted";
+  const readOnly = isFinalized;
+
+  const load = useCallback(async () => {
+    if (!workspaceId) return;
+    setLoading(true);
+    setError("");
+    try {
+      const [cl, ev, sv, tm, rl] = await Promise.all([
+        base44.entities.Client.filter({ workspace_id: workspaceId }, "name", 500),
+        base44.entities.Event.filter({ workspace_id: workspaceId }, "-start_date", 500),
+        loadServices(workspaceId, { includeInactive: true }),
+        loadTeamMembers(workspaceId),
+        loadRoles(workspaceId)
+      ]);
+      setClients(cl || []);
+      setEvents(ev || []);
+      setServices(sv || []);
+      setTeamMembers(tm || []);
+      setRoles(rl || []);
+
+      if (isNew) {
+        const num = await generateQuotationNumber(workspaceId);
+        setQuotationNumber(num);
+        setGstApplicable(gstWorkspaceEnabled);
+        const estimateItems = location.state?.estimateItems;
+        if (Array.isArray(estimateItems) && estimateItems.length) {
+          setItems(estimateItems.map((it) => ({ ...it, id: undefined })));
+        }
+        const qpEventId = new URLSearchParams(location.search).get("event_id");
+        if (qpEventId) {
+          const qpEvent = (ev || []).find((e) => e.id === qpEventId);
+          if (qpEvent) {
+            setEventId(qpEvent.id);
+            if (qpEvent.client_id) setClientId(qpEvent.client_id);
+            if (qpEvent.start_date) setStartDate(qpEvent.start_date);
+            if (qpEvent.end_date) setEndDate(qpEvent.end_date);
           }
-          const qItems = await base44.entities.QuotationItem.filter({
-            workspace_id: workspaceId,
-            quotation_id: id,
-          }, "sort_order", 500);
-          setForm({
-            client_id: q.client_id || "",
-            use_custom_client: !q.client_id && !!q.custom_client,
-            custom_client: q.custom_client || { name: "", phone: "", email: "", address: "", venue: "" },
-            event_id: q.event_id || "",
-            category: q.category || "PHOTOGRAPHY_VIDEOGRAPHY",
-            context_side: q.context_side || "",
-            property_type: q.property_type || "",
-            project_start_date: q.project_start_date || "",
-            project_end_date: q.project_end_date || "",
-            excluded_dates: q.excluded_dates || [],
-            show_item_pricing: q.show_item_pricing !== false,
-            quotation_date: q.quotation_date || todayStr(),
-            valid_until: q.valid_until || "",
-            status: q.status,
-            discount_type: q.discount_type || "percentage",
-            discount_value: q.discount_value || 0,
-            gst_applicable: !!q.gst_applicable,
-            gst_mode: q.gst_mode || "cgst_sgst",
-            terms_and_conditions: q.terms_and_conditions || "",
-            special_notes: q.special_notes || "",
-            notes: q.notes || "",
-            is_package: q.is_package === true,
-            package_name: q.package_name || "",
-            package_inclusions: q.package_inclusions || "",
-            milestones: Array.isArray(q.milestones) ? q.milestones : [],
-          });
-          setItems(qItems || []);
-        } catch (e) {
-          setErr(e?.message || "Failed to load quotation");
-        } finally {
-          setLoading(false);
         }
-      })();
-    } else if (!isEdit && currentWorkspace) {
-      const defaultTerms = currentWorkspace.default_quotation_terms || "";
-      let estimateItems = [];
-      try {
-        const stored = sessionStorage.getItem("estimateItems");
-        if (stored) {
-          estimateItems = JSON.parse(stored);
-          sessionStorage.removeItem("estimateItems");
-        }
-      } catch { }
-      setForm({
-        client_id: "",
-        use_custom_client: false,
-        custom_client: { name: "", phone: "", email: "", address: "", venue: "" },
-        event_id: "",
-        category: "PHOTOGRAPHY_VIDEOGRAPHY",
-        context_side: "",
-        property_type: "",
-        project_start_date: "",
-        project_end_date: "",
-        excluded_dates: [],
-        show_item_pricing: true,
-        quotation_date: todayStr(),
-        valid_until: "",
-        status: "Draft",
-        discount_type: "percentage",
-        discount_value: 0,
-        gst_applicable: gstEnabled,
-        gst_mode: "cgst_sgst",
-        terms_and_conditions: defaultTerms,
-        special_notes: "",
-        notes: "",
-        is_package: false,
-        package_name: "",
-        package_inclusions: "",
-        milestones: [],
-      });
-      setItems(estimateItems);
+      } else {
+        const result = await loadQuotation(workspaceId, id);
+        if (!result) { setNotFound(true); return; }
+        const q = result.quotation;
+        setExistingQuotation(q);
+        setQuotationNumber(q.quotation_number);
+        setQuotationDate(q.quotation_date || today());
+        setValidUntil(q.valid_until || "");
+        setClientId(q.client_id || "");
+        setEventId(q.event_id || "");
+        setStatus(q.status || "draft");
+        setItems(result.items || []);
+        setCategory(q.category || "PHOTOGRAPHY");
+        setContextType(q.context_type || "");
+        setStartDate(q.start_date || "");
+        setEndDate(q.end_date || "");
+        setExcludedDates(q.excluded_dates || []);
+        setShowPricing(q.show_pricing !== false);
+        setDiscountType(q.discount_type || "percent");
+        setDiscountValue(q.discount_value || 0);
+        setGstApplicable(!!q.gst_applicable);
+        setGstMode(q.gst_mode || "cgst_sgst");
+        setTerms(q.terms_and_conditions || "");
+        setSpecialNotes(q.special_notes || "");
+        setNotes(q.notes || "");
+        setFooterMessage(q.footer_message || DEFAULT_FOOTER_MESSAGE);
+        setTemplateId(q.template_id || "gold_premium");
+        try { setTemplateConfig(JSON.parse(q.template_config || "{}")); } catch { setTemplateConfig({}); }
+        setProjectTitle(q.project_title || "");
+        setProjectSummary(q.project_summary || "");
+        setAccessPassword(q.client_access_password || "");
+        try { setMilestones(JSON.parse(q.payment_schedule_json || "[]")); } catch { setMilestones([]); }
+        setBankDetails(parseSnapshot(q.bank_details_snapshot) || {});
+        setSocialLinks(parseSnapshot(q.social_links_snapshot) || {});
+      }
+    } catch (e) {
+      setError(e?.message || "Failed to load quotation.");
+    } finally {
+      setLoading(false);
     }
-  }, [id, workspaceId, currentWorkspace?.id]);
+  }, [workspaceId, id, isNew, location.state, gstWorkspaceEnabled]);
 
-  const clientEvents = useMemo(
-    () => events.filter((e) => !form?.client_id || e.client_id === form?.client_id),
-    [events, form?.client_id]
+  useEffect(() => { load(); }, [load]);
+
+  const totals = useMemo(
+    () => computeTotals(items, { discountType, discountValue, gstApplicable, gstMode }),
+    [items, discountType, discountValue, gstApplicable, gstMode]
   );
 
-  const allDates = useMemo(() => {
-    if (!form?.project_start_date) return [];
-    return dateRange(form.project_start_date, form.project_end_date);
-  }, [form?.project_start_date, form?.project_end_date]);
+  const subtotals = useMemo(() => subtotalsByType(items), [items]);
 
-  if (loading || !form) {
-    return <LoadingState label="Loading quotation…" />;
-  }
+  const client = clients.find((c) => c.id === clientId) || null;
+  const event = events.find((e) => e.id === eventId) || null;
+  const availableEvents = clientId
+    ? events.filter((e) => !e.client_id || e.client_id === clientId)
+    : events;
 
-  if (err) {
-    return (
-      <div className="flex flex-col items-center justify-center gap-3 py-20 text-center">
-        <AlertCircle className="h-8 w-8 text-destructive" />
-        <p className="text-sm text-muted-foreground">{err}</p>
-        <Button variant="outline" onClick={() => navigate("/quotation")}>Back to Quotations</Button>
-      </div>
-    );
-  }
-
-  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
-
-  const toggleDate = (date) => {
-    setForm((f) => {
-      const excluded = f.excluded_dates.includes(date);
-      return {
-        ...f,
-        excluded_dates: excluded
-          ? f.excluded_dates.filter((d) => d !== date)
-          : [...f.excluded_dates, date],
-      };
-    });
+  const onClientChange = (val) => {
+    setClientId(val);
+    setCustomClientMode(false);
+    if (eventId) {
+      const ev = events.find((e) => e.id === eventId);
+      if (ev && ev.client_id && ev.client_id !== val) setEventId("");
+    }
   };
 
-  const totals = computeQuotationTotals({
-    items,
-    discount_type: form.discount_type,
-    discount_value: form.discount_value,
-    gst_applicable: form.gst_applicable,
-    gst_mode: form.gst_mode,
+  const onEventChange = (val) => {
+    setEventId(val);
+    if (val) {
+      const ev = events.find((e) => e.id === val);
+      if (ev?.client_id && !clientId) setClientId(ev.client_id);
+      if (ev?.start_date && !startDate) setStartDate(ev.start_date);
+      if (ev?.end_date && !endDate) setEndDate(ev.end_date);
+    }
+  };
+
+  // ---- Save ----
+  const buildData = () => ({
+    quotation_number: quotationNumber,
+    client_id: clientId,
+    event_id: eventId,
+    quotation_date: quotationDate,
+    valid_until: validUntil,
+    category,
+    context_type: contextType,
+    start_date: startDate,
+    end_date: endDate,
+    excluded_dates: excludedDates,
+    show_pricing: showPricing,
+    discount_type: discountType,
+    discount_value: Number(discountValue) || 0,
+    gst_applicable: gstApplicable,
+    gst_mode: gstMode,
+    terms_and_conditions: terms,
+    special_notes: specialNotes,
+    notes,
+    payment_schedule_json: JSON.stringify(milestones.filter((m) => m.name || m.value)),
+    footer_message: footerMessage,
+    template_id: templateId,
+    template_config: JSON.stringify(templateConfig),
+    project_title: projectTitle,
+    project_summary: projectSummary,
+    client_access_password: accessPassword || ""
   });
 
-  const isEventCategory = form.category === "PHOTOGRAPHY_VIDEOGRAPHY" || form.category === "EVENT_MANAGEMENT";
-  const isArchCategory = form.category === "ARCHITECTURE_INTERIOR";
-
   const validate = () => {
-    if (!form.client_id && !form.use_custom_client) return "Please select a client or enter custom client details";
-    if (form.use_custom_client && !form.custom_client?.name?.trim()) return "Enter the custom client name";
-    if (!form.quotation_date) return "Quotation date is required";
-    if (items.length === 0) return "Add at least one line item";
-    for (const item of items) {
-      if (!item.name?.trim()) return "All items must have a name";
-      if (Number(item.quantity) < 1) return "Quantity must be at least 1";
-      if (Number(item.unit_rate) < 0) return "Rate cannot be negative";
+    if (!quotationDate) return "Quotation date is required.";
+    if (items.length === 0) return "Add at least one item.";
+    for (const it of items) {
+      if (!it.name?.trim()) return "Every item needs a name.";
+      if (Number(it.quantity) < 0) return "Quantity cannot be negative.";
+      if (Number(it.unit_rate) < 0) return "Unit rate cannot be negative.";
     }
-    if (form.discount_type === "percentage" && Number(form.discount_value) > 100) return "Discount percentage cannot exceed 100%";
-    if (form.discount_type === "fixed" && Number(form.discount_value) > totals.subtotal) return "Fixed discount cannot exceed subtotal";
-    if (form.gst_applicable && gstEnabled) {
-      if (!currentWorkspace.gstin) return "GST is enabled but your workspace has no GSTIN. Add it in Preferences or disable GST for this quotation.";
-    }
-    return null;
+    return "";
   };
 
-  const buildQuotationData = (status) => {
-    const qNum = isEdit ? undefined : nextQuotationNumber(
-      quotations.map((q) => q.quotation_number),
-      form.quotation_date
-    );
-    const data = {
-      client_id: form.use_custom_client ? null : (form.client_id || null),
-      custom_client: form.use_custom_client ? form.custom_client : null,
-      event_id: form.event_id || null,
-      category: form.category,
-      context_side: isEventCategory ? form.context_side || null : null,
-      property_type: isArchCategory ? form.property_type || null : null,
-      project_start_date: form.project_start_date || null,
-      project_end_date: form.project_end_date || null,
-      excluded_dates: form.excluded_dates.length > 0 ? form.excluded_dates : null,
-      show_item_pricing: form.show_item_pricing,
-      quotation_date: form.quotation_date,
-      valid_until: form.valid_until || null,
-      status,
-      subtotal: totals.subtotal,
-      discount_type: form.discount_type,
-      discount_value: Number(form.discount_value) || 0,
-      discount_amount: totals.discount_amount,
-      taxable_amount: totals.taxable_amount,
-      gst_applicable: form.gst_applicable && gstEnabled,
-      gst_mode: form.gst_mode,
-      cgst_amount: totals.cgst_amount,
-      sgst_amount: totals.sgst_amount,
-      igst_amount: totals.igst_amount,
-      gst_total: totals.gst_total,
-      grand_total: totals.grand_total,
-      terms_and_conditions: form.terms_and_conditions,
-      special_notes: form.special_notes,
-      notes: form.notes,
-      is_package: form.is_package,
-      package_name: form.is_package ? form.package_name : null,
-      package_inclusions: form.is_package ? form.package_inclusions : null,
-      milestones: form.milestones && form.milestones.length > 0 ? form.milestones : null,
-    };
-    if (!isEdit) data.quotation_number = qNum;
-    return data;
-  };
-
-  const saveItems = async (quotationId) => {
-    if (isEdit) {
-      const oldItems = await base44.entities.QuotationItem.filter({
-        workspace_id: workspaceId,
-        quotation_id: quotationId,
-      });
-      if (oldItems.length > 0) {
-        await base44.entities.QuotationItem.deleteMany({
-          id: { $in: oldItems.map((i) => i.id) },
-        });
-      }
-    }
-    if (items.length > 0) {
-      await base44.entities.QuotationItem.bulkCreate(
-        items.map((item, idx) => ({
-          workspace_id: workspaceId,
-          quotation_id: quotationId,
-          item_type: item.item_type,
-          reference_id: item.reference_id || null,
-          team_member_id: item.team_member_id || null,
-          provider_id: item.provider_id || null,
-          is_addon: item.is_addon || false,
-          name: item.name,
-          description: item.description || "",
-          quantity: Number(item.quantity) || 1,
-          days: Number(item.days) || 1,
-          unit_rate: Number(item.unit_rate) || 0,
-          line_total: lineTotal(item),
-          gst_rate: item.gst_rate ?? null,
-          sac_code: item.sac_code || "",
-          day_date: item.day_date || null,
-          phase_title: item.phase_title || "",
-          member_side: item.member_side || "",
-          sort_order: idx,
-        }))
-      );
-    }
-  };
-
-  const handleSave = async (status) => {
-    const validationErr = validate();
-    if (validationErr) {
-      toast({ title: validationErr, variant: "destructive" });
-      return;
-    }
+  const saveDraft = async () => {
+    const v = validate();
+    if (v) { setError(v); return; }
+    setError("");
     setSaving(true);
-    setErr("");
     try {
-      const data = buildQuotationData(status);
-      let q;
-      if (isEdit) {
-        q = await updateQuotation(id, data);
+      const refCheck = await verifyQuotationRefs(workspaceId, clientId, eventId);
+      if (!refCheck.ok) { setError(refCheck.error); setSaving(false); return; }
+      const data = { ...buildData(), status: "draft" };
+      if (isNew) {
+        const q = await createQuotation(workspaceId, data, items, {
+          bank_details_snapshot: buildBankDetailsSnapshot(bankDetails),
+          social_links_snapshot: buildSocialLinksSnapshot(socialLinks)
+        });
+        invalidateEntities(queryClient, ["Quotation", "QuotationItem", "Event"]);
+        toast({ title: "Quotation saved as draft" });
+        navigate(`/quotation/${q.id}`, { replace: true });
       } else {
-        q = await createQuotation(data);
+        await updateQuotation(workspaceId, id, data, items, {
+          bank_details_snapshot: buildBankDetailsSnapshot(bankDetails),
+          social_links_snapshot: buildSocialLinksSnapshot(socialLinks)
+        });
+        invalidateEntities(queryClient, ["Quotation", "QuotationItem", "Event"]);
+        toast({ title: "Quotation updated" });
+        load();
       }
-      await saveItems(q.id);
-      toast({ title: isEdit ? "Quotation updated" : "Quotation created" });
-      navigate(`/quotation/${q.id}`);
     } catch (e) {
-      toast({ title: "Save failed", description: e?.message, variant: "destructive" });
+      setError(e?.message || "Failed to save quotation.");
     } finally {
       setSaving(false);
     }
   };
 
-  const handleFinalize = async () => {
-    const validationErr = validate();
-    if (validationErr) {
-      toast({ title: validationErr, variant: "destructive" });
+  const finalize = async () => {
+    const v = validate();
+    if (v) { setError(v); return; }
+    if (gstApplicable && gstWorkspaceEnabled && !workspace.gstin) {
+      setError("GST is enabled but your workspace GSTIN is missing. Add it in Preferences or disable GST.");
       return;
     }
+    setError("");
     setFinalizing(true);
-    setErr("");
     try {
-      const client = clients.find((c) => c.id === form.client_id);
-      const event = form.event_id ? events.find((e) => e.id === form.event_id) : null;
-      const data = buildQuotationData("Finalized");
-      // Use custom_client as the snapshot source when no existing client is selected
-      data.client_snapshot = form.use_custom_client
-        ? { name: form.custom_client.name, phone: form.custom_client.phone, email: form.custom_client.email, address: form.custom_client.address }
-        : buildClientSnapshot(client);
-      data.business_snapshot = buildBusinessSnapshot(currentWorkspace);
-      data.event_snapshot = buildEventSnapshot(event);
-
-      let q;
-      if (isEdit) {
-        q = await updateQuotation(id, data);
-      } else {
-        q = await createQuotation(data);
+      const refCheck = await verifyQuotationRefs(workspaceId, clientId, eventId);
+      if (!refCheck.ok) { setError(refCheck.error); setFinalizing(false); return; }
+      const data = { ...buildData(), status: "finalized" };
+      // Ensure finalized quotations have a public_token for URL 2 (e-sign page)
+      if (!existingQuotation?.public_token) {
+        data.public_token = generatePublicToken();
       }
-      await saveItems(q.id);
-      toast({ title: "Quotation finalized", description: "Snapshots preserved for historical accuracy." });
-      navigate(`/quotation/${q.id}`);
+      const snapshots = {
+        client_snapshot: buildClientSnapshot(refCheck.client || client),
+        business_snapshot: buildBusinessSnapshot(workspace),
+        event_snapshot: buildEventSnapshot(refCheck.event || event),
+        bank_details_snapshot: buildBankDetailsSnapshot(bankDetails),
+        social_links_snapshot: buildSocialLinksSnapshot(socialLinks)
+      };
+      let q;
+      if (isNew) {
+        q = await createQuotation(workspaceId, data, items, snapshots);
+      } else {
+        q = await updateQuotation(workspaceId, id, data, items, snapshots);
+      }
+
+      let inv = null;
+      let invoiceError = false;
+      try {
+        const existingInvs = await base44.entities.Invoice.filter(
+          { workspace_id: workspaceId, quotation_id: q.id }, "-invoice_date", 10
+        );
+        if (!existingInvs || existingInvs.length === 0) {
+          inv = await createFromQuotation(workspaceId, q, items);
+        }
+      } catch (e) { invoiceError = true; }
+
+      invalidateEntities(queryClient, ["Quotation", "QuotationItem", "Event", "Invoice", "InvoiceItem"]);
+      if (inv) toast({ title: "Quotation finalized & invoice created", description: inv.invoice_number });
+      else if (invoiceError) toast({ title: "Quotation finalized", description: "Invoice could not be created automatically.", variant: "destructive" });
+      else toast({ title: "Quotation finalized" });
+
+      if (isNew) navigate(`/quotation/${q.id}`, { replace: true });
+      else load();
     } catch (e) {
-      toast({ title: "Finalize failed", description: e?.message, variant: "destructive" });
+      setError(e?.message || "Failed to finalize quotation.");
     } finally {
       setFinalizing(false);
     }
   };
 
-  return (
-    <div className="flex flex-col gap-6">
-      <PageHeader
-        title={isEdit ? "Edit Quotation" : "New Quotation"}
-        description={isEdit ? form.quotation_number || "Edit quotation" : "Create a quotation for your client"}
-        actions={
-          <Button variant="ghost" onClick={() => navigate(-1)}>
-            <ArrowLeft className="h-4 w-4" /> Back
-          </Button>
-        }
-      />
+  const accept = async () => {
+    if (!existingQuotation) return;
+    setAccepting(true);
+    try {
+      const ev = eventId ? await base44.entities.Event.get(eventId) : null;
+      const prev = ev ? (Number(ev.contract_value) || 0) : 0;
+      const wl = term.workItemSingular.toLowerCase();
+      const proceed = window.confirm(
+        ev
+          ? `This ${wl} currently has a contract value of ${formatMoney(prev, currency)}.\n\nUpdate it to the accepted quotation total of ${formatMoney(existingQuotation.grand_total, currency)}?`
+          : `Mark this quotation as Accepted?`
+      );
+      if (!proceed) { setAccepting(false); return; }
+      const { eventUpdated, syncResult } = await acceptQuotation(workspaceId, id, { updateContractValue: !!ev });
+      invalidateEntities(queryClient, ["Quotation", "QuotationItem", "Event", "FinancialTransaction", "PaymentMilestone", "EventTeamAssignment", "EventServiceAssignment"]);
+      const syncOk = syncResult?.ok;
+      const eventCreated = syncResult?.event?.created;
+      toast({
+        title: eventUpdated ? "Quotation accepted — contract value updated" : "Quotation accepted",
+        description: syncOk
+          ? `${eventCreated ? "Event created" : "Event linked"} • ${syncResult.team_synced?.length || 0} team • ${syncResult.service_synced?.length || 0} services • ${syncResult.milestones_synced?.length || 0} milestones`
+          : "Sync pending — click Sync to create event & milestones",
+        variant: syncOk ? "default" : "destructive"
+      });
+      load();
+    } catch (e) {
+      setError(e?.message || "Failed to accept quotation.");
+    } finally {
+      setAccepting(false);
+    }
+  };
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Main column */}
-        <div className="flex flex-col gap-6 lg:col-span-2">
-          {/* Client + Category + Dates */}
-          <Card>
-            <CardHeader><CardTitle>Quotation Details</CardTitle></CardHeader>
-            <CardBody className="space-y-4">
-              {/* Client selection */}
-              <div className="flex flex-wrap items-center gap-2">
-                <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-foreground">
-                  <input
-                    type="radio"
-                    checked={!form.use_custom_client}
-                    onChange={() => set("use_custom_client", false)}
-                    className="h-4 w-4"
-                  />
-                  Existing Client
-                </label>
-                <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-foreground">
-                  <input
-                    type="radio"
-                    checked={form.use_custom_client}
-                    onChange={() => set("use_custom_client", true)}
-                    className="h-4 w-4"
-                  />
-                  Custom Client
-                </label>
-              </div>
+  // ---- Sync accepted quotation to Event + Financials ----
+  const [syncing, setSyncing] = useState(false);
 
-              {form.use_custom_client ? (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <Input
-                    label="Client Name"
-                    value={form.custom_client.name}
-                    onChange={(e) => set("custom_client", { ...form.custom_client, name: e.target.value })}
-                  />
-                  <Input
-                    label="Contact Number"
-                    value={form.custom_client.phone}
-                    onChange={(e) => set("custom_client", { ...form.custom_client, phone: e.target.value })}
-                  />
-                  <Input
-                    label="Email"
-                    type="email"
-                    value={form.custom_client.email}
-                    onChange={(e) => set("custom_client", { ...form.custom_client, email: e.target.value })}
-                  />
-                  <Input
-                    label="Residence / Billing Address"
-                    value={form.custom_client.address}
-                    onChange={(e) => set("custom_client", { ...form.custom_client, address: e.target.value })}
-                  />
-                  <Input
-                    label="Event / Site Venue"
-                    value={form.custom_client.venue}
-                    onChange={(e) => set("custom_client", { ...form.custom_client, venue: e.target.value })}
-                  />
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <Select
-                    label="Client"
-                    value={form.client_id}
-                    onChange={(e) => { set("client_id", e.target.value); set("event_id", ""); }}
-                  >
-                    <option value="">Select client…</option>
-                    {clients.map((c) => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </Select>
-                  <Select
-                    label={`${t.workItemSingular} (optional)`}
-                    value={form.event_id}
-                    onChange={(e) => set("event_id", e.target.value)}
-                    disabled={!form.client_id}
-                  >
-                    <option value="">No {t.workItemSingular.toLowerCase()}</option>
-                    {clientEvents.map((e) => (
-                      <option key={e.id} value={e.id}>{e.title}</option>
-                    ))}
-                  </Select>
-                </div>
-              )}
+  const syncQuotation = async () => {
+    if (!existingQuotation || existingQuotation.status !== "accepted") return;
+    setSyncing(true);
+    try {
+      const result = await syncAcceptedQuotation(workspaceId, id);
+      if (result?.ok) {
+        invalidateEntities(queryClient, ["Quotation", "Event", "EventTeamAssignment", "EventServiceAssignment", "PaymentMilestone", "FinancialTransaction"]);
+        toast({
+          title: "Sync complete",
+          description: `${result.event?.created ? "Event created" : "Event linked"} • ${result.team_synced?.length || 0} team • ${result.service_synced?.length || 0} services • ${result.milestones_synced?.length || 0} milestones • 0 payments`
+        });
+        load();
+      } else {
+        toast({ title: "Sync failed", description: result?.error || "Unknown error", variant: "destructive" });
+      }
+    } catch (e) {
+      toast({ title: "Sync failed", description: e?.message, variant: "destructive" });
+    } finally {
+      setSyncing(false);
+    }
+  };
 
-              {/* Category */}
-              <Select
-                label="Quotation Category"
-                value={form.category}
-                onChange={(e) => set("category", e.target.value)}
-              >
-                {CATEGORIES.map((c) => (
-                  <option key={c.value} value={c.value}>{c.label}</option>
-                ))}
-              </Select>
+  // Auto-sync: if quotation is accepted with sync_pending, trigger sync on load
+  useEffect(() => {
+    if (existingQuotation?.status === "accepted" && existingQuotation.sync_pending && !syncing) {
+      syncQuotation();
+    }
+  }, [existingQuotation?.id, existingQuotation?.sync_pending]);
 
-              {/* Dynamic context based on category */}
-              {isEventCategory && (
-                <Select
-                  label="Side / Context (optional)"
-                  value={form.context_side}
-                  onChange={(e) => set("context_side", e.target.value)}
-                >
-                  <option value="">No specific side</option>
-                  {EVENT_SIDES.map((s) => (
-                    <option key={s} value={s}>{s}</option>
-                  ))}
-                </Select>
-              )}
-              {isArchCategory && (
-                <Select
-                  label="Property / Project Type"
-                  value={form.property_type}
-                  onChange={(e) => set("property_type", e.target.value)}
-                >
-                  <option value="">Select type…</option>
-                  {PROPERTY_TYPES.map((p) => (
-                    <option key={p} value={p}>{p}</option>
-                  ))}
-                </Select>
-              )}
+  const onDuplicate = async () => {
+    if (!existingQuotation) return;
+    try {
+      const q = await duplicateQuotation(workspaceId, existingQuotation, items);
+      invalidateEntities(queryClient, ["Quotation", "QuotationItem"]);
+      toast({ title: "Quotation duplicated", description: q.quotation_number });
+      navigate(`/quotation/${q.id}`);
+    } catch (e) {
+      setError(e?.message || "Failed to duplicate quotation.");
+    }
+  };
 
-              {/* Project dates */}
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <Input
-                  label="Project / Event Start Date"
-                  type="date"
-                  value={form.project_start_date}
-                  onChange={(e) => set("project_start_date", e.target.value)}
-                />
-                <Input
-                  label="Project / Event End Date"
-                  type="date"
-                  value={form.project_end_date}
-                  onChange={(e) => set("project_end_date", e.target.value)}
-                />
-              </div>
+  const onDelete = async () => {
+    if (!existingQuotation) return;
+    if (!window.confirm("Delete this quotation? This cannot be undone.")) return;
+    try {
+      await deleteQuotation(workspaceId, id);
+      invalidateEntities(queryClient, ["Quotation", "QuotationItem"]);
+      toast({ title: "Quotation deleted" });
+      navigate("/quotation");
+    } catch (e) {
+      setError(e?.message || "Failed to delete quotation.");
+    }
+  };
 
-              {/* Quotation dates */}
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <Input
-                  label="Quotation Date"
-                  type="date"
-                  value={form.quotation_date}
-                  onChange={(e) => set("quotation_date", e.target.value)}
-                />
-                <Input
-                  label="Valid Until (optional)"
-                  type="date"
-                  value={form.valid_until}
-                  onChange={(e) => set("valid_until", e.target.value)}
-                />
-              </div>
-            </CardBody>
-          </Card>
+  const downloadPdf = async () => {
+    if (!existingQuotation) return;
+    setGenerating(true);
+    try {
+      await generateQuotationPdf({ quotation: existingQuotation, items, workspace, client, event, currency });
+      toast({ title: "PDF downloaded" });
+    } catch (e) {
+      toast({ title: "PDF generation failed", description: e?.message, variant: "destructive" });
+    } finally {
+      setGenerating(false);
+    }
+  };
 
-          {/* Day/Phase Builder */}
-          <Card>
-            <CardHeader><CardTitle>Deliverables & Day/Phase Builder</CardTitle></CardHeader>
-            <CardBody>
-              <QuotationDayBuilder
-                items={items}
-                services={services}
-                roles={roles}
-                teamMembers={teamMembers}
-                gstEnabled={gstEnabled}
-                allDates={allDates}
-                excludedDates={form.excluded_dates}
-                onToggleDate={toggleDate}
-                onChange={setItems}
-              />
-            </CardBody>
-          </Card>
+  const previewPdf = async () => {
+    if (!existingQuotation) return;
+    setGenerating(true);
+    setPreview({ url: "", filename: "", open: true, loading: true });
+    try {
+      const result = await generateQuotationPdf({ quotation: existingQuotation, items, workspace, client, event, currency, returnBlob: true });
+      setPreview({ url: result.url, filename: result.filename, open: true, loading: false });
+    } catch (e) {
+      toast({ title: "Preview failed", description: e?.message, variant: "destructive" });
+      setPreview({ url: "", filename: "", open: false, loading: false });
+    } finally {
+      setGenerating(false);
+    }
+  };
 
-          {/* Terms & Notes */}
-          <Card>
-            <CardHeader><CardTitle>Terms, Notes & Settings</CardTitle></CardHeader>
-            <CardBody className="space-y-4">
-              {/* Item rate visibility */}
-              <label className="flex cursor-pointer items-center justify-between rounded-lg border border-border bg-muted/40 px-3 py-2.5 text-sm">
-                <span className="flex items-center gap-2 font-medium text-foreground">
-                  {form.show_item_pricing ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                  Show Qty, Rate & Amount to Client
-                </span>
-                <button
-                  type="button"
-                  onClick={() => set("show_item_pricing", !form.show_item_pricing)}
-                  className={`relative h-6 w-11 rounded-full transition-colors ${form.show_item_pricing ? "bg-primary" : "bg-border"}`}
-                  role="switch"
-                  aria-checked={form.show_item_pricing}
-                >
-                  <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${form.show_item_pricing ? "translate-x-5" : "translate-x-0.5"}`} />
-                </button>
-              </label>
-              <p className="-mt-2 text-xs text-muted-foreground">
-                When off, the client sees only the day/event scope and final total. Admin always retains full pricing data.
-              </p>
+  const downloadJobSheet = async () => {
+    if (!event) { toast({ title: `Select a ${term.workItemSingular.toLowerCase()} to generate a job sheet` }); return; }
+    setGenerating(true);
+    try {
+      const [asgns, members] = await Promise.all([
+        base44.entities.EventTeamAssignment.filter({ workspace_id: workspaceId, event_id: event.id }, "created_date", 200),
+        base44.entities.TeamMember.filter({ workspace_id: workspaceId }, "name", 200)
+      ]);
+      await generateJobSheetPdf({ event, assignments: asgns || [], members: members || [], roles, workspace, currency });
+      toast({ title: "Job sheet downloaded" });
+    } catch (e) {
+      toast({ title: "Job sheet failed", description: e?.message, variant: "destructive" });
+    } finally {
+      setGenerating(false);
+    }
+  };
 
-              {/* Package / Lump-sum mode */}
-              <label className="flex cursor-pointer items-center justify-between rounded-lg border border-border bg-muted/40 px-3 py-2.5 text-sm">
-                <span className="flex items-center gap-2 font-medium text-foreground">
-                  <Package className="h-4 w-4" />
-                  Package / Lump-Sum Mode
-                </span>
-                <button
-                  type="button"
-                  onClick={() => set("is_package", !form.is_package)}
-                  className={`relative h-6 w-11 rounded-full transition-colors ${form.is_package ? "bg-primary" : "bg-border"}`}
-                  role="switch"
-                  aria-checked={form.is_package}
-                >
-                  <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${form.is_package ? "translate-x-5" : "translate-x-0.5"}`} />
-                </button>
-              </label>
-              {form.is_package && (
-                <div className="space-y-3 rounded-lg border border-border bg-muted/20 p-3">
-                  <Input
-                    label="Package Name"
-                    value={form.package_name}
-                    onChange={(e) => set("package_name", e.target.value)}
-                    placeholder="e.g. Wedding Package, Complete Coverage"
-                  />
-                  <div>
-                    <label className="text-sm font-medium text-foreground">Package Inclusions / Deliverables</label>
-                    <textarea
-                      value={form.package_inclusions}
-                      onChange={(e) => set("package_inclusions", e.target.value)}
-                      rows={3}
-                      placeholder="Describe what's included in this package…"
-                      className="mt-1.5 w-full rounded-lg border border-input bg-card px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30"
-                    />
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    In package mode, individual item pricing (Qty/Rate/Amount) is hidden on the public quotation. Only the consolidated package total is shown.
-                  </p>
-                </div>
-              )}
+  const previewJobSheet = async () => {
+    if (!event) { toast({ title: `Select a ${term.workItemSingular.toLowerCase()} to generate a job sheet` }); return; }
+    setGenerating(true);
+    setPreview({ url: "", filename: "", open: true, loading: true });
+    try {
+      const [asgns, members] = await Promise.all([
+        base44.entities.EventTeamAssignment.filter({ workspace_id: workspaceId, event_id: event.id }, "created_date", 200),
+        base44.entities.TeamMember.filter({ workspace_id: workspaceId }, "name", 200)
+      ]);
+      const result = await generateJobSheetPdf({ event, assignments: asgns || [], members: members || [], roles, workspace, currency, returnBlob: true });
+      setPreview({ url: result.url, filename: result.filename, open: true, loading: false });
+    } catch (e) {
+      toast({ title: "Job sheet preview failed", description: e?.message, variant: "destructive" });
+      setPreview({ url: "", filename: "", open: false, loading: false });
+    } finally {
+      setGenerating(false);
+    }
+  };
 
-              <div>
-                <label className="text-sm font-medium text-foreground">Terms & Conditions</label>
-                <textarea
-                  value={form.terms_and_conditions}
-                  onChange={(e) => set("terms_and_conditions", e.target.value)}
-                  rows={5}
-                  placeholder="Payment terms, delivery timeline, cancellation policy…"
-                  className="mt-1.5 w-full rounded-lg border border-input bg-card px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-foreground">Special Notes</label>
-                <textarea
-                  value={form.special_notes}
-                  onChange={(e) => set("special_notes", e.target.value)}
-                  rows={3}
-                  placeholder="Travel, accommodation, revision limits, client requirements…"
-                  className="mt-1.5 w-full rounded-lg border border-input bg-card px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-foreground">Internal Notes</label>
-                <textarea
-                  value={form.notes}
-                  onChange={(e) => set("notes", e.target.value)}
-                  rows={2}
-                  placeholder="Internal notes (not shown to client)"
-                  className="mt-1.5 w-full rounded-lg border border-input bg-card px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30"
-                />
-              </div>
-            </CardBody>
-          </Card>
-        </div>
+  const previewTemplate = () => {
+    const html = renderTemplate(templateId, {
+      workspace, quotation: { ...existingQuotation, ...buildData(), ...totals, project_title: projectTitle, project_summary: projectSummary },
+      client, event, items, currency, templateConfig
+    });
+    setTemplatePreviewHtml(html);
+    setShowTemplatePreview(true);
+  };
 
-        {/* Sidebar: Discount, GST, Totals */}
-        <div className="flex flex-col gap-6">
-          <Card className="h-fit">
-            <CardHeader><CardTitle>Discount</CardTitle></CardHeader>
-            <CardBody className="space-y-3">
-              <Select
-                label="Discount Type"
-                value={form.discount_type}
-                onChange={(e) => set("discount_type", e.target.value)}
-              >
-                <option value="percentage">Percentage (%)</option>
-                <option value="fixed">Fixed Amount</option>
-              </Select>
-              <Input
-                label={form.discount_type === "percentage" ? "Discount %" : "Discount Amount"}
-                type="number"
-                min="0"
-                value={form.discount_value}
-                onChange={(e) => set("discount_value", Number(e.target.value) || 0)}
-              />
-              {form.discount_type === "percentage" && Number(form.discount_value) > 100 && (
-                <p className="flex items-start gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">
-                  <AlertCircle className="h-4 w-4 shrink-0" /> Discount cannot exceed 100%
-                </p>
-              )}
-              {form.discount_type === "fixed" && Number(form.discount_value) > totals.subtotal && (
-                <p className="flex items-start gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">
-                  <AlertCircle className="h-4 w-4 shrink-0" /> Fixed discount cannot exceed subtotal
-                </p>
-              )}
-            </CardBody>
-          </Card>
+  // ---- Package apply ----
+  const applyPackage = (pkg) => {
+    const incDates = includedDates(startDate, endDate, excludedDates);
+    const newItems = deserializePackageStructure(pkg.structure_json, incDates);
+    setItems(newItems);
+    if (pkg.terms_and_conditions && !terms) setTerms(pkg.terms_and_conditions);
+    if (pkg.footer_message && !footerMessage) setFooterMessage(pkg.footer_message);
+    if (pkg.category) setCategory(pkg.category);
+    toast({ title: "Package applied", description: pkg.name });
+  };
 
-          {gstEnabled && (
-            <Card className="h-fit">
-              <CardHeader><CardTitle>GST</CardTitle></CardHeader>
-              <CardBody className="space-y-3">
-                <label className="flex cursor-pointer items-center justify-between rounded-lg border border-border bg-muted/40 px-3 py-2.5 text-sm">
-                  <span className="font-medium text-foreground">Apply GST to this quotation</span>
-                  <button
-                    type="button"
-                    onClick={() => set("gst_applicable", !form.gst_applicable)}
-                    className={`relative h-6 w-11 rounded-full transition-colors ${form.gst_applicable ? "bg-primary" : "bg-border"}`}
-                    role="switch"
-                    aria-checked={form.gst_applicable}
-                  >
-                    <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${form.gst_applicable ? "translate-x-5" : "translate-x-0.5"}`} />
-                  </button>
-                </label>
-                {form.gst_applicable && (
-                  <Select
-                    label="GST Mode"
-                    value={form.gst_mode}
-                    onChange={(e) => set("gst_mode", e.target.value)}
-                  >
-                    <option value="cgst_sgst">CGST + SGST (Same State)</option>
-                    <option value="igst">IGST (Inter-State)</option>
-                  </Select>
-                )}
-                {form.gst_applicable && !currentWorkspace.gstin && (
-                  <p className="flex items-start gap-2 rounded-lg bg-warning/10 px-3 py-2 text-xs text-warning">
-                    <AlertCircle className="h-4 w-4 shrink-0" />
-                    No GSTIN configured. Add one in Preferences before sending a GST quotation.
-                  </p>
-                )}
-              </CardBody>
-            </Card>
-          )}
-
-          <Card className="h-fit">
-            <CardHeader><CardTitle>Summary</CardTitle></CardHeader>
-            <CardBody className="space-y-3">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Subtotal</span>
-                <span className="font-semibold text-foreground">{formatCurrency(totals.subtotal)}</span>
-              </div>
-              {totals.discount_amount > 0 && (
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Discount</span>
-                  <span className="font-medium text-destructive">−{formatCurrency(totals.discount_amount)}</span>
-                </div>
-              )}
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Taxable Amount</span>
-                <span className="font-medium text-foreground">{formatCurrency(totals.taxable_amount)}</span>
-              </div>
-              {form.gst_applicable && gstEnabled && (
-                <>
-                  {form.gst_mode === "igst" ? (
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">IGST</span>
-                      <span className="font-medium text-foreground">{formatCurrency(totals.igst_amount)}</span>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">CGST</span>
-                        <span className="font-medium text-foreground">{formatCurrency(totals.cgst_amount)}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">SGST</span>
-                        <span className="font-medium text-foreground">{formatCurrency(totals.sgst_amount)}</span>
-                      </div>
-                    </>
-                  )}
-                </>
-              )}
-              <div className="border-t border-border pt-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-base font-semibold text-foreground">Grand Total</span>
-                  <span className="text-xl font-bold text-primary">{formatCurrency(totals.grand_total)}</span>
-                </div>
-              </div>
-            </CardBody>
-          </Card>
-
-          <Card className="h-fit">
-            <CardHeader><CardTitle>Payment Milestones</CardTitle></CardHeader>
-            <CardBody>
-              <MilestoneEditor
-                milestones={form.milestones}
-                grandTotal={totals.grand_total}
-                onChange={(ms) => set("milestones", ms)}
-              />
-            </CardBody>
-          </Card>
-
-          <div className="flex flex-col gap-2">
-            <Button onClick={() => handleSave("Draft")} disabled={saving || finalizing}>
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              {isEdit ? "Save Changes" : "Save as Draft"}
-            </Button>
-            <Button variant="primary" onClick={handleFinalize} disabled={saving || finalizing}>
-              {finalizing ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileCheck className="h-4 w-4" />}
-              Finalize Quotation
-            </Button>
-          </div>
+  if (loading) return <LoadingState label="Loading quotation…" />;
+  if (notFound) {
+    return (
+      <div className="p-6 max-w-[800px] mx-auto">
+        <EmptyState title="Quotation not found" description="This quotation may not exist or belongs to another workspace." />
+        <div className="mt-4">
+          <Button variant="outline" onClick={() => navigate("/quotation")}><ArrowLeft className="w-4 h-4" />Back to Quotations</Button>
         </div>
       </div>
+    );
+  }
+
+  return (
+    <div className="p-4 sm:p-6 space-y-4 max-w-[1100px] mx-auto">
+      {/* Header */}
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <button onClick={() => navigate("/quotation")} className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1">
+          <ArrowLeft className="w-4 h-4" /> Quotations
+        </button>
+        <div className="flex items-center gap-2">
+          <span className={cn("text-xs px-2 py-1 rounded font-medium uppercase tracking-wide", QUOTATION_STATUS_META[status]?.className)}>
+            {QUOTATION_STATUS_META[status]?.label || status}
+          </span>
+          <span className="text-sm font-medium text-muted-foreground">{quotationNumber}</span>
+          {!readOnly && (
+            <Button size="sm" variant="outline" onClick={() => setShowPackageDialog(true)}>
+              <Package className="w-3.5 h-3.5" /> Packages
+            </Button>
+          )}
+          {status === "accepted" && existingQuotation && (
+            <Button size="sm" onClick={async () => {
+              try {
+                const inv = await createFromQuotation(workspaceId, existingQuotation, items);
+                invalidateEntities(queryClient, ["Invoice", "InvoiceItem"]);
+                toast({ title: "Invoice created", description: inv.invoice_number });
+                navigate(`/invoices/${inv.id}`);
+              } catch (e) { setError(e?.message || "Failed to create invoice."); }
+            }}>
+              <Receipt className="w-3.5 h-3.5" /> Create Invoice
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {error && (
+        <div className="flex items-start gap-2 bg-destructive/10 border border-destructive/30 rounded-lg p-3 text-sm text-destructive">
+          <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      {/* Quotation meta */}
+      <Section title="Quotation">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Field label="Quotation No">
+            <Input value={quotationNumber} onChange={(e) => setQuotationNumber(e.target.value)} disabled={readOnly} />
+          </Field>
+          <Field label="Date">
+            <Input type="date" value={quotationDate} onChange={(e) => setQuotationDate(e.target.value)} disabled={readOnly} />
+          </Field>
+          <Field label="Client">
+            <div className="flex items-center gap-2">
+              <Select value={clientId} onChange={(e) => onClientChange(e.target.value)} disabled={readOnly} className="flex-1">
+                <option value="">— Select client —</option>
+                {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </Select>
+              {!readOnly && (
+                <Button type="button" variant="outline" size="sm" onClick={() => setShowClientForm(true)} className="shrink-0">
+                  <Plus className="w-3.5 h-3.5" /> New
+                </Button>
+              )}
+            </div>
+          </Field>
+          <Field label={term.workItemSingular}>
+            <Select value={eventId} onChange={(e) => onEventChange(e.target.value)} disabled={readOnly} className="w-full">
+              <option value="">— Select {term.workItemSingular.toLowerCase()} —</option>
+              {availableEvents.map((e) => <option key={e.id} value={e.id}>{e.title}</option>)}
+            </Select>
+          </Field>
+          <Field label="Valid Until">
+            <Input type="date" value={validUntil} onChange={(e) => setValidUntil(e.target.value)} disabled={readOnly} />
+          </Field>
+          <Field label="PDF Template">
+            <Select value={templateId} onChange={(e) => setTemplateId(e.target.value)} disabled={readOnly} className="w-full">
+              {QUOTATION_TEMPLATES.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+            </Select>
+          </Field>
+          <Field label="Project Title">
+            <Input value={projectTitle} onChange={(e) => setProjectTitle(e.target.value)} disabled={readOnly} placeholder="e.g. Wedding Coverage" />
+          </Field>
+          <div className="sm:col-span-2">
+            <Field label="Project Summary">
+              <Textarea value={projectSummary} onChange={(e) => setProjectSummary(e.target.value)} disabled={readOnly} rows={2} placeholder="Brief project scope description" />
+            </Field>
+          </div>
+        </div>
+      </Section>
+
+      {/* Category & Context */}
+      <QuotationCategoryContext
+        category={category}
+        setCategory={setCategory}
+        contextType={contextType}
+        setContextType={setContextType}
+        readOnly={readOnly}
+      />
+
+      {/* Date Engine */}
+      <QuotationDateEngine
+        startDate={startDate}
+        setStartDate={setStartDate}
+        endDate={endDate}
+        setEndDate={setEndDate}
+        excludedDates={excludedDates}
+        setExcludedDates={setExcludedDates}
+        readOnly={readOnly}
+      />
+
+      {/* Day/Phase Builder */}
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-sm font-semibold">Day / Phase Builder</h3>
+          {!readOnly && (
+            <Button size="sm" variant="outline" onClick={() => setShowPackageDialog(true)}>
+              <Package className="w-3.5 h-3.5" /> Apply Package
+            </Button>
+          )}
+        </div>
+        <QuotationDayBuilder
+          items={items}
+          setItems={setItems}
+          startDate={startDate}
+          endDate={endDate}
+          excludedDates={excludedDates}
+          teamMembers={teamMembers}
+          roles={roles}
+          services={services}
+          currency={currency}
+          readOnly={readOnly}
+        />
+      </div>
+
+      {/* Pricing + GST */}
+      <QuotationPricingPanel
+        discountType={discountType}
+        setDiscountType={setDiscountType}
+        discountValue={discountValue}
+        setDiscountValue={setDiscountValue}
+        gstApplicable={gstApplicable}
+        setGstApplicable={setGstApplicable}
+        gstMode={gstMode}
+        setGstMode={setGstMode}
+        gstWorkspaceEnabled={gstWorkspaceEnabled}
+        workspaceGstin={workspace?.gstin}
+        totals={totals}
+        subtotals={subtotals}
+        currency={currency}
+        readOnly={readOnly}
+      />
+
+      {/* Payment Milestones */}
+      <QuotationMilestonesEditor
+        schedule={milestones}
+        setSchedule={setMilestones}
+        grandTotal={totals.grandTotal}
+        currency={currency}
+        readOnly={readOnly}
+      />
+
+      {/* Presentation Settings */}
+      <QuotationPresentationSection
+        showPricing={showPricing}
+        setShowPricing={setShowPricing}
+        bankDetails={bankDetails}
+        setBankDetails={setBankDetails}
+        socialLinks={socialLinks}
+        setSocialLinks={setSocialLinks}
+        footerMessage={footerMessage}
+        setFooterMessage={setFooterMessage}
+        specialNotes={specialNotes}
+        setSpecialNotes={setSpecialNotes}
+        workspace={workspace}
+        readOnly={readOnly}
+      />
+
+      {/* Terms & notes */}
+      <Section icon={FileText} title="Terms & Conditions">
+        <textarea
+          value={terms}
+          onChange={(e) => setTerms(e.target.value)}
+          disabled={readOnly}
+          rows={4}
+          className="w-full bg-card border border-border rounded-md p-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
+        />
+        <Field label="Notes (internal)">
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            disabled={readOnly}
+            rows={2}
+            className="w-full bg-card border border-border rounded-md p-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
+          />
+        </Field>
+        <Field label="Client Access Password (optional)">
+          <Input value={accessPassword} onChange={(e) => setAccessPassword(e.target.value)} disabled={readOnly} placeholder="Leave blank for public link" />
+          <p className="text-xs text-muted-foreground mt-1">If set, the client must enter their email + this password to view and sign the quotation online.</p>
+        </Field>
+      </Section>
+
+      {/* Template Settings */}
+      <QuotationTemplateSettings templateConfig={templateConfig} onChange={setTemplateConfig} readOnly={readOnly} />
+
+      {/* Actions */}
+      <QuotationActions
+        isNew={isNew}
+        readOnly={readOnly}
+        isFinalized={isFinalized}
+        status={status}
+        saving={saving}
+        finalizing={finalizing}
+        accepting={accepting}
+        generating={generating}
+        syncing={syncing}
+        saveDraft={saveDraft}
+        finalize={finalize}
+        accept={accept}
+        downloadPdf={downloadPdf}
+        downloadJobSheet={downloadJobSheet}
+        previewPdf={previewPdf}
+        previewJobSheet={previewJobSheet}
+        previewTemplate={previewTemplate}
+        onDuplicate={onDuplicate}
+        onDelete={onDelete}
+        existingQuotation={existingQuotation}
+        hasEvent={!!event}
+        onSync={syncQuotation}
+      />
+
+      {/* Client Project Portal — public link control + view tracking */}
+      {existingQuotation && (
+        <PublicLinkPanel
+          quotation={existingQuotation}
+          onUpdated={(updated) => {
+            setExistingQuotation((q) => ({ ...q, ...updated }));
+          }}
+        />
+      )}
+
+      <PdfPreviewModal
+        url={preview.url}
+        filename={preview.filename}
+        open={preview.open}
+        loading={preview.loading}
+        onClose={() => setPreview((p) => ({ ...p, open: false }))}
+      />
+
+      <QuotationTemplatePreview
+        open={showTemplatePreview}
+        onClose={() => setShowTemplatePreview(false)}
+        templateHtml={templatePreviewHtml}
+        quotationNumber={quotationNumber}
+        clientName={client?.name}
+      />
+
+      <QuotationPackageDialog
+        open={showPackageDialog}
+        onClose={() => setShowPackageDialog(false)}
+        workspaceId={workspaceId}
+        items={items}
+        onApplyPackage={applyPackage}
+        readOnly={readOnly}
+      />
+
+      <ClientForm
+        open={showClientForm}
+        onClose={() => setShowClientForm(false)}
+        workspaceId={workspaceId}
+        onSaved={async (savedClient) => {
+          const list = await base44.entities.Client.filter({ workspace_id: workspaceId }, "name", 500);
+          setClients(list || []);
+          setClientId(savedClient.id);
+        }}
+      />
     </div>
   );
 }

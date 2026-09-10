@@ -1,196 +1,199 @@
-import { useMemo, useState } from "react";
-import { Plus, CalendarDays, Download } from "lucide-react";
-import PageHeader from "@/components/common/PageHeader";
-import Card, { CardBody } from "@/components/common/Card";
-import SearchInput from "@/components/common/SearchInput";
-import FilterControl from "@/components/common/FilterControl";
-import Button from "@/components/common/Button";
-import EmptyState from "@/components/common/EmptyState";
-import LoadingState from "@/components/common/LoadingState";
-import ErrorState from "@/components/common/ErrorState";
-import EventCard from "@/components/events/EventCard";
-import EventForm from "@/components/events/EventForm";
-import { useEvents } from "@/hooks/useEvents";
-import { useClients } from "@/hooks/useClients";
-import { useEventTeamAssignments } from "@/hooks/useEventTeamAssignments";
-import { useTeamMembers } from "@/hooks/useTeamMembers";
-import { usePlan } from "@/lib/PlanContext";
-import PlanLimitReached from "@/components/common/PlanLimitReached";
-import { defaultEventStatuses, defaultEventTypes, eventPeriods } from "@/constants/events";
-import { isToday, isThisWeek, isUpcoming, isPast } from "@/utils/dates";
-import { toast } from "@/components/ui/use-toast";
-import { exportEventsCSV } from "@/utils/exports";
-import { useBusinessTerminology } from "@/lib/BusinessTerminology";
+import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
 import { useWorkspace } from "@/lib/WorkspaceContext";
+import ReminderBanner from "@/components/events/ReminderBanner";
+import UpgradeBanner from "@/components/events/UpgradeBanner";
+import EventsTable from "@/components/events/EventsTable";
+import EventsRightPanel from "@/components/events/EventsRightPanel";
+import EventForm from "@/components/events/EventForm";
+import SearchInput from "@/components/common/SearchInput";
+import Select from "@/components/common/Select";
+import Button from "@/components/common/Button";
+import PageHeader from "@/components/common/PageHeader";
+import { Users, Plus, Download, CalendarCheck, Clock, CheckCircle2, CalendarDays } from "lucide-react";
+import StatCard from "@/components/common/StatCard";
+import { isToday, isThisWeek, isUpcomingDate, isPastDate, isWithinFY } from "@/lib/dates";
+import { exportEventsCsv } from "@/lib/exportUtils";
+import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
+import { useT } from "@/hooks/useT";
+import { invalidateEntities } from "@/lib/queryInvalidation";
+import { useFinancialYear } from "@/hooks/useFinancialYear";
+import { fyDisplayLabel, fyRecordValue } from "@/lib/financialYearService";
 
 export default function Events() {
-  const { events, loading, error, refetch, createEvent, updateEvent } = useEvents();
-  const { clients, createClient } = useClients();
-  const { assignments } = useEventTeamAssignments();
-  const { members } = useTeamMembers();
-  const { canCreateResource, usage, getLimit } = usePlan();
-  const t = useBusinessTerminology();
-  const { currentWorkspace } = useWorkspace();
-  const eventTypes = currentWorkspace?.event_types?.length
-    ? currentWorkspace.event_types
-    : defaultEventTypes;
-  const eventStatuses = currentWorkspace?.event_statuses?.length
-    ? currentWorkspace.event_statuses
-    : defaultEventStatuses;
-  const eventsLimit = getLimit("max_events");
-  const eventsLimitReached = !canCreateResource("events");
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [typeFilter, setTypeFilter] = useState("all");
-  const [periodFilter, setPeriodFilter] = useState("all");
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editingEvent, setEditingEvent] = useState(null);
+  const { workspaceId, workspace } = useWorkspace();
+  const navigate = useNavigate();
+  const term = useBusinessTerminology();
+  const t = useT();
+  const { fiscalYears } = useFinancialYear();
 
-  const clientMap = useMemo(
-    () => Object.fromEntries(clients.map((c) => [c.id, c])),
-    [clients]
-  );
+  const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [fyFilter, setFyFilter] = useState("all");
+  const [showForm, setShowForm] = useState(false);
+  const [editingEvent, setEditingEvent] = useState(null);
+  const queryClient = useQueryClient();
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["events", workspaceId],
+    queryFn: async () => {
+      const [evList, clList, tmList, svList, asgList] = await Promise.all([
+        base44.entities.Event.filter({ workspace_id: workspaceId }, "-start_date", 500),
+        base44.entities.Client.filter({ workspace_id: workspaceId }, "name", 500),
+        base44.entities.TeamMember.filter({ workspace_id: workspaceId }, "name", 500),
+        base44.entities.Service.filter({ workspace_id: workspaceId }, "name", 500),
+        base44.entities.EventTeamAssignment.filter({ workspace_id: workspaceId }, "-created_date", 1000)
+      ]);
+      const map = {};
+      (clList || []).forEach((c) => { map[c.id] = c; });
+      const teamMap = {};
+      (tmList || []).forEach((m) => { teamMap[m.id] = m; });
+      const serviceMap = {};
+      (svList || []).forEach((s) => { serviceMap[s.id] = s; });
+      // Active team assignments grouped by event — powers date-wise booking
+      // visibility in the expanded event list rows (PART 9).
+      const assignmentsByEvent = {};
+      (asgList || []).forEach((a) => {
+        if (a.assignment_status === "removed") return;
+        if (!assignmentsByEvent[a.event_id]) assignmentsByEvent[a.event_id] = [];
+        assignmentsByEvent[a.event_id].push(a);
+      });
+      return { events: evList || [], clients: map, teamMap, serviceMap, assignmentsByEvent };
+    },
+    enabled: !!workspaceId
+  });
+  const events = data?.events || [];
+  const clients = data?.clients || {};
+  const teamMap = data?.teamMap || {};
+  const serviceMap = data?.serviceMap || {};
+  const assignmentsByEvent = data?.assignmentsByEvent || {};
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ["events", workspaceId] });
+    invalidateEntities(queryClient, ["Event", "EventTeamAssignment"]);
+  };
+
+  const clientName = (id) => clients[id]?.name || "";
 
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return events
-      .filter((e) => {
-        const clientName = clientMap[e.client_id]?.name || "";
-        const matchesSearch =
-          !q ||
-          [e.title, clientName, e.venue].some((f) =>
-            (f || "").toLowerCase().includes(q)
-          );
-        const matchesStatus = statusFilter === "all" || e.status === statusFilter;
-        const matchesType = typeFilter === "all" || e.event_type === typeFilter;
-        const date = e.start_date;
-        let matchesPeriod = true;
-        if (periodFilter === "Upcoming") matchesPeriod = isUpcoming(date);
-        else if (periodFilter === "Today") matchesPeriod = isToday(date);
-        else if (periodFilter === "This Week") matchesPeriod = isThisWeek(date);
-        else if (periodFilter === "Past") matchesPeriod = isPast(date);
-        return matchesSearch && matchesStatus && matchesType && matchesPeriod;
-      })
-      .sort((a, b) => (a.start_date || "").localeCompare(b.start_date || ""));
-  }, [events, clientMap, search, statusFilter, typeFilter, periodFilter]);
-
-  const handleSave = async (data) => {
-    if (editingEvent) {
-      await updateEvent(editingEvent.id, data);
-      toast({ title: `${t.workItemSingular} updated` });
-    } else {
-      try {
-        await createEvent(data);
-        toast({ title: `${t.workItemSingular} created` });
-      } catch (e) {
-        toast({ title: `Cannot create ${t.workItemSingular.toLowerCase()}`, description: e?.message, variant: "destructive" });
-        throw e;
+    const q = query.trim().toLowerCase();
+    return events.filter((e) => {
+      if (fyFilter && fyFilter !== "all" && !isWithinFY(e.start_date, fyFilter)) return false;
+      switch (statusFilter) {
+        case "today": if (!isToday(e.start_date)) return false; break;
+        case "week": if (!isThisWeek(e.start_date)) return false; break;
+        case "upcoming": if (!(isUpcomingDate(e.start_date) && e.status !== "completed" && e.status !== "cancelled")) return false; break;
+        case "past": if (!(isPastDate(e.start_date) || e.status === "completed")) return false; break;
+        case "completed": if (e.status !== "completed") return false; break;
+        case "in-progress": if (e.status !== "in-progress") return false; break;
+        case "cancelled": if (e.status !== "cancelled") return false; break;
+        default: break;
       }
-    }
-  };
+      if (q) {
+        const hay = `${e.title} ${e.event_type} ${e.venue || ""} ${clientName(e.client_id)}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [events, query, statusFilter, fyFilter, clients]);
 
-  const openNew = () => {
-    setEditingEvent(null);
-    setModalOpen(true);
-  };
+  const openEvent = (e) => navigate(`/events/${e.id}`);
+  const openNew = () => navigate("/events/new");
+  const openEdit = (e) => navigate(`/events/${e.id}/edit`);
+
+  const upcomingCount = events.filter((e) => isUpcomingDate(e.start_date) && e.status !== "completed" && e.status !== "cancelled").length;
+  const completedCount = events.filter((e) => e.status === "completed").length;
+  const inProgressCount = events.filter((e) => e.status === "in-progress").length;
 
   return (
-    <div className="flex flex-col gap-6">
-      <PageHeader
-        title={t.workItemPlural}
-        description={`Manage your upcoming and past ${t.workItemPlural.toLowerCase()}.`}
-        actions={
-          <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => { exportEventsCSV(filtered, clients, "all", t); toast({ title: `${t.workItemPlural} exported` }); }}>
-              <Download className="h-4 w-4" /> Export
-            </Button>
-            <Button onClick={openNew} disabled={eventsLimitReached}>
-              <Plus className="h-4 w-4" /> {t.createWorkItemLabel}
-            </Button>
-          </div>
-        }
-      />
+    <div className="p-4 sm:p-6 space-y-4 max-w-[1400px] mx-auto">
+      <PageHeader eyebrow="Schedule" title={term.workItemPlural} subtitle={`Manage your bookings, schedule, and ${term.workItemSingular.toLowerCase()} details.`}>
+        <Button variant="outline" size="sm" onClick={() => navigate("/team")}>
+          <Users className="w-4 h-4" />
+          <span className="hidden sm:inline">{term.teamLabel}</span>
+        </Button>
+        <Button onClick={openNew}>
+          <Plus className="w-4 h-4" />
+          <span className="hidden sm:inline">{term.addWorkItemLabel}</span>
+        </Button>
+      </PageHeader>
 
-      {eventsLimitReached && (
-        <PlanLimitReached
-          resource={t.workItemPlural.toLowerCase()}
-          currentUsage={usage.events}
-          limit={eventsLimit}
+      {/* Stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <StatCard label={term.totalWorkLabel} value={events.length} icon={CalendarDays} tone="primary" />
+        <StatCard label={term.activeWorkLabel} value={upcomingCount} icon={Clock} tone="info" />
+        <StatCard label={t("In Progress")} value={inProgressCount} icon={Clock} tone="warning" />
+        <StatCard label={term.completedWorkLabel} value={completedCount} icon={CheckCircle2} tone="success" />
+      </div>
+
+      <ReminderBanner events={events} onEventClick={openEvent} />
+      <UpgradeBanner used={events.length} />
+
+      {/* Toolbar */}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+        <SearchInput
+          placeholder={term.searchPlaceholder}
+          className="sm:max-w-xs"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
         />
-      )}
+        <div className="flex items-center gap-2 sm:ml-auto flex-wrap">
+          <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="flex-1 min-w-[110px] sm:flex-none">
+            <option value="all">All {term.workItemPlural} ({events.length})</option>
+            <option value="today">{t("Today")}</option>
+            <option value="week">{t("This Week")}</option>
+            <option value="upcoming">{t("Upcoming")}</option>
+            <option value="past">{t("Past")}</option>
+            <option value="completed">{t("Completed")}</option>
+            <option value="in-progress">{t("In Progress")}</option>
+            <option value="cancelled">{t("Cancelled")}</option>
+          </Select>
+          <Select value={fyFilter} onChange={(e) => setFyFilter(e.target.value)} className="flex-1 min-w-[110px] sm:flex-none">
+            <option value="all">{t("All Years")}</option>
+            {fiscalYears.map((fy) => (
+              <option key={fy.id} value={fyRecordValue(fy)}>
+                {fyDisplayLabel(fy)}
+              </option>
+            ))}
+          </Select>
+          <Button
+            variant="outline"
+            size="icon"
+            aria-label="Export"
+            className="shrink-0"
+            onClick={() => exportEventsCsv(filtered, clients, fyFilter !== "all" ? fyFilter : null, term)}
+            disabled={filtered.length === 0}
+          >
+            <Download className="w-4 h-4" />
+          </Button>
+        </div>
+      </div>
 
-      <Card>
-        <CardBody className="flex flex-col gap-3 sm:flex-row sm:items-end sm:flex-wrap">
-          <SearchInput
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={t.searchPlaceholder}
-            className="flex-1 min-w-[200px]"
-          />
-          <FilterControl
-            label="Period"
-            value={periodFilter}
-            onChange={(e) => setPeriodFilter(e.target.value)}
-            options={eventPeriods}
-          />
-          <FilterControl
-            label="Status"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            options={eventStatuses}
-          />
-          <FilterControl
-            label="Type"
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value)}
-            options={eventTypes}
-          />
-        </CardBody>
-      </Card>
-
-      {loading ? (
-        <Card>
-          <LoadingState label={`Loading ${t.workItemPlural.toLowerCase()}…`} />
-        </Card>
-      ) : error ? (
-        <Card>
-          <ErrorState message={error} onRetry={refetch} />
-        </Card>
-      ) : filtered.length === 0 ? (
-        <Card>
-          <EmptyState
-            title={`No ${t.workItemPlural.toLowerCase()} yet`}
-            description={`Create your first ${t.workItemSingular.toLowerCase()} to get started.`}
-            icon={CalendarDays}
-            action={
-              <Button onClick={openNew}>
-                <Plus className="h-4 w-4" /> {t.createWorkItemLabel}
-              </Button>
-            }
-          />
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((event) => (
-            <EventCard
-              key={event.id}
-              event={event}
-              clientName={clientMap[event.client_id]?.name}
-              assignments={assignments}
-              members={members}
-            />
-          ))}
+      {error && (
+        <div className="text-sm text-destructive bg-destructive/5 border border-destructive/20 rounded-md px-3 py-2">
+          {error?.message || t("Failed to load events.")}
         </div>
       )}
 
-      <EventForm
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        event={editingEvent}
-        clients={clients}
-        onSave={handleSave}
-        onCreateClient={createClient}
-      />
+      {/* Content */}
+      <div className="grid grid-cols-1 xl:grid-cols-[1fr_300px] gap-4">
+        <EventsTable
+          events={filtered}
+          clients={clients}
+          teamMap={teamMap}
+          serviceMap={serviceMap}
+          assignmentsByEvent={assignmentsByEvent}
+          loading={isLoading}
+          onEventClick={openEvent}
+          onEditEvent={openEdit}
+          onAdd={openNew}
+          canAdd
+          term={term}
+        />
+        <EventsRightPanel events={events} onEventClick={openEvent} term={term} />
+      </div>
+
     </div>
   );
 }

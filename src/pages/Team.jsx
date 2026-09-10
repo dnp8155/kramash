@@ -1,295 +1,392 @@
-import { useMemo, useState } from "react";
-import { Plus, Users, Download, FileBarChart, Settings2 } from "lucide-react";
-import PageHeader from "@/components/common/PageHeader";
-import Card, { CardBody } from "@/components/common/Card";
-import SearchInput from "@/components/common/SearchInput";
-import FilterControl from "@/components/common/FilterControl";
-import Button from "@/components/common/Button";
-import EmptyState from "@/components/common/EmptyState";
-import LoadingState from "@/components/common/LoadingState";
-import ErrorState from "@/components/common/ErrorState";
+import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
+import { useWorkspace } from "@/lib/WorkspaceContext";
+import { useAuth } from "@/lib/AuthContext";
 import TeamMemberCard from "@/components/team/TeamMemberCard";
 import TeamMemberForm from "@/components/team/TeamMemberForm";
-import TeamRoleForm from "@/components/team/TeamRoleForm";
-import AvailabilityChecker from "@/components/team/AvailabilityChecker";
+import AvailabilityCalendar from "@/components/team/AvailabilityCalendar";
+import UpcomingBookingsList from "@/components/team/UpcomingBookingsList";
+import SearchInput from "@/components/common/SearchInput";
+import Select from "@/components/common/Select";
+import Button from "@/components/common/Button";
+import LoadingState from "@/components/common/LoadingState";
+import EmptyState from "@/components/common/EmptyState";
+import { CardGridSkeleton } from "@/components/common/Skeletons";
+import { Skeleton } from "@/components/ui/skeleton";
+import Card from "@/components/common/Card";
+import { Crown, Plus, AlertTriangle, Download, Users, UserCheck, UserX, CalendarClock, Ban } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { loadTeamMembers, loadRoles, loadAssignments, loadBlockDates, ensureDefaultRoles } from "@/lib/teamService";
+import BlockDateDialog from "@/components/team/BlockDateDialog";
+import { useToast } from "@/components/ui/use-toast";
+import { exportTeamCsv } from "@/lib/exportUtils";
+import StatCard from "@/components/common/StatCard";
+import PageHeader from "@/components/common/PageHeader";
+import { usePlan } from "@/hooks/usePlan";
+import { invalidateEntities } from "@/lib/queryInvalidation";
+import { loadServiceProviders } from "@/lib/serviceProviderService";
+import { buildPersonStatements } from "@/lib/personStatementService";
 import PersonStatementCard from "@/components/team/PersonStatementCard";
-import FinancialYearSelector from "@/components/finance/FinancialYearSelector";
-import { useTeamMembers } from "@/hooks/useTeamMembers";
-import { useTeamRoles } from "@/hooks/useTeamRoles";
-import { useEventTeamAssignments } from "@/hooks/useEventTeamAssignments";
-import { useEventServiceAssignments } from "@/hooks/useEventServiceAssignments";
-import { useEvents } from "@/hooks/useEvents";
-import { useFinancialTransactions } from "@/hooks/useFinancialTransactions";
-import { useTeamBlockDates } from "@/hooks/useTeamBlockDates";
-import { useFinancialYear } from "@/lib/FinancialYearContext";
-import { usePlan } from "@/lib/PlanContext";
-import { useWorkspace } from "@/lib/WorkspaceContext";
-import PlanLimitReached from "@/components/common/PlanLimitReached";
-import { toast } from "@/components/ui/use-toast";
-import { exportTeamCSV } from "@/utils/exports";
-import { computePersonStatements } from "@/utils/personStatements";
 
 export default function Team() {
-  const { members, loading, error, refetch, createMember, updateMember } = useTeamMembers();
-  const { roles } = useTeamRoles();
-  const { assignments } = useEventTeamAssignments();
-  const { serviceAssignments } = useEventServiceAssignments();
-  const { events } = useEvents();
-  const { transactions } = useFinancialTransactions();
-  const { blockDates } = useTeamBlockDates();
-  const { financialYears, selectedFYId } = useFinancialYear();
-  const { ownerName } = useWorkspace();
-  const { canCreateResource, usage, getLimit } = usePlan();
-  const teamLimit = getLimit("max_team_members");
-  const teamLimitReached = !canCreateResource("team_members");
+  const { workspaceId, workspace } = useWorkspace();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { plan } = usePlan();
+  const currency = workspace?.currency || "INR";
 
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("Active");
+  const [tab, setTab] = useState("Roster");
+  const [query, setQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editingMember, setEditingMember] = useState(null);
-  const [roleModalOpen, setRoleModalOpen] = useState(false);
-  const [editingRole, setEditingRole] = useState(null);
-  const [view, setView] = useState("cards"); // "cards" | "statements"
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(null);
+  const [showBlock, setShowBlock] = useState(false);
+  const [blockPreselect, setBlockPreselect] = useState({ memberId: null, date: null });
+  const queryClient = useQueryClient();
 
-  const roleName = (m) =>
-    roles.find((r) => r.id === m.role_id)?.name || m.profession || "—";
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["team", workspaceId],
+    queryFn: async () => {
+      await ensureDefaultRoles(workspaceId);
+      const [membs, rles, asgns, txns, blocks, svcAsgns, svcProviders, expenseTxns, dayAsgns, svcs] = await Promise.all([
+        loadTeamMembers(workspaceId),
+        loadRoles(workspaceId),
+        loadAssignments(workspaceId),
+        base44.entities.FinancialTransaction.filter({ workspace_id: workspaceId, transaction_type: "TEAM_PAYMENT", status: "ACTIVE" }, "-transaction_date", 1000),
+        loadBlockDates(workspaceId),
+        base44.entities.EventServiceAssignment.filter({ workspace_id: workspaceId }, "-created_date", 1000),
+        loadServiceProviders(workspaceId),
+        base44.entities.FinancialTransaction.filter({ workspace_id: workspaceId, transaction_type: "BUSINESS_EXPENSE", status: "ACTIVE" }, "-transaction_date", 1000),
+        base44.entities.EventDayAssignment.filter({ workspace_id: workspaceId }, "date", 1000),
+        base44.entities.Service.filter({ workspace_id: workspaceId }, "name", 500)
+      ]);
+      const evIds = [...new Set([
+        ...((asgns || []).map((a) => a.event_id)),
+        ...((svcAsgns || []).map((a) => a.event_id))
+      ])];
+      const evMap = {};
+      await Promise.all(
+        evIds.map(async (id) => {
+          try {
+            const ev = await base44.entities.Event.get(id);
+            if (ev && ev.workspace_id === workspaceId) evMap[id] = ev;
+          } catch (e) { /* event may be gone */ }
+        })
+      );
+      return {
+        members: membs || [],
+        roles: rles || [],
+        assignments: asgns || [],
+        transactions: txns || [],
+        blockDates: blocks || [],
+        eventsById: evMap,
+        serviceAssignments: svcAsgns || [],
+        serviceProviders: svcProviders || [],
+        expenseTransactions: expenseTxns || [],
+        dayAssignments: dayAsgns || [],
+        services: svcs || []
+      };
+    },
+    enabled: !!workspaceId
+  });
+  const members = data?.members || [];
+  const roles = data?.roles || [];
+  const assignments = data?.assignments || [];
+  const transactions = data?.transactions || [];
+  const blockDates = data?.blockDates || [];
+  const eventsById = data?.eventsById || {};
+  const serviceAssignments = data?.serviceAssignments || [];
+  const expenseTransactions = data?.expenseTransactions || [];
+  const dayAssignments = data?.dayAssignments || [];
+  const services = data?.services || [];
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ["team", workspaceId] });
+    invalidateEntities(queryClient, ["TeamMember", "TeamBlockDate", "EventTeamAssignment", "EventServiceAssignment", "FinancialTransaction"]);
+  };
 
-  const assignmentCount = (memberId) =>
-    assignments.filter(
-      (a) => a.team_member_id === memberId && a.assignment_status === "Assigned"
-    ).length;
+  const rolesById = useMemo(() => {
+    const m = {}; roles.forEach((r) => { m[r.id] = r; }); return m;
+  }, [roles]);
 
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
+    const q = query.trim().toLowerCase();
     return members.filter((m) => {
-      const matchesSearch =
-        !q ||
-        [m.name, m.phone, m.email, m.profession, roleName(m)].some((f) =>
-          (f || "").toLowerCase().includes(q)
-        );
-      const matchesStatus = statusFilter === "all" || m.status === statusFilter;
-      const matchesRole =
-        roleFilter === "all" || m.role_id === roleFilter;
-      return matchesSearch && matchesStatus && matchesRole;
+      if (roleFilter !== "all") {
+        if (roleFilter === "none") {
+          if (m.role_id) return false;
+        } else if (m.role_id !== roleFilter) return false;
+      }
+      if (statusFilter !== "all" && m.status !== statusFilter) return false;
+      if (q) {
+        const hay = `${m.name} ${m.phone || ""} ${m.profession || ""} ${m.email || ""}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
     });
-  }, [members, roles, search, statusFilter, roleFilter]);
+  }, [members, query, roleFilter, statusFilter]);
 
-  // Consolidated person-wise statements across team + service assignments.
-  // Respects the selected Financial Year for both assignments and transactions.
   const personStatements = useMemo(
-    () =>
-      computePersonStatements({
-        members: filtered,
-        teamAssignments: assignments,
-        serviceAssignments,
-        transactions,
-        events,
-        financialYears,
-        selectedFYId,
-        ownerName,
-      }),
-    [filtered, assignments, serviceAssignments, transactions, events, financialYears, selectedFYId, ownerName]
+    () => buildPersonStatements({
+      members,
+      teamAssignments: assignments,
+      serviceAssignments,
+      transactions: [...transactions, ...expenseTransactions],
+      eventsById
+    }),
+    [members, assignments, serviceAssignments, transactions, expenseTransactions, eventsById]
   );
 
-  // Sort statements: those with financial activity first, then by name
-  const sortedStatements = useMemo(
-    () =>
-      [...personStatements].sort((a, b) => {
-        const aActive = a.totalObligation > 0 || a.totalPaid > 0 ? 1 : 0;
-        const bActive = b.totalObligation > 0 || b.totalPaid > 0 ? 1 : 0;
-        if (aActive !== bActive) return bActive - aActive;
-        return a.member.name.localeCompare(b.member.name);
-      }),
-    [personStatements]
-  );
+  const openNew = () => { setEditing(null); setShowForm(true); };
+  const openEdit = (m) => { setEditing(m); setShowForm(true); };
+  const openMember = (m) => navigate(`/team/${m.id}`);
 
-  const openAdd = () => {
-    setEditingMember(null);
-    setModalOpen(true);
-  };
-
-  const openEdit = (m) => {
-    setEditingMember(m);
-    setModalOpen(true);
-  };
-
-  const handleSave = async (data) => {
-    if (editingMember) {
-      try {
-        await updateMember(editingMember.id, data);
-        toast({ title: "Team member updated" });
-      } catch (e) {
-        toast({ title: "Cannot update team member", description: e?.message, variant: "destructive" });
-        throw e;
-      }
-    } else {
-      try {
-        await createMember(data);
-        toast({ title: "Team member added" });
-      } catch (e) {
-        toast({ title: "Cannot add team member", description: e?.message, variant: "destructive" });
-        throw e;
-      }
+  const toggleArchive = async (m) => {
+    const next = m.status === "active" ? "inactive" : "active";
+    try {
+      await base44.entities.TeamMember.update(m.id, { status: next });
+      toast({ title: next === "inactive" ? "Member set inactive" : "Member reactivated" });
+      invalidate();
+    } catch (e) {
+      toast({ title: "Failed to update member", description: e?.message, variant: "destructive" });
     }
   };
 
+  const doDelete = async (m) => {
+    try {
+      const count = assignments.filter(
+        (a) => a.team_member_id === m.id && a.assignment_status !== "removed"
+      ).length;
+      if (count > 0) {
+        // Soft-archive instead of hard delete to preserve history.
+        await base44.entities.TeamMember.update(m.id, { status: "inactive" });
+        toast({ title: "Member archived", description: "Has existing assignments — set inactive to preserve history." });
+      } else {
+        await base44.entities.TeamMember.delete(m.id);
+        toast({ title: "Member deleted" });
+      }
+      setConfirmDelete(null);
+      invalidate();
+    } catch (e) {
+      toast({ title: "Failed to delete member", description: e?.message, variant: "destructive" });
+    }
+  };
+
+  const activeCount = members.filter((m) => m.status === "active").length;
+
   return (
-    <div className="flex flex-col gap-6">
-      <PageHeader
-        title="Team"
-        description="Manage your team members, roles, rates and availability."
-        actions={
-          <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => { setEditingRole(null); setRoleModalOpen(true); }}>
-              <Settings2 className="h-4 w-4" /> Manage Roles
-            </Button>
-            <Button variant="outline" onClick={() => { exportTeamCSV(filtered, roles); toast({ title: "Team exported" }); }}>
-              <Download className="h-4 w-4" /> Export
-            </Button>
-            <Button onClick={openAdd} disabled={teamLimitReached}>
-              <Plus className="h-4 w-4" /> Add Team Member
-            </Button>
-          </div>
-        }
-      />
+    <div className="p-4 sm:p-6 space-y-5 max-w-[1400px] mx-auto">
+      <PageHeader eyebrow="People" title="Team" subtitle="Manage your roster, roles, and availability.">
+        <Button variant="outline" size="sm" onClick={() => exportTeamCsv(filtered, rolesById)} disabled={filtered.length === 0}>
+          <Download className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">Export</span>
+        </Button>
+        <Button variant="dark" onClick={openNew}>
+          <Plus className="w-4 h-4" /> Add Team Member
+        </Button>
+      </PageHeader>
 
-      {teamLimitReached && (
-        <PlanLimitReached
-          resource="team member"
-          currentUsage={usage.team_members}
-          limit={teamLimit}
-        />
-      )}
-
-      <Card>
-        <CardBody className="flex flex-col gap-3 sm:flex-row sm:items-end">
-          <SearchInput
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name, phone, role…"
-            className="flex-1"
-          />
-          <FilterControl
-            label="Status"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            options={["all", "Active", "Inactive"]}
-            optionLabels={["All", "Active", "Inactive"]}
-          />
-          <FilterControl
-            label="Role"
-            value={roleFilter}
-            onChange={(e) => setRoleFilter(e.target.value)}
-            options={roles.map((r) => r.id)}
-            optionLabels={roles.map((r) => r.name)}
-          />
-        </CardBody>
-      </Card>
-
-      {/* View toggle + FY selector for statements */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="inline-flex rounded-lg border border-border bg-card p-1">
-          <button
-            onClick={() => setView("cards")}
-            className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
-              view === "cards"
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <Users className="mr-1.5 inline h-4 w-4" /> Members
-          </button>
-          <button
-            onClick={() => setView("statements")}
-            className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
-              view === "statements"
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <FileBarChart className="mr-1.5 inline h-4 w-4" /> Statements
-          </button>
-        </div>
-        {view === "statements" && (
-          <FinancialYearSelector showLabel={false} className="sm:w-48" />
-        )}
+      {/* Stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <StatCard label="Total Members" value={members.length} icon={Users} tone="primary" />
+        <StatCard label="Active" value={activeCount} icon={UserCheck} tone="success" />
+        <StatCard label="Roles" value={roles.filter((r) => r.status === "active").length} icon={Crown} tone="info" />
       </div>
 
-      {loading ? (
-        <Card>
-          <LoadingState label="Loading team…" />
-        </Card>
-      ) : error ? (
-        <Card>
-          <ErrorState message={error} onRetry={refetch} />
-        </Card>
-      ) : view === "statements" ? (
-        sortedStatements.length === 0 ? (
-          <Card>
+      <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-lg w-full sm:w-auto">
+        {["Roster", "Statements", "Availability Calendar"].map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={cn(
+              "px-4 py-1.5 text-sm font-medium rounded-md transition-all whitespace-nowrap flex-1 sm:flex-initial",
+              tab === t
+                ? "bg-card text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            {t}
+          </button>
+        ))}
+      </div>
+
+      {error && (
+        <div className="text-sm text-destructive bg-destructive/5 border border-destructive/20 rounded-md px-3 py-2">
+          {error?.message || "Failed to load team."}
+        </div>
+      )}
+
+      {tab === "Roster" ? (
+        <>
+          {/* Filters */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+            <SearchInput
+              placeholder="Search name, phone, role"
+              className="sm:max-w-xs"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+            <div className="flex items-center gap-2 sm:ml-auto">
+              <Select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)} className="flex-1 min-w-[110px] sm:flex-none">
+                <option value="all">All Roles</option>
+                <option value="none">No Role</option>
+                {roles.filter((r) => r.status === "active").map((r) => (
+                  <option key={r.id} value={r.id}>{r.name}</option>
+                ))}
+              </Select>
+              <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="flex-1 min-w-[110px] sm:flex-none">
+                <option value="all">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </Select>
+            </div>
+          </div>
+
+          {isLoading ? (
+            <CardGridSkeleton count={4} />
+          ) : filtered.length === 0 ? (
+            <Card className="p-0">
+              <EmptyState
+                title={members.length === 0 ? "No team members yet" : "No members match your filters"}
+                description={members.length === 0 ? "Add your first team member to begin scheduling." : "Try adjusting your search or filters."}
+                action={members.length === 0 ? <Button onClick={openNew}><Plus className="w-4 h-4" /> Add Team Member</Button> : null}
+              />
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {filtered.map((m) => (
+                <TeamMemberCard
+                  key={m.id}
+                  member={m}
+                  assignments={assignments}
+                  transactions={transactions}
+                  eventsById={eventsById}
+                  currentUser={user}
+                  currency={currency}
+                  onEdit={openEdit}
+                  onArchive={toggleArchive}
+                  onDelete={(mem) => setConfirmDelete(mem)}
+                  onOpen={openMember}
+                />
+              ))}
+            </div>
+          )}
+
+          {(() => {
+            const limit = plan?.limits?.max_team_members;
+            const hasLimit = limit != null && limit < 999999;
+            if (!hasLimit) return null;
+            return (
+              <div className="flex items-center gap-2 text-sm text-foreground bg-warning/10 border border-warning/20 rounded-lg px-4 py-3">
+                <Crown className="w-4 h-4 text-warning" />
+                Your plan: up to {limit} active team members — {activeCount}/{limit} used. Upgrade for unlimited.
+              </div>
+            );
+          })()}
+        </>
+      ) : tab === "Statements" ? (
+        isLoading ? (
+          <CardGridSkeleton count={6} />
+        ) : personStatements.length === 0 ? (
+          <Card className="p-0">
             <EmptyState
-              title={search || statusFilter !== "all" || roleFilter !== "all" ? "No team members found" : "No team members yet"}
-              description={
-                search || statusFilter !== "all" || roleFilter !== "all"
-                  ? "Try a different search or filter."
-                  : "Add your first team member to begin scheduling."
-              }
-              icon={FileBarChart}
+              title="No statements yet"
+              description="Consolidated person-wise payment statements will appear here once team members or service providers have assignments."
             />
           </Card>
         ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {sortedStatements.map((stmt) => (
-              <PersonStatementCard key={stmt.member.id} statement={stmt} />
-            ))}
+          <>
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <p className="text-sm text-muted-foreground">
+                {personStatements.length} person{personStatements.length !== 1 ? "s" : ""} · consolidated across team & service assignments
+              </p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {personStatements.map((ps) => (
+                <PersonStatementCard key={ps.key} statement={ps} currency={currency} />
+              ))}
+            </div>
+          </>
+        )
+      ) : (
+        isLoading ? (
+          <Skeleton className="h-96 w-full rounded-lg" />
+        ) : (
+          <div className="space-y-4">
+            <div className="flex justify-end">
+              <Button variant="outline" size="sm" onClick={() => { setBlockPreselect({ memberId: null, date: null }); setShowBlock(true); }}>
+                <Ban className="w-3.5 h-3.5" /> Block Dates
+              </Button>
+            </div>
+            <AvailabilityCalendar
+              members={members}
+              assignments={assignments}
+              eventsById={eventsById}
+              blockDates={blockDates}
+              serviceAssignments={serviceAssignments}
+              dayAssignments={dayAssignments}
+              services={services}
+              currency={currency}
+              onEventClick={(ev) => navigate(`/events/${ev.id}`)}
+              onBlockDate={(date) => { setBlockPreselect({ memberId: null, date }); setShowBlock(true); }}
+            />
+            <UpcomingBookingsList
+              members={members}
+              assignments={assignments}
+              eventsById={eventsById}
+              serviceAssignments={serviceAssignments}
+              dayAssignments={dayAssignments}
+              services={services}
+              onEventClick={(ev) => navigate(`/events/${ev.id}`)}
+            />
           </div>
         )
-      ) : filtered.length === 0 ? (
-        <Card>
-          <EmptyState
-            title={search || statusFilter !== "all" || roleFilter !== "all" ? "No team members found" : "No team members yet"}
-            description={
-              search || statusFilter !== "all" || roleFilter !== "all"
-                ? "Try a different search or filter."
-                : "Add your first team member to begin scheduling."
-            }
-            icon={Users}
-            action={
-              !search && statusFilter === "all" && roleFilter === "all" ? (
-                <Button onClick={openAdd}>
-                  <Plus className="h-4 w-4" /> Add Member
-                </Button>
-              ) : null
-            }
-          />
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((m) => (
-            <TeamMemberCard
-              key={m.id}
-              member={m}
-              roleName={roleName(m)}
-              assignmentCount={assignmentCount(m.id)}
-              onEdit={() => openEdit(m)}
-            />
-          ))}
-        </div>
       )}
 
-      <AvailabilityChecker
-        members={members}
-        assignments={assignments}
-        events={events}
+      <TeamMemberForm
+        open={showForm}
+        onClose={() => setShowForm(false)}
+        onSaved={invalidate}
+        member={editing}
+        workspaceId={workspaceId}
       />
 
-      <TeamMemberForm
-        open={modalOpen}
-        onClose={() => { setModalOpen(false); setEditingMember(null); }}
-        member={editingMember}
-        roles={roles}
-        onSave={handleSave}
+      <BlockDateDialog
+        open={showBlock}
+        onClose={() => setShowBlock(false)}
+        onSaved={invalidate}
+        workspaceId={workspaceId}
+        members={members}
+        preselectedMemberId={blockPreselect.memberId}
+        preselectedDate={blockPreselect.date}
       />
+
+      {/* Delete confirmation */}
+      {confirmDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setConfirmDelete(null)}>
+          <Card className="max-w-sm w-full p-5" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="w-5 h-5 text-destructive mt-0.5 shrink-0" />
+              <div>
+                <h3 className="text-sm font-semibold">Delete {confirmDelete.name}?</h3>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {assignments.filter((a) => a.team_member_id === confirmDelete.id && a.assignment_status !== "removed").length > 0
+                    ? "This member has existing work assignments and will be set to Inactive to preserve history."
+                    : "This will permanently remove the team member. This cannot be undone."}
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-4">
+              <Button variant="outline" size="sm" onClick={() => setConfirmDelete(null)}>Cancel</Button>
+              <Button variant="destructive" size="sm" onClick={() => doDelete(confirmDelete)}>Confirm</Button>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

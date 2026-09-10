@@ -2,94 +2,43 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
-import {
-  Camera,
-  Check,
-  Loader2,
-  ArrowRight,
-  ArrowLeft,
-  Building2,
-  MapPin,
-  Receipt,
-  PartyPopper,
-  Ruler,
-  Briefcase,
-} from "lucide-react";
+import Logo from "@/components/common/Logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { BUSINESS_CATEGORIES, CATEGORY_LABELS } from "@/lib/BusinessTerminology";
-import { seedWorkspacePresets } from "@/utils/presetSeeding";
+import { Loader2, Check, Building2, MapPin, Receipt, PartyPopper, Camera, PartyPopper as PartyIcon, Briefcase, Compass } from "lucide-react";
+import { BUSINESS_CATEGORIES, BUSINESS_CATEGORY_OPTIONS, categoryLabel } from "@/lib/businessTerminology";
+import { getIndustryPresets } from "@/constants/industryPresets";
+import { DEFAULT_EXPENSE_CATEGORIES } from "@/constants/financeConfig";
+import { ensureDefaultFY } from "@/lib/financialYearService";
 
-const CURRENCIES = [
-  { v: "INR", l: "INR (₹)" },
-  { v: "USD", l: "USD ($)" },
-  { v: "EUR", l: "EUR (€)" },
-  { v: "AED", l: "AED (د.إ)" },
-  { v: "GBP", l: "GBP (£)" },
-];
-const TIMEZONES = [
-  { v: "Asia/Kolkata", l: "Asia/Kolkata (IST)" },
-  { v: "Asia/Dubai", l: "Asia/Dubai (GST)" },
-  { v: "UTC", l: "UTC" },
-  { v: "America/New_York", l: "America/New_York (EST)" },
-  { v: "Europe/London", l: "Europe/London (GMT)" },
-];
-const COUNTRIES = ["India", "United States", "United Kingdom", "United Arab Emirates", "Singapore", "Other"];
-const GST_RATES = [0, 5, 12, 18, 28];
+const currencies = ["INR (₹)", "USD ($)", "EUR (€)", "AED (د.إ)"];
+const timezones = ["Asia/Kolkata", "UTC", "Asia/Dubai", "America/New_York"];
+const gstRates = [0, 5, 12, 18, 28];
 
-const STEPS = [
-  { key: "category", label: "Category", icon: Building2 },
-  { key: "business", label: "Business", icon: Briefcase },
-  { key: "location", label: "Location", icon: MapPin },
-  { key: "gst", label: "GST", icon: Receipt },
-];
-
-const CATEGORY_OPTIONS = [
-  {
-    value: BUSINESS_CATEGORIES.PHOTOGRAPHY,
-    label: "Photography",
-    description: "Photographers, videographers, wedding films",
-    icon: Camera,
-  },
-  {
-    value: BUSINESS_CATEGORIES.EVENT_MANAGEMENT,
-    label: "Event Management",
-    description: "Event planners, decorators, production houses",
-    icon: PartyPopper,
-  },
-  {
-    value: BUSINESS_CATEGORIES.ARCHITECTURE,
-    label: "Architecture",
-    description: "Architects, interior designers, contractors",
-    icon: Ruler,
-  },
-  {
-    value: BUSINESS_CATEGORIES.OTHER,
-    label: "Other Service Business",
-    description: "Consulting, agencies, freelance, custom",
-    icon: Briefcase,
-  },
-];
-
-const fieldClass =
-  "h-11 w-full rounded-lg border border-input bg-card px-3 text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30";
+const CATEGORY_ICONS = {
+  PHOTOGRAPHY: Camera,
+  EVENT_MANAGEMENT: PartyIcon,
+  ARCHITECTURE: Building2,
+  OTHER: Briefcase
+};
 
 export default function Onboarding() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [step, setStep] = useState(0);
+
+  const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
   const [form, setForm] = useState({
+    your_name: user?.full_name || "",
+    name: "",
     business_category: "",
     custom_business_type: "",
-    owner_name: user?.full_name || "",
-    name: "",
-    email: user?.email || "",
+    business_type: "",
     phone: "",
-    address: "",
+    email: user?.email || "",
     city: "",
     state: "",
     country: "India",
@@ -100,96 +49,65 @@ export default function Onboarding() {
     gst_business_name: "",
     gst_billing_address: "",
     gst_state: "",
-    default_gst_rate: 18,
+    default_gst_rate: 18
   });
 
-  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+  const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
 
-  const canNext = () => {
-    if (step === 0) return !!form.business_category;
-    if (step === 1) {
-      if (!form.owner_name.trim()) return false;
-      if (!form.name.trim()) return false;
-      if (form.business_category === BUSINESS_CATEGORIES.OTHER && !form.custom_business_type.trim()) return false;
-      return true;
-    }
-    if (step === 2) return form.city.trim() && form.country;
-    if (step === 3) {
-      if (!form.gst_enabled) return true;
-      const gstinValid = /^[A-Z0-9]{15}$/.test(form.gstin.trim());
-      return !!(gstinValid && form.gst_business_name.trim() && form.gst_billing_address.trim() && form.gst_state.trim());
-    }
-    return true;
-  };
-
-  const handleCreate = async () => {
-    setError("");
+  const createWorkspace = async () => {
     setSaving(true);
+    setError("");
     try {
-      const ws = await base44.entities.Workspace.create({
-        name: form.name.trim(),
-        business_category: form.business_category,
-        custom_business_type: form.business_category === BUSINESS_CATEGORIES.OTHER ? form.custom_business_type.trim() : "",
-        business_type: form.business_category === BUSINESS_CATEGORIES.OTHER
-          ? form.custom_business_type.trim()
-          : CATEGORY_LABELS[form.business_category],
+      const category = form.business_category || BUSINESS_CATEGORIES.OTHER;
+      const businessType = category === BUSINESS_CATEGORIES.OTHER
+        ? (form.custom_business_type || "Other")
+        : categoryLabel(category);
+      // Save the user's personal name on their profile.
+      if (form.your_name.trim() && form.your_name.trim() !== user?.full_name) {
+        try { await base44.auth.updateMe({ full_name: form.your_name.trim() }); } catch (e) { /* non-fatal */ }
+      }
+      const workspace = await base44.entities.Workspace.create({
+        ...form,
+        business_category: category,
+        business_type: businessType,
         owner_user_id: user.id,
-        owner_name: form.owner_name.trim() || user.full_name || form.name.trim(),
-        is_active: true,
-        onboarding_completed: true,
-        email: form.email.trim(),
-        phone: form.phone.trim(),
-        logo: "",
-        address: form.address.trim(),
-        city: form.city.trim(),
-        state: form.state.trim(),
-        country: form.country,
-        currency: form.currency,
-        timezone: form.timezone,
         plan_type: "free",
-        plan_status: "active",
-        member_user_ids: [user.id],
-        gst_enabled: form.gst_enabled,
-        gstin: form.gst_enabled ? form.gstin.trim() : "",
-        gst_business_name: form.gst_enabled ? form.gst_business_name.trim() : "",
-        gst_billing_address: form.gst_enabled ? form.gst_billing_address.trim() : "",
-        gst_state: form.gst_enabled ? form.gst_state.trim() : "",
-        default_gst_rate: form.gst_enabled ? Number(form.default_gst_rate) : null,
+        plan_status: "active"
       });
       await base44.entities.WorkspaceMember.create({
-        workspace_id: ws.id,
-        workspace_owner_id: user.id,
+        workspace_id: workspace.id,
         user_id: user.id,
         role: "owner",
-        status: "active",
-        joined_at: new Date().toISOString(),
+        status: "active"
       });
-      // Initialize the default Free subscription for this workspace
+      // Seed industry-specific team roles for the new workspace.
       try {
-        await base44.functions.invoke("initializeFreePlan", { workspace_id: ws.id });
-      } catch {
-        /* non-blocking — PlanContext defaults to Free if no subscription exists */
-      }
-      // Initialize the current Financial Year for this workspace
+        const presets = getIndustryPresets(category);
+        if (presets.roles.length > 0) {
+          await base44.entities.TeamRole.bulkCreate(
+            presets.roles.map((r) => ({ ...r, workspace_id: workspace.id, status: "active" }))
+          );
+        }
+      } catch (e) { /* non-fatal */ }
+      // Seed default expense categories for the new workspace.
       try {
-        await base44.functions.invoke("initializeFinancialYear", { workspace_id: ws.id });
-      } catch {
-        /* non-blocking — FinancialYearProvider will retry on first load */
-      }
-      // Seed industry-specific presets (team roles, services, expense categories)
+        await base44.entities.ExpenseCategory.bulkCreate(
+          DEFAULT_EXPENSE_CATEGORIES.map((n) => ({ workspace_id: workspace.id, name: n, status: "active" }))
+        );
+      } catch (e) { /* non-fatal */ }
+      // Auto-create the current applicable Financial Year for the new workspace.
       try {
-        await seedWorkspacePresets(ws.id, form.business_category);
-      } catch {
-        /* non-blocking — user can configure manually */
-      }
-      const updateData = { active_workspace_id: ws.id, workspace_ids: [ws.id] };
-      if (form.phone.trim()) updateData.phone = form.phone.trim();
+        await ensureDefaultFY(workspace.id);
+      } catch (e) { /* non-fatal */ }
+      // Initialize Free subscription + seed category-specific services (via backend, enforces RLS).
       try {
-        await base44.auth.updateMe(updateData);
-      } catch {
-        /* non-blocking */
-      }
-      setStep("success");
+        const presets = getIndustryPresets(category);
+        await base44.functions.invoke("initWorkspaceSubscription", {
+          workspace_id: workspace.id,
+          default_services: presets.services
+        });
+      } catch (e) { /* non-fatal */ }
+      setStep(5);
     } catch (err) {
       setError(err.message || "Failed to create workspace. Please try again.");
     } finally {
@@ -197,378 +115,244 @@ export default function Onboarding() {
     }
   };
 
-  const enterApp = () => navigate("/dashboard", { replace: true });
+  const enterApp = () => navigate("/events");
 
-  if (step === "success") {
-    return (
-      <div className="flex min-h-dvh items-center justify-center bg-background px-4">
-        <div className="w-full max-w-md text-center">
-          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-success/15 text-success">
-            <Check className="h-8 w-8" />
-          </div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Workspace created</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {form.name} is ready on the Free plan. Welcome to Kramashah.
-          </p>
-          <Button className="mt-8 h-12 w-full text-base font-medium" onClick={enterApp}>
-            Enter Kramashah <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  const StepIcon = STEPS[step]?.icon;
+  const canNext1 = !!form.business_category && (form.business_category !== BUSINESS_CATEGORIES.OTHER || form.custom_business_type.trim());
+  const canNext2 = form.name.trim() && form.your_name.trim();
+  const canNext3 = form.city.trim() && form.country;
 
   return (
-    <div className="min-h-dvh bg-background px-4 py-8">
-      <div className="mx-auto w-full max-w-xl">
-        {/* Brand */}
-        <div className="mb-8 flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
-            <Camera className="h-5 w-5" />
-          </div>
-          <span className="text-lg font-bold tracking-tight text-foreground">Kramashah</span>
+    <div className="min-h-dvh flex items-center justify-center bg-background px-4 py-8">
+      <div className="w-full max-w-lg">
+        {/* Logo */}
+        <div className="flex justify-center mb-6">
+          <Logo size={48} className="rounded-xl bg-white shadow-sm" />
         </div>
 
-        {/* Step indicator */}
-        <div className="mb-6 flex items-center justify-between">
-          {STEPS.map((s, i) => {
-            const Icon = s.icon;
-            const done = step === "review" || step > i;
-            const active = step === i;
-            return (
-              <div key={s.key} className="flex flex-1 items-center">
-                <div className="flex items-center gap-2">
-                  <div
-                    className={`flex h-9 w-9 items-center justify-center rounded-full border text-sm font-semibold transition-colors ${
-                      active
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : done
-                        ? "border-success bg-success/15 text-success"
-                        : "border-border bg-card text-muted-foreground"
-                    }`}
-                  >
-                    {done ? <Check className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
-                  </div>
-                  <span className={`hidden text-xs font-medium sm:block ${active ? "text-foreground" : "text-muted-foreground"}`}>
-                    {s.label}
-                  </span>
-                </div>
-                {i < STEPS.length - 1 && <div className={`mx-2 h-px flex-1 ${done ? "bg-success" : "bg-border"}`} />}
+        {/* Stepper */}
+        <div className="flex items-center justify-between mb-8">
+          {[1, 2, 3, 4].map((s) => (
+            <div key={s} className="flex items-center flex-1 last:flex-none">
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                  step >= s ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                }`}
+              >
+                {step > s ? <Check className="w-4 h-4" /> : s}
               </div>
-            );
-          })}
+              {s < 4 && (
+                <div className={`h-0.5 flex-1 mx-2 ${step > s ? "bg-primary" : "bg-muted"}`} />
+              )}
+            </div>
+          ))}
         </div>
 
-        <div className="rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
+        <div className="bg-card rounded-2xl shadow-sm border border-border p-6 sm:p-8">
           {error && (
-            <div className="mb-5 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">{error}</div>
+            <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">{error}</div>
           )}
 
-          {/* Step 0: Business Category Selection */}
-          {step === 0 && (
-            <div className="space-y-4">
-              <div>
-                <h2 className="text-lg font-semibold text-foreground">What type of business do you run?</h2>
-                <p className="text-sm text-muted-foreground">This sets up your workspace terminology and starter presets.</p>
-              </div>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {CATEGORY_OPTIONS.map((opt) => {
-                  const Icon = opt.icon;
+          {step === 1 && (
+            <StepShell icon={Compass} title="What type of business do you run?" subtitle="Choose your industry — you can change this later.">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {BUSINESS_CATEGORY_OPTIONS.map((opt) => {
+                  const Icon = CATEGORY_ICONS[opt.value];
                   const selected = form.business_category === opt.value;
                   return (
                     <button
                       key={opt.value}
                       type="button"
                       onClick={() => set("business_category", opt.value)}
-                      className={`flex flex-col items-start gap-2 rounded-xl border p-4 text-left transition-all ${
+                      className={`text-left p-4 rounded-xl border-2 transition-all ${
                         selected
-                          ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                          : "border-border bg-card hover:border-primary/40 hover:bg-muted/30"
+                          ? "border-primary bg-primary/5"
+                          : "border-border hover:border-primary/40 hover:bg-muted/40"
                       }`}
                     >
-                      <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${selected ? "bg-primary text-primary-foreground" : "bg-accent text-accent-foreground"}`}>
-                        <Icon className="h-5 w-5" />
+                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center mb-2 ${selected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
+                        <Icon className="w-4.5 h-4.5" />
                       </div>
-                      <div>
-                        <p className="text-sm font-semibold text-foreground">{opt.label}</p>
-                        <p className="text-xs text-muted-foreground">{opt.description}</p>
-                      </div>
-                      {selected && (
-                        <div className="absolute top-3 right-3">
-                          <Check className="h-4 w-4 text-primary" />
-                        </div>
-                      )}
+                      <div className="text-sm font-semibold text-foreground">{opt.label}</div>
+                      <div className="text-xs text-muted-foreground mt-0.5 leading-snug">{opt.description}</div>
                     </button>
                   );
                 })}
               </div>
-            </div>
-          )}
 
-          {/* Step 1: Business Details */}
-          {step === 1 && (
-            <div className="space-y-4">
-              <div>
-                <h2 className="text-lg font-semibold text-foreground">Tell us about your business</h2>
-                <p className="text-sm text-muted-foreground">This becomes your workspace name in Kramashah.</p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="owner_name">Your Name</Label>
-                <Input
-                  id="owner_name"
-                  value={form.owner_name}
-                  onChange={(e) => set("owner_name", e.target.value)}
-                  placeholder="Krishna Shah"
-                  autoFocus
-                />
-              </div>
               {form.business_category === BUSINESS_CATEGORIES.OTHER && (
-                <div className="space-y-2">
-                  <Label htmlFor="custom_business_type">Business Type / Industry Name</Label>
+                <div className="space-y-1.5 animate-fade-in">
+                  <Label>Business Type / Industry Name <span className="text-destructive">*</span></Label>
                   <Input
-                    id="custom_business_type"
                     value={form.custom_business_type}
                     onChange={(e) => set("custom_business_type", e.target.value)}
                     placeholder="e.g. Interior Design, Consulting, Production House"
                     autoFocus
                   />
-                  <p className="text-xs text-muted-foreground">Required for Other Service Business.</p>
+                  <p className="text-xs text-muted-foreground">Tell us what you do — this customises your workspace.</p>
                 </div>
               )}
-              <div className="space-y-2">
-                <Label htmlFor="name">Business / Workspace Name</Label>
-                <Input
-                  id="name"
-                  value={form.name}
-                  onChange={(e) => set("name", e.target.value)}
-                  placeholder="Krishna Shah Photography"
-                  autoFocus={form.business_category !== BUSINESS_CATEGORIES.OTHER}
-                />
-              </div>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Contact Email</Label>
-                  <Input id="email" type="email" value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="studio@example.com" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone</Label>
-                  <Input id="phone" type="tel" value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="+91 98200 11223" />
-                </div>
-              </div>
-            </div>
+
+              <Button className="w-full h-12 mt-2" disabled={!canNext1} onClick={() => setStep(2)}>
+                Continue
+              </Button>
+            </StepShell>
           )}
 
-          {/* Step 2: Location */}
           {step === 2 && (
-            <div className="space-y-4">
-              <div>
-                <h2 className="text-lg font-semibold text-foreground">Location & preferences</h2>
-                <p className="text-sm text-muted-foreground">Used for currency, dates, and quotations.</p>
+            <StepShell icon={Building2} title="Business Details" subtitle="Tell us about your business.">
+              <Field label="Your Name *">
+                <Input value={form.your_name} onChange={(e) => set("your_name", e.target.value)} placeholder="Krishna Shah" autoFocus />
+              </Field>
+              <Field label="Business / Workspace Name *">
+                <Input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="Krishna Shah Photography" />
+              </Field>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Field label="Phone">
+                  <Input value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="+91…" />
+                </Field>
+                <Field label="Email">
+                  <Input value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="you@example.com" />
+                </Field>
               </div>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="city">City</Label>
-                  <Input id="city" value={form.city} onChange={(e) => set("city", e.target.value)} placeholder="Mumbai" autoFocus />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="state">State</Label>
-                  <Input id="state" value={form.state} onChange={(e) => set("state", e.target.value)} placeholder="Maharashtra" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="country">Country</Label>
-                  <select id="country" value={form.country} onChange={(e) => set("country", e.target.value)} className={fieldClass}>
-                    {COUNTRIES.map((c) => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="currency">Currency</Label>
-                  <select id="currency" value={form.currency} onChange={(e) => set("currency", e.target.value)} className={fieldClass}>
-                    {CURRENCIES.map((c) => (
-                      <option key={c.v} value={c.v}>{c.l}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-2 sm:col-span-2">
-                  <Label htmlFor="timezone">Timezone</Label>
-                  <select id="timezone" value={form.timezone} onChange={(e) => set("timezone", e.target.value)} className={fieldClass}>
-                    {TIMEZONES.map((t) => (
-                      <option key={t.v} value={t.v}>{t.l}</option>
-                    ))}
-                  </select>
-                </div>
+              <div className="flex gap-2 mt-2">
+                <Button variant="outline" className="flex-1 h-12" onClick={() => setStep(1)}>Back</Button>
+                <Button className="flex-1 h-12" disabled={!canNext2} onClick={() => setStep(3)}>Continue</Button>
               </div>
-            </div>
+            </StepShell>
           )}
 
-          {/* Step 3: GST */}
           {step === 3 && (
-            <div className="space-y-4">
-              <div>
-                <h2 className="text-lg font-semibold text-foreground">GST registration</h2>
-                <p className="text-sm text-muted-foreground">You can change this later in Preferences.</p>
+            <StepShell icon={MapPin} title="Location & Preferences" subtitle="Where is your business based?">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Field label="City *">
+                  <Input value={form.city} onChange={(e) => set("city", e.target.value)} placeholder="Mumbai" autoFocus />
+                </Field>
+                <Field label="State">
+                  <Input value={form.state} onChange={(e) => set("state", e.target.value)} placeholder="Maharashtra" />
+                </Field>
+                <Field label="Country *">
+                  <Input value={form.country} onChange={(e) => set("country", e.target.value)} placeholder="India" />
+                </Field>
+                <Field label="Currency">
+                  <select
+                    value={form.currency}
+                    onChange={(e) => set("currency", e.target.value)}
+                    className="w-full h-12 px-3 bg-card border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-ring/40"
+                  >
+                    {currencies.map((c) => <option key={c} value={c.split(" ")[0]}>{c}</option>)}
+                  </select>
+                </Field>
+                <Field label="Timezone" className="sm:col-span-2">
+                  <select
+                    value={form.timezone}
+                    onChange={(e) => set("timezone", e.target.value)}
+                    className="w-full h-12 px-3 bg-card border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-ring/40"
+                  >
+                    {timezones.map((t) => <option key={t}>{t}</option>)}
+                  </select>
+                </Field>
               </div>
+              <div className="flex gap-2 mt-2">
+                <Button variant="outline" className="flex-1 h-12" onClick={() => setStep(2)}>Back</Button>
+                <Button className="flex-1 h-12" disabled={!canNext3} onClick={() => setStep(4)}>Continue</Button>
+              </div>
+            </StepShell>
+          )}
+
+          {step === 4 && (
+            <StepShell icon={Receipt} title="GST Registration" subtitle="Is your business GST registered?">
               <div className="grid grid-cols-2 gap-3">
                 <button
-                  type="button"
                   onClick={() => set("gst_enabled", false)}
-                  className={`h-12 rounded-lg border text-sm font-medium transition-colors ${
-                    !form.gst_enabled ? "border-primary bg-primary/10 text-primary" : "border-border bg-card text-muted-foreground hover:bg-muted"
-                  }`}
+                  className={`h-12 rounded-md border text-sm font-medium ${!form.gst_enabled ? "border-primary bg-primary/5 text-foreground" : "border-border text-muted-foreground"}`}
                 >
-                  No, skip
+                  No
                 </button>
                 <button
-                  type="button"
                   onClick={() => set("gst_enabled", true)}
-                  className={`h-12 rounded-lg border text-sm font-medium transition-colors ${
-                    form.gst_enabled ? "border-primary bg-primary/10 text-primary" : "border-border bg-card text-muted-foreground hover:bg-muted"
-                  }`}
+                  className={`h-12 rounded-md border text-sm font-medium ${form.gst_enabled ? "border-primary bg-primary/5 text-foreground" : "border-border text-muted-foreground"}`}
                 >
-                  Yes, GST registered
+                  Yes
                 </button>
               </div>
 
               {form.gst_enabled && (
-                <div className="space-y-4 rounded-lg border border-border bg-muted/40 p-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="gstin">GSTIN</Label>
-                    <Input id="gstin" value={form.gstin} onChange={(e) => set("gstin", e.target.value.toUpperCase())} placeholder="22AAAAA0000A1Z5" maxLength={15} />
-                    {form.gstin && !/^[A-Z0-9]{15}$/.test(form.gstin.trim()) && (
-                      <p className="text-xs text-destructive">GSTIN should be 15 alphanumeric characters.</p>
-                    )}
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="gst_business_name">Registered Business Name</Label>
-                    <Input id="gst_business_name" value={form.gst_business_name} onChange={(e) => set("gst_business_name", e.target.value)} placeholder="Krishna Shah Photography Pvt Ltd" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="gst_billing_address">GST Billing Address</Label>
-                    <textarea
-                      id="gst_billing_address"
-                      value={form.gst_billing_address}
-                      onChange={(e) => set("gst_billing_address", e.target.value)}
-                      placeholder="123 Business Park, Mumbai"
-                      rows={2}
-                      className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30"
-                    />
-                  </div>
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="gst_state">State</Label>
-                      <Input id="gst_state" value={form.gst_state} onChange={(e) => set("gst_state", e.target.value)} placeholder="Maharashtra" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="default_gst_rate">Default GST Rate (%)</Label>
-                      <select id="default_gst_rate" value={form.default_gst_rate} onChange={(e) => set("default_gst_rate", Number(e.target.value))} className={fieldClass}>
-                        {GST_RATES.map((r) => (
-                          <option key={r} value={r}>{r}%</option>
-                        ))}
+                <div className="space-y-4 mt-4 animate-fade-in">
+                  <Field label="GSTIN *">
+                    <Input value={form.gstin} onChange={(e) => set("gstin", e.target.value)} placeholder="22AAAAA0000A1Z5" />
+                  </Field>
+                  <Field label="Registered Business Name *">
+                    <Input value={form.gst_business_name} onChange={(e) => set("gst_business_name", e.target.value)} placeholder="Krishna Shah Photography Pvt Ltd" />
+                  </Field>
+                  <Field label="GST Billing Address *">
+                    <Input value={form.gst_billing_address} onChange={(e) => set("gst_billing_address", e.target.value)} placeholder="Address" />
+                  </Field>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Field label="GST State *">
+                      <Input value={form.gst_state} onChange={(e) => set("gst_state", e.target.value)} placeholder="Maharashtra" />
+                    </Field>
+                    <Field label="Default GST Rate (%)">
+                      <select
+                        value={form.default_gst_rate}
+                        onChange={(e) => set("default_gst_rate", Number(e.target.value))}
+                        className="w-full h-12 px-3 bg-card border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-ring/40"
+                      >
+                        {gstRates.map((r) => <option key={r} value={r}>{r}%</option>)}
                       </select>
-                    </div>
+                    </Field>
                   </div>
                 </div>
               )}
-            </div>
+
+              <div className="flex gap-2 mt-2">
+                <Button variant="outline" className="flex-1 h-12" onClick={() => setStep(3)}>Back</Button>
+                <Button className="flex-1 h-12" disabled={saving || (form.gst_enabled && (!form.gstin || !form.gst_business_name || !form.gst_billing_address || !form.gst_state))} onClick={createWorkspace}>
+                  {saving ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />Creating…</>) : "Create Workspace"}
+                </Button>
+              </div>
+            </StepShell>
           )}
 
-          {/* Review state */}
-          {step === "review" && (
-            <div className="space-y-5">
-              <div>
-                <h2 className="text-lg font-semibold text-foreground">Review your workspace</h2>
-                <p className="text-sm text-muted-foreground">Confirm the details below before creating your workspace.</p>
+          {step === 5 && (
+            <div className="text-center py-6">
+              <div className="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-4">
+                <PartyPopper className="w-8 h-8 text-success" />
               </div>
-
-              <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-4">
-                <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                  <Briefcase className="h-4 w-4 text-primary" /> Business
-                </div>
-                <dl className="grid grid-cols-1 gap-x-4 gap-y-2 text-sm sm:grid-cols-2">
-                  <div><dt className="text-muted-foreground">Category</dt><dd className="font-medium text-foreground">{CATEGORY_LABELS[form.business_category]}</dd></div>
-                  {form.business_category === BUSINESS_CATEGORIES.OTHER && form.custom_business_type && (
-                    <div><dt className="text-muted-foreground">Industry</dt><dd className="font-medium text-foreground">{form.custom_business_type}</dd></div>
-                  )}
-                  <div><dt className="text-muted-foreground">Owner name</dt><dd className="font-medium text-foreground">{form.owner_name}</dd></div>
-                  <div><dt className="text-muted-foreground">Business name</dt><dd className="font-medium text-foreground">{form.name}</dd></div>
-                  {form.phone && <div><dt className="text-muted-foreground">Phone</dt><dd className="font-medium text-foreground">{form.phone}</dd></div>}
-                  {form.email && <div><dt className="text-muted-foreground">Email</dt><dd className="font-medium text-foreground">{form.email}</dd></div>}
-                </dl>
-              </div>
-
-              <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-4">
-                <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                  <MapPin className="h-4 w-4 text-primary" /> Location
-                </div>
-                <dl className="grid grid-cols-1 gap-x-4 gap-y-2 text-sm sm:grid-cols-2">
-                  <div><dt className="text-muted-foreground">City</dt><dd className="font-medium text-foreground">{form.city}</dd></div>
-                  {form.state && <div><dt className="text-muted-foreground">State</dt><dd className="font-medium text-foreground">{form.state}</dd></div>}
-                  <div><dt className="text-muted-foreground">Country</dt><dd className="font-medium text-foreground">{form.country}</dd></div>
-                  <div><dt className="text-muted-foreground">Currency</dt><dd className="font-medium text-foreground">{form.currency}</dd></div>
-                  <div><dt className="text-muted-foreground">Timezone</dt><dd className="font-medium text-foreground">{form.timezone}</dd></div>
-                </dl>
-              </div>
-
-              <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-4">
-                <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                  <Receipt className="h-4 w-4 text-primary" /> GST
-                </div>
-                <dl className="grid grid-cols-1 gap-x-4 gap-y-2 text-sm sm:grid-cols-2">
-                  <div><dt className="text-muted-foreground">GST registered</dt><dd className="font-medium text-foreground">{form.gst_enabled ? "Yes" : "No"}</dd></div>
-                  {form.gst_enabled && (
-                    <>
-                      <div><dt className="text-muted-foreground">GSTIN</dt><dd className="font-medium text-foreground">{form.gstin}</dd></div>
-                      <div><dt className="text-muted-foreground">Registered name</dt><dd className="font-medium text-foreground">{form.gst_business_name}</dd></div>
-                      <div className="sm:col-span-2"><dt className="text-muted-foreground">Billing address</dt><dd className="font-medium text-foreground">{form.gst_billing_address}</dd></div>
-                      <div><dt className="text-muted-foreground">State</dt><dd className="font-medium text-foreground">{form.gst_state}</dd></div>
-                      <div><dt className="text-muted-foreground">Default rate</dt><dd className="font-medium text-foreground">{form.default_gst_rate}%</dd></div>
-                    </>
-                  )}
-                </dl>
-              </div>
+              <h2 className="text-xl font-semibold">Workspace created!</h2>
+              <p className="text-sm text-muted-foreground mt-1 mb-6">
+                {form.name} is ready. You're on the Free plan — welcome to Kramasha.
+              </p>
+              <Button className="w-full h-12" onClick={enterApp}>Enter Kramasha</Button>
             </div>
           )}
-
-          {/* Footer nav */}
-          <div className="mt-6 flex items-center justify-between gap-3">
-            {step === "review" ? (
-              <Button variant="outline" onClick={() => setStep(3)} disabled={saving}>
-                <ArrowLeft className="h-4 w-4" /> Back
-              </Button>
-            ) : step > 0 ? (
-              <Button variant="outline" onClick={() => setStep((s) => Math.max(0, s - 1))} disabled={saving}>
-                <ArrowLeft className="h-4 w-4" /> Back
-              </Button>
-            ) : (
-              <span />
-            )}
-            {step === "review" ? (
-              <Button onClick={handleCreate} disabled={saving}>
-                {saving ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Creating...
-                  </>
-                ) : (
-                  <>
-                    Create Workspace <Check className="h-4 w-4" />
-                  </>
-                )}
-              </Button>
-            ) : step < 3 ? (
-              <Button onClick={() => setStep((s) => s + 1)} disabled={!canNext()}>
-                Continue <ArrowRight className="h-4 w-4" />
-              </Button>
-            ) : (
-              <Button onClick={() => setStep("review")} disabled={!canNext()}>
-                Review & Create <ArrowRight className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function StepShell({ icon: Icon, title, subtitle, children }) {
+  return (
+    <div className="animate-fade-in">
+      <div className="flex items-center gap-3 mb-5">
+        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+          <Icon className="w-5 h-5 text-primary" />
+        </div>
+        <div>
+          <h2 className="text-lg font-semibold">{title}</h2>
+          <p className="text-sm text-muted-foreground">{subtitle}</p>
+        </div>
+      </div>
+      <div className="space-y-4">{children}</div>
+    </div>
+  );
+}
+
+function Field({ label, className, children }) {
+  return (
+    <div className={className}>
+      <Label className="mb-1.5 block">{label}</Label>
+      {children}
     </div>
   );
 }

@@ -1,142 +1,148 @@
-import { useEffect, useMemo, useState } from "react";
-import { Plus, Users, Download } from "lucide-react";
-import PageHeader from "@/components/common/PageHeader";
-import Card, { CardBody } from "@/components/common/Card";
+import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
+import { useWorkspace } from "@/lib/WorkspaceContext";
 import SearchInput from "@/components/common/SearchInput";
 import Button from "@/components/common/Button";
-import EmptyState from "@/components/common/EmptyState";
 import LoadingState from "@/components/common/LoadingState";
-import ErrorState from "@/components/common/ErrorState";
-import ClientCard from "@/components/clients/ClientCard";
+import EmptyState from "@/components/common/EmptyState";
+import { TableSkeleton } from "@/components/common/Skeletons";
 import ClientForm from "@/components/clients/ClientForm";
-import { useClients } from "@/hooks/useClients";
-import { useEvents } from "@/hooks/useEvents";
-import { base44 } from "@/api/base44Client";
-import { useBusinessTerminology } from "@/lib/BusinessTerminology";
-import { exportClientsCSV } from "@/utils/exports";
-import { toast } from "@/components/ui/use-toast";
+import { Plus, Pencil, Eye, Download, Users, CalendarCheck, UserCheck } from "lucide-react";
+import { exportClientsCsv } from "@/lib/exportUtils";
+import StatCard from "@/components/common/StatCard";
+import PageHeader from "@/components/common/PageHeader";
+import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
+import { useT } from "@/hooks/useT";
+import { invalidateEntities } from "@/lib/queryInvalidation";
 
 export default function Clients() {
-  const { clients, loading, error, refetch, createClient } = useClients();
-  const { events } = useEvents();
-  const t = useBusinessTerminology();
-  const [search, setSearch] = useState("");
-  const [modalOpen, setModalOpen] = useState(false);
-  const [transactions, setTransactions] = useState([]);
+  const { workspaceId } = useWorkspace();
+  const navigate = useNavigate();
+  const term = useBusinessTerminology();
+  const t = useT();
 
-  useEffect(() => {
-    base44.entities.FinancialTransaction.filter(
-      { transaction_type: "CLIENT_RECEIPT", status: "ACTIVE" },
-      "-transaction_date",
-      500
-    )
-      .then(setTransactions)
-      .catch(() => setTransactions([]));
-  }, []);
+  const [query, setQuery] = useState("");
+  const [showForm, setShowForm] = useState(false);
+  const [editingClient, setEditingClient] = useState(null);
+  const queryClient = useQueryClient();
 
-  const clientStats = useMemo(() => {
-    const map = new Map();
-    for (const c of clients) {
-      const clientEvents = events.filter((e) => e.client_id === c.id);
-      const eventCount = clientEvents.length;
-      const contractValue = clientEvents
-        .filter((e) => e.status !== "Cancelled")
-        .reduce((s, e) => s + (Number(e.contract_value) || 0), 0);
-      const received = transactions
-        .filter((t) => t.client_id === c.id)
-        .reduce((s, t) => s + (Number(t.amount) || 0), 0);
-      const outstanding = Math.max(0, contractValue - received);
-      map.set(c.id, { eventCount, outstanding });
-    }
-    return map;
-  }, [clients, events, transactions]);
-
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return clients;
-    return clients.filter((c) =>
-      [c.name, c.phone, c.alternate_phone, c.email, c.city, c.state].some((f) =>
-        (f || "").toLowerCase().includes(q)
-      )
-    );
-  }, [clients, search]);
-
-  const handleSave = async (data) => {
-    await createClient(data);
-    toast({ title: "Client created successfully." });
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["clients", workspaceId],
+    queryFn: async () => {
+      const [clList, evList] = await Promise.all([
+        base44.entities.Client.filter({ workspace_id: workspaceId }, "name", 500),
+        base44.entities.Event.filter({ workspace_id: workspaceId }, "-start_date", 500)
+      ]);
+      const counts = {};
+      (evList || []).forEach((e) => { counts[e.client_id] = (counts[e.client_id] || 0) + 1; });
+      return { clients: clList || [], eventCounts: counts };
+    },
+    enabled: !!workspaceId
+  });
+  const clients = data?.clients || [];
+  const eventCounts = data?.eventCounts || {};
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ["clients", workspaceId] });
+    invalidateEntities(queryClient, ["Client"]);
   };
 
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return clients;
+    return clients.filter((c) =>
+      `${c.name} ${c.phone || ""} ${c.email || ""}`.toLowerCase().includes(q)
+    );
+  }, [clients, query]);
+
+  const openNew = () => { setEditingClient(null); setShowForm(true); };
+  const openEdit = (c) => { setEditingClient(c); setShowForm(true); };
+
+  const totalEvents = Object.values(eventCounts).reduce((s, n) => s + n, 0);
+
   return (
-    <div className="flex flex-col gap-6">
-      <PageHeader
-        title="Clients"
-        description={`Manage your clients and their ${t.workItemSingular.toLowerCase()} history.`}
-        actions={
-          <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => { exportClientsCSV(clients, events, t); toast({ title: "Clients exported" }); }}>
-              <Download className="h-4 w-4" /> Export
-            </Button>
-            <Button onClick={() => setModalOpen(true)}>
-              <Plus className="h-4 w-4" /> Add Client
-            </Button>
-          </div>
-        }
+    <div className="p-4 sm:p-6 space-y-5 max-w-[1400px] mx-auto">
+      <PageHeader title="Clients" subtitle={`Manage your client directory and their ${term.workItemSingular.toLowerCase()} history.`}>
+        <Button variant="outline" size="sm" onClick={() => exportClientsCsv(filtered, eventCounts)} disabled={filtered.length === 0}>
+          <Download className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">{t("Export")}</span>
+        </Button>
+        <Button onClick={openNew}>
+          <Plus className="w-4 h-4" />
+          <span className="hidden sm:inline">{t("Add Client")}</span>
+        </Button>
+      </PageHeader>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <StatCard label={t("Total Clients")} value={clients.length} icon={Users} tone="primary" />
+        <StatCard label={`Total ${term.workItemPlural}`} value={totalEvents} icon={CalendarCheck} tone="info" />
+        <StatCard label={`With ${term.workItemPlural}`} value={Object.keys(eventCounts).length} icon={UserCheck} tone="success" />
+      </div>
+
+      <SearchInput
+        placeholder={t("Search by name, phone, email")}
+        className="sm:max-w-xs"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
       />
 
-      <Card>
-        <CardBody>
-          <SearchInput
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name, phone, email…"
-          />
-        </CardBody>
-      </Card>
+      {error && (
+        <div className="text-sm text-destructive bg-destructive/5 border border-destructive/20 rounded-md px-3 py-2">
+          {error?.message || t("Failed to load clients.")}
+        </div>
+      )}
 
-      {loading ? (
-        <Card>
-          <LoadingState label="Loading clients…" />
-        </Card>
-      ) : error ? (
-        <Card>
-          <ErrorState message={error} onRetry={refetch} />
-        </Card>
+      {isLoading ? (
+        <TableSkeleton rows={6} />
       ) : filtered.length === 0 ? (
-        <Card>
+        <div className="bg-card border border-border rounded-lg">
           <EmptyState
-            title={search ? "No clients found" : "No clients yet"}
-            description={
-              search
-                ? "Try a different name, phone number or email."
-                : "Add your first client to start managing projects, events and payments."
-            }
-            icon={Users}
-            action={
-              !search ? (
-                <Button onClick={() => setModalOpen(true)}>
-                  <Plus className="h-4 w-4" /> Add Client
-                </Button>
-              ) : null
-            }
+            title={query ? t("No clients found") : t("No clients yet")}
+            description={query ? t("Try a different search term.") : `Add a client to create and manage ${term.workItemPlural.toLowerCase()}.`}
+            action={!query ? <Button onClick={openNew}>+ {t("Add Client")}</Button> : null}
           />
-        </Card>
+        </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="bg-card border border-border rounded-lg overflow-hidden">
+          <div className="hidden sm:grid grid-cols-[1.4fr_1fr_1.4fr_1fr_80px_auto] gap-4 items-center px-4 py-2.5 border-b border-border text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            <span>{t("Name")}</span>
+            <span>{t("Phone")}</span>
+            <span>{t("Email")}</span>
+            <span>{term.workItemPlural}</span>
+            <span />
+            <span />
+          </div>
           {filtered.map((c) => (
-            <ClientCard
-              key={c.id}
-              client={c}
-              eventCount={clientStats.get(c.id)?.eventCount || 0}
-              outstanding={clientStats.get(c.id)?.outstanding || 0}
-            />
+            <div key={c.id} className="grid grid-cols-[1fr_auto] sm:grid-cols-[1.4fr_1fr_1.4fr_1fr_80px_auto] gap-3 sm:gap-4 items-center px-4 py-3 border-b border-border last:border-0 hover:bg-muted/40 transition-colors">
+              <button onClick={() => navigate(`/clients/${c.id}`)} className="text-left min-w-0">
+                <div className="text-sm font-medium text-foreground truncate">{c.name}</div>
+                <div className="text-xs text-muted-foreground sm:hidden">{c.phone || c.email || "—"}</div>
+              </button>
+              <span className="text-sm text-foreground hidden sm:block truncate">{c.phone || "—"}</span>
+              <span className="text-sm text-muted-foreground hidden sm:block truncate">{c.email || "—"}</span>
+              <span className="text-sm text-foreground hidden sm:block">{eventCounts[c.id] || 0}</span>
+              <span className="hidden sm:block" />
+              <div className="flex items-center gap-1 justify-self-end">
+                <Button variant="primary" size="icon" aria-label="View" onClick={() => navigate(`/clients/${c.id}`)}>
+                  <Eye className="w-4 h-4" />
+                </Button>
+                <Button variant="primary" size="icon" aria-label="Edit" onClick={() => openEdit(c)}>
+                  <Pencil className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
           ))}
         </div>
       )}
 
       <ClientForm
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onSave={handleSave}
+        open={showForm}
+        onClose={() => setShowForm(false)}
+        onSaved={invalidate}
+        client={editingClient}
+        workspaceId={workspaceId}
       />
     </div>
   );

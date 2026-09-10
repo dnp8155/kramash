@@ -1,198 +1,178 @@
-import { useState } from "react";
-import { RefreshCw, Check, Download, Smartphone, WifiOff, Lock, Loader2, Share } from "lucide-react";
-import { usePWA } from "@/hooks/usePWA";
-import { APP_CONFIG, CHANGELOG, TAG_STYLES } from "@/constants/app";
-import PageHeader from "@/components/common/PageHeader";
-import Card, { CardBody, CardHeader, CardTitle } from "@/components/common/Card";
+// App & Updates — connected to real PWA state, version, and update detection.
+import { useState, useEffect } from "react";
+import { Download, CheckCircle2, RefreshCw, Loader2, Shield, Bell, Info, Share } from "lucide-react";
 import Button from "@/components/common/Button";
-
-// Detect iOS (Safari) for install guidance.
-function isIOS() {
-  return (
-    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
-  );
-}
+import Logo from "@/components/common/Logo";
+import { APP_CONFIG, getVersionString } from "@/lib/appConfig";
+import { useInstallPrompt, useServiceWorkerUpdate, usePwaDisplayMode } from "@/hooks/usePWA";
 
 export default function AppUpdates() {
-  const pwa = usePWA();
   const [checking, setChecking] = useState(false);
   const [installing, setInstalling] = useState(false);
+  const [notifPermission, setNotifPermission] = useState(
+    typeof Notification !== "undefined" ? Notification.permission : "unsupported"
+  );
+
+  const { canInstall, installed, isIOS, needsIOSGuidance, promptInstall } = useInstallPrompt();
+  const { updateAvailable, applyUpdate, installing: swInstalling } = useServiceWorkerUpdate();
+  const isPwaInstalled = usePwaDisplayMode();
+  const appLockAvailable = APP_CONFIG.features.appLock.available;
+
+  const handleInstall = async () => {
+    setInstalling(true);
+    try {
+      await promptInstall();
+    } finally {
+      setInstalling(false);
+    }
+  };
 
   const handleCheckUpdates = async () => {
     setChecking(true);
-    await pwa.checkForUpdates();
-    setTimeout(() => setChecking(false), 1000);
+    try {
+      if ("serviceWorker" in navigator) {
+        const reg = await navigator.serviceWorker.getRegistration();
+        if (reg) await reg.update();
+      }
+      await new Promise((r) => setTimeout(r, 800));
+    } finally {
+      setChecking(false);
+    }
   };
 
-  const handleInstall = async () => {
-    if (!pwa.canInstall) return;
-    setInstalling(true);
-    await pwa.promptInstall();
-    setInstalling(false);
+  const handleEnableNotifications = async () => {
+    if (typeof Notification === "undefined") return;
+    const perm = await Notification.requestPermission();
+    setNotifPermission(perm);
   };
 
   return (
-    <div className="flex flex-col gap-6">
-      <PageHeader title="App & Updates" description="Version info, app installation, and updates." />
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Version + Update */}
-        <Card className="lg:col-span-2">
-          <CardHeader className="flex items-center gap-2">
-            <RefreshCw className="h-4 w-4 text-primary" /><CardTitle>Current Version</CardTitle>
-          </CardHeader>
-          <CardBody className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-2xl font-bold text-foreground">v{APP_CONFIG.version}</p>
-              <p className="text-sm text-muted-foreground">Released {APP_CONFIG.releaseDate} · Kramashah Beta</p>
-              {pwa.updateAvailable ? (
-                <div className="mt-3 flex items-center gap-2 text-sm text-warning">
-                  <RefreshCw className="h-4 w-4" /> A new version is available
-                </div>
-              ) : (
-                <div className="mt-3 flex items-center gap-2 text-sm text-success">
-                  <Check className="h-4 w-4" /> You're up to date
-                </div>
-              )}
-            </div>
-            <div className="flex flex-col gap-2 sm:items-end">
-              {pwa.updateAvailable ? (
-                <Button onClick={pwa.applyUpdate}>
-                  <RefreshCw className="h-4 w-4" /> Update Now
-                </Button>
-              ) : (
-                <Button variant="outline" onClick={handleCheckUpdates} disabled={checking}>
-                  {checking ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} Check for Updates
-                </Button>
-              )}
-              <p className="text-xs text-muted-foreground">
-                {pwa.swSupported ? "Auto-update enabled" : "Updates apply on page reload"}
-              </p>
-            </div>
-          </CardBody>
-        </Card>
-
-        {/* Install App */}
-        <Card>
-          <CardHeader className="flex items-center gap-2">
-            <Smartphone className="h-4 w-4 text-primary" /><CardTitle>Install App</CardTitle>
-          </CardHeader>
-          <CardBody className="space-y-3">
-            {pwa.isInstalled ? (
-              <div className="flex items-center gap-2 text-sm text-success">
-                <Check className="h-4 w-4" /> Kramashah is installed on this device
-              </div>
-            ) : pwa.canInstall ? (
-              <>
-                <p className="text-sm text-muted-foreground">Install Kramashah as an app for quick access.</p>
-                <Button className="w-full" onClick={handleInstall} disabled={installing}>
-                  {installing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Smartphone className="h-4 w-4" />}
-                  {installing ? "Installing…" : "Install on this device"}
-                </Button>
-              </>
-            ) : isIOS() ? (
-              <>
-                <p className="text-sm text-muted-foreground">
-                  iOS doesn't support automatic install. Add Kramashah to your Home Screen manually:
-                </p>
-                <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm">
-                  <ol className="list-decimal space-y-1.5 pl-4 text-muted-foreground">
-                    <li className="flex items-center gap-1.5">
-                      Tap the <Share className="inline h-3.5 w-3.5" /> Share button in Safari
-                    </li>
-                    <li>Select <span className="font-medium text-foreground">Add to Home Screen</span></li>
-                    <li>Tap <span className="font-medium text-foreground">Add</span></li>
-                  </ol>
-                </div>
-              </>
-            ) : (
-              <>
-                <p className="text-sm text-muted-foreground">
-                  Install Kramashah as an app for quick access.
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Use your browser menu → <span className="font-medium text-foreground">Install app</span> or <span className="font-medium text-foreground">Add to Home Screen</span>.
-                </p>
-              </>
-            )}
-          </CardBody>
-        </Card>
+    <div className="p-4 sm:p-6 max-w-[800px] mx-auto space-y-4">
+      {/* App info */}
+      <div className="bg-card border border-border rounded-lg p-6 text-center">
+        <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3 overflow-hidden">
+          <Logo size={44} />
+        </div>
+        <h2 className="text-lg font-semibold">{APP_CONFIG.name}</h2>
+        <p className="text-sm text-muted-foreground mt-1">{getVersionString()}</p>
+        <div className="flex items-center justify-center gap-2 mt-3 text-sm text-success">
+          <CheckCircle2 className="w-4 h-4" />
+          {updateAvailable ? "Update available" : "You're up to date"}
+        </div>
+        <Button variant="outline" className="mt-4" onClick={handleCheckUpdates} disabled={checking}>
+          {checking ? <><Loader2 className="w-4 h-4 animate-spin" /> Checking…</> : <><RefreshCw className="w-4 h-4" /> Check for Updates</>}
+        </Button>
       </div>
 
-      {/* Status indicators */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {/* Offline */}
-        <Card>
-          <CardBody className="flex items-center gap-3">
-            <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${pwa.isOffline ? "bg-warning/10 text-warning" : "bg-success/10 text-success"}`}>
-              {pwa.isOffline ? <WifiOff className="h-5 w-5" /> : <Check className="h-5 w-5" />}
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-foreground">
-                {pwa.isOffline ? "You're offline" : "You're online"}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {pwa.isOffline ? "Some features may be unavailable" : "All features available"}
-              </p>
-            </div>
-          </CardBody>
-        </Card>
-
-        {/* App Lock */}
-        <Card>
-          <CardBody className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-              <Lock className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-foreground">App Lock</p>
-              <p className="text-xs text-muted-foreground">Not available in Beta</p>
-            </div>
-          </CardBody>
-        </Card>
-
-        {/* PWA Status */}
-        <Card>
-          <CardBody className="flex items-center gap-3">
-            <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${pwa.swSupported ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"}`}>
-              <Smartphone className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-foreground">
-                {pwa.swSupported ? "PWA Ready" : "PWA Unsupported"}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {pwa.swSupported ? "Installable & offline-capable" : "Browser doesn't support PWA"}
-              </p>
-            </div>
-          </CardBody>
-        </Card>
-      </div>
-
-      {/* Changelog */}
-      <Card>
-        <CardHeader><CardTitle>Changelog</CardTitle></CardHeader>
-        <CardBody className="p-0">
-          <div className="divide-y divide-border">
-            {CHANGELOG.map((c) => (
-              <div key={c.version} className="flex flex-col gap-2 px-5 py-4 sm:flex-row sm:items-start sm:gap-5">
-                <div className="sm:w-28 shrink-0">
-                  <p className="text-sm font-semibold text-foreground">v{c.version}</p>
-                  <p className="text-xs text-muted-foreground">{c.date}</p>
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${TAG_STYLES[c.tag]}`}>{c.tag}</span>
-                    <p className="text-sm font-semibold text-foreground">{c.title}</p>
-                  </div>
-                  <p className="mt-1 text-sm text-muted-foreground">{c.notes}</p>
-                </div>
-              </div>
-            ))}
+      {/* Update available */}
+      {updateAvailable && (
+        <div className="bg-primary text-primary-foreground border border-primary rounded-lg p-4 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-sm">
+            <RefreshCw className="w-4 h-4" />
+            A new version of Kramasha is available.
           </div>
-        </CardBody>
-      </Card>
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10"
+            onClick={applyUpdate}
+            disabled={swInstalling}
+          >
+            {swInstalling ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Updating…</> : "Update Now"}
+          </Button>
+        </div>
+      )}
+
+      {/* Install / PWA status */}
+      <div className="bg-card border border-border rounded-lg p-4">
+        <h3 className="text-sm font-semibold mb-3">Install App</h3>
+        {isPwaInstalled || installed ? (
+          <div className="flex items-center gap-2 text-sm text-success">
+            <CheckCircle2 className="w-4 h-4" />
+            Kramasha is installed on this device.
+          </div>
+        ) : needsIOSGuidance ? (
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">
+              To install on iPhone/iPad:
+            </p>
+            <ol className="space-y-1.5 text-sm text-muted-foreground pl-4">
+              <li>1. Tap the <Share className="w-3.5 h-3.5 inline mx-0.5" /> Share button in Safari</li>
+              <li>2. Select "Add to Home Screen"</li>
+              <li>3. Tap "Add" to install Kramasha</li>
+            </ol>
+          </div>
+        ) : canInstall ? (
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm text-muted-foreground">Install Kramasha as an app on your device.</p>
+            <Button variant="primary" size="sm" onClick={handleInstall} disabled={installing}>
+              {installing ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Installing…</> : <><Download className="w-3.5 h-3.5" /> Install</>}
+            </Button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Info className="w-4 h-4 shrink-0" />
+            <span>Use your browser menu → "Install app" or "Add to Home Screen" to install.</span>
+          </div>
+        )}
+      </div>
+
+      {/* App Lock (WebAuthn) */}
+      <div className="bg-card border border-border rounded-lg p-4">
+        <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
+          <Shield className="w-4 h-4" /> App Lock
+        </h3>
+        {appLockAvailable ? (
+          <p className="text-sm text-muted-foreground">
+            Secure device authentication (WebAuthn/passkey) is available on this device. App Lock setup will be available in a future update.
+          </p>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            Secure biometric app lock (WebAuthn) is not supported on this device/browser. This feature requires a compatible device with Face ID, Touch ID, or a security key.
+          </p>
+        )}
+      </div>
+
+      {/* Notifications */}
+      <div className="bg-card border border-border rounded-lg p-4">
+        <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
+          <Bell className="w-4 h-4" /> Notifications
+        </h3>
+        {notifPermission === "granted" ? (
+          <div className="flex items-center gap-2 text-sm text-success">
+            <CheckCircle2 className="w-4 h-4" /> Browser notifications are enabled.
+          </div>
+        ) : notifPermission === "denied" ? (
+          <p className="text-sm text-muted-foreground">
+            Notifications are blocked. Update your browser settings to allow notifications from Kramasha.
+          </p>
+        ) : notifPermission === "unsupported" ? (
+          <p className="text-sm text-muted-foreground">Browser notifications are not supported on this device.</p>
+        ) : (
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm text-muted-foreground">Enable browser notifications for event and subscription reminders.</p>
+            <Button variant="outline" size="sm" onClick={handleEnableNotifications}>Enable</Button>
+          </div>
+        )}
+      </div>
+
+      {/* Release notes */}
+      <div className="bg-card border border-border rounded-lg p-4">
+        <h3 className="text-sm font-semibold mb-2">Release Notes</h3>
+        <ul className="space-y-2 text-sm text-muted-foreground">
+          <li>• PWA install, offline shell, and update detection.</li>
+          <li>• Phone OTP architecture with provider configuration support.</li>
+          <li>• Subscription payment gateway foundation (Stripe).</li>
+          <li>• Excel/CSV export for Events, Clients, Team, and Financial activity.</li>
+          <li>• In-app notifications for event reminders and subscription expiry.</li>
+          <li>• Workspace logo upload and branded quotation PDF.</li>
+        </ul>
+      </div>
+
+      {/* Third-party disclaimer */}
+      <div className="bg-muted/50 border border-border rounded-lg p-3">
+        <p className="text-xs text-muted-foreground">{APP_CONFIG.thirdPartyCostDisclaimer}</p>
+      </div>
     </div>
   );
 }

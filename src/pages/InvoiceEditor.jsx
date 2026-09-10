@@ -1,370 +1,599 @@
-import { useEffect, useState, useMemo } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useWorkspace } from "@/lib/WorkspaceContext";
-import PageHeader from "@/components/common/PageHeader";
+import { useToast } from "@/components/ui/use-toast";
+import { invalidateEntities } from "@/lib/queryInvalidation";
 import Button from "@/components/common/Button";
-import Card, { CardHeader, CardTitle, CardBody } from "@/components/common/Card";
 import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
-import { ArrowLeft, Save, Loader2, Plus, Trash2, FileText } from "lucide-react";
-import { formatCurrency } from "@/utils/format";
-import { calculateInvoiceTotals, computeDueDate, lineItemTotal } from "@/utils/invoiceCalculations";
-import { toast } from "@/components/ui/use-toast";
 import LoadingState from "@/components/common/LoadingState";
+import EmptyState from "@/components/common/EmptyState";
+import { formatMoney } from "@/utils/format";
+import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
+import { AlertTriangle, ArrowLeft, Plus, Eye, Send, Wallet } from "lucide-react";
+import InvoiceClientCard from "@/components/invoice/InvoiceClientCard";
+import InvoiceProductsSection from "@/components/invoice/InvoiceProductsSection";
+import InvoiceFinancials from "@/components/invoice/InvoiceFinancials";
+import InvoicePrintView from "@/components/invoice/InvoicePrintView";
+import RecordInvoicePaymentDialog from "@/components/invoice/RecordInvoicePaymentDialog";
+import InvoicePublicLinkPanel from "@/components/invoice/InvoicePublicLinkPanel";
+import Toggle from "@/components/common/Toggle";
+import {
+  generateInvoiceNumber, loadInvoice,
+  createInvoice, updateInvoice, deleteInvoice,
+  verifyInvoiceRefs, buildClientSnapshot, buildBusinessSnapshot, buildEventSnapshot,
+  computeInvoiceTotals
+} from "@/lib/invoiceService";
+import ClientForm from "@/components/clients/ClientForm";
+
+const today = () => new Date().toISOString().slice(0, 10);
+
+const INVOICE_STATUS_META = {
+  draft: { label: "Draft", className: "bg-muted text-muted-foreground" },
+  sent: { label: "Sent", className: "bg-badge-upcoming-bg text-badge-upcoming-fg" },
+  paid: { label: "Paid", className: "bg-badge-completed-bg text-badge-completed-fg" },
+  partial: { label: "Partial", className: "bg-badge-progress-bg text-badge-progress-fg" },
+  cancelled: { label: "Cancelled", className: "bg-destructive/10 text-destructive" }
+};
 
 export default function InvoiceEditor() {
+  const { id } = useParams();
+  const isNew = !id || id === "new";
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const { workspaceId, currentWorkspace } = useWorkspace();
+  const location = useLocation();
+  const { workspaceId, workspace } = useWorkspace();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const currency = workspace?.currency || "INR";
+  const gstWorkspaceEnabled = !!workspace?.gst_enabled;
+  const term = useBusinessTerminology();
+
   const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const [invoiceNumber, setInvoiceNumber] = useState("");
+  const [invoiceDate, setInvoiceDate] = useState(today());
+  const [dueDate, setDueDate] = useState("");
+  const [clientId, setClientId] = useState("");
+  const [eventId, setEventId] = useState("");
+  const [status, setStatus] = useState("draft");
+  const [items, setItems] = useState([]);
+  const [discountType, setDiscountType] = useState("percent");
+  const [discountValue, setDiscountValue] = useState(0);
+  const [gstApplicable, setGstApplicable] = useState(false);
+  const [gstRate, setGstRate] = useState(workspace?.default_gst_rate || 18);
+  const [gstMode, setGstMode] = useState("cgst_sgst");
+  const [notes, setNotes] = useState("");
+  const [paymentTerms, setPaymentTerms] = useState("");
+  const [dueDateType, setDueDateType] = useState("due_on_receipt");
+  const [milestoneTag, setMilestoneTag] = useState("Full Payment");
+  const [showItemizedRates, setShowItemizedRates] = useState(true);
+  const [authorizedSignatory, setAuthorizedSignatory] = useState("");
+
   const [clients, setClients] = useState([]);
   const [events, setEvents] = useState([]);
-  const [quotation, setQuotation] = useState(null);
-  const [existingMilestoneInvoices, setExistingMilestoneInvoices] = useState([]);
+  const [existingInvoice, setExistingInvoice] = useState(null);
+  const [showClientForm, setShowClientForm] = useState(false);
+  const [showPrintView, setShowPrintView] = useState(false);
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [publicLinkData, setPublicLinkData] = useState(null);
 
-  const quotationId = searchParams.get("quotation");
-  const invoiceType = searchParams.get("type") || "manual";
-  const milestoneIndex = searchParams.get("index");
+  const readOnly = status === "paid" || status === "cancelled";
 
-  const [form, setForm] = useState({
-    client_id: "",
-    event_id: "",
-    issue_date: new Date().toISOString().slice(0, 10),
-    due_date_type: "due_on_receipt",
-    due_date: "",
-    show_itemized_rates: true,
-    line_items: [{ description: "", deliverables: "", quantity: 1, unit_rate: 0, line_total: 0 }],
-    discount_type: "percentage",
-    discount_value: 0,
-    tax_enabled: false,
-    tax_rate: currentWorkspace?.default_gst_rate || 18,
-    tax_mode: "CGST_SGST",
-    payment_terms: currentWorkspace?.default_quotation_terms || "",
-    notes: "",
-    milestone_index: milestoneIndex ? parseInt(milestoneIndex, 10) : null,
-  });
-
-  const isFromQuotation = !!quotationId;
-
-  useEffect(() => {
+  const load = useCallback(async () => {
     if (!workspaceId) return;
-    (async () => {
-      setLoading(true);
-      try {
-        const [clientList, eventList] = await Promise.all([
-          base44.entities.Client.filter({ workspace_id: workspaceId }, "name", 500),
-          base44.entities.Event.filter({ workspace_id: workspaceId }, "-start_date", 500),
-        ]);
-        setClients(clientList || []);
-        setEvents(eventList || []);
+    setLoading(true);
+    setError("");
+    try {
+      const [cl, ev] = await Promise.all([
+        base44.entities.Client.filter({ workspace_id: workspaceId }, "name", 500),
+        base44.entities.Event.filter({ workspace_id: workspaceId }, "-start_date", 500)
+      ]);
+      setClients(cl || []);
+      setEvents(ev || []);
 
-        if (quotationId) {
-          const quot = await base44.entities.Quotation.get(quotationId);
-          setQuotation(quot);
-          setForm((f) => ({
-            ...f,
-            client_id: quot?.client_id || "",
-            event_id: quot?.event_id || "",
-          }));
-
-          // Check existing milestone invoices
-          const existing = await base44.entities.Invoice.filter({
-            workspace_id: workspaceId,
-            quotation_id: quotationId,
-          });
-          setExistingMilestoneInvoices(existing || []);
+      if (isNew) {
+        const num = await generateInvoiceNumber(workspaceId);
+        setInvoiceNumber(num);
+        setGstApplicable(gstWorkspaceEnabled);
+        // Pre-fill from quotation if provided via navigation state
+        const prefill = location.state?.fromQuotation;
+        if (prefill) {
+          setClientId(prefill.client_id || "");
+          setEventId(prefill.event_id || "");
+          if (prefill.items?.length) {
+            setItems(prefill.items.map((it) => ({
+              item_type: "line_item",
+              name: it.name || "",
+              description: it.description || "",
+              quantity: Math.max(1, Number(it.quantity) || 1),
+              unit_rate: Number(it.unit_rate) || 0
+            })));
+          }
+          setDiscountType(prefill.discount_type || "percent");
+          setDiscountValue(prefill.discount_value || 0);
+          setGstApplicable(!!prefill.gst_applicable);
         }
-      } catch {} finally {
-        setLoading(false);
+        // Pre-select event from query param
+        const qpEventId = new URLSearchParams(location.search).get("event_id");
+        if (qpEventId) {
+          const qpEvent = (ev || []).find((e) => e.id === qpEventId);
+          if (qpEvent) {
+            setEventId(qpEvent.id);
+            if (qpEvent.client_id) setClientId(qpEvent.client_id);
+          }
+        }
+      } else {
+        const result = await loadInvoice(workspaceId, id);
+        if (!result) { setNotFound(true); return; }
+        const inv = result.invoice;
+        setExistingInvoice(inv);
+        setInvoiceNumber(inv.invoice_number);
+        setInvoiceDate(inv.invoice_date || today());
+        setDueDate(inv.due_date || "");
+        setClientId(inv.client_id || "");
+        setEventId(inv.event_id || "");
+        setStatus(inv.status || "draft");
+        setItems(result.items || []);
+        setDiscountType(inv.discount_type || "percent");
+        setDiscountValue(inv.discount_value || 0);
+        setGstApplicable(!!inv.gst_applicable);
+        setGstRate(Number(inv.gst_rate) || (workspace?.default_gst_rate || 18));
+        setGstMode(inv.gst_mode || "cgst_sgst");
+        setNotes(inv.notes || "");
+        setPaymentTerms(inv.payment_terms || "");
+        setDueDateType(inv.due_date_type || "due_on_receipt");
+        setMilestoneTag(inv.milestone_tag || "Full Payment");
+        setShowItemizedRates(inv.show_itemized_rates !== false);
+        setAuthorizedSignatory(inv.authorized_signatory || "");
+        setPublicLinkData({
+          public_link_enabled: !!inv.public_link_enabled,
+          public_token: inv.public_token || "",
+          portal_view_count: Number(inv.portal_view_count) || 0
+        });
       }
-    })();
-  }, [workspaceId, quotationId]);
+    } catch (e) {
+      setError(e?.message || "Failed to load invoice.");
+    } finally {
+      setLoading(false);
+    }
+  }, [workspaceId, id, isNew, location.state, gstWorkspaceEnabled]);
 
-  const totals = useMemo(() => calculateInvoiceTotals(form), [form]);
+  useEffect(() => { load(); }, [load]);
 
-  const set = (field, value) => setForm((f) => ({ ...f, [field]: value }));
+  const totals = useMemo(
+    () => computeInvoiceTotals(items, { discountType, discountValue, gstApplicable, gstRate, gstMode }),
+    [items, discountType, discountValue, gstApplicable, gstRate, gstMode]
+  );
 
-  const updateItem = (idx, field, value) => {
-    setForm((f) => {
-      const items = [...f.line_items];
-      items[idx] = { ...items[idx], [field]: value };
-      items[idx].line_total = lineItemTotal(items[idx].quantity, items[idx].unit_rate);
-      return { ...f, line_items: items };
-    });
+  const client = clients.find((c) => c.id === clientId) || null;
+  const event = events.find((e) => e.id === eventId) || null;
+
+  const availableEvents = clientId
+    ? events.filter((e) => !e.client_id || e.client_id === clientId)
+    : events;
+
+  const onClientChange = (val) => {
+    setClientId(val);
+    if (eventId) {
+      const ev = events.find((e) => e.id === eventId);
+      if (ev && ev.client_id && ev.client_id !== val) setEventId("");
+    }
   };
 
-  const addItem = () => setForm((f) => ({
-    ...f,
-    line_items: [...f.line_items, { description: "", deliverables: "", quantity: 1, unit_rate: 0, line_total: 0 }],
-  }));
+  const onEventChange = (val) => {
+    setEventId(val);
+    if (val) {
+      const ev = events.find((e) => e.id === val);
+      if (ev?.client_id && !clientId) setClientId(ev.client_id);
+    }
+  };
 
-  const removeItem = (idx) => setForm((f) => ({ ...f, line_items: f.line_items.filter((_, i) => i !== idx) }));
+  const buildData = () => ({
+    invoice_number: invoiceNumber,
+    client_id: clientId,
+    event_id: eventId,
+    invoice_date: invoiceDate,
+    due_date: dueDate,
+    due_date_type: dueDateType,
+    milestone_tag: milestoneTag,
+    show_itemized_rates: showItemizedRates,
+    discount_type: discountType,
+    discount_value: Number(discountValue) || 0,
+    gst_applicable: gstApplicable,
+    gst_rate: Number(gstRate) || 0,
+    gst_mode: gstMode,
+    notes,
+    payment_terms: paymentTerms,
+    terms_and_conditions: paymentTerms,
+    authorized_signatory: authorizedSignatory
+  });
 
-  const handleSave = async () => {
-    if (!form.client_id) { toast({ title: "Please select a client", variant: "destructive" }); return; }
+  const validate = () => {
+    if (!invoiceDate) return "Invoice date is required.";
+    if (items.length === 0) return "Add at least one item.";
+    for (const it of items) {
+      if (!it.name?.trim()) return "Every item needs a name.";
+    }
+    return "";
+  };
+
+  const save = async () => {
+    const v = validate();
+    if (v) { setError(v); return; }
+    setError("");
     setSaving(true);
     try {
-      const payload = {
-        workspace_id: workspaceId,
-        client_id: form.client_id,
-        event_id: form.event_id || null,
-        issue_date: form.issue_date,
-        due_date_type: form.due_date_type,
-        due_date: form.due_date_type === "custom" ? form.due_date : undefined,
-        show_itemized_rates: form.show_itemized_rates,
-        discount_type: form.discount_type,
-        discount_value: Number(form.discount_value) || 0,
-        tax_enabled: form.tax_enabled,
-        tax_rate: Number(form.tax_rate) || 0,
-        tax_mode: form.tax_mode,
-        payment_terms: form.payment_terms,
-        notes: form.notes,
-        status: "Draft",
-      };
-
-      if (isFromQuotation) {
-        payload.quotation_id = quotationId;
-        payload.invoice_type = invoiceType;
-        payload.milestone_index = form.milestone_index;
+      const refCheck = await verifyInvoiceRefs(workspaceId, clientId, eventId);
+      if (!refCheck.ok) { setError(refCheck.error); setSaving(false); return; }
+      const data = { ...buildData(), status: "draft" };
+      if (isNew) {
+        const inv = await createInvoice(workspaceId, data, items, {
+          client_snapshot: buildClientSnapshot(refCheck.client || client),
+          business_snapshot: buildBusinessSnapshot(workspace),
+          event_snapshot: buildEventSnapshot(refCheck.event || event)
+        });
+        invalidateEntities(queryClient, ["Invoice", "InvoiceItem"]);
+        toast({ title: "Invoice saved" });
+        navigate(`/invoices/${inv.id}`, { replace: true });
       } else {
-        payload.invoice_type = "manual";
-        payload.line_items = form.line_items.filter((i) => i.description.trim());
+        await updateInvoice(workspaceId, id, data, items);
+        invalidateEntities(queryClient, ["Invoice", "InvoiceItem"]);
+        toast({ title: "Invoice updated" });
+        load();
       }
-
-      const res = await base44.functions.invoke("createInvoice", payload);
-      if (res.status >= 200 && res.status < 300) {
-        toast({ title: "Invoice created successfully" });
-        navigate(`/invoices/${res.data.invoice.id}`);
-      } else {
-        toast({ title: res.data?.error || "Failed to create invoice", variant: "destructive" });
-      }
-    } catch (err) {
-      toast({ title: err?.response?.data?.error || err?.message || "Failed to create invoice", variant: "destructive" });
+    } catch (e) {
+      setError(e?.message || "Failed to save invoice.");
     } finally {
       setSaving(false);
     }
   };
 
-  if (loading) return <LoadingState label="Loading…" />;
+  const sendInvoice = async () => {
+    if (!existingInvoice) return;
+    try {
+      await base44.entities.Invoice.update(id, { status: "sent" });
+      invalidateEntities(queryClient, ["Invoice", "InvoiceItem"]);
+      toast({ title: "Invoice marked as sent" });
+      setStatus("sent");
+      load();
+    } catch (e) {
+      setError(e?.message || "Failed to update status.");
+    }
+  };
+
+  const onDelete = async () => {
+    if (!existingInvoice) return;
+    if (!window.confirm("Delete this invoice? This cannot be undone.")) return;
+    try {
+      await deleteInvoice(workspaceId, id);
+      invalidateEntities(queryClient, ["Invoice", "InvoiceItem"]);
+      toast({ title: "Invoice deleted" });
+      navigate("/invoices");
+    } catch (e) {
+      setError(e?.message || "Failed to delete invoice.");
+    }
+  };
+
+  if (loading) return <LoadingState label="Loading invoice…" />;
+  if (notFound) {
+    return (
+      <div className="p-6 max-w-[800px] mx-auto">
+        <EmptyState title="Invoice not found" description="This invoice may not exist or belongs to another workspace." />
+        <div className="mt-4">
+          <Button variant="outline" onClick={() => navigate("/invoices")}><ArrowLeft className="w-4 h-4" />Back to Invoices</Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title={isFromQuotation ? "Create Invoice from Quotation" : "New Invoice"}
-        description={isFromQuotation ? quotation?.quotation_number : "Create a manual invoice for a client"}
-        actions={<Button variant="ghost" onClick={() => navigate(-1)}><ArrowLeft className="h-4 w-4" /> Back</Button>}
-      />
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="flex flex-col gap-6 lg:col-span-2">
-          {/* Quotation info or Client/Event selection */}
-          {isFromQuotation ? (
-            <Card>
-              <CardHeader><CardTitle>Quotation Details</CardTitle></CardHeader>
-              <CardBody className="space-y-3">
-                <div className="rounded-lg bg-muted/30 p-3 text-sm">
-                  <p className="text-muted-foreground">Quotation</p>
-                  <p className="font-semibold text-foreground">{quotation?.quotation_number}</p>
-                  <p className="mt-1 text-muted-foreground">Total: <span className="font-semibold text-foreground">{formatCurrency(quotation?.grand_total || 0)}</span></p>
-                  <p className="text-muted-foreground">Status: {quotation?.status}</p>
-                </div>
-                {invoiceType === "milestone" && form.milestone_index != null && (
-                  <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
-                    <p className="text-sm font-medium text-primary">
-                      Milestone: {quotation?.milestones?.[form.milestone_index]?.label || "Custom"}
-                    </p>
-                    <p className="text-2xl font-bold text-primary">
-                      {formatCurrency(quotation?.milestones?.[form.milestone_index]?.amount || 0)}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {quotation?.milestones?.[form.milestone_index]?.percentage}% of quotation total
-                    </p>
-                  </div>
-                )}
-                {invoiceType === "full" && (
-                  <p className="text-sm text-muted-foreground">
-                    A full invoice will import all quotation items, discounts, and tax configuration.
-                  </p>
-                )}
-              </CardBody>
-            </Card>
-          ) : (
-            <Card>
-              <CardHeader><CardTitle>Client & Project</CardTitle></CardHeader>
-              <CardBody className="space-y-4">
-                <Select label="Client *" value={form.client_id} onChange={(e) => set("client_id", e.target.value)}>
-                  <option value="">Select a client…</option>
-                  {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </Select>
-                <Select label="Event / Project (optional)" value={form.event_id} onChange={(e) => set("event_id", e.target.value)}>
-                  <option value="">None</option>
-                  {events.map((ev) => <option key={ev.id} value={ev.id}>{ev.title}</option>)}
-                </Select>
-              </CardBody>
-            </Card>
-          )}
-
-          {/* Line Items (manual only) */}
-          {!isFromQuotation && (
-            <Card>
-              <CardHeader><CardTitle>Line Items</CardTitle></CardHeader>
-              <CardBody className="space-y-3">
-                {form.line_items.map((item, idx) => (
-                  <div key={idx} className="rounded-lg border border-border p-3">
-                    <div className="flex items-start gap-2">
-                      <input
-                        type="text"
-                        value={item.description}
-                        onChange={(e) => updateItem(idx, "description", e.target.value)}
-                        placeholder="Description"
-                        className="min-w-0 flex-1 rounded-lg border border-input bg-card px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30"
-                      />
-                      <button onClick={() => removeItem(idx)} className="rounded-md p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                    <div className="mt-2 grid grid-cols-3 gap-2">
-                      <div>
-                        <label className="text-[10px] font-medium uppercase text-muted-foreground">Qty</label>
-                        <input type="number" min="1" value={item.quantity}
-                          onChange={(e) => updateItem(idx, "quantity", Math.max(1, Number(e.target.value) || 1))}
-                          className="h-9 w-full rounded-lg border border-input bg-card px-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30" />
-                      </div>
-                      <div>
-                        <label className="text-[10px] font-medium uppercase text-muted-foreground">Rate</label>
-                        <input type="number" min="0" value={item.unit_rate}
-                          onChange={(e) => updateItem(idx, "unit_rate", Math.max(0, Number(e.target.value) || 0))}
-                          className="h-9 w-full rounded-lg border border-input bg-card px-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30" />
-                      </div>
-                      <div>
-                        <label className="text-[10px] font-medium uppercase text-muted-foreground">Total</label>
-                        <p className="py-2 text-right text-sm font-semibold text-foreground">{formatCurrency(item.line_total || 0)}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                <Button size="sm" variant="outline" onClick={addItem}><Plus className="h-4 w-4" /> Add Line Item</Button>
-              </CardBody>
-            </Card>
-          )}
-
-          {/* Notes & Terms */}
-          <Card>
-            <CardHeader><CardTitle>Notes & Terms</CardTitle></CardHeader>
-            <CardBody className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-foreground">Payment Terms (client-visible)</label>
-                <textarea value={form.payment_terms} onChange={(e) => set("payment_terms", e.target.value)} rows={3}
-                  placeholder="Payment terms shown on invoice and public URL…"
-                  className="mt-1.5 w-full rounded-lg border border-input bg-card px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30" />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-foreground">Internal Notes (never shown to client)</label>
-                <textarea value={form.notes} onChange={(e) => set("notes", e.target.value)} rows={2}
-                  placeholder="Internal notes…"
-                  className="mt-1.5 w-full rounded-lg border border-input bg-card px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30" />
-              </div>
-            </CardBody>
-          </Card>
+    <div className="p-4 sm:p-6 space-y-4 max-w-[1000px] mx-auto">
+      {/* Header */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <button onClick={() => navigate("/invoices")} className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 mb-1">
+            <ArrowLeft className="w-4 h-4" /> Invoices
+          </button>
+          <h1 className="text-xl font-bold text-foreground">
+            {isNew ? "New Invoice" : `Invoice ${invoiceNumber}`}
+          </h1>
+          {client && <p className="text-sm text-muted-foreground mt-0.5">{client.name}</p>}
         </div>
-
-        {/* Sidebar */}
-        <div className="flex flex-col gap-6">
-          <Card className="h-fit">
-            <CardHeader><CardTitle>Invoice Details</CardTitle></CardHeader>
-            <CardBody className="space-y-4">
-              <Input label="Issue Date" type="date" value={form.issue_date} onChange={(e) => set("issue_date", e.target.value)} />
-              <Select label="Due Date" value={form.due_date_type} onChange={(e) => set("due_date_type", e.target.value)}>
-                <option value="due_on_receipt">Due on Receipt</option>
-                <option value="net_15">Net 15</option>
-                <option value="net_30">Net 30</option>
-                <option value="custom">Custom Date</option>
-              </Select>
-              {form.due_date_type === "custom" && (
-                <Input label="Custom Due Date" type="date" value={form.due_date} onChange={(e) => set("due_date", e.target.value)} />
-              )}
-              <label className="flex items-center justify-between rounded-lg border border-border bg-muted/40 px-3 py-2.5 text-sm">
-                <span className="font-medium text-foreground">Show Itemized Rates</span>
-                <button type="button" onClick={() => set("show_itemized_rates", !form.show_itemized_rates)}
-                  className={`relative h-6 w-11 rounded-full transition-colors ${form.show_itemized_rates ? "bg-primary" : "bg-border"}`}>
-                  <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${form.show_itemized_rates ? "translate-x-5" : "translate-x-0.5"}`} />
-                </button>
-              </label>
-            </CardBody>
-          </Card>
-
-          {/* Discount & Tax (manual only) */}
-          {!isFromQuotation && (
-            <>
-              <Card className="h-fit">
-                <CardHeader><CardTitle>Discount</CardTitle></CardHeader>
-                <CardBody className="space-y-3">
-                  <Select label="Discount Type" value={form.discount_type} onChange={(e) => set("discount_type", e.target.value)}>
-                    <option value="percentage">Percentage (%)</option>
-                    <option value="flat">Flat Amount</option>
-                  </Select>
-                  <Input label={form.discount_type === "percentage" ? "Discount %" : "Discount Amount"} type="number" min="0"
-                    value={form.discount_value} onChange={(e) => set("discount_value", Number(e.target.value) || 0)} />
-                </CardBody>
-              </Card>
-
-              <Card className="h-fit">
-                <CardHeader><CardTitle>GST / Tax</CardTitle></CardHeader>
-                <CardBody className="space-y-3">
-                  <label className="flex cursor-pointer items-center justify-between rounded-lg border border-border bg-muted/40 px-3 py-2.5 text-sm">
-                    <span className="font-medium text-foreground">Enable GST</span>
-                    <button type="button" onClick={() => set("tax_enabled", !form.tax_enabled)}
-                      className={`relative h-6 w-11 rounded-full transition-colors ${form.tax_enabled ? "bg-primary" : "bg-border"}`}>
-                      <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${form.tax_enabled ? "translate-x-5" : "translate-x-0.5"}`} />
-                    </button>
-                  </label>
-                  {form.tax_enabled && (
-                    <>
-                      <Select label="Tax Rate" value={form.tax_rate} onChange={(e) => set("tax_rate", Number(e.target.value))}>
-                        <option value={5}>5%</option>
-                        <option value={12}>12%</option>
-                        <option value={18}>18%</option>
-                        <option value={28}>28%</option>
-                      </Select>
-                      <Select label="Tax Mode" value={form.tax_mode} onChange={(e) => set("tax_mode", e.target.value)}>
-                        <option value="CGST_SGST">CGST + SGST (Same State)</option>
-                        <option value="IGST">IGST (Inter-State)</option>
-                      </Select>
-                    </>
-                  )}
-                </CardBody>
-              </Card>
-            </>
+        <div className="flex items-center gap-2">
+          {!isNew && existingInvoice && (
+            <span className={`text-xs px-2.5 py-1 rounded-md font-medium uppercase tracking-wide ${INVOICE_STATUS_META[status]?.className}`}>
+              {INVOICE_STATUS_META[status]?.label || status}
+            </span>
           )}
-
-          {/* Summary */}
-          <Card className="h-fit">
-            <CardHeader><CardTitle>Summary</CardTitle></CardHeader>
-            <CardBody className="space-y-2">
-              <div className="flex justify-between text-sm"><span className="text-muted-foreground">Subtotal</span><span className="font-semibold">{formatCurrency(totals.subtotal)}</span></div>
-              {totals.discount_amount > 0 && <div className="flex justify-between text-sm"><span className="text-muted-foreground">Discount</span><span className="text-destructive">−{formatCurrency(totals.discount_amount)}</span></div>}
-              <div className="flex justify-between text-sm"><span className="text-muted-foreground">Taxable</span><span className="font-medium">{formatCurrency(totals.taxable_amount)}</span></div>
-              {form.tax_enabled && form.tax_mode === "CGST_SGST" && (
-                <>
-                  <div className="flex justify-between text-sm"><span className="text-muted-foreground">CGST</span><span>{formatCurrency(totals.cgst_amount)}</span></div>
-                  <div className="flex justify-between text-sm"><span className="text-muted-foreground">SGST</span><span>{formatCurrency(totals.sgst_amount)}</span></div>
-                </>
-              )}
-              {form.tax_enabled && form.tax_mode === "IGST" && <div className="flex justify-between text-sm"><span className="text-muted-foreground">IGST</span><span>{formatCurrency(totals.igst_amount)}</span></div>}
-              <div className="border-t border-border pt-2">
-                <div className="flex justify-between"><span className="font-semibold">Total</span><span className="text-lg font-bold text-primary">{formatCurrency(totals.total_amount)}</span></div>
-              </div>
-            </CardBody>
-          </Card>
-
-          <Button onClick={handleSave} disabled={saving} className="w-full">
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            Create Invoice
+          <Button variant="outline" onClick={() => navigate("/invoices")}>Cancel</Button>
+          {!isNew && existingInvoice && (
+            <Button variant="outline" onClick={() => setShowPrintView(true)}>
+              <Eye className="w-4 h-4" /> View / Print
+            </Button>
+          )}
+          <Button onClick={save} disabled={saving || readOnly}>
+            {saving ? "Saving…" : "Save Invoice"}
           </Button>
         </div>
       </div>
+
+      {error && (
+        <div className="flex items-start gap-2 bg-destructive/10 border border-destructive/30 rounded-lg p-3 text-sm text-destructive">
+          <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      {/* Top: Invoice ID + Issue Date + Client Card */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="bg-card border border-border rounded-lg p-4 space-y-3">
+          <div>
+            <label className="block text-xs font-medium text-muted-foreground mb-1">Invoice ID</label>
+            <Input
+              value={invoiceNumber}
+              onChange={(e) => setInvoiceNumber(e.target.value)}
+              disabled={readOnly}
+              placeholder="Auto-generated if blank"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-muted-foreground mb-1">Issue Date</label>
+            <Input
+              type="date"
+              value={invoiceDate}
+              onChange={(e) => setInvoiceDate(e.target.value)}
+              disabled={readOnly}
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-muted-foreground mb-1">Due Date Type</label>
+            <Select
+              value={dueDateType}
+              onChange={(e) => {
+                setDueDateType(e.target.value);
+                if (e.target.value === "due_on_receipt") setDueDate(invoiceDate);
+                else if (e.target.value === "net_15") {
+                  const d = new Date(invoiceDate + "T00:00:00"); d.setDate(d.getDate() + 15);
+                  setDueDate(d.toISOString().slice(0, 10));
+                } else if (e.target.value === "net_30") {
+                  const d = new Date(invoiceDate + "T00:00:00"); d.setDate(d.getDate() + 30);
+                  setDueDate(d.toISOString().slice(0, 10));
+                }
+              }}
+              disabled={readOnly}
+              className="w-full"
+            >
+              <option value="due_on_receipt">Due on Receipt</option>
+              <option value="net_15">Net 15 Days</option>
+              <option value="net_30">Net 30 Days</option>
+              <option value="custom">Custom Date</option>
+            </Select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-muted-foreground mb-1">Due Date</label>
+            <Input
+              type="date"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+              disabled={readOnly || dueDateType !== "custom"}
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-muted-foreground mb-1">Milestone Tag</label>
+            <Select
+              value={milestoneTag}
+              onChange={(e) => setMilestoneTag(e.target.value)}
+              disabled={readOnly}
+              className="w-full"
+            >
+              <option value="Full Payment">Full Payment</option>
+              <option value="Advance">Advance</option>
+              <option value="Event Day">Event Day</option>
+              <option value="Final Handover">Final Handover</option>
+              <option value="Custom">Custom</option>
+            </Select>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          {/* Client selector */}
+          <div className="bg-card border border-border rounded-lg p-4">
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-xs font-medium text-muted-foreground">Select Client</label>
+              {!readOnly && (
+                <Button type="button" variant="outline" size="sm" onClick={() => setShowClientForm(true)}>
+                  <Plus className="w-3.5 h-3.5" /> New
+                </Button>
+              )}
+            </div>
+            <Select
+              value={clientId}
+              onChange={(e) => onClientChange(e.target.value)}
+              disabled={readOnly}
+              className="w-full"
+            >
+              <option value="">— Select client —</option>
+              {clients.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </Select>
+            <div className="mt-2">
+              <label className="text-xs font-medium text-muted-foreground">{term.workItemSingular}</label>
+              <Select
+                value={eventId}
+                onChange={(e) => onEventChange(e.target.value)}
+                disabled={readOnly}
+                className="w-full mt-1"
+              >
+                <option value="">— Optional —</option>
+                {availableEvents.map((e) => (
+                  <option key={e.id} value={e.id}>{e.title}</option>
+                ))}
+              </Select>
+            </div>
+          </div>
+          <InvoiceClientCard client={client} />
+        </div>
+      </div>
+
+      {/* Products & Packages */}
+      <InvoiceProductsSection
+        items={items}
+        setItems={setItems}
+        readOnly={readOnly}
+        currency={currency}
+      />
+
+      {/* Financials */}
+      <InvoiceFinancials
+        discountType={discountType}
+        setDiscountType={setDiscountType}
+        discountValue={discountValue}
+        setDiscountValue={setDiscountValue}
+        gstApplicable={gstApplicable}
+        setGstApplicable={setGstApplicable}
+        gstRate={gstRate}
+        setGstRate={setGstRate}
+        gstMode={gstMode}
+        totals={totals}
+        currency={currency}
+        readOnly={readOnly}
+      />
+
+      {/* Pricing Display Toggle */}
+      <div className="bg-card border border-border rounded-lg p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <label className="text-sm font-semibold text-foreground">Show Itemized Rates</label>
+            <p className="text-xs text-muted-foreground mt-0.5">When off, PDF and public link show package/scope description only — no qty, rate, or line amounts.</p>
+          </div>
+          <Toggle checked={showItemizedRates} onChange={setShowItemizedRates} disabled={readOnly} />
+        </div>
+      </div>
+
+      {/* Payment Terms (client-visible) */}
+      <div className="bg-card border border-border rounded-lg p-4">
+        <label className="block text-xs font-medium text-muted-foreground mb-1.5">Payment Terms (client-visible)</label>
+        <textarea
+          value={paymentTerms}
+          onChange={(e) => setPaymentTerms(e.target.value)}
+          disabled={readOnly}
+          rows={3}
+          placeholder="Payment terms shown to client on PDF and public link"
+          className="w-full bg-card border border-border rounded-md p-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
+        />
+      </div>
+
+      {/* Internal Notes (never shown to client) */}
+      <div className="bg-card border border-border rounded-lg p-4">
+        <label className="block text-xs font-medium text-muted-foreground mb-1.5">Internal Notes (never shown to client)</label>
+        <textarea
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          disabled={readOnly}
+          rows={2}
+          placeholder="Internal notes (optional)"
+          className="w-full bg-card border border-border rounded-md p-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
+        />
+      </div>
+
+      {/* Authorized Signatory */}
+      <div className="bg-card border border-border rounded-lg p-4">
+        <label className="block text-xs font-medium text-muted-foreground mb-1.5">Authorized Signatory</label>
+        <Input
+          value={authorizedSignatory}
+          onChange={(e) => setAuthorizedSignatory(e.target.value)}
+          disabled={readOnly}
+          placeholder="Name of authorized signatory"
+        />
+      </div>
+
+      {/* Public Link Panel */}
+      {!isNew && existingInvoice && (
+        <InvoicePublicLinkPanel
+          invoice={{ ...existingInvoice, ...publicLinkData }}
+          onUpdate={(data) => {
+            setPublicLinkData(data);
+            setExistingInvoice({ ...existingInvoice, ...data });
+          }}
+        />
+      )}
+
+      {/* Status actions for existing invoices */}
+      {!isNew && existingInvoice && (
+        <div className="flex items-center justify-end gap-2 flex-wrap">
+          {status === "draft" && (
+            <Button variant="dark" onClick={async () => {
+              try {
+                await base44.entities.Invoice.update(id, { status: "due" });
+                invalidateEntities(queryClient, ["Invoice", "InvoiceItem"]);
+                toast({ title: "Invoice issued" });
+                setStatus("due");
+                load();
+              } catch (e) { setError(e?.message || "Failed to issue invoice."); }
+            }}>
+              <Send className="w-4 h-4" /> Issue Invoice
+            </Button>
+          )}
+          {(status === "due" || status === "sent" || status === "partial" || status === "overdue") && (
+            <Button variant="success" onClick={() => setShowPaymentDialog(true)}>
+              <Wallet className="w-4 h-4" /> Record Payment
+            </Button>
+          )}
+          {status === "draft" && (
+            <Button variant="outline" onClick={sendInvoice} disabled={readOnly}>Mark as Sent</Button>
+          )}
+          <Button variant="destructive" onClick={onDelete}>Delete</Button>
+        </div>
+      )}
+
+      {showPaymentDialog && (
+        <RecordInvoicePaymentDialog
+          open={showPaymentDialog}
+          onClose={() => setShowPaymentDialog(false)}
+          invoice={{ ...existingInvoice, invoice_number: invoiceNumber, grand_total: totals.grandTotal, amount_paid: existingInvoice?.amount_paid || 0 }}
+          onRecorded={() => load()}
+        />
+      )}
+
+      <ClientForm
+        open={showClientForm}
+        onClose={() => setShowClientForm(false)}
+        workspaceId={workspaceId}
+        onSaved={async (savedClient) => {
+          const list = await base44.entities.Client.filter({ workspace_id: workspaceId }, "name", 500);
+          setClients(list || []);
+          setClientId(savedClient.id);
+        }}
+      />
+
+      {!isNew && existingInvoice && (
+        <InvoicePrintView
+          open={showPrintView}
+          onClose={() => setShowPrintView(false)}
+          invoice={{
+            ...existingInvoice,
+            invoice_number: invoiceNumber,
+            invoice_date: invoiceDate,
+            due_date: dueDate,
+            client_id: clientId,
+            event_id: eventId,
+            status,
+            discount_type: discountType,
+            discount_value: Number(discountValue) || 0,
+            gst_applicable: gstApplicable,
+            notes
+          }}
+          items={items}
+          workspace={workspace}
+          currency={currency}
+        />
+      )}
     </div>
   );
 }
