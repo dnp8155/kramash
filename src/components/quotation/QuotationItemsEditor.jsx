@@ -1,4 +1,5 @@
 import { Plus, Trash2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import Button from "@/components/common/Button";
 import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
@@ -11,7 +12,7 @@ export default function QuotationItemsEditor({
   items, updateItem, removeItem,
   addService, addRole, addCustom,
   addServiceId, setAddServiceId, addRoleId, setAddRoleId,
-  services, roles, gstApplicable, readOnly, currency
+  services, roles, gstApplicable, readOnly, currency, itemErrors = {}
 }) {
   return (
     <Section title="Items & Deliverables">
@@ -50,7 +51,7 @@ export default function QuotationItemsEditor({
           {items.map((it, idx) => (
             <div key={idx} className="bg-card border border-border rounded-lg p-3 space-y-2">
               <div className="flex items-center justify-between gap-2">
-                <Input value={it.name} onChange={(e) => updateItem(idx, "name", e.target.value)} disabled={readOnly} className="h-8 flex-1" placeholder="Item name" />
+                <Input value={it.name} onChange={(e) => updateItem(idx, "name", e.target.value)} disabled={readOnly} className={cn("h-8 flex-1", itemErrors[idx]?.name && "border-destructive bg-destructive/5")} placeholder="Item name" />
                 {!readOnly && (
                   <button onClick={() => removeItem(idx)} className="text-muted-foreground hover:text-destructive p-1 shrink-0" aria-label="Remove item">
                     <Trash2 className="w-3.5 h-3.5" />
@@ -108,7 +109,7 @@ export default function QuotationItemsEditor({
                       value={it.name}
                       onChange={(e) => updateItem(idx, "name", e.target.value)}
                       disabled={readOnly}
-                      className="h-8"
+                      className={cn("h-8", itemErrors[idx]?.name && "border-destructive bg-destructive/5")}
                       placeholder="Item name"
                     />
                     <input

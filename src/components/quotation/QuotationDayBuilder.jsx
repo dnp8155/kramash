@@ -13,7 +13,8 @@ export default function QuotationDayBuilder({
   roles,
   services,
   currency,
-  readOnly
+  readOnly,
+  itemErrors = {}
 }) {
   const incDates = useMemo(
     () => includedDates(startDate, endDate, excludedDates),
@@ -171,6 +172,7 @@ export default function QuotationDayBuilder({
           currency={currency}
           readOnly={readOnly}
           includedDates={incDates}
+          itemErrors={itemErrors}
         />
       ))}
 
@@ -193,6 +195,7 @@ export default function QuotationDayBuilder({
           currency={currency}
           readOnly={readOnly}
           includedDates={incDates}
+          itemErrors={itemErrors}
         />
       )}
     </div>

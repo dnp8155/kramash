@@ -67,6 +67,7 @@ export default function QuotationEditor() {
   const [generating, setGenerating] = useState(false);
   const [preview, setPreview] = useState({ url: "", filename: "", open: false, loading: false });
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
   const [showPackageDialog, setShowPackageDialog] = useState(false);
   const [showTemplatePreview, setShowTemplatePreview] = useState(false);
   const [templatePreviewHtml, setTemplatePreviewHtml] = useState("");
@@ -291,19 +292,23 @@ export default function QuotationEditor() {
   });
 
   const validate = () => {
-    if (!quotationDate) return "Quotation date is required.";
-    if (items.length === 0) return "Add at least one item.";
-    for (const it of items) {
-      if (!it.name?.trim()) return "Every item needs a name.";
-      if (Number(it.quantity) < 0) return "Quantity cannot be negative.";
-      if (Number(it.unit_rate) < 0) return "Unit rate cannot be negative.";
-    }
-    return "";
+    const errors = { items: {} };
+    if (!quotationDate) errors.quotationDate = true;
+    if (items.length === 0) errors.noItems = true;
+    items.forEach((it, idx) => {
+      if (!it.name?.trim()) errors.items[idx] = { name: true };
+    });
+    const hasErrors = errors.quotationDate || errors.noItems || Object.keys(errors.items).length > 0;
+    return { ok: !hasErrors, errors };
   };
+
+  // Clear field errors as soon as the user edits any item
+  useEffect(() => { setFieldErrors({}); }, [items]);
 
   const saveDraft = async () => {
     const v = validate();
-    if (v) { setError(v); return; }
+    if (!v.ok) { setFieldErrors(v.errors); if (v.errors.noItems) toast({ title: "Add at least one item.", variant: "destructive" }); return; }
+    setFieldErrors({});
     setError("");
     setSaving(true);
     try {
@@ -336,11 +341,12 @@ export default function QuotationEditor() {
 
   const finalize = async () => {
     const v = validate();
-    if (v) { setError(v); return; }
+    if (!v.ok) { setFieldErrors(v.errors); if (v.errors.noItems) toast({ title: "Add at least one item.", variant: "destructive" }); return; }
     if (gstApplicable && gstWorkspaceEnabled && !workspace.gstin) {
       setError("GST is enabled but your workspace GSTIN is missing. Add it in Preferences or disable GST.");
       return;
     }
+    setFieldErrors({});
     setError("");
     setFinalizing(true);
     try {
@@ -614,7 +620,7 @@ export default function QuotationEditor() {
             <Input value={quotationNumber} onChange={(e) => setQuotationNumber(e.target.value)} disabled={readOnly} />
           </Field>
           <Field label="Date">
-            <Input type="date" value={quotationDate} onChange={(e) => setQuotationDate(e.target.value)} disabled={readOnly} />
+            <Input type="date" value={quotationDate} onChange={(e) => setQuotationDate(e.target.value)} disabled={readOnly} className={cn(fieldErrors.quotationDate && "border-destructive bg-destructive/5")} />
           </Field>
           <Field label="Client">
             <div className="flex items-center gap-2">
@@ -695,6 +701,7 @@ export default function QuotationEditor() {
           services={services}
           currency={currency}
           readOnly={readOnly}
+          itemErrors={fieldErrors.items || {}}
         />
       </div>
 

@@ -2,7 +2,21 @@ import Input from "@/components/common/Input";
 import Toggle from "@/components/common/Toggle";
 import { Section, Field } from "@/components/quotation/QuotationParts";
 import { Textarea } from "@/components/ui/textarea";
-import { Eye, Building2, Share2, MessageSquare, StickyNote } from "lucide-react";
+import { Eye, Building2, Share2, MessageSquare, StickyNote, Instagram, Youtube, Globe, Link as LinkIcon } from "lucide-react";
+import { getSocialIcon } from "@/lib/socialIcons";
+
+function SocialField({ label, url, onChange, placeholder, defaultIcon: DefaultIcon, disabled }) {
+  const DetectedIcon = getSocialIcon(url);
+  const Icon = DetectedIcon || DefaultIcon;
+  return (
+    <Field label={label}>
+      <div className="relative">
+        <Icon className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+        <Input value={url} onChange={onChange} disabled={disabled} placeholder={placeholder} className="pl-9" />
+      </div>
+    </Field>
+  );
+}
 
 export default function QuotationPresentationSection({
   showPricing, setShowPricing,
@@ -84,24 +98,16 @@ export default function QuotationPresentationSection({
       {/* Social Links */}
       <Section icon={Share2} title="Social Links">
         <div className="flex items-center justify-between mb-2">
-          <p className="text-xs text-muted-foreground">Only non-empty links will be shown to the client.</p>
+          <p className="text-xs text-muted-foreground">Only non-empty links will be shown to the client. Icons auto-detect from the URL.</p>
           {!readOnly && (
             <button onClick={loadSocialFromWorkspace} className="text-xs text-primary hover:underline">Load from workspace</button>
           )}
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Field label="Instagram">
-            <Input value={socialLinks.instagram || ""} onChange={(e) => setSocialLinks({ ...socialLinks, instagram: e.target.value })} disabled={readOnly} placeholder="https://instagram.com/…" />
-          </Field>
-          <Field label="YouTube">
-            <Input value={socialLinks.youtube || ""} onChange={(e) => setSocialLinks({ ...socialLinks, youtube: e.target.value })} disabled={readOnly} placeholder="https://youtube.com/…" />
-          </Field>
-          <Field label="Website">
-            <Input value={socialLinks.website || ""} onChange={(e) => setSocialLinks({ ...socialLinks, website: e.target.value })} disabled={readOnly} placeholder="https://…" />
-          </Field>
-          <Field label="Portfolio">
-            <Input value={socialLinks.portfolio || ""} onChange={(e) => setSocialLinks({ ...socialLinks, portfolio: e.target.value })} disabled={readOnly} placeholder="https://…" />
-          </Field>
+          <SocialField label="Instagram" url={socialLinks.instagram || ""} onChange={(e) => setSocialLinks({ ...socialLinks, instagram: e.target.value })} disabled={readOnly} placeholder="https://instagram.com/…" defaultIcon={Instagram} />
+          <SocialField label="YouTube" url={socialLinks.youtube || ""} onChange={(e) => setSocialLinks({ ...socialLinks, youtube: e.target.value })} disabled={readOnly} placeholder="https://youtube.com/…" defaultIcon={Youtube} />
+          <SocialField label="Website" url={socialLinks.website || ""} onChange={(e) => setSocialLinks({ ...socialLinks, website: e.target.value })} disabled={readOnly} placeholder="https://…" defaultIcon={Globe} />
+          <SocialField label="Portfolio" url={socialLinks.portfolio || ""} onChange={(e) => setSocialLinks({ ...socialLinks, portfolio: e.target.value })} disabled={readOnly} placeholder="https://…" defaultIcon={LinkIcon} />
         </div>
       </Section>
 

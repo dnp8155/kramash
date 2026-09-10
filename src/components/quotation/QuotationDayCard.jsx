@@ -25,7 +25,8 @@ export default function QuotationDayCard({
   currency,
   readOnly,
   isUncategorized,
-  includedDates = []
+  includedDates = [],
+  itemErrors = {}
 }) {
   const [addTeamId, setAddTeamId] = useState("");
   const [addServiceId, setAddServiceId] = useState("");
@@ -107,6 +108,7 @@ export default function QuotationDayCard({
                   currency={currency}
                   readOnly={readOnly}
                   showMemberType={it.item_type === "team"}
+                  hasError={!!itemErrors[it._idx]?.name}
                 />
               ))}
             </div>
@@ -143,6 +145,7 @@ export default function QuotationDayCard({
                   currency={currency}
                   readOnly={readOnly}
                   showAddon
+                  hasError={!!itemErrors[it._idx]?.name}
                 />
               ))}
             </div>
@@ -179,6 +182,7 @@ export default function QuotationDayCard({
                   currency={currency}
                   readOnly={readOnly}
                   showDescription
+                  hasError={!!itemErrors[it._idx]?.name}
                 />
               ))}
             </div>
@@ -196,9 +200,9 @@ export default function QuotationDayCard({
 
 // ---- Item Row (stacked card, responsive) ----
 
-function ItemRow({ item, onUpdate, onRemove, currency, readOnly, showMemberType, showAddon, showDescription }) {
+function ItemRow({ item, onUpdate, onRemove, currency, readOnly, showMemberType, showAddon, showDescription, hasError }) {
   return (
-    <div className="bg-muted/20 border border-border/60 rounded-lg p-2.5 space-y-2">
+    <div className={cn("bg-muted/20 border rounded-lg p-2.5 space-y-2", hasError ? "border-destructive bg-destructive/5" : "border-border/60")}>
       <div className="flex items-start gap-2">
         <div className="flex-1 min-w-0">
           {showDescription ? (
@@ -207,7 +211,7 @@ function ItemRow({ item, onUpdate, onRemove, currency, readOnly, showMemberType,
               onChange={(e) => onUpdate("name", e.target.value)}
               disabled={readOnly}
               placeholder="Description (e.g. Drone Coverage)"
-              className="w-full text-sm font-medium bg-transparent focus:outline-none placeholder:text-muted-foreground/50"
+              className={cn("w-full text-sm font-medium bg-transparent focus:outline-none placeholder:text-muted-foreground/50", hasError && "text-destructive placeholder:text-destructive/40")}
             />
           ) : (
             <span className="text-sm font-medium text-foreground block truncate">{item.name || "Unnamed"}</span>
