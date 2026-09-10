@@ -23,6 +23,12 @@ const statusStyles = {
   Accepted: "bg-success/10 text-success border-success/20",
   Rejected: "bg-destructive/10 text-destructive border-destructive/20",
   Expired: "bg-muted text-muted-foreground border-border",
+  // Payment milestone statuses (lowercase)
+  upcoming: "bg-muted text-muted-foreground border-border",
+  due: "bg-warning/10 text-warning border-warning/20",
+  partially_paid: "bg-info/10 text-info border-info/20",
+  paid: "bg-success/10 text-success border-success/20",
+  overdue: "bg-destructive/10 text-destructive border-destructive/20",
   // Subscription / payment statuses (uppercase)
   ACTIVE: "bg-success/10 text-success border-success/20",
   EXPIRED: "bg-muted text-muted-foreground border-border",

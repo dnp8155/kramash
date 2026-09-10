@@ -22,6 +22,7 @@ export default function QuotationDayBuilder({
   items,
   services,
   roles,
+  teamMembers = [],
   gstEnabled,
   allDates = [],
   excludedDates = [],
@@ -63,6 +64,7 @@ export default function QuotationDayBuilder({
       {
         item_type: "role",
         reference_id: role?.id || null,
+        team_member_id: null,
         name: role?.name || "",
         description: "",
         quantity: 1,
@@ -86,6 +88,8 @@ export default function QuotationDayBuilder({
       {
         item_type: "service",
         reference_id: svc?.id || null,
+        provider_id: null,
+        is_addon: false,
         name: svc?.name || "",
         description: svc?.description || "",
         quantity: 1,
@@ -236,6 +240,7 @@ export default function QuotationDayBuilder({
                       idx={idx}
                       activeServices={activeServices}
                       activeRoles={activeRoles}
+                      teamMembers={teamMembers}
                       gstEnabled={gstEnabled}
                       onServiceSelect={handleServiceSelect}
                       onRoleSelect={handleRoleSelect}
@@ -279,6 +284,7 @@ export default function QuotationDayBuilder({
                 idx={idx}
                 activeServices={activeServices}
                 activeRoles={activeRoles}
+                teamMembers={teamMembers}
                 gstEnabled={gstEnabled}
                 onServiceSelect={handleServiceSelect}
                 onRoleSelect={handleRoleSelect}
@@ -330,7 +336,7 @@ export default function QuotationDayBuilder({
 }
 
 // Single item row — responsive: stacked card on mobile, row on desktop
-function ItemRow({ item, idx, activeServices, activeRoles, gstEnabled, onServiceSelect, onRoleSelect, onUpdate, onRemove }) {
+function ItemRow({ item, idx, activeServices, activeRoles, teamMembers = [], gstEnabled, onServiceSelect, onRoleSelect, onUpdate, onRemove }) {
   return (
     <div className="rounded-lg border border-border bg-card p-2.5 sm:p-3">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
@@ -385,6 +391,41 @@ function ItemRow({ item, idx, activeServices, activeRoles, gstEnabled, onService
                 <option key={s} value={s}>{s}</option>
               ))}
             </Select>
+          )}
+          {item.item_type === "role" && (
+            <Select
+              value={item.team_member_id || ""}
+              onChange={(e) => onUpdate(idx, "team_member_id", e.target.value || null)}
+              className="!h-8 !text-xs"
+            >
+              <option value="">Assign team member (optional)</option>
+              {teamMembers.filter((m) => m.status !== "Inactive").map((m) => (
+                <option key={m.id} value={m.id}>{m.name}</option>
+              ))}
+            </Select>
+          )}
+          {item.item_type === "service" && (
+            <div className="flex items-center gap-2">
+              <Select
+                value={item.provider_id || ""}
+                onChange={(e) => onUpdate(idx, "provider_id", e.target.value || null)}
+                className="!h-8 !text-xs"
+              >
+                <option value="">Provider (optional)</option>
+                {teamMembers.filter((m) => m.status !== "Inactive").map((m) => (
+                  <option key={m.id} value={m.id}>{m.name}</option>
+                ))}
+              </Select>
+              <label className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
+                <input
+                  type="checkbox"
+                  checked={item.is_addon || false}
+                  onChange={(e) => onUpdate(idx, "is_addon", e.target.checked)}
+                  className="h-3.5 w-3.5 rounded border-border text-primary focus:ring-primary"
+                />
+                Add-on
+              </label>
+            </div>
           )}
         </div>
 

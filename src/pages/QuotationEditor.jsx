@@ -7,6 +7,7 @@ import { useClients } from "@/hooks/useClients";
 import { useEvents } from "@/hooks/useEvents";
 import { useServices } from "@/hooks/useServices";
 import { useTeamRoles } from "@/hooks/useTeamRoles";
+import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { useQuotations } from "@/hooks/useQuotations";
 import { useBusinessTerminology } from "@/lib/BusinessTerminology";
 import { toast } from "@/components/ui/use-toast";
@@ -48,6 +49,7 @@ export default function QuotationEditor() {
   const { events, loading: eventsLoading } = useEvents();
   const { services } = useServices();
   const { roles } = useTeamRoles();
+  const { members: teamMembers } = useTeamMembers();
   const { quotations, createQuotation, updateQuotation } = useQuotations();
   const t = useBusinessTerminology();
 
@@ -280,6 +282,9 @@ export default function QuotationEditor() {
           quotation_id: quotationId,
           item_type: item.item_type,
           reference_id: item.reference_id || null,
+          team_member_id: item.team_member_id || null,
+          provider_id: item.provider_id || null,
+          is_addon: item.is_addon || false,
           name: item.name,
           description: item.description || "",
           quantity: Number(item.quantity) || 1,
@@ -533,6 +538,7 @@ export default function QuotationEditor() {
                 items={items}
                 services={services}
                 roles={roles}
+                teamMembers={teamMembers}
                 gstEnabled={gstEnabled}
                 allDates={allDates}
                 excludedDates={form.excluded_dates}

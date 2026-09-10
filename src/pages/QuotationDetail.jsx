@@ -20,6 +20,7 @@ import { formatCurrency, formatDate } from "@/utils/format";
 import { generateQuotationPDF } from "@/utils/quotationPdf";
 import { nextQuotationNumber } from "@/utils/quotation";
 import PortalManager from "@/components/quotation/PortalManager";
+import PaymentMilestoneList from "@/components/quotation/PaymentMilestoneList";
 
 export default function QuotationDetail() {
   const { id } = useParams();
@@ -507,6 +508,15 @@ export default function QuotationDetail() {
               />
             </CardBody>
           </Card>
+
+          {quotation.status === "Accepted" && (
+            <Card className="h-fit">
+              <CardHeader><CardTitle>Payment Milestones</CardTitle></CardHeader>
+              <CardBody>
+                <PaymentMilestoneList quotationId={quotation.id} />
+              </CardBody>
+            </Card>
+          )}
 
           <Card className="h-fit">
             <CardHeader><CardTitle>Summary</CardTitle></CardHeader>

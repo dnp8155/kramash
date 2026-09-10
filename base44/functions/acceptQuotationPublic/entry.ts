@@ -122,16 +122,178 @@ export default async function (req: Request): Promise<Response> {
     // Update quotation status
     await base44.asServiceRole.entities.Quotation.update(quotation.id, updates);
 
-    // Sync event contract value
-    if (quotation.event_id && quotation.grand_total) {
-      try {
-        await base44.asServiceRole.entities.Event.update(quotation.event_id, {
-          contract_value: quotation.grand_total,
+    // ─── Synchronization workflow ───
+    // On acceptance, sync the quotation to the Event and Financials architecture.
+    // Creates/updates the Event, team assignments, service assignments, and payment
+    // milestones (dues). No FinancialTransaction is created — acceptance ≠ payment.
+
+    const quotationItems = await base44.asServiceRole.entities.QuotationItem.filter(
+      { quotation_id: quotation.id },
+      "sort_order",
+      500
+    );
+
+    // 1. Event creation/update (duplicate prevention via quotation.event_id)
+    let eventId = quotation.event_id;
+    if (!eventId) {
+      let clientId = quotation.client_id;
+      if (!clientId && quotation.custom_client) {
+        const newClient = await base44.asServiceRole.entities.Client.create({
+          workspace_id: quotation.workspace_id,
+          name: quotation.custom_client.name,
+          phone: quotation.custom_client.phone || "",
+          email: quotation.custom_client.email || "",
+          address: quotation.custom_client.address || "",
         });
+        clientId = newClient.id;
+      }
+
+      const eventTitle =
+        quotation.event_snapshot?.title ||
+        quotation.custom_client?.venue ||
+        quotation.package_name ||
+        `Project ${quotation.quotation_number}`;
+
+      const eventTypeMap: Record<string, string> = {
+        PHOTOGRAPHY_VIDEOGRAPHY: "Photography",
+        EVENT_MANAGEMENT: "Event Management",
+        ARCHITECTURE_INTERIOR: "Architecture",
+        OTHER: "Other",
+      };
+
+      const newEvent = await base44.asServiceRole.entities.Event.create({
+        workspace_id: quotation.workspace_id,
+        client_id: clientId,
+        title: eventTitle,
+        event_type: eventTypeMap[quotation.category] || "Other",
+        start_date: quotation.project_start_date || quotation.quotation_date,
+        end_date: quotation.project_end_date || null,
+        venue: quotation.event_snapshot?.venue || quotation.custom_client?.venue || "",
+        venue_address: quotation.event_snapshot?.venue_address || "",
+        status: "Confirmed",
+        contract_value: quotation.grand_total,
+      });
+      eventId = newEvent.id;
+
+      // Link event back to quotation (stable quotationId → eventId relationship)
+      await base44.asServiceRole.entities.Quotation.update(quotation.id, { event_id: eventId });
+    } else {
+      // Update existing event — reconcile, don't duplicate
+      await base44.asServiceRole.entities.Event.update(eventId, {
+        contract_value: quotation.grand_total,
+        status: "Confirmed",
+      });
+    }
+
+    // 2. Team sync — role items with team_member_id → EventTeamAssignment
+    const roleItems = (quotationItems || []).filter(
+      (i: any) => i.item_type === "role" && i.team_member_id
+    );
+    for (const item of roleItems) {
+      const existing = await base44.asServiceRole.entities.EventTeamAssignment.filter({
+        event_id: eventId,
+        team_member_id: item.team_member_id,
+        assignment_status: "Assigned",
+      });
+      const workingDates = item.day_date ? [item.day_date] : [];
+
+      if (existing && existing.length > 0) {
+        await base44.asServiceRole.entities.EventTeamAssignment.update(existing[0].id, {
+          role_id: item.reference_id || null,
+          role_name_snapshot: item.name,
+          agreed_rate: item.unit_rate || 0,
+          working_dates: workingDates,
+          category_type: item.member_side || "",
+        });
+      } else {
+        await base44.asServiceRole.entities.EventTeamAssignment.create({
+          workspace_id: quotation.workspace_id,
+          event_id: eventId,
+          team_member_id: item.team_member_id,
+          role_id: item.reference_id || null,
+          role_name_snapshot: item.name,
+          agreed_rate: item.unit_rate || 0,
+          rate_type: "Per Event",
+          working_dates: workingDates,
+          category_type: item.member_side || "",
+          assignment_status: "Assigned",
+        });
+      }
+    }
+
+    // 3. Service sync — service items with reference_id → EventServiceAssignment
+    const serviceItems = (quotationItems || []).filter(
+      (i: any) => i.item_type === "service" && i.reference_id
+    );
+    const providerIds = [...new Set(serviceItems.map((i: any) => i.provider_id).filter(Boolean))];
+    const providerNames: Record<string, string> = {};
+    for (const pid of providerIds) {
+      try {
+        const member = await base44.asServiceRole.entities.TeamMember.get(pid);
+        if (member) providerNames[pid] = member.name;
       } catch {}
     }
 
-    return Response.json({ success: true, quotation_id: quotation.id });
+    for (const item of serviceItems) {
+      const existing = await base44.asServiceRole.entities.EventServiceAssignment.filter({
+        event_id: eventId,
+        service_id: item.reference_id,
+        assignment_status: "Assigned",
+      });
+
+      const providerName = item.provider_id ? providerNames[item.provider_id] || null : null;
+
+      if (existing && existing.length > 0) {
+        await base44.asServiceRole.entities.EventServiceAssignment.update(existing[0].id, {
+          provider_id: item.provider_id || null,
+          provider_name_snapshot: providerName,
+          rate: item.unit_rate || 0,
+          is_addon: item.is_addon === true,
+        });
+      } else {
+        await base44.asServiceRole.entities.EventServiceAssignment.create({
+          workspace_id: quotation.workspace_id,
+          event_id: eventId,
+          service_id: item.reference_id,
+          service_name_snapshot: item.name,
+          provider_id: item.provider_id || null,
+          provider_name_snapshot: providerName,
+          rate: item.unit_rate || 0,
+          is_addon: item.is_addon === true,
+          assignment_status: "Assigned",
+        });
+      }
+    }
+
+    // 4. Milestone sync — create PaymentMilestone dues (not payments)
+    // Duplicate prevention: only create if no milestones exist for this quotation
+    const existingMilestones = await base44.asServiceRole.entities.PaymentMilestone.filter({
+      quotation_id: quotation.id,
+    });
+    if (
+      existingMilestones.length === 0 &&
+      Array.isArray(quotation.milestones) &&
+      quotation.milestones.length > 0
+    ) {
+      await base44.asServiceRole.entities.PaymentMilestone.bulkCreate(
+        quotation.milestones.map((m: any, idx: number) => ({
+          workspace_id: quotation.workspace_id,
+          quotation_id: quotation.id,
+          event_id: eventId,
+          label: m.label || `Milestone ${idx + 1}`,
+          percentage: m.percentage || 0,
+          amount: m.amount || 0,
+          paid_amount: 0,
+          sort_order: idx,
+          status: "upcoming",
+        }))
+      );
+    }
+
+    // 5. No FinancialTransaction created — acceptance ≠ payment
+    // 6. SELF safety — no payable transactions created on acceptance
+
+    return Response.json({ success: true, quotation_id: quotation.id, event_id: eventId });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }

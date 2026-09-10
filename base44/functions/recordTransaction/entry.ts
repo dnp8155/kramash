@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 import { findFYForDate } from '../../shared/financialYear.ts';
+import { allocateMilestonePayments } from '../../shared/milestoneAllocation.ts';
 
 // Records a financial transaction with server-side validation:
 //   1. SELF guard — blocks TEAM_PAYMENT / BUSINESS_EXPENSE transactions
@@ -103,6 +104,18 @@ export default async function(req: Request): Promise<Response> {
       financial_year_id: fy.id,
       status: body.status || 'ACTIVE',
     });
+
+    // ─── Allocate CLIENT_RECEIPT to payment milestones ───
+    // When a client payment is recorded, allocate it to PaymentMilestone records
+    // for the event. This updates paid_amount and status on each milestone.
+    // Acceptance only created dues; this is where actual payments are tracked.
+    if (transaction_type === 'CLIENT_RECEIPT' && body.event_id) {
+      try {
+        await allocateMilestonePayments(base44, workspace_id, body.event_id);
+      } catch (e) {
+        // Milestone allocation failure should not block the transaction
+      }
+    }
 
     return Response.json({ success: true, transaction });
   } catch (error) {

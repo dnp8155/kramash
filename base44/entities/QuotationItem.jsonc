@@ -24,6 +24,19 @@
       "type": "string",
       "description": "Service or TeamRole id (null for custom items)"
     },
+    "team_member_id": {
+      "type": "string",
+      "description": "Team member assigned to this role item. On quotation acceptance, syncs to EventTeamAssignment. Null for unassigned roles."
+    },
+    "provider_id": {
+      "type": "string",
+      "description": "Team member providing this service item. On quotation acceptance, syncs to EventServiceAssignment.provider_id. Null when no specific provider."
+    },
+    "is_addon": {
+      "type": "boolean",
+      "default": false,
+      "description": "For service items: whether this is an add-on on top of the base contract value"
+    },
     "name": {
       "type": "string",
       "description": "Snapshot of the item name at creation time"

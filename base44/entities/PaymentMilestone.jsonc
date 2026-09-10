@@ -1,0 +1,112 @@
+{
+  "name": "PaymentMilestone",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "description": "Workspace this milestone belongs to"
+    },
+    "quotation_id": {
+      "type": "string",
+      "description": "Quotation this milestone was created from"
+    },
+    "event_id": {
+      "type": "string",
+      "description": "Event this milestone is linked to (for payment allocation)"
+    },
+    "label": {
+      "type": "string",
+      "description": "Milestone label (e.g. Advance on Signing, Event Day, Handover)"
+    },
+    "percentage": {
+      "type": "number",
+      "description": "Percentage of grand total this milestone represents (e.g. 50)"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Due amount for this milestone in workspace currency"
+    },
+    "paid_amount": {
+      "type": "number",
+      "default": 0,
+      "description": "Amount paid toward this milestone, allocated from CLIENT_RECEIPT transactions in sort order. Not set on acceptance \u2014 only updated when an actual payment is recorded."
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date",
+      "description": "When this milestone payment is due (optional, set by admin). Drives overdue/due status computation."
+    },
+    "sort_order": {
+      "type": "number",
+      "default": 0,
+      "description": "Display and payment allocation order. Milestones are paid in this sequence."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "upcoming",
+        "due",
+        "partially_paid",
+        "paid",
+        "overdue"
+      ],
+      "default": "upcoming",
+      "description": "Computed from paid_amount and due_date. upcoming = no payment, due date not near; due = no payment, due within 7 days; partially_paid = some payment but less than amount; paid = fully paid; overdue = no/partial payment, due date passed."
+    }
+  },
+  "required": [
+    "workspace_id",
+    "quotation_id",
+    "label",
+    "amount"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.workspace_id": {
+            "$in": "{{user.data.workspace_ids}}"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "data.workspace_id": {
+        "$in": "{{user.data.workspace_ids}}"
+      }
+    },
+    "update": {
+      "$or": [
+        {
+          "data.workspace_id": {
+            "$in": "{{user.data.workspace_ids}}"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.workspace_id": {
+            "$in": "{{user.data.workspace_ids}}"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
