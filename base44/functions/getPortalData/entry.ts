@@ -171,6 +171,14 @@ export default async function (req: Request): Promise<Response> {
         special_notes: quotation.special_notes,
         show_item_pricing: quotation.show_item_pricing !== false,
         hide_team_names: quotation.hide_team_names === true,
+        is_package: quotation.is_package === true,
+        package_name: quotation.package_name || "",
+        package_inclusions: quotation.package_inclusions || "",
+        milestones: Array.isArray(quotation.milestones) ? quotation.milestones : [],
+        signed_at: quotation.signed_at || null,
+        signed_by_name: quotation.signed_by_name || "",
+        signature_data: quotation.signature_data || "",
+        signature_type: quotation.signature_type || "",
         client_snapshot: quotation.client_snapshot,
         business_snapshot: quotation.business_snapshot,
         event_snapshot: quotation.event_snapshot,
@@ -188,7 +196,23 @@ export default async function (req: Request): Promise<Response> {
         member_side: i.member_side,
       })),
       workspace: workspace
-        ? { name: workspace.name, logo: workspace.logo, phone: workspace.phone, email: workspace.email }
+        ? {
+            name: workspace.name,
+            logo: workspace.logo,
+            phone: workspace.phone,
+            email: workspace.email,
+            address: [workspace.address, workspace.city, workspace.state].filter(Boolean).join(", "),
+            gstin: workspace.gstin || "",
+            gst_business_name: workspace.gst_business_name || "",
+            bank_account_name: workspace.bank_account_name || "",
+            bank_name: workspace.bank_name || "",
+            bank_account_number: workspace.bank_account_number || "",
+            bank_ifsc: workspace.bank_ifsc || "",
+            bank_upi_id: workspace.bank_upi_id || "",
+            social_instagram: workspace.social_instagram || "",
+            social_website: workspace.social_website || "",
+            social_youtube: workspace.social_youtube || "",
+          }
         : null,
       event: event
         ? {

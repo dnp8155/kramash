@@ -65,6 +65,40 @@
       "default": false,
       "description": "If true, team member names are hidden on the public client portal \u2014 only role and count are shown."
     },
+    "is_package": {
+      "type": "boolean",
+      "default": false,
+      "description": "Package/Lump-Sum mode. When true, individual item pricing (Qty/Rate/Amount) is hidden on the public quotation and only the consolidated package total is shown."
+    },
+    "package_name": {
+      "type": "string",
+      "description": "Package title for lump-sum mode (e.g. Wedding Package, Complete Coverage)"
+    },
+    "package_inclusions": {
+      "type": "string",
+      "description": "Deliverables and inclusions summary text for package mode"
+    },
+    "milestones": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "description": "Milestone label (e.g. Advance on Signing, Event Day, Handover)"
+          },
+          "percentage": {
+            "type": "number",
+            "description": "Percentage of grand total this milestone represents (e.g. 50)"
+          },
+          "amount": {
+            "type": "number",
+            "description": "Computed amount for this milestone in workspace currency"
+          }
+        }
+      },
+      "description": "Payment milestone schedule shown on the public quotation (e.g. 50% Advance, 30% Event Day, 20% Handover)"
+    },
     "custom_client": {
       "type": "object",
       "description": "Custom client details when no existing Client is selected (does not create a master Client record)",
@@ -175,6 +209,27 @@
       "type": "string",
       "description": "Optional internal notes"
     },
+    "signed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when the client electronically signed/accepted the quotation via the public portal"
+    },
+    "signed_by_name": {
+      "type": "string",
+      "description": "Legal name entered by the client at the time of electronic signing"
+    },
+    "signature_data": {
+      "type": "string",
+      "description": "Base64 data URL of the drawn signature image, or the typed legal name"
+    },
+    "signature_type": {
+      "type": "string",
+      "enum": [
+        "drawn",
+        "typed"
+      ],
+      "description": "Whether the client's signature was drawn on canvas or typed as a legal name"
+    },
     "client_snapshot": {
       "type": "object",
       "description": "Snapshot of client details at finalization for historical accuracy",
@@ -234,10 +289,12 @@
           "type": "string"
         },
         "start_date": {
-          "type": "string"
+          "type": "string",
+          "format": "date"
         },
         "end_date": {
-          "type": "string"
+          "type": "string",
+          "format": "date"
         },
         "venue": {
           "type": "string"

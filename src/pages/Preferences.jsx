@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Save, Building2, Bell, Palette, Receipt, Upload, Loader2, Trash2, Plus, Pencil, Users, FileText } from "lucide-react";
+import { Save, Building2, Bell, Palette, Receipt, Upload, Loader2, Trash2, Plus, Pencil, Users, FileText, Wallet, Share2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useWorkspace } from "@/lib/WorkspaceContext";
 import { useTeamRoles } from "@/hooks/useTeamRoles";
@@ -98,6 +98,14 @@ export default function Preferences() {
         default_quotation_terms: currentWorkspace.default_quotation_terms || "",
         event_types: currentWorkspace.event_types || [],
         event_statuses: currentWorkspace.event_statuses || [],
+        bank_account_name: currentWorkspace.bank_account_name || "",
+        bank_name: currentWorkspace.bank_name || "",
+        bank_account_number: currentWorkspace.bank_account_number || "",
+        bank_ifsc: currentWorkspace.bank_ifsc || "",
+        bank_upi_id: currentWorkspace.bank_upi_id || "",
+        social_instagram: currentWorkspace.social_instagram || "",
+        social_website: currentWorkspace.social_website || "",
+        social_youtube: currentWorkspace.social_youtube || "",
       });
     }
   }, [currentWorkspace?.id]);
@@ -163,6 +171,14 @@ export default function Preferences() {
         default_quotation_terms: form.default_quotation_terms || "",
         event_types: form.event_types || [],
         event_statuses: form.event_statuses || [],
+        bank_account_name: form.bank_account_name.trim(),
+        bank_name: form.bank_name.trim(),
+        bank_account_number: form.bank_account_number.trim(),
+        bank_ifsc: form.bank_ifsc.trim(),
+        bank_upi_id: form.bank_upi_id.trim(),
+        social_instagram: form.social_instagram.trim(),
+        social_website: form.social_website.trim(),
+        social_youtube: form.social_youtube.trim(),
       });
       await refresh();
       toast({ title: "Changes saved", description: "Your workspace has been updated." });
@@ -309,6 +325,40 @@ export default function Preferences() {
                 </Select>
               </div>
             )}
+          </CardBody>
+        </Card>
+
+        {/* Bank & Payment Details */}
+        <Card className="lg:col-span-2">
+          <CardHeader className="flex items-center gap-2">
+            <Wallet className="h-4 w-4 text-primary" />
+            <CardTitle>Bank & Payment Details</CardTitle>
+          </CardHeader>
+          <CardBody className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Input label="Account Holder Name" value={form.bank_account_name} onChange={(e) => set("bank_account_name", e.target.value)} />
+            <Input label="Bank Name" value={form.bank_name} onChange={(e) => set("bank_name", e.target.value)} />
+            <Input label="Account Number" value={form.bank_account_number} onChange={(e) => set("bank_account_number", e.target.value)} />
+            <Input label="IFSC Code" value={form.bank_ifsc} onChange={(e) => set("bank_ifsc", e.target.value.toUpperCase())} />
+            <Input label="UPI ID" value={form.bank_upi_id} onChange={(e) => set("bank_upi_id", e.target.value)} className="sm:col-span-2" />
+            <p className="text-xs text-muted-foreground sm:col-span-2">
+              These details appear on the public quotation page for client payments. Only fill the fields you want to share.
+            </p>
+          </CardBody>
+        </Card>
+
+        {/* Social Links */}
+        <Card className="lg:col-span-2">
+          <CardHeader className="flex items-center gap-2">
+            <Share2 className="h-4 w-4 text-primary" />
+            <CardTitle>Social Links</CardTitle>
+          </CardHeader>
+          <CardBody className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Input label="Instagram URL" value={form.social_instagram} onChange={(e) => set("social_instagram", e.target.value)} placeholder="https://instagram.com/…" />
+            <Input label="Website URL" value={form.social_website} onChange={(e) => set("social_website", e.target.value)} placeholder="https://…" />
+            <Input label="YouTube URL" value={form.social_youtube} onChange={(e) => set("social_youtube", e.target.value)} placeholder="https://youtube.com/@…" />
+            <p className="text-xs text-muted-foreground sm:col-span-2">
+              These links appear as clickable buttons on the public quotation page. Only fill the ones you want to show.
+            </p>
           </CardBody>
         </Card>
 

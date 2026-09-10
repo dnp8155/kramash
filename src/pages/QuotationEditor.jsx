@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Save, FileCheck, Loader2, AlertCircle, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, Save, FileCheck, Loader2, AlertCircle, Eye, EyeOff, Package } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useWorkspace } from "@/lib/WorkspaceContext";
 import { useClients } from "@/hooks/useClients";
@@ -17,6 +17,7 @@ import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
 import LoadingState from "@/components/common/LoadingState";
 import QuotationDayBuilder from "@/components/quotation/QuotationDayBuilder";
+import MilestoneEditor from "@/components/quotation/MilestoneEditor";
 import { computeQuotationTotals, nextQuotationNumber, lineTotal, buildClientSnapshot, buildBusinessSnapshot, buildEventSnapshot } from "@/utils/quotation";
 import { dateRange } from "@/utils/dates";
 import { formatCurrency } from "@/utils/format";
@@ -97,6 +98,10 @@ export default function QuotationEditor() {
             terms_and_conditions: q.terms_and_conditions || "",
             special_notes: q.special_notes || "",
             notes: q.notes || "",
+            is_package: q.is_package === true,
+            package_name: q.package_name || "",
+            package_inclusions: q.package_inclusions || "",
+            milestones: Array.isArray(q.milestones) ? q.milestones : [],
           });
           setItems(qItems || []);
         } catch (e) {
@@ -137,6 +142,10 @@ export default function QuotationEditor() {
         terms_and_conditions: defaultTerms,
         special_notes: "",
         notes: "",
+        is_package: false,
+        package_name: "",
+        package_inclusions: "",
+        milestones: [],
       });
       setItems(estimateItems);
     }
@@ -243,6 +252,10 @@ export default function QuotationEditor() {
       terms_and_conditions: form.terms_and_conditions,
       special_notes: form.special_notes,
       notes: form.notes,
+      is_package: form.is_package,
+      package_name: form.is_package ? form.package_name : null,
+      package_inclusions: form.is_package ? form.package_inclusions : null,
+      milestones: form.milestones && form.milestones.length > 0 ? form.milestones : null,
     };
     if (!isEdit) data.quotation_number = qNum;
     return data;
@@ -553,6 +566,46 @@ export default function QuotationEditor() {
                 When off, the client sees only the day/event scope and final total. Admin always retains full pricing data.
               </p>
 
+              {/* Package / Lump-sum mode */}
+              <label className="flex cursor-pointer items-center justify-between rounded-lg border border-border bg-muted/40 px-3 py-2.5 text-sm">
+                <span className="flex items-center gap-2 font-medium text-foreground">
+                  <Package className="h-4 w-4" />
+                  Package / Lump-Sum Mode
+                </span>
+                <button
+                  type="button"
+                  onClick={() => set("is_package", !form.is_package)}
+                  className={`relative h-6 w-11 rounded-full transition-colors ${form.is_package ? "bg-primary" : "bg-border"}`}
+                  role="switch"
+                  aria-checked={form.is_package}
+                >
+                  <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${form.is_package ? "translate-x-5" : "translate-x-0.5"}`} />
+                </button>
+              </label>
+              {form.is_package && (
+                <div className="space-y-3 rounded-lg border border-border bg-muted/20 p-3">
+                  <Input
+                    label="Package Name"
+                    value={form.package_name}
+                    onChange={(e) => set("package_name", e.target.value)}
+                    placeholder="e.g. Wedding Package, Complete Coverage"
+                  />
+                  <div>
+                    <label className="text-sm font-medium text-foreground">Package Inclusions / Deliverables</label>
+                    <textarea
+                      value={form.package_inclusions}
+                      onChange={(e) => set("package_inclusions", e.target.value)}
+                      rows={3}
+                      placeholder="Describe what's included in this package…"
+                      className="mt-1.5 w-full rounded-lg border border-input bg-card px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    In package mode, individual item pricing (Qty/Rate/Amount) is hidden on the public quotation. Only the consolidated package total is shown.
+                  </p>
+                </div>
+              )}
+
               <div>
                 <label className="text-sm font-medium text-foreground">Terms & Conditions</label>
                 <textarea
@@ -700,6 +753,17 @@ export default function QuotationEditor() {
                   <span className="text-xl font-bold text-primary">{formatCurrency(totals.grand_total)}</span>
                 </div>
               </div>
+            </CardBody>
+          </Card>
+
+          <Card className="h-fit">
+            <CardHeader><CardTitle>Payment Milestones</CardTitle></CardHeader>
+            <CardBody>
+              <MilestoneEditor
+                milestones={form.milestones}
+                grandTotal={totals.grand_total}
+                onChange={(ms) => set("milestones", ms)}
+              />
             </CardBody>
           </Card>
 

@@ -53,8 +53,29 @@ export default async function (req: Request): Promise<Response> {
       return Response.json({ error: "This quotation is not yet ready for acceptance." }, { status: 400 });
     }
 
+    // Extract signature data from the request body
+    const signedByName = body?.signed_by_name;
+    const signatureData = body?.signature_data;
+    const signatureType = body?.signature_type;
+
+    if (!signedByName || typeof signedByName !== "string" || signedByName.trim().length < 2) {
+      return Response.json({ error: "Legal name is required to sign the quotation." }, { status: 400 });
+    }
+    if (!signatureData || typeof signatureData !== "string" || signatureData.length < 2) {
+      return Response.json({ error: "Signature is required to accept the quotation." }, { status: 400 });
+    }
+    if (!["drawn", "typed"].includes(signatureType)) {
+      return Response.json({ error: "Invalid signature type." }, { status: 400 });
+    }
+
     // Build snapshots if not already present (for historical accuracy)
-    const updates: any = { status: "Accepted" };
+    const updates: any = {
+      status: "Accepted",
+      signed_at: new Date().toISOString(),
+      signed_by_name: signedByName.trim(),
+      signature_data: signatureData,
+      signature_type: signatureType,
+    };
 
     if (!quotation.client_snapshot) {
       if (quotation.client_id) {

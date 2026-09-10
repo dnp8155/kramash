@@ -184,3 +184,10 @@
     background: transparent;
   }
 }
+
+/* Print styles for public quotation page */
+@media print {
+  body { background: white !important; }
+  .rounded-2xl { border-radius: 0.25rem !important; box-shadow: none !important; }
+  .shadow-sm { box-shadow: none !important; }
+}
