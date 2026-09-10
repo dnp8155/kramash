@@ -1,19 +1,24 @@
 import { useState, useEffect } from "react";
+import { base44 } from "@/api/base44Client";
+import { useWorkspace } from "@/lib/WorkspaceContext";
 import { themes } from "@/constants/preferencesConfig";
 import Toggle from "@/components/common/Toggle";
+import { useToast } from "@/components/ui/use-toast";
+import { useDisplayPreferences } from "@/hooks/useDisplayPreferences";
 import { cn } from "@/lib/utils";
 
 export default function AppearanceSection() {
+  const { workspace } = useWorkspace();
+  const { toast } = useToast();
+  const prefs = useDisplayPreferences();
+
   const [theme, setTheme] = useState(() => {
     if (typeof window === "undefined") return "Contact Sheet";
     return localStorage.getItem("app-theme") || "Contact Sheet";
   });
-  const [toggles, setToggles] = useState({
-    statusDots: true,
-    groupUpcoming: true,
-    eventStatus: true,
-    menubarLabels: true,
-  });
+  // Local-only toggles (not persisted to workspace — UI-level preferences)
+  const [groupUpcoming, setGroupUpcoming] = useState(true);
+  const [menubarLabels, setMenubarLabels] = useState(true);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -22,7 +27,16 @@ export default function AppearanceSection() {
     localStorage.setItem("app-theme", theme);
   }, [theme]);
 
-  const setT = (key) => (v) => setToggles((p) => ({ ...p, [key]: v }));
+  const setPref = (key) => async (v) => {
+    const next = { ...prefs, [key]: v };
+    try {
+      await base44.entities.Workspace.update(workspace.id, {
+        display_preferences: JSON.stringify(next),
+      });
+    } catch (e) {
+      toast({ title: "Failed to save preference", description: e?.message, variant: "destructive" });
+    }
+  };
 
   return (
     <div className="bg-card border border-border rounded-lg p-5 max-w-lg space-y-5">
@@ -46,20 +60,24 @@ export default function AppearanceSection() {
       <div className="pt-4 border-t border-border">
         <h3 className="text-sm font-semibold mb-3">Display</h3>
         <div className="space-y-3">
-          <ToggleRow label="Show status dots" checked={toggles.statusDots} onChange={setT("statusDots")} />
-          <ToggleRow label="Group upcoming events" checked={toggles.groupUpcoming} onChange={setT("groupUpcoming")} />
-          <ToggleRow label="Show event status" checked={toggles.eventStatus} onChange={setT("eventStatus")} />
-          <ToggleRow label="Show menubar labels" checked={toggles.menubarLabels} onChange={setT("menubarLabels")} />
+          <ToggleRow label="Show progress indicators" hint="Event status colors (Upcoming, In Progress, Completed, Cancelled)" checked={prefs.showProgressIndicators} onChange={setPref("showProgressIndicators")} />
+          <ToggleRow label="Show member type colors" hint="Color-code team member type tags (Bride Side, Groom Side, etc.)" checked={prefs.showMemberTypeColors} onChange={setPref("showMemberTypeColors")} />
+          <ToggleRow label="Show status dots" hint="Colored dot before team member names (active, inactive, booked)" checked={prefs.showStatusDots} onChange={setPref("showStatusDots")} />
+          <ToggleRow label="Group upcoming events" checked={groupUpcoming} onChange={setGroupUpcoming} />
+          <ToggleRow label="Show menubar labels" checked={menubarLabels} onChange={setMenubarLabels} />
         </div>
       </div>
     </div>
   );
 }
 
-function ToggleRow({ label, checked, onChange }) {
+function ToggleRow({ label, hint, checked, onChange }) {
   return (
-    <div className="flex items-center justify-between">
-      <span className="text-sm text-foreground">{label}</span>
+    <div className="flex items-center justify-between gap-3">
+      <div className="min-w-0">
+        <span className="text-sm text-foreground block">{label}</span>
+        {hint && <span className="text-xs text-muted-foreground">{hint}</span>}
+      </div>
       <Toggle checked={checked} onChange={onChange} label={label} />
     </div>
   );

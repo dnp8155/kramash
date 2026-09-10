@@ -6,10 +6,12 @@ import EmptyState from "@/components/common/EmptyState";
 import Button from "@/components/common/Button";
 import { EVENT_STATUS } from "@/constants/statusConfig";
 import { formatEventDates, isThisWeek, formatAssignedDates } from "@/lib/dates";
+import { useDisplayPreferences } from "@/hooks/useDisplayPreferences";
 import { cn } from "@/lib/utils";
 
 export default function EventsTable({ events, clients, teamMap = {}, serviceMap = {}, assignmentsByEvent = {}, loading, onEventClick, onEditEvent, onAdd, canAdd, term }) {
   const t = term || {};
+  const prefs = useDisplayPreferences();
   if (loading) {
     return (
       <div className="bg-card border border-border rounded-xl shadow-card">
@@ -52,7 +54,7 @@ export default function EventsTable({ events, clients, teamMap = {}, serviceMap 
             {weekEvents.length} {t.workItemSingular || "Event"}{weekEvents.length > 1 ? "s" : ""} This Week
           </div>
           {weekEvents.map((e) => (
-            <Row key={e.id} event={e} term={t} clientName={clientName(e.client_id)} teamMap={teamMap} serviceMap={serviceMap} assignmentsByEvent={assignmentsByEvent} onClick={() => onEventClick(e)} onEdit={() => onEditEvent(e)} />
+            <Row key={e.id} event={e} term={t} prefs={prefs} clientName={clientName(e.client_id)} teamMap={teamMap} serviceMap={serviceMap} assignmentsByEvent={assignmentsByEvent} onClick={() => onEventClick(e)} onEdit={() => onEditEvent(e)} />
           ))}
         </>
       )}
@@ -63,7 +65,7 @@ export default function EventsTable({ events, clients, teamMap = {}, serviceMap 
             All {t.workItemPlural || "Events"}
           </div>
           {laterEvents.map((e) => (
-            <Row key={e.id} event={e} term={t} clientName={clientName(e.client_id)} teamMap={teamMap} serviceMap={serviceMap} assignmentsByEvent={assignmentsByEvent} onClick={() => onEventClick(e)} onEdit={() => onEditEvent(e)} />
+            <Row key={e.id} event={e} term={t} prefs={prefs} clientName={clientName(e.client_id)} teamMap={teamMap} serviceMap={serviceMap} assignmentsByEvent={assignmentsByEvent} onClick={() => onEventClick(e)} onEdit={() => onEditEvent(e)} />
           ))}
         </>
       )}
@@ -71,7 +73,7 @@ export default function EventsTable({ events, clients, teamMap = {}, serviceMap 
   );
 }
 
-function Row({ event, clientName, teamMap, serviceMap, assignmentsByEvent, onClick, onEdit, term }) {
+function Row({ event, clientName, teamMap, serviceMap, assignmentsByEvent, onClick, onEdit, term, prefs }) {
   const teamNames = (event.team_member_ids || []).map((id) => teamMap[id]?.name).filter(Boolean);
   const serviceNames = (event.service_ids || []).map((id) => serviceMap[id]?.name).filter(Boolean);
   const eventAssignments = assignmentsByEvent?.[event.id] || [];
@@ -86,7 +88,9 @@ function Row({ event, clientName, teamMap, serviceMap, assignmentsByEvent, onCli
       >
         <span className="text-sm text-muted-foreground font-medium hidden sm:block">{shortId}</span>
         <div className="flex items-center gap-2.5 min-w-0">
-          <span className={cn("w-2 h-2 rounded-full shrink-0", EVENT_STATUS[event.status]?.dot)} />
+          {prefs?.showProgressIndicators && (
+            <span className={cn("w-2 h-2 rounded-full shrink-0", EVENT_STATUS[event.status]?.dot)} />
+          )}
           <div className="min-w-0">
             <div className="text-sm font-medium text-foreground truncate">{event.title}</div>
             <div className="text-xs text-muted-foreground sm:hidden">{event.event_type} · {formatEventDates(event)}</div>
@@ -125,7 +129,7 @@ function Row({ event, clientName, teamMap, serviceMap, assignmentsByEvent, onCli
           </div>
 
           <div className="space-y-2 text-sm">
-            {event.venue && (
+            {prefs?.showAddressOnCards && event.venue && (
               <div className="flex items-start gap-2 text-muted-foreground">
                 <MapPin className="w-3.5 h-3.5 mt-0.5 shrink-0" />
                 <span>{event.venue}{event.venue_address ? ` · ${event.venue_address}` : ""}</span>
@@ -143,7 +147,7 @@ function Row({ event, clientName, teamMap, serviceMap, assignmentsByEvent, onCli
                 <span className="line-clamp-2">{event.notes}</span>
               </div>
             )}
-            {eventAssignments.length > 0 ? (
+            {prefs?.showTeam && eventAssignments.length > 0 ? (
               <div className="flex items-start gap-2 text-muted-foreground">
                 <Users className="w-3.5 h-3.5 mt-0.5 shrink-0" />
                 <ul className="space-y-1 min-w-0">
@@ -161,7 +165,7 @@ function Row({ event, clientName, teamMap, serviceMap, assignmentsByEvent, onCli
                   })}
                 </ul>
               </div>
-            ) : teamNames.length > 0 && (
+            ) : prefs?.showTeam && teamNames.length > 0 && (
               <div className="flex items-start gap-2 text-muted-foreground">
                 <Users className="w-3.5 h-3.5 mt-0.5 shrink-0" />
                 <div className="flex flex-wrap gap-1.5">
@@ -171,7 +175,7 @@ function Row({ event, clientName, teamMap, serviceMap, assignmentsByEvent, onCli
                 </div>
               </div>
             )}
-            {serviceNames.length > 0 && (
+            {prefs?.showServicesOnCards && serviceNames.length > 0 && (
               <div className="flex items-start gap-2 text-muted-foreground">
                 <Briefcase className="w-3.5 h-3.5 mt-0.5 shrink-0" />
                 <div className="flex flex-wrap gap-1.5">

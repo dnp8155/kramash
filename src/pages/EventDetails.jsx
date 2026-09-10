@@ -37,6 +37,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
+import { useDisplayPreferences } from "@/hooks/useDisplayPreferences";
 import { invalidateEntities } from "@/lib/queryInvalidation";
 
 export default function EventDetails() {
@@ -45,6 +46,7 @@ export default function EventDetails() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const term = useBusinessTerminology();
+  const prefs = useDisplayPreferences();
 
   const [showForm, setShowForm] = useState(false);
   const [showAssign, setShowAssign] = useState(false);
@@ -57,6 +59,19 @@ export default function EventDetails() {
   const [servicePayAssignment, setServicePayAssignment] = useState(null);
   const [tab, setTab] = useState("Team");
   const queryClient = useQueryClient();
+
+  // Ensure the active tab is always in the filtered tabs list
+  useEffect(() => {
+    const validTabs = [
+      ...(prefs.showTeam ? ["Team"] : []),
+      "Financials",
+      ...(prefs.showServices ? ["Services"] : []),
+      "Payments", "Notes", "Progress",
+    ];
+    if (!validTabs.includes(tab)) {
+      setTab("Financials");
+    }
+  }, [prefs.showTeam, prefs.showServices]);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["event", id, workspaceId],
@@ -267,7 +282,14 @@ export default function EventDetails() {
     );
   }
 
-  const tabs = ["Team", "Financials", "Services", "Payments", "Notes", "Progress"];
+  const tabs = [
+    ...(prefs.showTeam ? ["Team"] : []),
+    "Financials",
+    ...(prefs.showServices ? ["Services"] : []),
+    "Payments",
+    "Notes",
+    "Progress",
+  ];
   const eventTransactions = transactions.filter((t) => t.status === "ACTIVE");
 
   const removeServiceAssignment = async (a) => {
@@ -324,7 +346,9 @@ export default function EventDetails() {
           </div>
           <p className="text-sm text-muted-foreground ml-6">
             <span className="inline-flex items-center gap-1.5">
-              <span className={cn("w-1.5 h-1.5 rounded-full", statusDot)} />
+              {prefs.showProgressIndicators && (
+                <span className={cn("w-1.5 h-1.5 rounded-full", statusDot)} />
+              )}
               <span className="capitalize">{event.status}</span>
             </span>
             {event.event_type && <> · {event.event_type}</>}

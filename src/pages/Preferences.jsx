@@ -26,6 +26,7 @@ import { txInFY, fyDisplayLabel } from "@/lib/financialYearService";
 import { getIndustryPresets } from "@/constants/industryPresets";
 import TeamMemberTypeManager from "@/components/preferences/TeamMemberTypeManager";
 import EventTypeManager from "@/components/preferences/EventTypeManager";
+import { usePlan } from "@/hooks/usePlan";
 
 const sections = [
   { id: "profile", label: "Profile", icon: User },
@@ -50,14 +51,26 @@ export default function Preferences() {
   const { workspaceId, workspace } = useWorkspace();
   const { toast } = useToast();
   const { fiscalYears, selectedFY, selectFY } = useFinancialYear();
+  const { plan } = usePlan();
+  const isPro = plan?.planCode === "PRO";
   const [activeTab, setActiveTab] = useState("profile");
   const [exporting, setExporting] = useState(false);
   const [toggles, setToggles] = useState(() => {
     try {
       const prefs = workspace?.display_preferences ? JSON.parse(workspace.display_preferences) : null;
-      return prefs || { showTeam: true, showServices: false, showAddress: false, showLogo: false };
+      return {
+        showProgressIndicators: true,
+        showMemberTypeColors: true,
+        showStatusDots: true,
+        showTeam: true,
+        showServices: true,
+        showAddressOnCards: false,
+        showServicesOnCards: false,
+        showLogo: false,
+        ...(prefs || {}),
+      };
     } catch {
-      return { showTeam: true, showServices: false, showAddress: false, showLogo: false };
+      return { showProgressIndicators: true, showMemberTypeColors: true, showStatusDots: true, showTeam: true, showServices: true, showAddressOnCards: false, showServicesOnCards: false, showLogo: false };
     }
   });
   const [businessType, setBusinessType] = useState(workspace?.business_type || "Photography");
@@ -337,11 +350,35 @@ export default function Preferences() {
           <Card title="Event / Work Types">
             <EventTypeManager workspace={workspace} />
           </Card>
-          <Card title="Card & Table Display">
+          <Card title="Detail Page Display">
+            <p className="text-xs text-muted-foreground mb-3">Control what appears on the full event detail page.</p>
             <div className="space-y-3">
-              <ToggleRow label="Show team members" checked={toggles.showTeam} onChange={setT("showTeam")} />
-              <ToggleRow label="Show services" checked={toggles.showServices} onChange={setT("showServices")} />
-              <ToggleRow label="Show address & venue" checked={toggles.showAddress} onChange={setT("showAddress")} />
+              <ToggleRow label="Show team" hint="Display assigned team members on the event detail page" checked={toggles.showTeam} onChange={setT("showTeam")} />
+              <ToggleRow label="Show services" hint="Display assigned services on the event detail page" checked={toggles.showServices} onChange={setT("showServices")} />
+            </div>
+          </Card>
+          <Card title="Card & Table Display">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-xs text-muted-foreground">Show on compact cards & tables</span>
+              {!isPro && (
+                <span className="text-[10px] font-bold uppercase tracking-wide bg-primary/10 text-primary px-1.5 py-0.5 rounded">Pro</span>
+              )}
+            </div>
+            <div className="space-y-3">
+              <ToggleRow
+                label="Show address & venue"
+                hint="Display client address and venue on compact cards"
+                checked={isPro && toggles.showAddressOnCards}
+                onChange={setT("showAddressOnCards")}
+                disabled={!isPro}
+              />
+              <ToggleRow
+                label="Show services on cards & tables"
+                hint="Display services on compact cards and table rows"
+                checked={isPro && toggles.showServicesOnCards}
+                onChange={setT("showServicesOnCards")}
+                disabled={!isPro}
+              />
             </div>
             <div className="mt-4 pt-4 border-t border-border">
               <div className="text-sm font-semibold mb-2">Shared Invoice</div>
@@ -441,11 +478,14 @@ function Field({ label, className, children }) {
   );
 }
 
-function ToggleRow({ label, checked, onChange }) {
+function ToggleRow({ label, hint, checked, onChange, disabled }) {
   return (
-    <div className="flex items-center justify-between">
-      <span className="text-sm text-foreground">{label}</span>
-      <Toggle checked={checked} onChange={onChange} label={label} />
+    <div className={cn("flex items-center justify-between gap-3", disabled && "opacity-50")}>
+      <div className="min-w-0">
+        <span className="text-sm text-foreground block">{label}</span>
+        {hint && <span className="text-xs text-muted-foreground">{hint}</span>}
+      </div>
+      <Toggle checked={checked} onChange={onChange} label={label} disabled={disabled} />
     </div>
   );
 }
