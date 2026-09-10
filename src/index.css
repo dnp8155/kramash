@@ -278,38 +278,3 @@
     background: white !important;
   }
 }
-
-/* ---- App-specific utility aliases (used by layout/navigation) ---- */
-/* These mirror the safe-area utilities above but with the class names the
-   existing layout components expect, so both the zip's components and the
-   app's layout/navigation work without modification. */
-@layer utilities {
-  .pt-safe { padding-top: env(safe-area-inset-top); }
-  .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
-  .pl-safe { padding-left: env(safe-area-inset-left); }
-  .pr-safe { padding-right: env(safe-area-inset-right); }
-  .pb-safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
-
-  .ks-scrollbar::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-  .ks-scrollbar::-webkit-scrollbar-thumb {
-    background: hsl(var(--border));
-    border-radius: 9999px;
-  }
-  .ks-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  .text-balance { text-wrap: balance; }
-  .text-pretty { text-wrap: pretty; }
-}
-
-/* ---- General Print (quotation/public pages) ---- */
-@media print {
-  body { background: white !important; }
-  .no-print { display: none !important; }
-  .rounded-2xl { border-radius: 0.25rem !important; box-shadow: none !important; }
-  .shadow-sm { box-shadow: none !important; }
-}
