@@ -4,115 +4,90 @@
   "properties": {
     "workspace_id": {
       "type": "string",
-      "description": "Workspace this event belongs to"
+      "title": "Workspace ID"
     },
     "client_id": {
       "type": "string",
-      "description": "Client this event is for (normalized reference)"
+      "title": "Client ID"
     },
     "title": {
       "type": "string",
-      "description": "Event title / name"
+      "title": "Event Title"
     },
     "event_type": {
       "type": "string",
-      "description": "Type of event (Wedding, Corporate, etc.)"
+      "title": "Event Type"
     },
     "start_date": {
       "type": "string",
       "format": "date",
-      "description": "Event start date (date-only, YYYY-MM-DD)"
+      "title": "Start Date"
     },
     "end_date": {
       "type": "string",
       "format": "date",
-      "description": "Event end date (date-only, YYYY-MM-DD). May be null for single-day events."
+      "title": "End Date"
+    },
+    "event_dates": {
+      "type": "array",
+      "title": "Event Dates (non-consecutive)",
+      "items": {
+        "type": "string",
+        "format": "date"
+      },
+      "default": []
+    },
+    "financial_year": {
+      "type": "string",
+      "title": "Financial Year (e.g. FY2026-27)"
+    },
+    "team_member_ids": {
+      "type": "array",
+      "title": "Assigned Team Member IDs",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "service_ids": {
+      "type": "array",
+      "title": "Selected Service IDs",
+      "items": {
+        "type": "string"
+      },
+      "default": []
     },
     "venue": {
       "type": "string",
-      "description": "Venue name"
+      "title": "Venue"
     },
     "venue_address": {
       "type": "string",
-      "description": "Full venue address"
+      "title": "Venue Address"
     },
     "status": {
       "type": "string",
+      "title": "Status",
+      "default": "upcoming",
       "enum": [
-        "Confirmed",
-        "In Progress",
-        "Pending",
-        "Completed",
-        "Cancelled"
-      ],
-      "default": "Pending"
+        "upcoming",
+        "in-progress",
+        "completed",
+        "cancelled"
+      ]
     },
     "contract_value": {
       "type": "number",
-      "description": "Agreed event value \u2014 total the client is expected to pay. Source of truth for client pending calculation. May be set manually or synced from an approved quotation (Phase 6)."
+      "title": "Contract / Agreed Value",
+      "default": 0
     },
     "description": {
       "type": "string",
-      "description": "Event description / brief"
+      "title": "Description"
     },
     "notes": {
       "type": "string",
-      "description": "Internal notes"
-    },
-    "job_sheet_config": {
-      "type": "object",
-      "description": "Operational Job Sheet display configuration for crew execution. Controls what operational data is shown to crew/supervisors. Never contains financial data.",
-      "properties": {
-        "show_team_names": {
-          "type": "boolean",
-          "default": true,
-          "description": "Show assigned member names alongside roles. If false, only role labels and counts are shown."
-        },
-        "include_contacts": {
-          "type": "boolean",
-          "default": false,
-          "description": "Include crew contact directory with phone numbers."
-        },
-        "include_equipment": {
-          "type": "boolean",
-          "default": true,
-          "description": "Include equipment / kit checklist section."
-        },
-        "equipment_items": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "Custom equipment checklist items. Empty/null falls back to category-based defaults."
-        },
-        "default_reporting_time": {
-          "type": "string",
-          "description": "Default reporting time for all dates (e.g. 8:00 AM). Overridden by date_overrides."
-        },
-        "date_overrides": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "date": {
-                "type": "string",
-                "format": "date"
-              },
-              "reporting_time": {
-                "type": "string"
-              },
-              "venue": {
-                "type": "string"
-              }
-            }
-          },
-          "description": "Per-date overrides for reporting time and venue."
-        },
-        "internal_notes": {
-          "type": "string",
-          "description": "Operational execution notes specific to the job sheet (distinct from general event notes)."
-        }
-      }
+      "title": "Notes"
     }
   },
   "required": [
@@ -122,52 +97,15 @@
     "start_date"
   ],
   "rls": {
+    "create": {},
     "read": {
-      "$or": [
-        {
-          "data.workspace_id": {
-            "$in": "{{user.data.workspace_ids}}"
-          }
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
-    "create": {
-      "data.workspace_id": {
-        "$in": "{{user.data.workspace_ids}}"
-      }
+      "created_by_id": "{{user.id}}"
     },
     "update": {
-      "$or": [
-        {
-          "data.workspace_id": {
-            "$in": "{{user.data.workspace_ids}}"
-          }
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "created_by_id": "{{user.id}}"
     },
     "delete": {
-      "$or": [
-        {
-          "data.workspace_id": {
-            "$in": "{{user.data.workspace_ids}}"
-          }
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "created_by_id": "{{user.id}}"
     }
   }
 }
