@@ -289,9 +289,6 @@ export default function ProfileWorkspaceSection() {
             </div>
           </div>
 
-          {/* Role */}
-          <Row label="Role" value={user?.role || "—"} />
-
           {/* Business Type — locked once set */}
           <div className="flex items-center justify-between py-3 border-b border-border last:border-0">
             <span className="text-xs font-medium text-muted-foreground shrink-0">Business Type</span>

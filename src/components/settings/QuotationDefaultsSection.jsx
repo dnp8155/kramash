@@ -91,6 +91,7 @@ export default function QuotationDefaultsSection() {
             onChange={(v) => set("showLogoWatermark", v)}
           />
         </div>
+        <CardSave save={save} saving={saving} />
       </div>
 
       {/* T&C */}
@@ -105,6 +106,7 @@ export default function QuotationDefaultsSection() {
           placeholder="Enter default terms & conditions for all quotations…"
         />
         <p className="text-xs text-muted-foreground mt-2">Used as the starting T&C for new quotations. Can be overridden per quotation.</p>
+        <CardSave save={save} saving={saving} />
       </div>
 
       {/* Payment */}
@@ -128,6 +130,7 @@ export default function QuotationDefaultsSection() {
             <p className="text-xs text-muted-foreground mt-1">Shown as a separate section on the quotation PDF.</p>
           </div>
         </div>
+        <CardSave save={save} saving={saving} />
       </div>
 
       {/* Bank & UPI Details */}
@@ -159,6 +162,7 @@ export default function QuotationDefaultsSection() {
             <Input value={prefs.bank_upi_id} onChange={(e) => set("bank_upi_id", e.target.value)} placeholder="e.g. name@oksbi" />
           </div>
         </div>
+        <CardSave save={save} saving={saving} />
       </div>
 
       {/* Social Links */}
@@ -174,6 +178,7 @@ export default function QuotationDefaultsSection() {
           <SocialField label="Website" value={prefs.social_website} onChange={(v) => set("social_website", v)} placeholder="https://…" Icon={Globe} />
           <SocialField label="Portfolio" value={prefs.social_portfolio} onChange={(v) => set("social_portfolio", v)} placeholder="https://…" Icon={LinkIcon} />
         </div>
+        <CardSave save={save} saving={saving} />
       </div>
 
       <Button onClick={save} disabled={saving}>
@@ -203,6 +208,16 @@ function ToggleRow({ label, hint, checked, onChange }) {
         {hint && <span className="text-xs text-muted-foreground">{hint}</span>}
       </div>
       <Toggle checked={checked} onChange={onChange} label={label} />
+    </div>
+  );
+}
+
+function CardSave({ save, saving }) {
+  return (
+    <div className="pt-3 mt-3 border-t border-border flex justify-end">
+      <Button size="sm" variant="outline" onClick={save} disabled={saving}>
+        {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />} Save
+      </Button>
     </div>
   );
 }

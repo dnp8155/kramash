@@ -9,13 +9,14 @@ import LoadingState from "@/components/common/LoadingState";
 import EmptyState from "@/components/common/EmptyState";
 import { TableSkeleton } from "@/components/common/Skeletons";
 import ClientForm from "@/components/clients/ClientForm";
-import { Plus, Pencil, Eye, Download, Users, CalendarCheck, UserCheck } from "lucide-react";
+import { Plus, Pencil, Eye, Download, Users, CalendarCheck, UserCheck, Share2 } from "lucide-react";
 import { exportClientsCsv } from "@/lib/exportUtils";
 import StatCard from "@/components/common/StatCard";
 import PageHeader from "@/components/common/PageHeader";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
 import { useT } from "@/hooks/useT";
 import { invalidateEntities } from "@/lib/queryInvalidation";
+import { useToast } from "@/components/ui/use-toast";
 
 export default function Clients() {
   const { workspaceId } = useWorkspace();
@@ -27,6 +28,16 @@ export default function Clients() {
   const [showForm, setShowForm] = useState(false);
   const [editingClient, setEditingClient] = useState(null);
   const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const copyPortalLink = () => {
+    const url = `${window.location.origin}/client-login`;
+    navigator.clipboard.writeText(url).then(() => {
+      toast({ title: "Client portal link copied!", description: url });
+    }).catch(() => {
+      toast({ title: "Could not copy link", variant: "destructive" });
+    });
+  };
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["clients", workspaceId],
@@ -64,6 +75,10 @@ export default function Clients() {
   return (
     <div className="p-4 sm:p-6 space-y-5 max-w-[1400px] mx-auto">
       <PageHeader title="Clients" subtitle={`Manage your client directory and their ${term.workItemSingular.toLowerCase()} history.`}>
+        <Button variant="outline" size="sm" onClick={copyPortalLink}>
+          <Share2 className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">Portal Link</span>
+        </Button>
         <Button variant="outline" size="sm" onClick={() => exportClientsCsv(filtered, eventCounts)} disabled={filtered.length === 0}>
           <Download className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">{t("Export")}</span>

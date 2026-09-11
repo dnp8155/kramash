@@ -283,9 +283,6 @@ export default function Team() {
                     onDelete={(mem) => setConfirmDelete(mem)}
                     onOpen={openMember}
                   />
-                  {statementByMemberId[m.id] && (
-                    <PersonStatementCard statement={statementByMemberId[m.id]} currency={currency} />
-                  )}
                 </div>
               ))}
             </div>

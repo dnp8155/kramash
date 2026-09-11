@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useWorkspace } from "@/lib/WorkspaceContext";
@@ -12,7 +13,8 @@ import PageHeader from "@/components/common/PageHeader";
 import LeadForm from "@/components/leads/LeadForm";
 import { useToast } from "@/components/ui/use-toast";
 import { invalidateEntities } from "@/lib/queryInvalidation";
-import { Plus, Pencil, Trash2, Phone, Mail, Calendar, TrendingUp, Flame, Users, Target } from "lucide-react";
+import { formatEventDate, todayISO } from "@/lib/dates";
+import { Plus, Pencil, Trash2, Phone, Mail, Calendar, TrendingUp, Flame, Users, Target, CalendarPlus } from "lucide-react";
 
 const STATUS_STYLES = {
   new: { bg: "bg-blue-50", text: "text-blue-700", label: "New" },
@@ -42,6 +44,7 @@ export default function Leads() {
   const { workspaceId } = useWorkspace();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -99,6 +102,39 @@ export default function Leads() {
       invalidate();
     } catch {
       toast({ title: "Failed to update status", variant: "destructive" });
+    }
+  };
+
+  const handleConvertToEvent = async (lead) => {
+    if (!window.confirm(`Convert "${lead.name}" to an event? This will create a client and event.`)) return;
+    try {
+      const client = await base44.entities.Client.create({
+        workspace_id: workspaceId,
+        name: lead.name,
+        phone: lead.phone || "",
+        email: lead.email || "",
+        notes: lead.notes || ""
+      });
+      const startDate = lead.event_date || todayISO();
+      const event = await base44.entities.Event.create({
+        workspace_id: workspaceId,
+        client_id: client.id,
+        title: lead.event_type || `${lead.name} - Event`,
+        event_type: lead.event_type || "",
+        start_date: startDate,
+        end_date: lead.event_date || "",
+        event_dates: lead.event_date ? [lead.event_date] : [],
+        venue: "",
+        status: "upcoming",
+        contract_value: lead.budget || 0,
+        notes: lead.notes || ""
+      });
+      await base44.entities.Lead.update(lead.id, { status: "won", converted_client_id: client.id });
+      toast({ title: "Lead converted to event" });
+      invalidate();
+      navigate(`/events/${event.id}`);
+    } catch (err) {
+      toast({ title: "Failed to convert lead", description: err?.message, variant: "destructive" });
     }
   };
 
@@ -189,7 +225,7 @@ export default function Leads() {
                   {lead.event_date && (
                     <div className="flex items-center gap-2">
                       <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
-                      <span>{new Date(lead.event_date).toLocaleDateString("en-IN")}</span>
+                      <span>{formatEventDate(lead.event_date, lead.event_date)}</span>
                     </div>
                   )}
                 </div>
@@ -204,6 +240,11 @@ export default function Leads() {
                   <p className="text-xs text-muted-foreground mb-3 line-clamp-2 break-anywhere">{lead.notes}</p>
                 )}
 
+                {lead.status !== "won" && (
+                  <Button variant="outline" size="sm" className="w-full mb-3" onClick={() => handleConvertToEvent(lead)}>
+                    <CalendarPlus className="w-3.5 h-3.5" /> Convert to Event
+                  </Button>
+                )}
                 <div className="flex items-center gap-2 pt-3 border-t border-border">
                   <Select
                     size="sm"

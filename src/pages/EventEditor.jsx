@@ -327,7 +327,7 @@ export default function EventEditor() {
           <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden">
             <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-border">
               {/* Left column */}
-              <div className="p-6 space-y-7">
+              <div className="p-6 space-y-7 min-w-0">
                 {/* Project Details */}
                 <div>
                   <SectionHeader icon={FolderOpen} title="Project Details" />
@@ -418,7 +418,7 @@ export default function EventEditor() {
               </div>
 
               {/* Right column */}
-              <div className="p-6 space-y-7">
+              <div className="p-6 space-y-7 min-w-0">
                 {/* Schedule */}
                 <div>
                   <SectionHeader icon={CalendarDays} title="Schedule" />
@@ -439,23 +439,27 @@ export default function EventEditor() {
                 {/* Divider */}
                 <div className="border-t border-border" />
 
-                {/* Assignments */}
-                <div>
-                  <SectionHeader icon={Briefcase} title="Assignments" />
-                  <div className="space-y-4">
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Services</Label>
-                      <ChipPicker options={serviceOptions} value={form.service_ids || []} onChange={(v) => set("service_ids", v)} multiple size="sm" emptyText="No services found. Add services from the Services page." />
+                {isEdit && (
+                  <>
+                    {/* Assignments */}
+                    <div>
+                      <SectionHeader icon={Briefcase} title="Assignments" />
+                      <div className="space-y-4">
+                        <div className="space-y-1.5">
+                          <Label className="text-xs">Services</Label>
+                          <ChipPicker options={serviceOptions} value={form.service_ids || []} onChange={(v) => set("service_ids", v)} multiple size="sm" emptyText="No services found. Add services from the Services page." />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="flex items-center gap-1.5 text-xs"><Users className="w-3.5 h-3.5" /> Team Members</Label>
+                          <ChipPicker options={teamOptions} value={form.team_member_ids || []} onChange={(v) => set("team_member_ids", v)} multiple size="sm" emptyText="No team members found. Add team from the Team page." />
+                        </div>
+                      </div>
                     </div>
-                    <div className="space-y-1.5">
-                      <Label className="flex items-center gap-1.5 text-xs"><Users className="w-3.5 h-3.5" /> Team Members</Label>
-                      <ChipPicker options={teamOptions} value={form.team_member_ids || []} onChange={(v) => set("team_member_ids", v)} multiple size="sm" emptyText="No team members found. Add team from the Team page." />
-                    </div>
-                  </div>
-                </div>
 
-                {/* Divider */}
-                <div className="border-t border-border" />
+                    {/* Divider */}
+                    <div className="border-t border-border" />
+                  </>
+                )}
 
                 {/* Additional Information */}
                 <div>

@@ -119,6 +119,7 @@ export default function TeamMemberDetails() {
   const serviceAssignments = data?.serviceAssignments || [];
   const expenseTransactions = data?.expenseTransactions || [];
 
+  const selfMember = isSelfMember(member);
   // Build consolidated person statement for this member (team roles + service provider)
   let personStatement = null;
   if (!selfMember) {
@@ -146,7 +147,6 @@ export default function TeamMemberDetails() {
   const totalPaid = memberPaidTotal(transactions, member.id);
   const totalRemaining = Math.max(0, totalEarnings - totalPaid);
   const currency = workspace?.currency || "INR";
-  const selfMember = isSelfMember(member);
 
   return (
     <div className="p-4 sm:p-6 space-y-4 max-w-[1100px] mx-auto">
