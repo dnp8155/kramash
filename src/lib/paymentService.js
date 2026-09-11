@@ -8,7 +8,7 @@ export async function createPaymentOrder(workspaceId, pricingId, checkOnly = fal
     pricing_id: pricingId,
     check_only: checkOnly
   });
-  return res;
+  return res?.data || res;
 }
 
 // Verify a Razorpay payment after checkout modal closes.
@@ -18,7 +18,7 @@ export async function verifyPayment(razorpayOrderId, razorpayPaymentId, razorpay
     razorpay_payment_id: razorpayPaymentId,
     razorpay_signature: razorpaySignature
   });
-  return res;
+  return res?.data || res;
 }
 
 // Check if the payment gateway is configured (honest status).

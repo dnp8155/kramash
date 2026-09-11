@@ -445,10 +445,11 @@ export async function acceptQuotation(workspaceId, quotationId, { updateContract
   let syncResult = null;
   if (sync) {
     try {
-      syncResult = await base44.functions.invoke("syncQuotationAcceptance", {
+      const _syncRes = await base44.functions.invoke("syncQuotationAcceptance", {
         workspace_id: workspaceId,
         quotation_id: quotationId
       });
+      syncResult = _syncRes?.data || _syncRes;
     } catch (e) { /* non-fatal — admin can retry sync from UI */ }
   }
   return { quotation: q, eventUpdated, previousContractValue, syncResult };

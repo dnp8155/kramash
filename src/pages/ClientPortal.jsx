@@ -74,10 +74,11 @@ export default function ClientPortal() {
       setError("");
       try {
         const res = await base44.functions.invoke("getClientPortalData", {});
-        setData(res);
+        const d = res?.data || res;
+        setData(d);
         // If the user was auto-linked (role upgraded to client), refresh the auth
         // context so the user object reflects the new role.
-        if (res?.auto_linked) {
+        if (d?.auto_linked) {
           toast({ title: "Welcome to your portal!", description: "Your account has been linked successfully." });
           checkUserAuth();
         }

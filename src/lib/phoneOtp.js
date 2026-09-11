@@ -38,7 +38,7 @@ export async function verifyPhoneOtp(phoneNumber, code) {
     uid,
     apiKey: firebaseConfig.apiKey
   });
-  return res;
+  return res?.data || res;
 }
 
 export function isValidMobileNumber(phone) {

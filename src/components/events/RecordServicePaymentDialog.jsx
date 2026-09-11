@@ -77,7 +77,7 @@ export default function RecordServicePaymentDialog({
         return;
       }
       const providerName = assignment.provider_name_snapshot || "";
-      const saved = await base44.functions.invoke("recordPayment", {
+      const _res = await base44.functions.invoke("recordPayment", {
         kind: "service",
         workspace_id: workspaceId,
         event_id: event.id,
@@ -89,6 +89,7 @@ export default function RecordServicePaymentDialog({
         notes: notes.trim() || `Service payment: ${assignment.service_name_snapshot || ""}${providerName ? ` (${providerName})` : ""}`,
         financial_year_id: fy.id
       });
+      const saved = _res?.data || _res;
       onSaved?.(saved);
       onClose?.();
     } catch (err) {

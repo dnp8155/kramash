@@ -67,11 +67,12 @@ export default function ClientProjectPortal() {
       setUnavailable(false);
       try {
         const res = await base44.functions.invoke("getPortalData", { public_token: token, skip_tracking: isPreview });
-        if (res.unavailable) {
+        const d = res?.data || res;
+        if (d.unavailable) {
           setUnavailable(true);
           setData(null);
         } else {
-          setData(res);
+          setData(d);
         }
       } catch (e) {
         setError(e?.message || "Failed to load project portal");
@@ -94,14 +95,15 @@ export default function ClientProjectPortal() {
     setDownloading(true);
     try {
       const res = await base44.functions.invoke("clientViewQuotation", { public_token: data.quotation.public_token, skip_tracking: true });
-      if (res.requires_auth) {
+      const d = res?.data || res;
+      if (d.requires_auth) {
         navigate(`/q/${data.quotation.public_token}`);
         return;
       }
       await generateQuotationPdf({
-        quotation: res.quotation,
-        items: res.items,
-        currency: res.quotation.currency || data.currency
+        quotation: d.quotation,
+        items: d.items,
+        currency: d.quotation.currency || data.currency
       });
     } catch (e) {
       navigate(`/q/${data.quotation.public_token}`);

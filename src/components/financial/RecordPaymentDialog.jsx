@@ -145,7 +145,7 @@ export default function RecordPaymentDialog({
       } else {
         // Team payments go through the backend for SELF guard protection
         const a = selectedAssignment;
-        saved = await base44.functions.invoke("recordPayment", {
+        const _res = await base44.functions.invoke("recordPayment", {
           kind: "team",
           workspace_id: workspaceId,
           event_id: eventId,
@@ -158,6 +158,7 @@ export default function RecordPaymentDialog({
           notes: notes.trim(),
           financial_year_id: fy.id
         });
+        saved = _res?.data || _res;
       }
       onSaved?.(saved);
       onClose?.();

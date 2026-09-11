@@ -44,9 +44,10 @@ export default function ClientDetails() {
         workspace_id: workspaceId,
         email: client.email
       });
+      const d = res?.data || res;
       setInvited(true);
-      setInviteResult(res);
-      if (res?.email_sent) {
+      setInviteResult(d);
+      if (d?.email_sent) {
         toast({
           title: "Invitation email sent!",
           description: "The client will receive an email with a link to set their password."

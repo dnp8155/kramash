@@ -116,10 +116,11 @@ export async function reconcileEventMilestones(workspaceId, eventId, transaction
 
 export async function syncAcceptedQuotation(workspaceId, quotationId) {
   if (!workspaceId || !quotationId) return null;
-  return base44.functions.invoke("syncQuotationAcceptance", {
+  const res = await base44.functions.invoke("syncQuotationAcceptance", {
     workspace_id: workspaceId,
     quotation_id: quotationId
   });
+  return res?.data || res;
 }
 
 // ---- Status metadata (for UI badges) ----

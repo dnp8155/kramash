@@ -550,7 +550,7 @@ export async function createFromQuotation(workspaceId, quotation, quotationItems
 // Create invoice from accepted quotation (full or milestone).
 // Calls the createInvoiceFromQuotation backend function for server-side numbering + race protection.
 export async function createInvoiceFromQuotation(workspaceId, quotationId, mode, options = {}) {
-  return base44.functions.invoke("createInvoiceFromQuotation", {
+  const res = await base44.functions.invoke("createInvoiceFromQuotation", {
     workspace_id: workspaceId,
     quotation_id: quotationId,
     mode,
@@ -558,12 +558,13 @@ export async function createInvoiceFromQuotation(workspaceId, quotationId, mode,
     due_date_type: options.due_date_type || "due_on_receipt",
     due_date: options.due_date || ""
   });
+  return res?.data || res;
 }
 
 // Record a payment against an invoice.
 // Calls the recordInvoicePayment backend function for FY linkage + duplicate prevention.
 export async function recordInvoicePayment(workspaceId, invoiceId, payment) {
-  return base44.functions.invoke("recordInvoicePayment", {
+  const res = await base44.functions.invoke("recordInvoicePayment", {
     workspace_id: workspaceId,
     invoice_id: invoiceId,
     amount: payment.amount,
@@ -573,14 +574,16 @@ export async function recordInvoicePayment(workspaceId, invoiceId, payment) {
     notes: payment.notes || "",
     financial_year_id: payment.financial_year_id || ""
   });
+  return res?.data || res;
 }
 
 // Toggle public link for an invoice.
 export async function toggleInvoicePublicLink(invoiceId, enabled) {
-  return base44.functions.invoke("toggleInvoicePublicLink", {
+  const res = await base44.functions.invoke("toggleInvoicePublicLink", {
     invoice_id: invoiceId,
     enabled
   });
+  return res?.data || res;
 }
 
 // ---- Refs validation ----

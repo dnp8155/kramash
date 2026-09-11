@@ -30,7 +30,7 @@ export default function AdminWorkspaceDetails() {
     setError("");
     try {
       const res = await base44.functions.invoke("adminGetWorkspaceDetails", { workspace_id: id });
-      setData(res);
+      setData(res?.data || res);
       const allPricings = await base44.entities.PlanPricing.list();
       setPricings(allPricings.filter((p) => p.is_active));
     } catch (e) {

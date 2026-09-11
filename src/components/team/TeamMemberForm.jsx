@@ -118,7 +118,7 @@ export default function TeamMemberForm({ open, onClose, onSaved, member = null, 
         saved = await base44.entities.TeamMember.update(member.id, payload);
       } else {
         const res = await base44.functions.invoke("createTeamMember", payload);
-        saved = res;
+        saved = res?.data || res;
       }
       onSaved?.(saved);
       onClose?.();
