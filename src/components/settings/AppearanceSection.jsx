@@ -8,7 +8,7 @@ import { useDisplayPreferences } from "@/hooks/useDisplayPreferences";
 import { cn } from "@/lib/utils";
 
 export default function AppearanceSection() {
-  const { workspace } = useWorkspace();
+  const { workspace, setWorkspace } = useWorkspace();
   const { toast } = useToast();
   const prefs = useDisplayPreferences();
 
@@ -30,6 +30,7 @@ export default function AppearanceSection() {
       await base44.entities.Workspace.update(workspace.id, {
         display_preferences: JSON.stringify(next),
       });
+      setWorkspace((w) => (w ? { ...w, display_preferences: JSON.stringify(next) } : w));
     } catch (e) {
       toast({ title: "Failed to save preference", description: e?.message, variant: "destructive" });
     }

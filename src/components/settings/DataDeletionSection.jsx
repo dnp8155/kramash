@@ -1,8 +1,10 @@
 import { useState, useMemo } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useWorkspace } from "@/lib/WorkspaceContext";
 import { useToast } from "@/components/ui/use-toast";
 import { useFinancialYear } from "@/hooks/useFinancialYear";
+import { invalidateEntities } from "@/lib/queryInvalidation";
 import Button from "@/components/common/Button";
 import Select from "@/components/common/Select";
 import Input from "@/components/common/Input";
@@ -14,6 +16,7 @@ export default function DataDeletionSection() {
   const { workspaceId } = useWorkspace();
   const { toast } = useToast();
   const { fiscalYears } = useFinancialYear();
+  const queryClient = useQueryClient();
 
   const [rangeType, setRangeType] = useState("fy");
   const [selectedFY, setSelectedFY] = useState("");
@@ -100,6 +103,7 @@ export default function DataDeletionSection() {
         title: "Data deleted",
         description: parts.length > 0 ? `Deleted ${parts.join(" and ")} for ${dateRange.label}.` : "No records found in this range."
       });
+      invalidateEntities(queryClient, ["FinancialTransaction", "Event", "EventTeamAssignment", "EventDayAssignment", "EventServiceAssignment", "PaymentMilestone"]);
       setConfirming(false);
       setConfirmText("");
     } catch (err) {
