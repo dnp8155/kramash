@@ -28,13 +28,15 @@ const fmtDate = (iso) => {
   return d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 };
 
-const INVOICE_STATUSES = ["draft", "sent", "paid", "partial", "cancelled"];
+const INVOICE_STATUSES = ["draft", "due", "sent", "partial", "paid", "overdue", "cancelled"];
 const INVOICE_STATUS_META = {
   draft: { label: "Draft", className: "bg-muted text-muted-foreground" },
+  due: { label: "Due", className: "bg-badge-upcoming-bg text-badge-upcoming-fg" },
   sent: { label: "Sent", className: "bg-badge-upcoming-bg text-badge-upcoming-fg" },
-  paid: { label: "Paid", className: "bg-badge-completed-bg text-badge-completed-fg" },
   partial: { label: "Partial", className: "bg-badge-progress-bg text-badge-progress-fg" },
-  cancelled: { label: "Cancelled", className: "bg-destructive/10 text-destructive" }
+  paid: { label: "Paid", className: "bg-badge-completed-bg text-badge-completed-fg" },
+  overdue: { label: "Overdue", className: "bg-destructive/10 text-destructive" },
+  cancelled: { label: "Cancelled", className: "bg-muted text-muted-foreground line-through" }
 };
 
 export default function Invoices() {
@@ -77,6 +79,11 @@ export default function Invoices() {
     for (const c of clients) m[c.id] = c;
     return m;
   }, [clients]);
+  const eventsById = useMemo(() => {
+    const m = {};
+    for (const e of events) m[e.id] = e;
+    return m;
+  }, [events]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -94,7 +101,10 @@ export default function Invoices() {
     const draftCount = invoices.filter((i) => i.status === "draft").length;
     const sentCount = invoices.filter((i) => i.status === "sent").length;
     const paidCount = invoices.filter((i) => i.status === "paid").length;
-    return { totalValue, draftCount, sentCount, paidCount };
+    const outstandingAmount = invoices
+      .filter((i) => i.status !== "paid" && i.status !== "cancelled")
+      .reduce((s, i) => s + (Number(i.balance_due) || 0), 0);
+    return { totalValue, draftCount, sentCount, paidCount, outstandingAmount };
   }, [invoices]);
 
   const onDelete = async (inv) => {
@@ -155,7 +165,7 @@ export default function Invoices() {
         <StatCard label="Total Invoices" value={invoices.length} icon={FileText} tone="primary" />
         <StatCard label="Total Value" value={formatMoney(stats.totalValue, currency)} icon={IndianRupee} tone="success" />
         <StatCard label="Paid" value={stats.paidCount} icon={CheckCircle2} tone="success" />
-        <StatCard label="Outstanding" value={stats.sentCount + stats.draftCount} icon={Clock} tone="muted" />
+        <StatCard label="Outstanding" value={formatMoney(stats.outstandingAmount, currency)} icon={Clock} tone="warning" />
       </div>
 
       {/* Filters */}
@@ -189,6 +199,8 @@ export default function Invoices() {
           <div className="sm:hidden space-y-3">
             {filtered.map((inv) => {
               const cl = clientsById[inv.client_id];
+              const ev = eventsById[inv.event_id];
+              const balance = Number(inv.balance_due) || 0;
               return (
                 <div key={inv.id} className="bg-card border border-border rounded-xl p-4 shadow-card cursor-pointer hover:shadow-card-hover transition-shadow" onClick={() => navigate(`/invoices/${inv.id}`)}>
                   <div className="flex items-center justify-between gap-2">
@@ -198,9 +210,14 @@ export default function Invoices() {
                     </span>
                   </div>
                   <div className="mt-2 text-sm text-foreground">{cl?.name || "—"}</div>
-                  <div className="text-xs text-muted-foreground">{fmtDate(inv.invoice_date)}</div>
+                  <div className="text-xs text-muted-foreground">{ev?.title ? `${ev.title} · ` : ""}{fmtDate(inv.invoice_date)}</div>
                   <div className="mt-3 flex items-center justify-between">
-                    <span className="text-sm font-semibold text-foreground">{formatMoney(inv.grand_total, currency)}</span>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-semibold text-foreground">{formatMoney(inv.grand_total, currency)}</span>
+                      {balance > 0 && inv.status !== "cancelled" && (
+                        <span className="text-xs text-warning font-medium">Due: {formatMoney(balance, currency)}</span>
+                      )}
+                    </div>
                     <div className="flex items-center gap-1">
                       <button onClick={(e) => { e.stopPropagation(); onPrint(inv); }} className="text-muted-foreground hover:text-foreground p-1" title="View / Print">
                         <Printer className="w-4 h-4" />
@@ -221,13 +238,15 @@ export default function Invoices() {
           {/* Desktop table */}
           <div className="hidden sm:block bg-card border border-border rounded-xl overflow-hidden shadow-card">
             <div className="overflow-x-auto">
-              <table className="w-full text-sm min-w-[680px]">
+              <table className="w-full text-sm min-w-[860px]">
                 <thead className="bg-muted/40 text-[11px] text-muted-foreground uppercase tracking-[0.08em] border-b border-border">
                   <tr>
                     <th className="text-left px-4 py-3 font-semibold">Invoice No</th>
                     <th className="text-left px-4 py-3 font-semibold">Client</th>
+                    <th className="text-left px-4 py-3 font-semibold">Work</th>
                     <th className="text-left px-4 py-3 font-semibold">Date</th>
                     <th className="text-right px-4 py-3 font-semibold">Total</th>
+                    <th className="text-right px-4 py-3 font-semibold">Balance Due</th>
                     <th className="text-left px-4 py-3 font-semibold">Status</th>
                     <th className="px-4 py-3 font-semibold w-20"></th>
                   </tr>
@@ -235,6 +254,9 @@ export default function Invoices() {
                 <tbody>
                   {filtered.map((inv) => {
                     const cl = clientsById[inv.client_id];
+                    const ev = eventsById[inv.event_id];
+                    const balance = Number(inv.balance_due) || 0;
+                    const isPaid = inv.status === "paid" || (balance === 0 && inv.status !== "cancelled");
                     return (
                       <tr
                         key={inv.id}
@@ -243,8 +265,14 @@ export default function Invoices() {
                       >
                         <td className="px-4 py-3.5 font-mono font-medium text-foreground">{inv.invoice_number}</td>
                         <td className="px-4 py-3.5 text-foreground">{cl?.name || "—"}</td>
+                        <td className="px-4 py-3.5 text-muted-foreground truncate max-w-[160px]">{ev?.title || "—"}</td>
                         <td className="px-4 py-3.5 text-muted-foreground">{fmtDate(inv.invoice_date)}</td>
                         <td className="px-4 py-3.5 text-right font-mono font-medium tabular-nums text-foreground">{formatMoney(inv.grand_total, currency)}</td>
+                        <td className="px-4 py-3.5 text-right font-mono tabular-nums">
+                          <span className={cn("font-semibold", balance > 0 && inv.status !== "cancelled" ? "text-warning" : isPaid ? "text-success" : "text-muted-foreground")}>
+                            {formatMoney(balance, currency)}
+                          </span>
+                        </td>
                         <td className="px-4 py-3.5">
                           <span className={cn("text-[11px] px-2 py-1 rounded-md font-semibold uppercase tracking-wide", INVOICE_STATUS_META[inv.status]?.className)}>
                             {INVOICE_STATUS_META[inv.status]?.label || inv.status}

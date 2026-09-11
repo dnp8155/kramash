@@ -192,7 +192,7 @@ export default function Quotation() {
         <StatCard label="Total Quotations" value={quotations.length} icon={FileText} tone="primary" />
         <StatCard label="Total Value" value={formatMoney(stats.totalValue, currency)} icon={IndianRupee} tone="success" />
         <StatCard label="Accepted" value={stats.acceptedCount} icon={CheckCircle2} tone="success" />
-        <StatCard label="Drafts" value={stats.draftCount} icon={Pencil} tone="muted" />
+        <StatCard label="Pending" value={stats.draftCount + stats.finalizedCount} icon={Pencil} tone="warning" />
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">
@@ -233,7 +233,7 @@ export default function Quotation() {
                   </span>
                 </div>
                 <div className="mt-2 text-sm text-foreground">{cl?.name || "—"}</div>
-                <div className="text-xs text-muted-foreground">{ev?.title || "—"} · {fmtDate(qt.quotation_date)}</div>
+                <div className="text-xs text-muted-foreground">{ev?.title || "—"} · {fmtDate(qt.quotation_date)}{qt.valid_until ? ` · Valid till ${fmtDate(qt.valid_until)}` : ""}</div>
                 <div className="mt-3 flex items-center justify-between">
                   <span className="text-sm font-semibold text-foreground">{formatMoney(qt.grand_total, currency)}</span>
                   <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
@@ -257,13 +257,14 @@ export default function Quotation() {
         {/* Desktop table */}
         <div className="hidden sm:block bg-card border border-border rounded-xl overflow-hidden shadow-card">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[720px]">
+            <table className="w-full text-sm min-w-[860px]">
               <thead className="bg-muted/40 text-[11px] text-muted-foreground uppercase tracking-[0.08em] border-b border-border">
                 <tr>
                   <th className="text-left px-4 py-3 font-semibold">Quotation No</th>
                   <th className="text-left px-4 py-3 font-semibold">Client</th>
                   <th className="text-left px-4 py-3 font-semibold">{term.workItemSingular}</th>
                   <th className="text-left px-4 py-3 font-semibold">Date</th>
+                  <th className="text-left px-4 py-3 font-semibold">Valid Until</th>
                   <th className="text-right px-4 py-3 font-semibold">Total</th>
                   <th className="text-left px-4 py-3 font-semibold">Status</th>
                   <th className="px-4 py-3 font-semibold w-20"></th>
@@ -281,8 +282,9 @@ export default function Quotation() {
                     >
                       <td className="px-4 py-3.5 font-mono font-medium text-foreground">{qt.quotation_number}</td>
                       <td className="px-4 py-3.5 text-foreground">{cl?.name || "—"}</td>
-                      <td className="px-4 py-3.5 text-muted-foreground">{ev?.title || "—"}</td>
+                      <td className="px-4 py-3.5 text-muted-foreground truncate max-w-[160px]">{ev?.title || "—"}</td>
                       <td className="px-4 py-3.5 text-muted-foreground">{fmtDate(qt.quotation_date)}</td>
+                      <td className="px-4 py-3.5 text-muted-foreground">{fmtDate(qt.valid_until)}</td>
                       <td className="px-4 py-3.5 text-right font-mono font-medium tabular-nums text-foreground">{formatMoney(qt.grand_total, currency)}</td>
                       <td className="px-4 py-3.5">
                         <span className={cn("text-[11px] px-2 py-1 rounded-md font-semibold uppercase tracking-wide", QUOTATION_STATUS_META[qt.status]?.className)}>
