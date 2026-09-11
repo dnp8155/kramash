@@ -5,8 +5,7 @@ import { formatINR } from "@/utils/format";
 import Button from "@/components/common/Button";
 import Select from "@/components/common/Select";
 import Toggle from "@/components/common/Toggle";
-import WorkspaceSettings from "@/components/settings/WorkspaceSettings";
-import ProfileSection from "@/components/settings/ProfileSection";
+import ProfileWorkspaceSection from "@/components/settings/ProfileWorkspaceSection";
 import AppearanceSection from "@/components/settings/AppearanceSection";
 import NotificationsSection from "@/components/settings/NotificationsSection";
 import BillingSection from "@/components/settings/BillingSection";
@@ -16,7 +15,7 @@ import ServiceForm from "@/components/services/ServiceForm";
 import { useToast } from "@/components/ui/use-toast";
 import { loadRoles } from "@/lib/teamService";
 import { loadAllServices } from "@/lib/quotationService";
-import { Pencil, Trash2, Plus, Download, Loader2, User, Building2, Briefcase, Tags, Palette, Bell, CreditCard, LogOut, FileText, Users } from "lucide-react";
+import { Pencil, Trash2, Plus, Download, Loader2, Briefcase, Tags, Palette, Bell, CreditCard, LogOut, FileText, Users, UserCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { exportFinancialCsv } from "@/lib/exportUtils";
 import { loadAllTransactions } from "@/lib/financeService";
@@ -28,8 +27,7 @@ import QuotationDefaultsSection from "@/components/settings/QuotationDefaultsSec
 import { usePlan } from "@/hooks/usePlan";
 
 const sections = [
-  { id: "profile", label: "Profile", icon: User },
-  { id: "workspace", label: "Workspace", icon: Building2 },
+  { id: "profile", label: "Profile & Workspace", icon: UserCircle },
   { id: "business", label: "Business Setup", icon: Briefcase },
   { id: "types", label: "Types & Display", icon: Tags },
   { id: "quotation", label: "Quotation", icon: FileText },
@@ -229,11 +227,8 @@ export default function Preferences() {
         })}
       </nav>
 
-      {/* Profile */}
-      {activeTab === "profile" && <ProfileSection />}
-
-      {/* Workspace */}
-      {activeTab === "workspace" && <WorkspaceSettings />}
+      {/* Profile & Workspace (merged) */}
+      {activeTab === "profile" && <ProfileWorkspaceSection />}
 
       {/* Business Setup */}
       {activeTab === "business" && (

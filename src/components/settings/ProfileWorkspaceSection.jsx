@@ -1,0 +1,396 @@
+import { useState, useRef } from "react";
+import { useAuth } from "@/lib/AuthContext";
+import { useWorkspace } from "@/lib/WorkspaceContext";
+import { base44 } from "@/api/base44Client";
+import { useToast } from "@/components/ui/use-toast";
+import Button from "@/components/common/Button";
+import Input from "@/components/common/Input";
+import Select from "@/components/common/Select";
+import Toggle from "@/components/common/Toggle";
+import { Pencil, Check, Camera, Loader2, Upload, User, Building2 } from "lucide-react";
+import { isValidIndianPhone, isValidEmail } from "@/lib/validation";
+
+const currencies = [{ v: "INR", l: "INR (₹)" }, { v: "USD", l: "USD ($)" }, { v: "EUR", l: "EUR (€)" }, { v: "AED", l: "AED (د.إ)" }];
+const timezones = ["Asia/Kolkata", "UTC", "Asia/Dubai", "America/New_York"];
+const gstRates = [0, 5, 12, 18, 28];
+
+export default function ProfileWorkspaceSection() {
+  const { user, checkUserAuth } = useAuth();
+  const { workspace, setWorkspace } = useWorkspace();
+  const { toast } = useToast();
+
+  // ---- Profile state ----
+  const [editingName, setEditingName] = useState(false);
+  const [name, setName] = useState(user?.full_name || "");
+  const [savingName, setSavingName] = useState(false);
+  const [uploadingImg, setUploadingImg] = useState(false);
+  const profileFileRef = useRef(null);
+  const profileImage = user?.data?.profile_image || user?.profile_image;
+
+  // ---- Workspace state ----
+  const [form, setForm] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [emailEditing, setEmailEditing] = useState(false);
+  const logoFileRef = useRef(null);
+
+  // Initialize workspace form when workspace loads
+  if (!form && workspace) {
+    setForm({
+      name: workspace.name || "",
+      phone: workspace.phone || "",
+      email: workspace.email || user?.email || "",
+      address: workspace.address || "",
+      city: workspace.city || "",
+      state: workspace.state || "",
+      country: workspace.country || "India",
+      currency: workspace.currency || "INR",
+      timezone: workspace.timezone || "Asia/Kolkata",
+      gst_enabled: !!workspace.gst_enabled,
+      gstin: workspace.gstin || "",
+      gst_business_name: workspace.gst_business_name || "",
+      gst_billing_address: workspace.gst_billing_address || "",
+      gst_state: workspace.gst_state || "",
+      default_gst_rate: workspace.default_gst_rate ?? 18,
+      logo: workspace.logo || ""
+    });
+  }
+
+  // ---- Profile handlers ----
+  const onProfileImage = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) { toast({ title: "Please choose an image file." }); return; }
+    if (file.size > 5 * 1024 * 1024) { toast({ title: "Image too large (max 5MB)." }); return; }
+    setUploadingImg(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      await base44.auth.updateMe({ profile_image: file_url });
+      await checkUserAuth();
+      toast({ title: "Profile photo updated" });
+    } catch (err) {
+      toast({ title: "Upload failed", description: err?.message, variant: "destructive" });
+    } finally {
+      setUploadingImg(false);
+    }
+  };
+
+  const removeProfileImage = async () => {
+    try {
+      await base44.auth.updateMe({ profile_image: "" });
+      await checkUserAuth();
+      toast({ title: "Profile photo removed" });
+    } catch (err) {
+      toast({ title: "Failed to remove photo", description: err?.message, variant: "destructive" });
+    }
+  };
+
+  const saveName = async () => {
+    if (!name.trim()) { toast({ title: "Name cannot be empty." }); return; }
+    setSavingName(true);
+    try {
+      await base44.auth.updateMe({ full_name: name.trim() });
+      await checkUserAuth();
+      setEditingName(false);
+      toast({ title: "Profile updated" });
+    } catch (err) {
+      toast({ title: "Update failed", description: err?.message, variant: "destructive" });
+    } finally {
+      setSavingName(false);
+    }
+  };
+
+  // ---- Workspace handlers ----
+  const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
+
+  const onLogo = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) { toast({ title: "Please choose an image file." }); return; }
+    if (file.size > 5 * 1024 * 1024) { toast({ title: "Image too large (max 5MB)." }); return; }
+    setUploading(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      set("logo", file_url);
+      await base44.entities.Workspace.update(workspace.id, { logo: file_url });
+      setWorkspace((w) => ({ ...w, logo: file_url }));
+      toast({ title: "Logo updated" });
+    } catch (err) {
+      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const saveWorkspace = async () => {
+    if (form.phone && !isValidIndianPhone(form.phone)) {
+      toast({ title: "Invalid phone", description: "Enter a valid Indian phone number (10 digits, starts with 6-9).", variant: "destructive" });
+      return;
+    }
+    if (form.email && !isValidEmail(form.email)) {
+      toast({ title: "Invalid email", description: "Enter a valid email address.", variant: "destructive" });
+      return;
+    }
+    setSaving(true);
+    try {
+      const updated = await base44.entities.Workspace.update(workspace.id, {
+        name: form.name,
+        phone: form.phone,
+        email: form.email,
+        address: form.address,
+        city: form.city,
+        state: form.state,
+        country: form.country,
+        currency: form.currency,
+        timezone: form.timezone,
+        gst_enabled: form.gst_enabled,
+        gstin: form.gstin,
+        gst_business_name: form.gst_business_name,
+        gst_billing_address: form.gst_billing_address,
+        gst_state: form.gst_state,
+        default_gst_rate: form.default_gst_rate
+      });
+      setWorkspace(updated);
+      toast({ title: "Settings saved" });
+    } catch (err) {
+      toast({ title: "Save failed", description: err.message, variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!form) return null;
+
+  return (
+    <div className="space-y-4">
+      {/* ---- Owner Profile ---- */}
+      <div className="bg-card border border-border rounded-lg p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <User className="w-4 h-4 text-muted-foreground" />
+          <h3 className="text-sm font-semibold">Owner Profile</h3>
+        </div>
+
+        <div className="flex items-center gap-4 mb-5">
+          <div className="relative group shrink-0">
+            <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center text-foreground font-bold text-xl overflow-hidden border border-border">
+              {profileImage
+                ? <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
+                : <span>{(user?.full_name || user?.email || "K").charAt(0).toUpperCase()}</span>}
+            </div>
+            <input ref={profileFileRef} type="file" accept="image/*" className="hidden" onChange={onProfileImage} />
+            <button
+              type="button"
+              onClick={() => profileFileRef.current?.click()}
+              disabled={uploadingImg}
+              className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-card border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shadow-sm"
+              aria-label="Change profile photo"
+              title="Change photo"
+            >
+              {uploadingImg ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
+            </button>
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="font-semibold text-sm truncate">{user?.full_name || "User"}</div>
+            <div className="text-xs text-muted-foreground truncate">{user?.email}</div>
+            {profileImage && (
+              <button
+                onClick={removeProfileImage}
+                className="text-xs text-muted-foreground hover:text-destructive mt-1 transition-colors"
+              >
+                Remove photo
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-0">
+          {/* Full Name — editable */}
+          <div className="flex items-center justify-between py-3 border-b border-border">
+            <span className="text-xs font-medium text-muted-foreground shrink-0">Full Name</span>
+            {editingName ? (
+              <div className="flex items-center gap-2 ml-3 flex-1 justify-end">
+                <input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  autoFocus
+                  className="flex-1 max-w-[180px] h-8 px-2 text-sm bg-card border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring/40"
+                />
+                <button
+                  onClick={saveName}
+                  disabled={savingName}
+                  className="w-8 h-8 rounded-md bg-success/10 text-success flex items-center justify-center hover:bg-success/20 transition-colors shrink-0"
+                  aria-label="Save name"
+                  title="Save"
+                >
+                  {savingName ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                </button>
+                <button
+                  onClick={() => { setName(user?.full_name || ""); setEditingName(false); }}
+                  className="w-8 h-8 rounded-md border border-border text-muted-foreground flex items-center justify-center hover:bg-muted transition-colors shrink-0"
+                  aria-label="Cancel"
+                  title="Cancel"
+                >
+                  ✕
+                </button>
+              </div>
+            ) : (
+              <>
+                <span className="text-sm text-foreground truncate ml-3">{user?.full_name || "—"}</span>
+                <button
+                  onClick={() => { setName(user?.full_name || ""); setEditingName(true); }}
+                  className="ml-2 w-7 h-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted flex items-center justify-center transition-colors shrink-0"
+                  aria-label="Edit name"
+                  title="Edit name"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+              </>
+            )}
+          </div>
+
+          <Row label="Email" value={user?.email || "—"} />
+          <Row label="Role" value={user?.role || "—"} />
+        </div>
+      </div>
+
+      {/* ---- Workspace / Business ---- */}
+      <div className="bg-card border border-border rounded-lg p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <Building2 className="w-4 h-4 text-muted-foreground" />
+          <h3 className="text-sm font-semibold">Business & Workspace</h3>
+        </div>
+
+        {/* Logo */}
+        <div className="flex items-center gap-3 mb-5">
+          <div className="w-14 h-14 rounded-full bg-muted border border-border flex items-center justify-center overflow-hidden">
+            {form.logo
+              ? <img src={form.logo} alt="Workspace logo" className="w-full h-full object-cover" />
+              : <Upload className="w-5 h-5 text-muted-foreground" />}
+          </div>
+          <input ref={logoFileRef} type="file" accept="image/*" className="hidden" onChange={onLogo} />
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => logoFileRef.current?.click()} disabled={uploading}>
+              {uploading ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />Uploading…</> : form.logo ? "Replace" : "Upload Logo"}
+            </Button>
+            {form.logo && (
+              <Button variant="ghost" size="sm" onClick={async () => {
+                try {
+                  await base44.entities.Workspace.update(workspace.id, { logo: "" });
+                  set("logo", "");
+                  setWorkspace((w) => ({ ...w, logo: "" }));
+                  toast({ title: "Logo removed" });
+                } catch (err) {
+                  toast({ title: "Failed to remove logo", description: err.message, variant: "destructive" });
+                }
+              }}>
+                Remove
+              </Button>
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <Field label="Business / Workspace Name"><Input value={form.name} onChange={(e) => set("name", e.target.value)} /></Field>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field label="Business Phone"><Input value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="10-digit mobile (e.g. 9876543210)" inputMode="tel" maxLength="13" /></Field>
+            <Field label="Business Email">
+              <div className="flex items-center gap-2">
+                <Input
+                  value={form.email}
+                  onChange={(e) => set("email", e.target.value)}
+                  readOnly={!emailEditing}
+                  placeholder="you@example.com"
+                  className={emailEditing ? "" : "bg-muted/50 cursor-not-allowed text-muted-foreground"}
+                />
+                {emailEditing ? (
+                  <button
+                    type="button"
+                    onClick={() => setEmailEditing(false)}
+                    className="shrink-0 w-9 h-9 rounded-md border border-border flex items-center justify-center text-success hover:bg-success/10 transition-colors"
+                    aria-label="Confirm email edit"
+                    title="Done"
+                  >
+                    <Check className="w-4 h-4" />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setEmailEditing(true)}
+                    className="shrink-0 w-9 h-9 rounded-md border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                    aria-label="Edit email"
+                    title="Edit email"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            </Field>
+          </div>
+          <Field label="Business Address"><Input value={form.address} onChange={(e) => set("address", e.target.value)} /></Field>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field label="City"><Input value={form.city} onChange={(e) => set("city", e.target.value)} /></Field>
+            <Field label="State"><Input value={form.state} onChange={(e) => set("state", e.target.value)} /></Field>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field label="Country"><Input value={form.country} onChange={(e) => set("country", e.target.value)} /></Field>
+            <Field label="Currency">
+              <Select value={form.currency} onChange={(e) => set("currency", e.target.value)}>
+                {currencies.map((c) => <option key={c.v} value={c.v}>{c.l}</option>)}
+              </Select>
+            </Field>
+          </div>
+          <Field label="Timezone">
+            <Select value={form.timezone} onChange={(e) => set("timezone", e.target.value)}>
+              {timezones.map((t) => <option key={t}>{t}</option>)}
+            </Select>
+          </Field>
+
+          {/* GST */}
+          <div className="pt-3 mt-3 border-t border-border">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-sm font-semibold text-foreground">GST Registration</span>
+              <Toggle checked={form.gst_enabled} onChange={(v) => set("gst_enabled", v)} label="GST enabled" />
+            </div>
+            {form.gst_enabled && (
+              <div className="space-y-3 mt-3 animate-fade-in">
+                <Field label="GSTIN"><Input value={form.gstin} onChange={(e) => set("gstin", e.target.value)} placeholder="22AAAAA0000A1Z5" /></Field>
+                <Field label="Registered Business Name"><Input value={form.gst_business_name} onChange={(e) => set("gst_business_name", e.target.value)} /></Field>
+                <Field label="GST Billing Address"><Input value={form.gst_billing_address} onChange={(e) => set("gst_billing_address", e.target.value)} /></Field>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Field label="GST State"><Input value={form.gst_state} onChange={(e) => set("gst_state", e.target.value)} /></Field>
+                  <Field label="Default GST Rate (%)">
+                    <Select value={form.default_gst_rate} onChange={(e) => set("default_gst_rate", Number(e.target.value))}>
+                      {gstRates.map((r) => <option key={r} value={r}>{r}%</option>)}
+                    </Select>
+                  </Field>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <Button onClick={saveWorkspace} disabled={saving}>
+            {saving ? <><Loader2 className="w-4 h-4 animate-spin" />Saving…</> : "Save Settings"}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Row({ label, value }) {
+  return (
+    <div className="flex items-center justify-between py-3 border-b border-border last:border-0">
+      <span className="text-xs font-medium text-muted-foreground">{label}</span>
+      <span className="text-sm text-foreground truncate ml-3">{value}</span>
+    </div>
+  );
+}
+
+function Field({ label, className, children }) {
+  return (
+    <div className={className}>
+      <label className="block text-xs font-medium text-muted-foreground mb-1">{label}</label>
+      {children}
+    </div>
+  );
+}
