@@ -23,11 +23,22 @@ export function computeExpiry(startDateStr, durationMonths) {
 }
 
 export async function verifyWorkspaceMembership(base44, userId, workspaceId) {
-  const memberships = await base44.entities.WorkspaceMember.filter({
-    workspace_id: workspaceId,
-    user_id: userId
-  });
-  return !!(memberships && memberships.length > 0);
+  // Check for a WorkspaceMember record (service role bypasses RLS)
+  try {
+    const memberships = await base44.asServiceRole.entities.WorkspaceMember.filter({
+      workspace_id: workspaceId,
+      user_id: userId
+    });
+    if (memberships && memberships.length > 0) return true;
+  } catch (e) { /* continue to owner check */ }
+
+  // Fallback: check if the user is the workspace owner directly
+  try {
+    const workspace = await base44.asServiceRole.entities.Workspace.get(workspaceId);
+    if (workspace && workspace.owner_user_id === userId) return true;
+  } catch (e) { /* continue */ }
+
+  return false;
 }
 
 // Resolve the effective plan + limits for a workspace (service-role reads, bypasses RLS).
