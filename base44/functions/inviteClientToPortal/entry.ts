@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
+import { verifyWorkspaceMembership } from '../../shared/planEngine.ts';
 
 // Workspace admin invites a client to the Client Portal.
 // Instead of calling inviteUser (which pre-creates the user and blocks self-registration),
@@ -21,9 +22,10 @@ export default async function(req) {
       return Response.json({ error: 'client_id, workspace_id, and email are required' }, { status: 400 });
     }
 
-    // Verify the caller is an admin (workspace owner)
-    if (user.role !== 'admin') {
-      return Response.json({ error: 'Only admins can invite clients' }, { status: 403 });
+    // Verify the caller is a member of this workspace (owner/admin/manager)
+    const isMember = await verifyWorkspaceMembership(base44, user.id, workspace_id);
+    if (!isMember) {
+      return Response.json({ error: 'Only workspace members can invite clients' }, { status: 403 });
     }
 
     // Build the registration link with email pre-filled
