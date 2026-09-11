@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { useWorkspace } from "@/lib/WorkspaceContext";
-import { businessTypes } from "@/constants/preferencesConfig";
 import { formatINR } from "@/utils/format";
 import Button from "@/components/common/Button";
 import Select from "@/components/common/Select";
@@ -23,7 +22,6 @@ import { exportFinancialCsv } from "@/lib/exportUtils";
 import { loadAllTransactions } from "@/lib/financeService";
 import { useFinancialYear } from "@/hooks/useFinancialYear";
 import { txInFY, fyDisplayLabel } from "@/lib/financialYearService";
-import { getIndustryPresets } from "@/constants/industryPresets";
 import TeamMemberTypeManager from "@/components/preferences/TeamMemberTypeManager";
 import EventTypeManager from "@/components/preferences/EventTypeManager";
 import QuotationDefaultsSection from "@/components/settings/QuotationDefaultsSection";
@@ -41,13 +39,6 @@ const sections = [
   { id: "export", label: "Data Export", icon: Download },
   { id: "session", label: "Session", icon: LogOut },
 ];
-
-const BUSINESS_TYPE_TO_CATEGORY = {
-  "Photography": "PHOTOGRAPHY",
-  "Videography": "PHOTOGRAPHY",
-  "Event Management": "EVENT_MANAGEMENT",
-  "Production House": "EVENT_MANAGEMENT"
-};
 
 export default function Preferences() {
   const { workspaceId, workspace } = useWorkspace();
@@ -75,68 +66,6 @@ export default function Preferences() {
       return { showProgressIndicators: true, showMemberTypeColors: true, showStatusDots: true, showTeam: true, showServices: true, showAddressOnCards: false, showServicesOnCards: false, showLogo: false };
     }
   });
-  const [businessType, setBusinessType] = useState(workspace?.business_type || "Photography");
-  const [loadingPresets, setLoadingPresets] = useState(false);
-
-  const changeBusinessType = async (val) => {
-    setBusinessType(val);
-    try {
-      await base44.entities.Workspace.update(workspace.id, { business_type: val });
-      toast({ title: "Business type updated" });
-    } catch (e) {
-      toast({ title: "Failed to update business type", description: e?.message, variant: "destructive" });
-    }
-  };
-
-  const loadPresetSet = async () => {
-    const category = BUSINESS_TYPE_TO_CATEGORY[businessType] || "OTHER";
-    const presets = getIndustryPresets(category);
-    if (presets.roles.length === 0 && presets.services.length === 0) {
-      toast({ title: "No presets available for this business type" });
-      return;
-    }
-    const existingRoleNames = new Set(roles.map((r) => r.name.toLowerCase()));
-    const existingServiceNames = new Set(serviceList.map((s) => s.name.toLowerCase()));
-    const newRoles = presets.roles.filter((r) => !existingRoleNames.has(r.name.toLowerCase()));
-    const newServices = presets.services.filter((s) => !existingServiceNames.has(s.name.toLowerCase()));
-    const skippedRoles = presets.roles.length - newRoles.length;
-    const skippedServices = presets.services.length - newServices.length;
-    if (newRoles.length === 0 && newServices.length === 0) {
-      toast({ title: "All presets already exist", description: "No new roles or services to add." });
-      return;
-    }
-    if (!window.confirm(`Add ${newRoles.length} roles and ${newServices.length} services for ${businessType}?${skippedRoles + skippedServices > 0 ? `\n(${skippedRoles + skippedServices} already exist — will be skipped)` : ""}`)) return;
-    setLoadingPresets(true);
-    try {
-      for (const r of newRoles) {
-        await base44.entities.TeamRole.create({
-          workspace_id: workspaceId,
-          name: r.name,
-          default_rate: r.default_rate,
-          rate_type: r.rate_type,
-          status: "active"
-        });
-      }
-      for (const s of newServices) {
-        await base44.entities.Service.create({
-          workspace_id: workspaceId,
-          name: s.name,
-          default_rate: s.default_rate,
-          rate_type: s.rate_type,
-          gst_rate: s.gst_rate || 0,
-          status: "active"
-        });
-      }
-      toast({ title: "Preset loaded", description: `${newRoles.length} roles and ${newServices.length} services added.` });
-      loadRolesList();
-      loadServicesList();
-    } catch (e) {
-      toast({ title: "Failed to load presets", description: e?.message, variant: "destructive" });
-    } finally {
-      setLoadingPresets(false);
-    }
-  };
-
   // Team Roles (real backend)
   const [roles, setRoles] = useState([]);
   const [loadingRoles, setLoadingRoles] = useState(false);
@@ -268,20 +197,6 @@ export default function Preferences() {
       {/* Business Setup */}
       {activeTab === "business" && (
         <div className="space-y-4">
-          <Card title="Business Type">
-            <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-end">
-              <Field label="Business Type" className="flex-1">
-                <Select value={businessType} onChange={(e) => changeBusinessType(e.target.value)}>
-                  {businessTypes.map((b) => <option key={b}>{b}</option>)}
-                </Select>
-              </Field>
-              <Button onClick={loadPresetSet} disabled={loadingPresets}>
-                {loadingPresets ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading…</> : "Load Set"}
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground mt-2">Load starter roles and services for the selected business type. Existing items with the same name are skipped.</p>
-          </Card>
-
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <Card title="Team Roles">
               <div className="space-y-2">
