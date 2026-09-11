@@ -7,7 +7,6 @@ import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
 import Toggle from "@/components/common/Toggle";
 import { Upload, Loader2, Pencil, Check } from "lucide-react";
-import { businessTypes } from "@/constants/preferencesConfig";
 import { toast } from "@/components/ui/use-toast";
 import { isValidIndianPhone, isValidEmail } from "@/lib/validation";
 
@@ -28,7 +27,6 @@ export default function WorkspaceSettings() {
     if (workspace) {
       setForm({
         name: workspace.name || "",
-        business_type: workspace.business_type || "Photography",
         phone: workspace.phone || "",
         email: workspace.email || user?.email || "",
         address: workspace.address || "",
@@ -84,7 +82,6 @@ export default function WorkspaceSettings() {
     try {
       const updated = await base44.entities.Workspace.update(workspace.id, {
         name: form.name,
-        business_type: form.business_type,
         phone: form.phone,
         email: form.email,
         address: form.address,
@@ -144,21 +141,6 @@ export default function WorkspaceSettings() {
       <div className="space-y-3">
         <Field label="Owner Name"><Input value={user?.full_name || ""} disabled placeholder="Owner name" /></Field>
         <Field label="Business / Workspace Name"><Input value={form.name} onChange={(e) => set("name", e.target.value)} /></Field>
-        <Field label="Business Type">
-          <Select
-            value={form.business_type}
-            onChange={(e) => set("business_type", e.target.value)}
-            disabled={!!workspace?.business_type}
-            className={workspace?.business_type ? "opacity-60 cursor-not-allowed" : ""}
-          >
-            {businessTypes.map((b) => <option key={b}>{b}</option>)}
-          </Select>
-          {workspace?.business_type && (
-            <p className="text-[11px] text-muted-foreground mt-1">
-              Business type is locked after initial setup and cannot be changed.
-            </p>
-          )}
-        </Field>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Field label="Business Phone"><Input value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="10-digit mobile (e.g. 9876543210)" inputMode="tel" maxLength="13" /></Field>
           <Field label="Business Email">
