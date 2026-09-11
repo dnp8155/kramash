@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
+import { useWorkspace } from "@/lib/WorkspaceContext";
 import { Pencil, Trash2, Plus, X, Check } from "lucide-react";
 import Button from "@/components/common/Button";
 import { useToast } from "@/components/ui/use-toast";
@@ -14,6 +15,7 @@ const COLOR_PRESETS = ["#ec4899", "#3b82f6", "#6b7280", "#10b981", "#f59e0b", "#
 
 export default function TeamMemberTypeManager({ workspace }) {
   const { toast } = useToast();
+  const { setWorkspace } = useWorkspace();
   const [types, setTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null);
@@ -32,12 +34,15 @@ export default function TeamMemberTypeManager({ workspace }) {
   }, [workspace]);
 
   const persist = async (newTypes) => {
+    if (!workspace?.id) return;
     setSaving(true);
     try {
       await base44.entities.Workspace.update(workspace.id, {
         team_member_types: JSON.stringify(newTypes),
       });
       setTypes(newTypes);
+      // Update workspace context so other pages see the change immediately
+      setWorkspace((w) => (w ? { ...w, team_member_types: JSON.stringify(newTypes) } : w));
       setEditing(null);
       setDraft({ title: "", color: COLOR_PRESETS[0] });
       toast({ title: "Team member type saved" });

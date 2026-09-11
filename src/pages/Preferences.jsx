@@ -84,7 +84,7 @@ export default function Preferences() {
     try {
       setRoles(await loadRoles(workspaceId));
     } catch (e) {
-      setRoles([]);
+      // Keep previous list on re-fetch error — don't wipe to empty
     } finally {
       setLoadingRoles(false);
     }
@@ -98,7 +98,7 @@ export default function Preferences() {
     try {
       setServiceList(await loadAllServices(workspaceId));
     } catch (e) {
-      setServiceList([]);
+      // Keep previous list on re-fetch error — don't wipe to empty
     } finally {
       setLoadingServices(false);
     }
@@ -106,23 +106,59 @@ export default function Preferences() {
 
   useEffect(() => { loadServicesList(); }, [loadServicesList]);
 
+  // Optimistic update on save — immediately show the saved record, then re-fetch for consistency
+  const onRoleSaved = (saved) => {
+    if (saved) {
+      setRoles((prev) => {
+        const idx = prev.findIndex((r) => r.id === saved.id);
+        if (idx >= 0) {
+          const next = [...prev];
+          next[idx] = saved;
+          return next;
+        }
+        return [saved, ...prev];
+      });
+    }
+    loadRolesList();
+  };
+
+  const onServiceSaved = (saved) => {
+    if (saved) {
+      setServiceList((prev) => {
+        const idx = prev.findIndex((s) => s.id === saved.id);
+        if (idx >= 0) {
+          const next = [...prev];
+          next[idx] = saved;
+          return next;
+        }
+        return [saved, ...prev];
+      });
+    }
+    loadServicesList();
+  };
+
   const openAddService = () => { setEditingService(null); setShowServiceForm(true); };
   const openEditService = (s) => { setEditingService(s); setShowServiceForm(true); };
   const toggleServiceStatus = async (s) => {
+    const newStatus = s.status === "active" ? "inactive" : "active";
+    setServiceList((prev) => prev.map((x) => x.id === s.id ? { ...x, status: newStatus } : x));
     try {
-      await base44.entities.Service.update(s.id, { status: s.status === "active" ? "inactive" : "active" });
+      await base44.entities.Service.update(s.id, { status: newStatus });
       loadServicesList();
     } catch (e) {
+      setServiceList((prev) => prev.map((x) => x.id === s.id ? { ...x, status: s.status } : x));
       toast({ title: "Failed to update service", description: e?.message, variant: "destructive" });
     }
   };
   const deleteService = async (s) => {
     if (!window.confirm(`Delete service "${s.name}"? Historical quotations keep their snapshot.`)) return;
+    setServiceList((prev) => prev.filter((x) => x.id !== s.id));
     try {
       await base44.entities.Service.delete(s.id);
       toast({ title: "Service deleted" });
       loadServicesList();
     } catch (e) {
+      loadServicesList();
       toast({ title: "Failed to delete service", description: e?.message, variant: "destructive" });
     }
   };
@@ -130,19 +166,24 @@ export default function Preferences() {
   const openAddRole = () => { setEditingRole(null); setShowRoleForm(true); };
   const openEditRole = (r) => { setEditingRole(r); setShowRoleForm(true); };
   const toggleRoleStatus = async (r) => {
+    const newStatus = r.status === "active" ? "inactive" : "active";
+    setRoles((prev) => prev.map((x) => x.id === r.id ? { ...x, status: newStatus } : x));
     try {
-      await base44.entities.TeamRole.update(r.id, { status: r.status === "active" ? "inactive" : "active" });
+      await base44.entities.TeamRole.update(r.id, { status: newStatus });
       loadRolesList();
     } catch (e) {
+      setRoles((prev) => prev.map((x) => x.id === r.id ? { ...x, status: r.status } : x));
       toast({ title: "Failed to update role", description: e?.message, variant: "destructive" });
     }
   };
   const deleteRole = async (r) => {
+    setRoles((prev) => prev.filter((x) => x.id !== r.id));
     try {
       await base44.entities.TeamRole.delete(r.id);
       toast({ title: "Role deleted" });
       loadRolesList();
     } catch (e) {
+      loadRolesList();
       toast({ title: "Failed to delete role", description: e?.message, variant: "destructive" });
     }
   };
@@ -363,7 +404,7 @@ export default function Preferences() {
       <TeamRoleForm
         open={showRoleForm}
         onClose={() => setShowRoleForm(false)}
-        onSaved={loadRolesList}
+        onSaved={onRoleSaved}
         role={editingRole}
         workspaceId={workspaceId}
       />
@@ -371,7 +412,7 @@ export default function Preferences() {
       <ServiceForm
         open={showServiceForm}
         onClose={() => setShowServiceForm(false)}
-        onSaved={loadServicesList}
+        onSaved={onServiceSaved}
         service={editingService}
         workspaceId={workspaceId}
         gstEnabled={!!workspace?.gst_enabled}

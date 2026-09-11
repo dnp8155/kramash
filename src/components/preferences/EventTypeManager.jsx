@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";
+import { useWorkspace } from "@/lib/WorkspaceContext";
 import Input from "@/components/common/Input";
 import Button from "@/components/common/Button";
 import { getDefaultEventTypes } from "@/lib/eventTypeService";
@@ -10,6 +11,7 @@ import { Plus, Trash2, RotateCcw, Loader2 } from "lucide-react";
 // Stored as a JSON string array on workspace.event_types.
 export default function EventTypeManager({ workspace }) {
   const { toast } = useToast();
+  const { setWorkspace } = useWorkspace();
   const [types, setTypes] = useState([]);
   const [newType, setNewType] = useState("");
   const [saving, setSaving] = useState(false);
@@ -36,6 +38,7 @@ export default function EventTypeManager({ workspace }) {
         event_types: JSON.stringify(nextTypes)
       });
       setTypes(nextTypes);
+      setWorkspace((w) => (w ? { ...w, event_types: JSON.stringify(nextTypes) } : w));
       toast({ title: "Event types saved" });
     } catch (e) {
       toast({ title: "Failed to save event types", description: e?.message, variant: "destructive" });
