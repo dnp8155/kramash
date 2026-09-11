@@ -126,9 +126,6 @@ export default function LeadForm({ open, onClose, editingLead, onSaved }) {
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{editingLead ? "Edit Lead" : "Add New Lead"}</DialogTitle>
-          <button onClick={onClose} className="absolute right-4 top-4 text-muted-foreground hover:text-foreground">
-            <X className="w-4 h-4" />
-          </button>
         </DialogHeader>
 
         <div className="space-y-4 pt-2">

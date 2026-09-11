@@ -36,8 +36,6 @@ export default function FiscalYearSelector({ size = "md" }) {
     return dateRange.startDate === preset.startDate && dateRange.endDate === preset.endDate;
   };
 
-  const isCustomSelected = dateRange?.type === "custom";
-
   const handleApplyCustom = () => {
     if (!customFrom || !customTo) return;
     if (customFrom > customTo) return;

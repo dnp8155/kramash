@@ -137,7 +137,6 @@ export default function Leads() {
         <LoadingState />
       ) : filtered.length === 0 ? (
         <EmptyState
-          icon={Users}
           title={query || statusFilter !== "all" || priorityFilter !== "all" ? "No leads match your filters" : "No leads yet"}
           description={query || statusFilter !== "all" || priorityFilter !== "all" ? "Try adjusting your search or filters." : "Add your first lead to start tracking potential clients."}
           action={!query && statusFilter === "all" && priorityFilter === "all" ? (

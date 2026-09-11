@@ -51,6 +51,11 @@ export function useFinancialYear() {
     if (workspaceId) localStorage.setItem(`fy-selected-${workspaceId}`, fyId);
   }, [workspaceId]);
 
+  const selectedFY = useMemo(
+    () => fiscalYears.find((f) => f.id === selectedFYId) || activeFY || null,
+    [fiscalYears, selectedFYId, activeFY]
+  );
+
   // Restore dateRange from localStorage or initialise from selectedFY
   useEffect(() => {
     if (!fiscalYears.length || !workspaceId) return;
@@ -87,11 +92,6 @@ export function useFinancialYear() {
       selectFY(range.fyId);
     }
   }, [workspaceId, selectFY]);
-
-  const selectedFY = useMemo(
-    () => fiscalYears.find((f) => f.id === selectedFYId) || activeFY || null,
-    [fiscalYears, selectedFYId, activeFY]
-  );
 
   const refresh = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ["financial-years", workspaceId] });
