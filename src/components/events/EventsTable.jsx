@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, ChevronUp, Pencil, MapPin, FileText, StickyNote, ArrowRight, Users, Briefcase } from "lucide-react";
+import { ChevronDown, ChevronUp, Pencil, MapPin, FileText, StickyNote, ArrowRight, Users, Briefcase, Trash2 } from "lucide-react";
 import StatusBadge from "@/components/common/StatusBadge";
 import LoadingState from "@/components/common/LoadingState";
 import EmptyState from "@/components/common/EmptyState";
@@ -9,7 +9,7 @@ import { formatEventDates, isThisWeek, formatAssignedDates } from "@/lib/dates";
 import { useDisplayPreferences } from "@/hooks/useDisplayPreferences";
 import { cn } from "@/lib/utils";
 
-export default function EventsTable({ events, clients, teamMap = {}, serviceMap = {}, assignmentsByEvent = {}, loading, onEventClick, onEditEvent, onAdd, canAdd, term }) {
+export default function EventsTable({ events, clients, teamMap = {}, serviceMap = {}, assignmentsByEvent = {}, loading, onEventClick, onEditEvent, onDeleteEvent, onAdd, canAdd, term }) {
   const t = term || {};
   const prefs = useDisplayPreferences();
   if (loading) {
@@ -57,7 +57,7 @@ export default function EventsTable({ events, clients, teamMap = {}, serviceMap 
                 {weekEvents.length} {t.workItemSingular || "Event"}{weekEvents.length > 1 ? "s" : ""} This Week
               </div>
               {weekEvents.map((e) => (
-                <Row key={e.id} event={e} term={t} prefs={prefs} clientName={clientName(e.client_id)} teamMap={teamMap} serviceMap={serviceMap} assignmentsByEvent={assignmentsByEvent} onClick={() => onEventClick(e)} onEdit={() => onEditEvent(e)} />
+                <Row key={e.id} event={e} term={t} prefs={prefs} clientName={clientName(e.client_id)} teamMap={teamMap} serviceMap={serviceMap} assignmentsByEvent={assignmentsByEvent} onClick={() => onEventClick(e)} onEdit={() => onEditEvent(e)} onDelete={() => onDeleteEvent(e)} />
               ))}
             </>
           )}
@@ -68,21 +68,21 @@ export default function EventsTable({ events, clients, teamMap = {}, serviceMap 
                 All {t.workItemPlural || "Events"}
               </div>
               {laterEvents.map((e) => (
-                <Row key={e.id} event={e} term={t} prefs={prefs} clientName={clientName(e.client_id)} teamMap={teamMap} serviceMap={serviceMap} assignmentsByEvent={assignmentsByEvent} onClick={() => onEventClick(e)} onEdit={() => onEditEvent(e)} />
+                <Row key={e.id} event={e} term={t} prefs={prefs} clientName={clientName(e.client_id)} teamMap={teamMap} serviceMap={serviceMap} assignmentsByEvent={assignmentsByEvent} onClick={() => onEventClick(e)} onEdit={() => onEditEvent(e)} onDelete={() => onDeleteEvent(e)} />
               ))}
             </>
           )}
         </>
       ) : (
         events.map((e) => (
-          <Row key={e.id} event={e} term={t} prefs={prefs} clientName={clientName(e.client_id)} teamMap={teamMap} serviceMap={serviceMap} assignmentsByEvent={assignmentsByEvent} onClick={() => onEventClick(e)} onEdit={() => onEditEvent(e)} />
+          <Row key={e.id} event={e} term={t} prefs={prefs} clientName={clientName(e.client_id)} teamMap={teamMap} serviceMap={serviceMap} assignmentsByEvent={assignmentsByEvent} onClick={() => onEventClick(e)} onEdit={() => onEditEvent(e)} onDelete={() => onDeleteEvent(e)} />
         ))
       )}
     </div>
   );
 }
 
-function Row({ event, clientName, teamMap, serviceMap, assignmentsByEvent, onClick, onEdit, term, prefs }) {
+function Row({ event, clientName, teamMap, serviceMap, assignmentsByEvent, onClick, onEdit, onDelete, term, prefs }) {
   const teamNames = (event.team_member_ids || []).map((id) => teamMap[id]?.name).filter(Boolean);
   const serviceNames = (event.service_ids || []).map((id) => serviceMap[id]?.name).filter(Boolean);
   const eventAssignments = assignmentsByEvent?.[event.id] || [];
@@ -133,6 +133,9 @@ function Row({ event, clientName, teamMap, serviceMap, assignmentsByEvent, onCli
               </Button>
               <Button variant="outline" size="sm" onClick={onClick}>
                 View Details <ArrowRight className="w-3 h-3" />
+              </Button>
+              <Button variant="destructive" size="sm" onClick={onDelete}>
+                <Trash2 className="w-3 h-3" /> Delete
               </Button>
             </div>
           </div>

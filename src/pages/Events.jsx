@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useWorkspace } from "@/lib/WorkspaceContext";
+import { useToast } from "@/components/ui/use-toast";
 import ReminderBanner from "@/components/events/ReminderBanner";
 import UpgradeBanner from "@/components/events/UpgradeBanner";
 import EventsTable from "@/components/events/EventsTable";
@@ -34,6 +35,7 @@ export default function Events() {
   const [fyFilter, setFyFilter] = useState("all");
   const [showForm, setShowForm] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
+  const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const { data, isLoading, error } = useQuery({
@@ -101,6 +103,17 @@ export default function Events() {
   const openEvent = (e) => navigate(`/events/${e.id}`);
   const openNew = () => navigate("/events/new");
   const openEdit = (e) => navigate(`/events/${e.id}/edit`);
+
+  const deleteEvent = async (e) => {
+    if (!window.confirm(`Delete "${e.title}"? This cannot be undone.`)) return;
+    try {
+      await base44.entities.Event.delete(e.id);
+      toast({ title: `${term.workItemSingular} deleted` });
+      invalidate();
+    } catch (err) {
+      toast({ title: "Failed to delete", description: err?.message, variant: "destructive" });
+    }
+  };
 
   const upcomingCount = events.filter((e) => isUpcomingDate(e.start_date) && e.status !== "completed" && e.status !== "cancelled").length;
   const completedCount = events.filter((e) => e.status === "completed").length;
@@ -187,6 +200,7 @@ export default function Events() {
           loading={isLoading}
           onEventClick={openEvent}
           onEditEvent={openEdit}
+          onDeleteEvent={deleteEvent}
           onAdd={openNew}
           canAdd
           term={term}

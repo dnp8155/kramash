@@ -33,7 +33,7 @@ import {
 } from "@/lib/financeService";
 import {
   ArrowLeft, Pencil, Wallet, FileText, MapPin, Calendar, Phone, Plus,
-  CalendarPlus, Share2, Receipt, StickyNote, Trash2, ClipboardList
+  CalendarPlus, Share2, Receipt, StickyNote, Trash2, ClipboardList, X
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
@@ -262,6 +262,34 @@ export default function EventDetails() {
     }
   };
 
+  const handleDeleteDate = async (dateToRemove) => {
+    const currentDates = Array.isArray(event?.event_dates) && event.event_dates.length > 0
+      ? event.event_dates
+      : [event?.start_date].filter(Boolean);
+    const newDates = currentDates.filter((d) => d !== dateToRemove);
+    if (newDates.length === 0) {
+      toast({ title: "Cannot delete the last date", description: "An event must have at least one date.", variant: "destructive" });
+      return;
+    }
+    if (!window.confirm(`Remove ${dateToRemove} from this ${term.workItemSingular.toLowerCase()}?`)) return;
+    try {
+      const updates = { event_dates: newDates };
+      if (dateToRemove === event.start_date) {
+        const sorted = [...newDates].sort();
+        updates.start_date = sorted[0];
+      }
+      if (dateToRemove === event.end_date) {
+        const sorted = [...newDates].sort();
+        updates.end_date = sorted[sorted.length - 1];
+      }
+      await base44.entities.Event.update(event.id, updates);
+      toast({ title: "Date removed" });
+      load();
+    } catch (e) {
+      toast({ title: "Failed to remove date", description: e?.message, variant: "destructive" });
+    }
+  };
+
   if (isLoading) return <DetailSkeleton />;
 
   if (hasError) {
@@ -414,7 +442,7 @@ export default function EventDetails() {
             <div className="mt-4">
               <div className="text-xs font-medium text-muted-foreground mb-2.5">Event Date(s)</div>
               <div className="flex flex-wrap gap-2">
-                {allDates.map((d) => <DateChip key={d} date={d} />)}
+                {allDates.map((d) => <DateChip key={d} date={d} onDelete={() => handleDeleteDate(d)} />)}
               </div>
             </div>
           )}
@@ -802,15 +830,25 @@ function FinancialMiniCard({ label, value, tone = "default" }) {
   );
 }
 
-function DateChip({ date }) {
+function DateChip({ date, onDelete }) {
   if (!date) return null;
   const d = new Date(date + "T00:00:00");
   const day = d.getDate();
   const month = d.toLocaleString("en-IN", { month: "short" });
   return (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-primary/8 text-primary text-xs font-semibold border border-primary/15">
+    <span className="inline-flex items-center gap-1.5 pl-2.5 pr-1 py-1 rounded-md bg-primary/8 text-primary text-xs font-semibold border border-primary/15">
       <Calendar className="w-3 h-3" />
       {day} {month}
+      {onDelete && (
+        <button
+          onClick={onDelete}
+          className="ml-0.5 w-4 h-4 rounded-full hover:bg-destructive/15 flex items-center justify-center text-primary/60 hover:text-destructive transition-colors"
+          aria-label="Remove date"
+          title="Remove date"
+        >
+          <X className="w-3 h-3" />
+        </button>
+      )}
     </span>
   );
 }
