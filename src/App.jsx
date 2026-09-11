@@ -22,6 +22,7 @@ import EventDetails from '@/pages/EventDetails';
 import EventEditor from '@/pages/EventEditor';
 import Clients from '@/pages/Clients';
 import ClientDetails from '@/pages/ClientDetails';
+import Leads from '@/pages/Leads';
 import Team from '@/pages/Team';
 import TeamMemberDetails from '@/pages/TeamMemberDetails';
 import Financial from '@/pages/Financial';
@@ -138,6 +139,7 @@ const AuthenticatedApp = () => {
           <Route path="/calendar" element={<Calendar />} />
           <Route path="/clients" element={<Clients />} />
           <Route path="/clients/:id" element={<ClientDetails />} />
+          <Route path="/leads" element={<Leads />} />
           <Route path="/team" element={<Team />} />
           <Route path="/team/:id" element={<TeamMemberDetails />} />
           <Route path="/financial" element={<Financial />} />

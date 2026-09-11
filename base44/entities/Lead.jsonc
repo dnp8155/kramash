@@ -1,0 +1,104 @@
+{
+  "name": "Lead",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "title": "Workspace ID"
+    },
+    "name": {
+      "type": "string",
+      "title": "Lead Name"
+    },
+    "phone": {
+      "type": "string",
+      "title": "Phone"
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "title": "Email"
+    },
+    "source": {
+      "type": "string",
+      "title": "Lead Source",
+      "default": "other",
+      "enum": [
+        "referral",
+        "social_media",
+        "website",
+        "walk_in",
+        "advertisement",
+        "other"
+      ]
+    },
+    "event_type": {
+      "type": "string",
+      "title": "Interested In (Event/Service Type)"
+    },
+    "event_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Tentative Event Date"
+    },
+    "budget": {
+      "type": "number",
+      "title": "Budget",
+      "default": 0
+    },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "default": "new",
+      "enum": [
+        "new",
+        "contacted",
+        "qualified",
+        "negotiation",
+        "won",
+        "lost"
+      ]
+    },
+    "priority": {
+      "type": "string",
+      "title": "Priority",
+      "default": "warm",
+      "enum": [
+        "hot",
+        "warm",
+        "cold"
+      ]
+    },
+    "next_followup_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Next Follow-up Date"
+    },
+    "notes": {
+      "type": "string",
+      "title": "Notes"
+    },
+    "converted_client_id": {
+      "type": "string",
+      "title": "Converted Client ID (if lead was converted to a client)"
+    }
+  },
+  "required": [
+    "workspace_id",
+    "name"
+  ],
+  "rls": {
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}
