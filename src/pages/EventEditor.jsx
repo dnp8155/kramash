@@ -287,6 +287,13 @@ export default function EventEditor() {
         <div className="border-b border-border bg-card">
           <div ref={topRef} className="max-w-5xl mx-auto px-4 sm:px-6 py-5 flex items-start justify-between gap-4">
             <div className="flex items-start gap-3">
+              <button
+                onClick={requestBack}
+                className="w-10 h-10 rounded-xl bg-muted hover:bg-secondary flex items-center justify-center shrink-0 transition-colors"
+                title="Back"
+              >
+                <ArrowLeft className="w-5 h-5 text-foreground" />
+              </button>
               <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                 <FolderPlus className="w-5 h-5 text-primary" />
               </div>
