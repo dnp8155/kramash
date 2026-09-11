@@ -11,8 +11,10 @@ import Toggle from "@/components/common/Toggle";
 import LoadingState from "@/components/common/LoadingState";
 import { RotateCcw, X, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useDisplayPreferences } from "@/hooks/useDisplayPreferences";
 
 export default function RateEstimator() {
+  const { showStatusDots } = useDisplayPreferences();
   const navigate = useNavigate();
   const { workspaceId, workspace } = useWorkspace();
   const { toast } = useToast();
@@ -235,10 +237,12 @@ export default function RateEstimator() {
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-bold text-foreground">Rate Estimator</h1>
         <div className="flex items-center gap-3">
+          {showStatusDots && (
           <span className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground">
             <span className="w-2 h-2 rounded-full bg-success" />
             Online
           </span>
+          )}
           <Button variant="dark" onClick={createQuotation} disabled={items.length === 0}>
             <Plus className="w-4 h-4" />
             New Entry

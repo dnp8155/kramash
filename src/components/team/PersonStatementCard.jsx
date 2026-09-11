@@ -1,6 +1,7 @@
 import { Crown, Wallet, Users, Briefcase, TrendingUp, Clock } from "lucide-react";
 import { formatMoney } from "@/utils/format";
 import { cn } from "@/lib/utils";
+import { useDisplayPreferences } from "@/hooks/useDisplayPreferences";
 
 // Consolidated per-person financial statement card.
 // Shows Roles Total, Services Total, Total Paid, Due Now, and Future Amount Due
@@ -8,6 +9,7 @@ import { cn } from "@/lib/utils";
 //
 // Responsive: works from 320px up. No horizontal overflow or text clipping.
 export default function PersonStatementCard({ statement, currency = "INR" }) {
+  const { showStatusDots } = useDisplayPreferences();
   const {
     name,
     member,
@@ -118,7 +120,7 @@ export default function PersonStatementCard({ statement, currency = "INR" }) {
       {/* Settled badge */}
       {isFullySettled && (
         <div className="text-xs font-medium text-success flex items-center gap-1 pt-1">
-          <span className="w-1.5 h-1.5 rounded-full bg-success" />
+          {showStatusDots && <span className="w-1.5 h-1.5 rounded-full bg-success" />}
           Fully settled
         </div>
       )}
