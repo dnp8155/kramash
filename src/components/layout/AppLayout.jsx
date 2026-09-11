@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import Sidebar from "@/components/layout/Sidebar";
 import TopHeader from "@/components/layout/TopHeader";
 import MobileNavigation from "@/components/layout/MobileNavigation";
@@ -12,6 +12,7 @@ import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 export default function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const location = useLocation();
 
   // Keep all pages in sync: when any entity changes server-side (create/update/delete),
   // invalidate every query cache that depends on it so dashboards, lists, and detail
@@ -53,7 +54,7 @@ export default function AppLayout() {
         <OfflineBanner />
         <TopHeader onMenuClick={() => setMobileOpen(true)} />
         <main className="flex-1 overflow-y-auto scrollbar-thin pb-24 lg:pb-0">
-          <ErrorBoundary>
+          <ErrorBoundary key={location.pathname}>
             <Outlet />
           </ErrorBoundary>
         </main>

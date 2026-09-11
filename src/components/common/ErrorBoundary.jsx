@@ -26,12 +26,20 @@ export default class ErrorBoundary extends Component {
           <p className="text-sm text-muted-foreground mt-1 max-w-sm">
             This section failed to load. Try refreshing the page.
           </p>
-          <button
-            onClick={() => window.location.reload()}
-            className="mt-4 h-9 px-4 rounded-md bg-primary text-primary-foreground text-sm font-medium"
-          >
-            Refresh
-          </button>
+          <div className="flex items-center gap-2 mt-4">
+            <button
+              onClick={() => this.setState({ hasError: false })}
+              className="h-9 px-4 rounded-md border border-border bg-card text-foreground text-sm font-medium hover:bg-muted"
+            >
+              Try Again
+            </button>
+            <button
+              onClick={() => window.location.reload()}
+              className="h-9 px-4 rounded-md bg-primary text-primary-foreground text-sm font-medium"
+            >
+              Refresh Page
+            </button>
+          </div>
         </div>
       );
     }
