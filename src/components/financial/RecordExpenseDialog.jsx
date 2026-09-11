@@ -18,7 +18,8 @@ export default function RecordExpenseDialog({
   workspaceId, currency = "INR",
   events = [],
   categories = [],
-  preselectedEventId = ""
+  preselectedEventId = "",
+  miscMode = false
 }) {
   const [eventId, setEventId] = useState("");
   const [categoryId, setCategoryId] = useState("");
@@ -34,7 +35,7 @@ export default function RecordExpenseDialog({
   useEffect(() => {
     if (open) {
       setError("");
-      setEventId(preselectedEventId || "");
+      setEventId(miscMode ? "" : (preselectedEventId || ""));
       setCategoryId("");
       setAmount("");
       setDate(todayISO());
@@ -45,7 +46,6 @@ export default function RecordExpenseDialog({
   }, [open, preselectedEventId]);
 
   const validate = () => {
-    if (!eventId) return "Please select an event.";
     if (!categoryId) return "Please select an expense category.";
     const amt = Number(amount);
     if (!amount || isNaN(amt) || amt <= 0) return "Amount must be greater than zero.";
@@ -63,12 +63,14 @@ export default function RecordExpenseDialog({
     setSaving(true);
     setError("");
     try {
-      // Verify the event belongs to the workspace.
-      const ev = events.find((x) => x.id === eventId);
-      if (!ev || ev.workspace_id !== workspaceId) {
-        setError("Selected event is not available in this workspace.");
-        setSaving(false);
-        return;
+      // Verify the event belongs to the workspace (if selected).
+      if (eventId) {
+        const ev = events.find((x) => x.id === eventId);
+        if (!ev || ev.workspace_id !== workspaceId) {
+          setError("Selected event is not available in this workspace.");
+          setSaving(false);
+          return;
+        }
       }
       const cat = categories.find((c) => c.id === categoryId);
       const fy = resolveFYForDate(date, fiscalYears);
@@ -105,20 +107,22 @@ export default function RecordExpenseDialog({
     <Dialog open={open} onOpenChange={(o) => !o && onClose?.()}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Record Expense</DialogTitle>
-          <DialogDescription>Record a business or event expense.</DialogDescription>
+          <DialogTitle>{miscMode ? "Misc Expense" : "Record Expense"}</DialogTitle>
+          <DialogDescription>{miscMode ? "Record an expense not tied to any event — added directly to the financial year." : "Record a business, event, or misc expense."}</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-3">
-          <div className="space-y-1.5">
-            <Label>Event <span className="text-destructive">*</span></Label>
-            <Select value={eventId} onChange={(e) => setEventId(e.target.value)} className="w-full">
-              <option value="">Select an event</option>
-              {events.map((ev) => (
-                <option key={ev.id} value={ev.id}>{ev.title}</option>
-              ))}
-            </Select>
-          </div>
+          {!miscMode && (
+            <div className="space-y-1.5">
+              <Label>Event <span className="text-muted-foreground font-normal">(optional — leave blank for misc expense)</span></Label>
+              <Select value={eventId} onChange={(e) => setEventId(e.target.value)} className="w-full">
+                <option value="">No event (misc expense)</option>
+                {events.map((ev) => (
+                  <option key={ev.id} value={ev.id}>{ev.title}</option>
+                ))}
+              </Select>
+            </div>
+          )}
 
           <div className="space-y-1.5">
             <Label>Expense Category <span className="text-destructive">*</span></Label>

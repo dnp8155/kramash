@@ -57,6 +57,7 @@ export default function Financial() {
   const [showClientPayment, setShowClientPayment] = useState(false);
   const [showTeamPayment, setShowTeamPayment] = useState(false);
   const [showExpense, setShowExpense] = useState(false);
+  const [showMiscExpense, setShowMiscExpense] = useState(false);
   const [editing, setEditing] = useState(null);
   const [voiding, setVoiding] = useState(null);
   const [showFYForm, setShowFYForm] = useState(false);
@@ -245,6 +246,9 @@ export default function Financial() {
           <div className="flex items-center gap-2 flex-wrap">
             <Button variant="outline" size="sm" onClick={() => setShowExpense(true)}>
               <Receipt className="w-3.5 h-3.5" /> {t("Record Expense")}
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setShowMiscExpense(true)}>
+              <Receipt className="w-3.5 h-3.5" /> {t("Misc Expense")}
             </Button>
             <Button variant="outline" size="sm" onClick={() => setShowTeamPayment(true)}>
               <Wallet className="w-3.5 h-3.5" /> {t("Team Payment")}
@@ -458,6 +462,16 @@ export default function Financial() {
         currency={currency}
         events={events}
         categories={categories}
+      />
+      <RecordExpenseDialog
+        open={showMiscExpense}
+        onClose={() => setShowMiscExpense(false)}
+        onSaved={load}
+        workspaceId={workspaceId}
+        currency={currency}
+        events={[]}
+        categories={categories}
+        miscMode
       />
       <EditTransactionDialog
         open={!!editing}
