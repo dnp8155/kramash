@@ -15,7 +15,7 @@ import ServiceForm from "@/components/services/ServiceForm";
 import { useToast } from "@/components/ui/use-toast";
 import { loadRoles } from "@/lib/teamService";
 import { loadAllServices } from "@/lib/quotationService";
-import { Pencil, Trash2, Plus, Download, Loader2, Briefcase, Tags, Palette, Bell, CreditCard, LogOut, FileText, Users, UserCircle } from "lucide-react";
+import { Pencil, Trash2, Plus, Download, Loader2, Briefcase, Tags, Palette, Bell, CreditCard, LogOut, FileText, Users, UserCircle, Power } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { exportFinancialCsv } from "@/lib/exportUtils";
 import { loadAllTransactions } from "@/lib/financeService";
@@ -245,7 +245,7 @@ export default function Preferences() {
                       <Pencil className="w-3.5 h-3.5" />
                     </button>
                     <button onClick={() => toggleServiceStatus(s)} className="text-muted-foreground hover:text-warning shrink-0" aria-label="Toggle status" title={s.status === "active" ? "Disable" : "Enable"}>
-                      {s.status === "active" ? <Trash2 className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+                      <Power className="w-3.5 h-3.5" />
                     </button>
                     <button onClick={() => deleteService(s)} className="text-muted-foreground hover:text-destructive shrink-0" aria-label="Delete service">
                       <Trash2 className="w-3.5 h-3.5" />
