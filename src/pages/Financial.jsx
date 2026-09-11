@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useWorkspace } from "@/lib/WorkspaceContext";
 import { useFinancialYear } from "@/hooks/useFinancialYear";
-import { txInFY, fyHasTransactions, setActiveFY, fyDisplayLabel, eventInFY } from "@/lib/financialYearService";
+import { txInFY, fyHasTransactions, setActiveFY, fyDisplayLabel, eventInFY, txInRange, eventInRange } from "@/lib/financialYearService";
 import SummaryCard from "@/components/financial/SummaryCard";
 import { TrendingUp, TrendingDown, ArrowDownLeft } from "lucide-react";
 import PaymentTable from "@/components/financial/PaymentTable";
@@ -48,7 +48,7 @@ export default function Financial() {
   const t = useT();
   const tabs = TAB_KEYS;
 
-  const { fiscalYears, selectedFY, selectFY, activeFY, refresh: refreshFY } = useFinancialYear();
+  const { fiscalYears, selectedFY, selectFY, activeFY, refresh: refreshFY, dateRange } = useFinancialYear();
 
   const [tab, setTab] = useState("Payment Activity");
   const [method, setMethod] = useState("All");
@@ -132,7 +132,7 @@ export default function Financial() {
   }, [error, toast]);
 
   // FY-scoped events — only events in the selected financial year
-  const fyEvents = useMemo(() => events.filter((e) => eventInFY(e, selectedFY)), [events, selectedFY]);
+  const fyEvents = useMemo(() => events.filter((e) => eventInRange(e, dateRange)), [events, dateRange]);
 
   const clientsById = useMemo(() => {
     const m = {}; clients.forEach((c) => { m[c.id] = c; }); return m;
@@ -147,8 +147,8 @@ export default function Financial() {
   // FY-scoped active transactions — for summary cards and breakdown.
   // NOT affected by method/type filters — those only filter the table below.
   const fyActiveTx = useMemo(() => {
-    return allTx.filter((t) => t.status === "ACTIVE" && txInFY(t, selectedFY));
-  }, [allTx, selectedFY]);
+    return allTx.filter((t) => t.status === "ACTIVE" && txInRange(t, dateRange));
+  }, [allTx, dateRange]);
 
   const summary = useMemo(() => ({
     received: totalReceived(fyActiveTx),
@@ -161,7 +161,7 @@ export default function Financial() {
   // FY-scoped transactions with method/type filters — for the activity table only.
   const fyTx = useMemo(() => {
     return allTx.filter((t) => {
-      if (!txInFY(t, selectedFY)) return false;
+      if (!txInRange(t, dateRange)) return false;
       if (method !== "All") {
         const cat = t.payment_method === "Cash" ? "Cash" : "Online";
         if (cat !== method) return false;
@@ -172,7 +172,7 @@ export default function Financial() {
       }
       return true;
     });
-  }, [allTx, selectedFY, method, type]);
+  }, [allTx, dateRange, method, type]);
 
   // Per-FY summary map keyed by FY record id — derived from all active transactions.
   const fySummaryMap = useMemo(() => {
@@ -270,7 +270,7 @@ export default function Financial() {
               variant="outline"
               size="sm"
               className="sm:ml-auto"
-              onClick={() => exportFinancialCsv(fyTx, { eventsById, clientsById, membersById }, currency, fyDisplayLabel(selectedFY))}
+              onClick={() => exportFinancialCsv(fyTx, { eventsById, clientsById, membersById }, currency, dateRange?.label)}
               disabled={fyTx.length === 0}
             >
               <Download className="w-3.5 h-3.5" />

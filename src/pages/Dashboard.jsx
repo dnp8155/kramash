@@ -12,7 +12,7 @@ import { loadTeamMembers, loadAssignments, loadBlockDates, splitAvailability, is
 import { todayISO, isUpcomingDate, formatEventDate } from "@/lib/dates";
 import { formatMoney } from "@/utils/format";
 import { useFinancialYear } from "@/hooks/useFinancialYear";
-import { txInFY, fyDisplayLabel, eventInFY } from "@/lib/financialYearService";
+import { txInRange, eventInRange } from "@/lib/financialYearService";
 import PageHeader from "@/components/common/PageHeader";
 import StatCard from "@/components/common/StatCard";
 import DashboardStatsSkeleton from "@/components/dashboard/DashboardStatsSkeleton";
@@ -32,7 +32,7 @@ export default function Dashboard() {
   const lang = getAppLanguage(user);
   const navigate = useNavigate();
   const currency = workspace?.currency || "INR";
-  const { selectedFY } = useFinancialYear();
+  const { dateRange } = useFinancialYear();
 
   const { data: events = [], isLoading: loadingEvents } = useQuery({
     queryKey: ["dashboard-events", workspaceId],
@@ -80,14 +80,14 @@ export default function Dashboard() {
   const clientsById = useMemo(() => Object.fromEntries(clients.map((c) => [c.id, c])), [clients]);
 
   // FY-scoped events — only events in the selected financial year
-  const fyEvents = useMemo(() => events.filter((e) => eventInFY(e, selectedFY)), [events, selectedFY]);
+  const fyEvents = useMemo(() => events.filter((e) => eventInRange(e, dateRange)), [events, dateRange]);
 
   const stats = useMemo(() => {
     const upcoming = fyEvents
       .filter((e) => e.status !== "cancelled" && e.status !== "completed" && isUpcomingDate(e.start_date))
       .sort((a, b) => a.start_date.localeCompare(b.start_date));
 
-    const fyActiveTx = activeTransactions(transactions).filter((t) => txInFY(t, selectedFY));
+    const fyActiveTx = activeTransactions(transactions).filter((t) => txInRange(t, dateRange));
     // FY-scoped revenue (selected financial year)
     const fyRevenue = fyActiveTx
       .filter((t) => t.transaction_type === "CLIENT_RECEIPT")
@@ -119,12 +119,12 @@ export default function Dashboard() {
     const activeMembers = members.filter((m) => m.status === "active").length;
 
     return { upcoming, fyRevenue, outstanding, topDues, activeMembers };
-  }, [fyEvents, transactions, members, clientsById, selectedFY]);
+  }, [fyEvents, transactions, members, clientsById, dateRange]);
 
   // 6-month revenue trend ending at min(today, FY end)
   const trendData = useMemo(() => {
     const activeTx = activeTransactions(transactions);
-    const fyEnd = selectedFY?.end_date;
+    const fyEnd = dateRange?.endDate;
     const todayStr = todayISO();
     const endRef = fyEnd && fyEnd < todayStr ? fyEnd : todayStr;
     const end = new Date(endRef + "T00:00:00");
@@ -142,11 +142,11 @@ export default function Dashboard() {
       if (byKey[k]) byKey[k].revenue += Number(t.amount) || 0;
     }
     return buckets;
-  }, [transactions, selectedFY]);
+  }, [transactions, dateRange]);
 
   // Team wages due: agreed (assignments) minus paid (TEAM_PAYMENT) per member — FY-scoped
   const wagesDue = useMemo(() => {
-    const fyActiveTx = activeTransactions(transactions).filter((t) => txInFY(t, selectedFY));
+    const fyActiveTx = activeTransactions(transactions).filter((t) => txInRange(t, dateRange));
     const fyEventIds = new Set(fyEvents.map((e) => e.id));
     const activeAssignments = (assignments || []).filter(
       (a) => a.assignment_status !== "removed" && fyEventIds.has(a.event_id)
@@ -172,7 +172,7 @@ export default function Dashboard() {
     }
     dues.sort((a, b) => b.due - a.due);
     return { dues, totalDue };
-  }, [assignments, members, fyEvents, transactions, selectedFY]);
+  }, [assignments, members, fyEvents, transactions, dateRange]);
 
   const todayAvail = useMemo(() => {
     const today = todayISO();
@@ -230,7 +230,7 @@ export default function Dashboard() {
             value={formatMoney(stats.fyRevenue, currency)}
             icon={TrendingUp}
             tone="success"
-            sub={fyDisplayLabel(selectedFY)}
+            sub={dateRange?.label}
           />
           <StatCard
             label={t("Outstanding dues")}

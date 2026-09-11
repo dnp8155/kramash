@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useWorkspace } from "@/lib/WorkspaceContext";
-import { ensureDefaultFY } from "@/lib/financialYearService";
+import { ensureDefaultFY, fyDisplayLabel } from "@/lib/financialYearService";
 
 // Central hook for Financial Year context.
 // Loads workspace FY records, resolves the active FY, and manages the
@@ -10,12 +10,15 @@ import { ensureDefaultFY } from "@/lib/financialYearService";
 export function useFinancialYear() {
   const { workspaceId } = useWorkspace();
   const [selectedFYId, setSelectedFYId] = useState(null);
+  const [dateRange, setDateRange] = useState(null);
   const queryClient = useQueryClient();
 
   // Reset selection when workspace changes — prevents stale FY from
   // the previous workspace appearing briefly during the switch.
   useEffect(() => {
     setSelectedFYId(null);
+    setDateRange(null);
+    if (workspaceId) localStorage.removeItem(`date-range-${workspaceId}`);
   }, [workspaceId]);
 
   const { data: fiscalYears = [], isLoading } = useQuery({
@@ -48,6 +51,43 @@ export function useFinancialYear() {
     if (workspaceId) localStorage.setItem(`fy-selected-${workspaceId}`, fyId);
   }, [workspaceId]);
 
+  // Restore dateRange from localStorage or initialise from selectedFY
+  useEffect(() => {
+    if (!fiscalYears.length || !workspaceId) return;
+    if (dateRange) return;
+
+    const stored = localStorage.getItem(`date-range-${workspaceId}`);
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        // Validate stored FY range still exists
+        if (parsed.type === "fy" && parsed.fyId && !fiscalYears.some((f) => f.id === parsed.fyId)) {
+          // Stale — fall through to selectedFY init
+        } else {
+          setDateRange(parsed);
+          return;
+        }
+      } catch {}
+    }
+    if (selectedFY) {
+      setDateRange({
+        type: "fy",
+        label: fyDisplayLabel(selectedFY),
+        startDate: selectedFY.start_date,
+        endDate: selectedFY.end_date,
+        fyId: selectedFY.id,
+      });
+    }
+  }, [fiscalYears, selectedFY, workspaceId, dateRange]);
+
+  const selectDateRange = useCallback((range) => {
+    setDateRange(range);
+    if (workspaceId) localStorage.setItem(`date-range-${workspaceId}`, JSON.stringify(range));
+    if (range.type === "fy" && range.fyId) {
+      selectFY(range.fyId);
+    }
+  }, [workspaceId, selectFY]);
+
   const selectedFY = useMemo(
     () => fiscalYears.find((f) => f.id === selectedFYId) || activeFY || null,
     [fiscalYears, selectedFYId, activeFY]
@@ -63,6 +103,8 @@ export function useFinancialYear() {
     selectedFY,
     selectedFYId: selectedFY?.id || null,
     selectFY,
+    dateRange,
+    selectDateRange,
     loading: isLoading,
     refresh,
   };

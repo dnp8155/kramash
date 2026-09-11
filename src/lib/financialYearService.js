@@ -117,6 +117,24 @@ export function eventInFY(event, fy) {
   return event.start_date >= fy.start_date && event.start_date <= fy.end_date;
 }
 
+// ---- Date-range filtering (works with any preset, not just FY) ----
+
+export function txInRange(tx, range) {
+  if (!range) return true;
+  if (range.type === "all_time") return true;
+  const d = tx.transaction_date;
+  if (!d) return false;
+  return d >= range.startDate && d <= range.endDate;
+}
+
+export function eventInRange(event, range) {
+  if (!range) return true;
+  if (range.type === "all_time") return true;
+  const d = event.start_date;
+  if (!d) return false;
+  return d >= range.startDate && d <= range.endDate;
+}
+
 // ---- Active FY management ----
 
 // Set one FY as the workspace active/default. Deactivates all others.
