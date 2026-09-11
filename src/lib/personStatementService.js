@@ -169,6 +169,26 @@ export function buildPersonStatements({
     // Future Amount Due = total remaining payable
     const futureDue = Math.max(0, combinedTotal - totalPaid);
 
+    // Last working date — most recent date the person has worked up to today.
+    // For started assignments: use end date if past, else today (in-progress).
+    const today = todayISO();
+    const startedTeam = p.teamAssignments.filter((a) => teamAssignmentStarted(a, eventsById[a.event_id]));
+    const startedSvc = p.serviceAssignments.filter((sa) => serviceAssignmentStarted(sa, eventsById[sa.event_id]));
+    const workingDates = [
+      ...startedTeam.map((a) => {
+        const ev = eventsById[a.event_id];
+        const end = a.booking_end_date || ev?.end_date || a.booking_start_date || ev?.start_date;
+        return end && end < today ? end : today;
+      }),
+      ...startedSvc.map((sa) => {
+        const ev = eventsById[sa.event_id];
+        const end = ev?.end_date || ev?.start_date;
+        return end && end < today ? end : today;
+      })
+    ];
+    workingDates.sort((a, b) => b.localeCompare(a));
+    const lastWorkedDate = workingDates[0] || null;
+
     return {
       ...p,
       rolesTotal,
@@ -179,7 +199,8 @@ export function buildPersonStatements({
       totalPaid,
       dueNowObligation,
       dueNow,
-      futureDue
+      futureDue,
+      lastWorkedDate
     };
   });
 

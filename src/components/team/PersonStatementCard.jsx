@@ -2,6 +2,7 @@ import { Crown, Wallet, Users, Briefcase, TrendingUp, Clock } from "lucide-react
 import { formatMoney } from "@/utils/format";
 import { cn } from "@/lib/utils";
 import { useDisplayPreferences } from "@/hooks/useDisplayPreferences";
+import { formatEventDate } from "@/lib/dates";
 
 // Consolidated per-person financial statement card.
 // Shows Roles Total, Services Total, Total Paid, Due Now, and Future Amount Due
@@ -18,7 +19,8 @@ export default function PersonStatementCard({ statement, currency = "INR" }) {
     combinedTotal = 0,
     totalPaid = 0,
     dueNow = 0,
-    futureDue = 0
+    futureDue = 0,
+    lastWorkedDate = null
   } = statement;
 
   const hasTeam = rolesTotal > 0 || (member && statement.teamAssignments?.length > 0);
@@ -63,7 +65,7 @@ export default function PersonStatementCard({ statement, currency = "INR" }) {
               )}
             />
             <span className="text-xs font-medium text-muted-foreground truncate">
-              Due Now (Till Now)
+              Due Now {lastWorkedDate ? `(${formatEventDate(lastWorkedDate)})` : ""}
             </span>
           </div>
           <span
