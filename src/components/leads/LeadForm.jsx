@@ -6,7 +6,7 @@ import Button from "@/components/common/Button";
 import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { X, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 const SOURCES = [
   { value: "referral", label: "Referral" },
