@@ -22,6 +22,7 @@ import EditServiceAssignmentDialog from "@/components/events/EditServiceAssignme
 import RecordServicePaymentDialog from "@/components/events/RecordServicePaymentDialog";
 import RecordPaymentDialog from "@/components/financial/RecordPaymentDialog";
 import RecordExpenseDialog from "@/components/financial/RecordExpenseDialog";
+import EventMilestonesTab from "@/components/events/EventMilestonesTab";
 import { loadServiceProviders } from "@/lib/serviceProviderService";
 import { useToast } from "@/components/ui/use-toast";
 import { currentFY, fyRange, fyForDate, formatEventDate } from "@/lib/dates";
@@ -320,6 +321,7 @@ export default function EventDetails() {
     "Financials",
     ...(prefs.showServices ? ["Services"] : []),
     "Payments",
+    "Milestones",
     "Notes",
     "Progress",
   ];
@@ -656,6 +658,16 @@ export default function EventDetails() {
             </div>
           )}
         </Card>
+      )}
+
+      {tab === "Milestones" && (
+        <EventMilestonesTab
+          event={event}
+          workspaceId={workspaceId}
+          currency={currency}
+          transactions={transactions}
+          onRefresh={load}
+        />
       )}
 
       {tab === "Notes" && (

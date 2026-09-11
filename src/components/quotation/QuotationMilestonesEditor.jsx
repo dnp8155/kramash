@@ -4,13 +4,33 @@ import Select from "@/components/common/Select";
 import { Section } from "@/components/quotation/QuotationParts";
 import { formatMoney } from "@/utils/format";
 import { calculateMilestones, validateMilestones, round2 } from "@/lib/quotationCalc";
-import { Plus, Trash2, AlertTriangle } from "lucide-react";
+import { useWorkspace } from "@/lib/WorkspaceContext";
+import { Plus, Trash2, AlertTriangle, CalendarCheck } from "lucide-react";
 
 export default function QuotationMilestonesEditor({
   schedule, setSchedule, grandTotal, currency, readOnly
 }) {
+  const { workspace } = useWorkspace();
   const milestones = calculateMilestones(schedule, grandTotal);
   const validationError = validateMilestones(schedule, grandTotal);
+
+  const templates = (() => {
+    try {
+      const prefs = workspace?.display_preferences ? JSON.parse(workspace.display_preferences) : {};
+      return prefs.milestoneTemplates || [];
+    } catch { return []; }
+  })();
+
+  const applyTemplate = (templateId) => {
+    const tpl = templates.find((t) => t.id === templateId);
+    if (!tpl) return;
+    setSchedule(tpl.milestones.map((m) => ({
+      name: m.name || "",
+      type: m.type || "percent",
+      value: Number(m.value) || 0,
+      due_condition: m.due_condition || ""
+    })));
+  };
 
   const addMilestone = () => {
     setSchedule([...schedule, { name: "", type: "percent", value: 0, due_condition: "" }]);
@@ -28,6 +48,21 @@ export default function QuotationMilestonesEditor({
 
   return (
     <Section title="Payment Milestones">
+      {!readOnly && templates.length > 0 && (
+        <div className="flex items-center gap-2 mb-3">
+          <CalendarCheck className="w-3.5 h-3.5 text-muted-foreground" />
+          <Select
+            value=""
+            onChange={(e) => { if (e.target.value) applyTemplate(e.target.value); }}
+            className="h-8 text-xs py-0 max-w-[200px]"
+          >
+            <option value="">Apply template…</option>
+            {templates.map((t) => (
+              <option key={t.id} value={t.id}>{t.name}</option>
+            ))}
+          </Select>
+        </div>
+      )}
       {milestones.length === 0 ? (
         <p className="text-sm text-muted-foreground">No milestones configured. Add payment stages like "50% Advance", "30% on Event Date", etc.</p>
       ) : (

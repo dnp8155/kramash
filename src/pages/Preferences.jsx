@@ -24,6 +24,7 @@ import { txInFY, fyDisplayLabel } from "@/lib/financialYearService";
 import TeamMemberTypeManager from "@/components/preferences/TeamMemberTypeManager";
 import EventTypeManager from "@/components/preferences/EventTypeManager";
 import QuotationDefaultsSection from "@/components/settings/QuotationDefaultsSection";
+import MilestoneTemplateManager from "@/components/preferences/MilestoneTemplateManager";
 import { usePlan } from "@/hooks/usePlan";
 
 const sections = [
@@ -342,7 +343,12 @@ export default function Preferences() {
       )}
 
       {/* Quotation Defaults */}
-      {activeTab === "quotation" && <QuotationDefaultsSection />}
+      {activeTab === "quotation" && (
+        <div className="space-y-4">
+          <QuotationDefaultsSection />
+          <MilestoneTemplateManager />
+        </div>
+      )}
 
       {/* Appearance */}
       {activeTab === "appearance" && <AppearanceSection />}

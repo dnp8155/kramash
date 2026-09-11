@@ -83,7 +83,6 @@
   },
   "required": [
     "workspace_id",
-    "quotation_id",
     "name"
   ],
   "rls": {

@@ -170,6 +170,32 @@ export default function InvoiceEditor() {
 
   useEffect(() => { load(); }, [load]);
 
+  // Apply workspace defaults (payment terms, bank, social) for new invoices
+  useEffect(() => {
+    if (!isNew || !workspace?.display_preferences) return;
+    try {
+      const prefs = JSON.parse(workspace.display_preferences);
+      if (prefs.defaultPaymentConditions) setPaymentTerms(prefs.defaultPaymentConditions);
+      if (prefs.bank_account_name || prefs.bank_name || prefs.bank_account_number || prefs.bank_ifsc || prefs.bank_upi_id) {
+        setBankDetails({
+          account_name: prefs.bank_account_name || "",
+          bank_name: prefs.bank_name || "",
+          account_number: prefs.bank_account_number || "",
+          ifsc: prefs.bank_ifsc || "",
+          upi_id: prefs.bank_upi_id || ""
+        });
+      }
+      if (prefs.social_instagram || prefs.social_youtube || prefs.social_website || prefs.social_portfolio) {
+        setSocialLinks({
+          instagram: prefs.social_instagram || "",
+          youtube: prefs.social_youtube || "",
+          website: prefs.social_website || "",
+          portfolio: prefs.social_portfolio || ""
+        });
+      }
+    } catch { /* ignore */ }
+  }, [isNew, workspace?.display_preferences]);
+
   const totals = useMemo(
     () => computeInvoiceTotals(items, { discountType, discountValue, gstApplicable, gstRate, gstMode }),
     [items, discountType, discountValue, gstApplicable, gstRate, gstMode]
