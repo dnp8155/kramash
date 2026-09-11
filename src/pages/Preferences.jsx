@@ -28,26 +28,12 @@ import MilestoneTemplateManager from "@/components/preferences/MilestoneTemplate
 import DataDeletionSection from "@/components/settings/DataDeletionSection";
 import { usePlan } from "@/hooks/usePlan";
 
-const sections = [
-  { id: "profile", label: "Profile & Workspace", icon: UserCircle },
-  { id: "business", label: "Business Setup", icon: Briefcase },
-  { id: "types", label: "Types & Display", icon: Tags },
-  { id: "quotation", label: "Quotation", icon: FileText },
-  { id: "appearance", label: "Appearance", icon: Palette },
-  { id: "notifications", label: "Notifications", icon: Bell },
-  { id: "billing", label: "Billing & Plan", icon: CreditCard },
-  { id: "export", label: "Data Export", icon: Download },
-  { id: "data", label: "Data Deletion", icon: Trash2 },
-  { id: "session", label: "Session", icon: LogOut },
-];
-
 export default function Preferences() {
   const { workspaceId, workspace } = useWorkspace();
   const { toast } = useToast();
   const { fiscalYears, selectedFY, selectFY } = useFinancialYear();
   const { plan } = usePlan();
   const isPro = plan?.planCode === "PRO";
-  const [activeTab, setActiveTab] = useState("profile");
   const [exporting, setExporting] = useState(false);
   const [toggles, setToggles] = useState(() => {
     try {
@@ -199,106 +185,82 @@ export default function Preferences() {
     }
   };
 
-  const activeLabel = sections.find((s) => s.id === activeTab)?.label || "Preferences";
-
   return (
-    <div className="p-4 sm:p-6 max-w-[1000px] mx-auto space-y-5">
+    <div className="p-4 sm:p-6 max-w-[1000px] mx-auto space-y-8">
       <div>
         <h1 className="text-xl font-bold text-foreground">Preferences</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">{activeLabel}</p>
+        <p className="text-sm text-muted-foreground mt-0.5">Manage your workspace, business, and app settings — each section saves independently.</p>
       </div>
 
-      {/* Tab nav */}
-      <nav className="flex gap-1 overflow-x-auto scrollbar-thin pb-1">
-        {sections.map((s) => {
-          const Icon = s.icon;
-          return (
-            <button
-              key={s.id}
-              onClick={() => setActiveTab(s.id)}
-              className={cn(
-                "flex items-center gap-2 px-3 py-2 rounded-lg text-sm whitespace-nowrap transition-colors shrink-0",
-                activeTab === s.id
-                  ? "bg-primary/10 text-primary font-semibold"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              )}
-            >
-              <Icon className="w-4 h-4 shrink-0" />
-              {s.label}
-            </button>
-          );
-        })}
-      </nav>
-
-      {/* Profile & Workspace (merged) */}
-      {activeTab === "profile" && <ProfileWorkspaceSection />}
+      {/* Profile & Workspace */}
+      <SectionBlock icon={UserCircle} title="Profile & Workspace">
+        <ProfileWorkspaceSection />
+      </SectionBlock>
 
       {/* Business Setup */}
-      {activeTab === "business" && (
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <Card title="Team Roles">
-              <div className="space-y-2">
-                {loadingRoles ? (
-                  <p className="text-sm text-muted-foreground py-2">Loading roles…</p>
-                ) : roles.length === 0 ? (
-                  <p className="text-sm text-muted-foreground py-2">No roles yet. Add one to get started.</p>
-                ) : (
-                  roles.map((r) => (
-                    <div key={r.id} className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-muted/40">
-                      <Users className={cn("w-3.5 h-3.5 shrink-0", r.status === "active" ? "text-success" : "text-destructive")} />
-                      <span className={cn("text-sm flex-1 min-w-0 truncate", r.status === "inactive" && "text-muted-foreground line-through")}>{r.name}</span>
-                      <span className="text-sm text-muted-foreground whitespace-nowrap">{formatINR(r.default_rate)}</span>
-                      <span className="text-[10px] text-muted-foreground whitespace-nowrap hidden sm:inline">{r.rate_type}</span>
-                      <button onClick={() => openEditRole(r)} className="text-muted-foreground hover:text-foreground shrink-0" aria-label="Edit role">
-                        <Pencil className="w-3.5 h-3.5" />
-                      </button>
-                      <button onClick={() => toggleRoleStatus(r)} className="text-muted-foreground hover:text-warning shrink-0" aria-label="Toggle status" title={r.status === "active" ? "Disable" : "Enable"}>
-                        {r.status === "active" ? <Trash2 className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
-                      </button>
-                    </div>
-                  ))
-                )}
-              </div>
-              <Button variant="dark" size="sm" className="mt-3" onClick={openAddRole}><Plus className="w-3.5 h-3.5" />Add Role</Button>
-            </Card>
-            <Card title="Services">
-              <div className="space-y-2">
-                {loadingServices ? (
-                  <p className="text-sm text-muted-foreground py-2">Loading services…</p>
-                ) : serviceList.length === 0 ? (
-                  <p className="text-sm text-muted-foreground py-2">No services yet. Add one to get started.</p>
-                ) : (
-                  serviceList.map((s) => (
-                    <div key={s.id} className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-muted/40">
-                      <Briefcase className={cn("w-3.5 h-3.5 shrink-0", s.status === "active" ? "text-success" : "text-destructive")} />
-                      <span className={cn("text-sm flex-1 min-w-0 truncate", s.status === "inactive" && "text-muted-foreground line-through")}>{s.name}</span>
-                      <span className="text-sm text-muted-foreground whitespace-nowrap">{formatINR(s.default_rate)}</span>
-                      <span className="text-[10px] text-muted-foreground whitespace-nowrap hidden sm:inline">{s.rate_type}</span>
-                      {workspace?.gst_enabled && Number(s.gst_rate) > 0 && (
-                        <span className="text-[10px] text-muted-foreground whitespace-nowrap hidden sm:inline">GST {s.gst_rate}%</span>
-                      )}
-                      <button onClick={() => openEditService(s)} className="text-muted-foreground hover:text-foreground shrink-0" aria-label="Edit service">
-                        <Pencil className="w-3.5 h-3.5" />
-                      </button>
-                      <button onClick={() => toggleServiceStatus(s)} className="text-muted-foreground hover:text-warning shrink-0" aria-label="Toggle status" title={s.status === "active" ? "Disable" : "Enable"}>
-                        {s.status === "active" ? <Trash2 className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
-                      </button>
-                      <button onClick={() => deleteService(s)} className="text-muted-foreground hover:text-destructive shrink-0" aria-label="Delete service">
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  ))
-                )}
-              </div>
-              <Button variant="dark" size="sm" className="mt-3" onClick={openAddService}><Plus className="w-3.5 h-3.5" />Add Service</Button>
-            </Card>
-          </div>
+      <SectionBlock icon={Briefcase} title="Business Setup">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Card title="Team Roles">
+            <div className="space-y-2">
+              {loadingRoles ? (
+                <p className="text-sm text-muted-foreground py-2">Loading roles…</p>
+              ) : roles.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-2">No roles yet. Add one to get started.</p>
+              ) : (
+                roles.map((r) => (
+                  <div key={r.id} className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-muted/40">
+                    <Users className={cn("w-3.5 h-3.5 shrink-0", r.status === "active" ? "text-success" : "text-destructive")} />
+                    <span className={cn("text-sm flex-1 min-w-0 truncate", r.status === "inactive" && "text-muted-foreground line-through")}>{r.name}</span>
+                    <span className="text-sm text-muted-foreground whitespace-nowrap">{formatINR(r.default_rate)}</span>
+                    <span className="text-[10px] text-muted-foreground whitespace-nowrap hidden sm:inline">{r.rate_type}</span>
+                    <button onClick={() => openEditRole(r)} className="text-muted-foreground hover:text-foreground shrink-0" aria-label="Edit role">
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                    <button onClick={() => toggleRoleStatus(r)} className="text-muted-foreground hover:text-warning shrink-0" aria-label="Toggle status" title={r.status === "active" ? "Disable" : "Enable"}>
+                      {r.status === "active" ? <Trash2 className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+            <Button variant="dark" size="sm" className="mt-3" onClick={openAddRole}><Plus className="w-3.5 h-3.5" />Add Role</Button>
+          </Card>
+          <Card title="Services">
+            <div className="space-y-2">
+              {loadingServices ? (
+                <p className="text-sm text-muted-foreground py-2">Loading services…</p>
+              ) : serviceList.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-2">No services yet. Add one to get started.</p>
+              ) : (
+                serviceList.map((s) => (
+                  <div key={s.id} className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-muted/40">
+                    <Briefcase className={cn("w-3.5 h-3.5 shrink-0", s.status === "active" ? "text-success" : "text-destructive")} />
+                    <span className={cn("text-sm flex-1 min-w-0 truncate", s.status === "inactive" && "text-muted-foreground line-through")}>{s.name}</span>
+                    <span className="text-sm text-muted-foreground whitespace-nowrap">{formatINR(s.default_rate)}</span>
+                    <span className="text-[10px] text-muted-foreground whitespace-nowrap hidden sm:inline">{s.rate_type}</span>
+                    {workspace?.gst_enabled && Number(s.gst_rate) > 0 && (
+                      <span className="text-[10px] text-muted-foreground whitespace-nowrap hidden sm:inline">GST {s.gst_rate}%</span>
+                    )}
+                    <button onClick={() => openEditService(s)} className="text-muted-foreground hover:text-foreground shrink-0" aria-label="Edit service">
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                    <button onClick={() => toggleServiceStatus(s)} className="text-muted-foreground hover:text-warning shrink-0" aria-label="Toggle status" title={s.status === "active" ? "Disable" : "Enable"}>
+                      {s.status === "active" ? <Trash2 className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+                    </button>
+                    <button onClick={() => deleteService(s)} className="text-muted-foreground hover:text-destructive shrink-0" aria-label="Delete service">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+            <Button variant="dark" size="sm" className="mt-3" onClick={openAddService}><Plus className="w-3.5 h-3.5" />Add Service</Button>
+          </Card>
         </div>
-      )}
+      </SectionBlock>
 
       {/* Types & Display */}
-      {activeTab === "types" && (
+      <SectionBlock icon={Tags} title="Types & Display">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <Card title="Team Member Types">
             <TeamMemberTypeManager workspace={workspace} />
@@ -342,27 +304,33 @@ export default function Preferences() {
             </div>
           </Card>
         </div>
-      )}
+      </SectionBlock>
 
       {/* Quotation Defaults */}
-      {activeTab === "quotation" && (
+      <SectionBlock icon={FileText} title="Quotation">
         <div className="space-y-4">
           <QuotationDefaultsSection />
           <MilestoneTemplateManager />
         </div>
-      )}
+      </SectionBlock>
 
       {/* Appearance */}
-      {activeTab === "appearance" && <AppearanceSection />}
+      <SectionBlock icon={Palette} title="Appearance">
+        <AppearanceSection />
+      </SectionBlock>
 
       {/* Notifications */}
-      {activeTab === "notifications" && <NotificationsSection />}
+      <SectionBlock icon={Bell} title="Notifications">
+        <NotificationsSection />
+      </SectionBlock>
 
       {/* Billing */}
-      {activeTab === "billing" && <BillingSection />}
+      <SectionBlock icon={CreditCard} title="Billing & Plan">
+        <BillingSection />
+      </SectionBlock>
 
       {/* Export */}
-      {activeTab === "export" && (
+      <SectionBlock icon={Download} title="Data Export">
         <Card title="Export">
           <Field label="Financial year" className="mb-3">
             <Select value={selectedFY?.id || ""} onChange={(e) => selectFY(e.target.value)}>
@@ -399,13 +367,17 @@ export default function Preferences() {
           </Button>
           <p className="text-xs text-muted-foreground mt-2">Exports financial activity for the selected year. Event, client, and team exports are available on their respective pages.</p>
         </Card>
-      )}
+      </SectionBlock>
 
       {/* Data Deletion */}
-      {activeTab === "data" && <DataDeletionSection />}
+      <SectionBlock icon={Trash2} title="Data Deletion">
+        <DataDeletionSection />
+      </SectionBlock>
 
       {/* Session */}
-      {activeTab === "session" && <SessionSection />}
+      <SectionBlock icon={LogOut} title="Session">
+        <SessionSection />
+      </SectionBlock>
 
       <TeamRoleForm
         open={showRoleForm}
@@ -424,6 +396,20 @@ export default function Preferences() {
         gstEnabled={!!workspace?.gst_enabled}
       />
     </div>
+  );
+}
+
+function SectionBlock({ icon: Icon, title, children }) {
+  return (
+    <section className="space-y-3">
+      <div className="flex items-center gap-2 pb-1 border-b border-border">
+        <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+          <Icon className="w-4 h-4 text-primary" />
+        </div>
+        <h2 className="text-sm font-bold text-foreground">{title}</h2>
+      </div>
+      {children}
+    </section>
   );
 }
 
