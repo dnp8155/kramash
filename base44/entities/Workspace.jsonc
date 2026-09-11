@@ -33,6 +33,14 @@
       "type": "string",
       "title": "Custom Work Item Label (Plural)"
     },
+    "tagline": {
+      "type": "string",
+      "title": "Business Tagline"
+    },
+    "website": {
+      "type": "string",
+      "title": "Website URL"
+    },
     "owner_user_id": {
       "type": "string",
       "title": "Owner User ID"
@@ -74,6 +82,30 @@
       "type": "string",
       "title": "Timezone",
       "default": "Asia/Kolkata"
+    },
+    "date_format": {
+      "type": "string",
+      "title": "Date Format",
+      "default": "DD/MM/YYYY",
+      "enum": [
+        "DD/MM/YYYY",
+        "MM/DD/YYYY",
+        "YYYY-MM-DD"
+      ]
+    },
+    "number_format": {
+      "type": "string",
+      "title": "Number Format",
+      "default": "indian",
+      "enum": [
+        "indian",
+        "western"
+      ]
+    },
+    "fy_start_month": {
+      "type": "number",
+      "title": "Financial Year Start Month (1-12)",
+      "default": 4
     },
     "plan_type": {
       "type": "string",

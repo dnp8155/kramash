@@ -9,6 +9,13 @@ function escapeHtml(str) {
     .replace(/'/g, "&#039;");
 }
 
+// Handles both plain text (old quotations) and HTML (from RichTextEditor).
+function safeRichHtml(text) {
+  if (!text) return "";
+  if (/<[a-z][\s\S]*>/i.test(text)) return text;
+  return escapeHtml(text).replace(/\n/g, "<br>");
+}
+
 function fmtDate(iso) {
   if (!iso) return "";
   const d = new Date(iso + "T00:00:00");
@@ -122,7 +129,7 @@ export function renderBlackPremium(data) {
   const paymentHtml = paymentMethod.split("\n").map((l) => escapeHtml(l)).join("<br>");
 
   // Payment Conditions
-  const paymentConditionsHtml = textToBulletList(quotation?.payment_conditions);
+  const paymentConditionsHtml = safeRichHtml(quotation?.payment_conditions);
 
   // Bank Details (from snapshot)
   let bankDetails = {};

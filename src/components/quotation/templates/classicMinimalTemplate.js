@@ -9,6 +9,14 @@ function escapeHtml(str) {
     .replace(/'/g, "&#039;");
 }
 
+// Handles both plain text (old quotations) and HTML (from RichTextEditor).
+// If content already has HTML tags, use as-is; otherwise escape and convert newlines.
+function safeRichHtml(text) {
+  if (!text) return "";
+  if (/<[a-z][\s\S]*>/i.test(text)) return text;
+  return escapeHtml(text).replace(/\n/g, "<br>");
+}
+
 function fmtDateLong(iso) {
   if (!iso) return "";
   const d = new Date(iso + "T00:00:00");
@@ -161,7 +169,7 @@ export function renderClassicMinimal(data) {
   // Notes & T&C
   const notesHtml = textToBullets(quotation?.notes);
   const termsText = quotation?.terms_and_conditions
-    ? `<div class="bullet-line">${escapeHtml(quotation.terms_and_conditions)}</div>`
+    ? `<div class="bullet-line">${safeRichHtml(quotation.terms_and_conditions)}</div>`
     : "";
 
   return `<!DOCTYPE html>

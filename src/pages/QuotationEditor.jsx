@@ -43,6 +43,7 @@ import QuotationTemplatePreview from "@/components/quotation/QuotationTemplatePr
 import QuotationTemplateSettings from "@/components/quotation/QuotationTemplateSettings";
 import PublicLinkPanel from "@/components/quotation/PublicLinkPanel";
 import { Textarea } from "@/components/ui/textarea";
+import RichTextEditor from "@/components/common/RichTextEditor";
 import ClientForm from "@/components/clients/ClientForm";
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -781,21 +782,18 @@ export default function QuotationEditor() {
 
       {/* Terms & notes */}
       <Section icon={FileText} title="Terms & Conditions">
-        <textarea
+        <RichTextEditor
           value={terms}
-          onChange={(e) => setTerms(e.target.value)}
-          disabled={readOnly}
-          rows={4}
-          className="w-full bg-card border border-border rounded-md p-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
+          onChange={setTerms}
+          readOnly={readOnly}
+          placeholder="Enter terms & conditions…"
         />
         <Field label="Payment Conditions (shown on PDF)">
-          <textarea
+          <RichTextEditor
             value={paymentConditions}
-            onChange={(e) => setPaymentConditions(e.target.value)}
-            disabled={readOnly}
-            rows={3}
+            onChange={setPaymentConditions}
+            readOnly={readOnly}
             placeholder="e.g. 50% advance to confirm booking. Balance due on or before event day."
-            className="w-full bg-card border border-border rounded-md p-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
           />
         </Field>
         <Field label="Notes (internal)">

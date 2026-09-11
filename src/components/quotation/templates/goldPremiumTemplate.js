@@ -9,6 +9,12 @@ function escapeHtml(str) {
     .replace(/'/g, "&#039;");
 }
 
+function safeRichHtml(text) {
+  if (!text) return "";
+  if (/<[a-z][\s\S]*>/i.test(text)) return text;
+  return escapeHtml(text).replace(/\n/g, "<br>");
+}
+
 function fmtDate(iso) {
   if (!iso) return "";
   const d = new Date(iso + "T00:00:00");
@@ -115,7 +121,7 @@ export function renderGoldPremium(data) {
 
   // Notes & terms
   const notesHtml = textToBulletList(quotation?.notes);
-  const termsHtml = textToBulletList(quotation?.terms_and_conditions);
+  const termsHtml = safeRichHtml(quotation?.terms_and_conditions);
 
   // Payment
   const paymentMethod = cfg.payment_method || "Bank Transfer / UPI / Cheque\nDetails will be shared upon confirmation.";

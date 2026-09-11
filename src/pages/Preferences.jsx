@@ -25,6 +25,7 @@ import TeamMemberTypeManager from "@/components/preferences/TeamMemberTypeManage
 import EventTypeManager from "@/components/preferences/EventTypeManager";
 import QuotationDefaultsSection from "@/components/settings/QuotationDefaultsSection";
 import MilestoneTemplateManager from "@/components/preferences/MilestoneTemplateManager";
+import DataDeletionSection from "@/components/settings/DataDeletionSection";
 import { usePlan } from "@/hooks/usePlan";
 
 const sections = [
@@ -36,6 +37,7 @@ const sections = [
   { id: "notifications", label: "Notifications", icon: Bell },
   { id: "billing", label: "Billing & Plan", icon: CreditCard },
   { id: "export", label: "Data Export", icon: Download },
+  { id: "data", label: "Data Deletion", icon: Trash2 },
   { id: "session", label: "Session", icon: LogOut },
 ];
 
@@ -398,6 +400,9 @@ export default function Preferences() {
           <p className="text-xs text-muted-foreground mt-2">Exports financial activity for the selected year. Event, client, and team exports are available on their respective pages.</p>
         </Card>
       )}
+
+      {/* Data Deletion */}
+      {activeTab === "data" && <DataDeletionSection />}
 
       {/* Session */}
       {activeTab === "session" && <SessionSection />}

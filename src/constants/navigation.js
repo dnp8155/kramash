@@ -1,6 +1,7 @@
 import {
   LayoutDashboard,
   CalendarDays,
+  CalendarRange,
   Users,
   UserCheck,
   Wallet,
@@ -20,6 +21,7 @@ import {
 export const mainNav = [
   { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
   { label: "Events", path: "/events", icon: CalendarDays },
+  { label: "Calendar", path: "/calendar", icon: CalendarRange },
   { label: "Clients", path: "/clients", icon: Users },
   { label: "Team", path: "/team", icon: UserCheck },
   { label: "Financial", path: "/financial", icon: Wallet },

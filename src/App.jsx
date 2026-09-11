@@ -36,6 +36,7 @@ import AppUpdates from '@/pages/AppUpdates';
 import YourPlan from '@/pages/YourPlan';
 import Help from '@/pages/Help';
 import More from '@/pages/More';
+import Calendar from '@/pages/Calendar';
 import TermsOfService from '@/pages/TermsOfService';
 import PrivacyPolicy from '@/pages/PrivacyPolicy';
 import FAQ from '@/pages/FAQ';
@@ -134,6 +135,7 @@ const AuthenticatedApp = () => {
           <Route path="/events/:id" element={<EventDetails />} />
           <Route path="/events/:id/edit" element={<EventEditor />} />
           <Route path="/events/:id/job-sheet" element={<JobSheet />} />
+          <Route path="/calendar" element={<Calendar />} />
           <Route path="/clients" element={<Clients />} />
           <Route path="/clients/:id" element={<ClientDetails />} />
           <Route path="/team" element={<Team />} />

@@ -7,6 +7,7 @@ import Input from "@/components/common/Input";
 import Toggle from "@/components/common/Toggle";
 import Button from "@/components/common/Button";
 import { Loader2, Save, FileText, CreditCard, Image as ImageIcon, Building2, Share2, Instagram, Youtube, Globe, Link as LinkIcon } from "lucide-react";
+import RichTextEditor from "@/components/common/RichTextEditor";
 
 export default function QuotationDefaultsSection() {
   const { workspace, setWorkspace } = useWorkspace();
@@ -98,10 +99,9 @@ export default function QuotationDefaultsSection() {
           <FileText className="w-4 h-4 text-primary" />
           <h3 className="text-sm font-semibold">Default Terms & Conditions</h3>
         </div>
-        <Textarea
+        <RichTextEditor
           value={prefs.defaultTerms}
-          onChange={(e) => set("defaultTerms", e.target.value)}
-          rows={5}
+          onChange={(v) => set("defaultTerms", v)}
           placeholder="Enter default terms & conditions for all quotations…"
         />
         <p className="text-xs text-muted-foreground mt-2">Used as the starting T&C for new quotations. Can be overridden per quotation.</p>
@@ -120,11 +120,11 @@ export default function QuotationDefaultsSection() {
           </div>
           <div>
             <label className="block text-xs font-medium text-muted-foreground mb-1">Payment Instructions</label>
-            <Textarea value={prefs.defaultPaymentInstructions} onChange={(e) => set("defaultPaymentInstructions", e.target.value)} rows={3} placeholder="Payment details will be shared upon confirmation." />
+            <RichTextEditor value={prefs.defaultPaymentInstructions} onChange={(v) => set("defaultPaymentInstructions", v)} placeholder="Payment details will be shared upon confirmation." />
           </div>
           <div>
             <label className="block text-xs font-medium text-muted-foreground mb-1">Payment Conditions</label>
-            <Textarea value={prefs.defaultPaymentConditions} onChange={(e) => set("defaultPaymentConditions", e.target.value)} rows={4} placeholder="e.g. 50% advance to confirm booking. Balance due on or before event day. Payments once made are non-refundable." />
+            <RichTextEditor value={prefs.defaultPaymentConditions} onChange={(v) => set("defaultPaymentConditions", v)} placeholder="e.g. 50% advance to confirm booking. Balance due on or before event day. Payments once made are non-refundable." />
             <p className="text-xs text-muted-foreground mt-1">Shown as a separate section on the quotation PDF.</p>
           </div>
         </div>

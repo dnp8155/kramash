@@ -386,7 +386,7 @@ export default function PublicInvoice() {
         {invoice.terms_and_conditions && (
           <div className="bg-card border border-border rounded-xl p-5 shadow-card">
             <h2 className="text-sm font-semibold text-foreground mb-2">Terms & Conditions</h2>
-            <div className="text-sm text-muted-foreground whitespace-pre-line break-anywhere">{invoice.terms_and_conditions}</div>
+            <div className="text-sm text-muted-foreground leading-relaxed [&_p]:mb-1 [&_ul]:list-disc [&_ol]:list-decimal [&_ul]:pl-5 [&_ol]:pl-5" dangerouslySetInnerHTML={{ __html: invoice.terms_and_conditions }} />
           </div>
         )}
 
@@ -394,7 +394,7 @@ export default function PublicInvoice() {
         {invoice.payment_terms && (
           <div className="bg-card border border-border rounded-xl p-5 shadow-card">
             <h2 className="text-sm font-semibold text-foreground mb-2">Payment Terms</h2>
-            <div className="text-sm text-muted-foreground whitespace-pre-line break-anywhere">{invoice.payment_terms}</div>
+            <div className="text-sm text-muted-foreground leading-relaxed [&_p]:mb-1 [&_ul]:list-disc [&_ol]:list-decimal [&_ul]:pl-5 [&_ol]:pl-5" dangerouslySetInnerHTML={{ __html: invoice.payment_terms }} />
           </div>
         )}
 

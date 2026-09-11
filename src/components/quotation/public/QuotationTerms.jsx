@@ -28,7 +28,7 @@ export default function QuotationTerms({ terms, specialNotes }) {
         <div className="px-5 pb-4 space-y-3">
           {hasTerms && (
             <div>
-              <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{terms}</p>
+              <div className="text-sm text-foreground leading-relaxed [&_p]:mb-1 [&_ul]:list-disc [&_ol]:list-decimal [&_ul]:pl-5 [&_ol]:pl-5" dangerouslySetInnerHTML={{ __html: terms }} />
             </div>
           )}
           {hasNotes && (

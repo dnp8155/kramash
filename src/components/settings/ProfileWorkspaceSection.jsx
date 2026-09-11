@@ -7,12 +7,23 @@ import Button from "@/components/common/Button";
 import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
 import Toggle from "@/components/common/Toggle";
-import { Pencil, Check, Camera, Loader2, Upload, User, Building2 } from "lucide-react";
+import ChangePasswordDialog from "@/components/settings/ChangePasswordDialog";
+import { Pencil, Check, Camera, Loader2, Upload, User, Building2, Lock, KeyRound, Globe } from "lucide-react";
 import { isValidIndianPhone, isValidEmail } from "@/lib/validation";
 
 const currencies = [{ v: "INR", l: "INR (₹)" }, { v: "USD", l: "USD ($)" }, { v: "EUR", l: "EUR (€)" }, { v: "AED", l: "AED (د.إ)" }];
-const timezones = ["Asia/Kolkata", "UTC", "Asia/Dubai", "America/New_York"];
+const timezones = ["Asia/Kolkata", "UTC", "Asia/Dubai", "America/New_York", "Europe/London", "Australia/Sydney"];
 const gstRates = [0, 5, 12, 18, 28];
+const dateFormats = [
+  { v: "DD/MM/YYYY", l: "DD/MM/YYYY (31/12/2026)" },
+  { v: "MM/DD/YYYY", l: "MM/DD/YYYY (12/31/2026)" },
+  { v: "YYYY-MM-DD", l: "YYYY-MM-DD (2026-12-31)" },
+];
+const numberFormats = [
+  { v: "indian", l: "Indian (1,00,000)" },
+  { v: "western", l: "International (100,000)" },
+];
+const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
 export default function ProfileWorkspaceSection() {
   const { user, checkUserAuth } = useAuth();
@@ -24,6 +35,7 @@ export default function ProfileWorkspaceSection() {
   const [name, setName] = useState(user?.full_name || "");
   const [savingName, setSavingName] = useState(false);
   const [uploadingImg, setUploadingImg] = useState(false);
+  const [showChangePwd, setShowChangePwd] = useState(false);
   const profileFileRef = useRef(null);
   const profileImage = user?.data?.profile_image || user?.profile_image;
 
@@ -31,13 +43,20 @@ export default function ProfileWorkspaceSection() {
   const [form, setForm] = useState(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [emailEditing, setEmailEditing] = useState(false);
   const logoFileRef = useRef(null);
+
+  // Lock flags — fields are locked once they have a value
+  const isNameLocked = !!(user?.full_name?.trim());
+  const isBusinessTypeLocked = !!(workspace?.business_type);
+  const isPhoneLocked = !!(workspace?.phone);
+  const isEmailLocked = !!(workspace?.email);
 
   // Initialize workspace form when workspace loads
   if (!form && workspace) {
     setForm({
       name: workspace.name || "",
+      tagline: workspace.tagline || "",
+      website: workspace.website || "",
       phone: workspace.phone || "",
       email: workspace.email || user?.email || "",
       address: workspace.address || "",
@@ -46,6 +65,9 @@ export default function ProfileWorkspaceSection() {
       country: workspace.country || "India",
       currency: workspace.currency || "INR",
       timezone: workspace.timezone || "Asia/Kolkata",
+      date_format: workspace.date_format || "DD/MM/YYYY",
+      number_format: workspace.number_format || "indian",
+      fy_start_month: workspace.fy_start_month ?? 4,
       gst_enabled: !!workspace.gst_enabled,
       gstin: workspace.gstin || "",
       gst_business_name: workspace.gst_business_name || "",
@@ -135,6 +157,8 @@ export default function ProfileWorkspaceSection() {
     try {
       const updated = await base44.entities.Workspace.update(workspace.id, {
         name: form.name,
+        tagline: form.tagline,
+        website: form.website,
         phone: form.phone,
         email: form.email,
         address: form.address,
@@ -143,6 +167,9 @@ export default function ProfileWorkspaceSection() {
         country: form.country,
         currency: form.currency,
         timezone: form.timezone,
+        date_format: form.date_format,
+        number_format: form.number_format,
+        fy_start_month: form.fy_start_month,
         gst_enabled: form.gst_enabled,
         gstin: form.gstin,
         gst_business_name: form.gst_business_name,
@@ -204,10 +231,15 @@ export default function ProfileWorkspaceSection() {
         </div>
 
         <div className="space-y-0">
-          {/* Full Name — editable */}
+          {/* Full Name — locked once set */}
           <div className="flex items-center justify-between py-3 border-b border-border">
             <span className="text-xs font-medium text-muted-foreground shrink-0">Full Name</span>
-            {editingName ? (
+            {isNameLocked ? (
+              <div className="flex items-center gap-1.5 ml-3">
+                <span className="text-sm text-foreground truncate">{user?.full_name}</span>
+                <Lock className="w-3 h-3 text-muted-foreground shrink-0" />
+              </div>
+            ) : editingName ? (
               <div className="flex items-center gap-2 ml-3 flex-1 justify-end">
                 <input
                   value={name}
@@ -248,8 +280,33 @@ export default function ProfileWorkspaceSection() {
             )}
           </div>
 
-          <Row label="Email" value={user?.email || "—"} />
+          {/* Email — locked once set */}
+          <div className="flex items-center justify-between py-3 border-b border-border">
+            <span className="text-xs font-medium text-muted-foreground shrink-0">Email</span>
+            <div className="flex items-center gap-1.5 ml-3">
+              <span className="text-sm text-foreground truncate">{user?.email || "—"}</span>
+              {isEmailLocked && <Lock className="w-3 h-3 text-muted-foreground shrink-0" />}
+            </div>
+          </div>
+
+          {/* Role */}
           <Row label="Role" value={user?.role || "—"} />
+
+          {/* Business Type — locked once set */}
+          <div className="flex items-center justify-between py-3 border-b border-border last:border-0">
+            <span className="text-xs font-medium text-muted-foreground shrink-0">Business Type</span>
+            <div className="flex items-center gap-1.5 ml-3">
+              <span className="text-sm text-foreground truncate">{workspace?.business_type || "—"}</span>
+              {isBusinessTypeLocked && <Lock className="w-3 h-3 text-muted-foreground shrink-0" />}
+            </div>
+          </div>
+        </div>
+
+        {/* Change Password */}
+        <div className="pt-4 mt-2 border-t border-border">
+          <Button variant="outline" size="sm" onClick={() => setShowChangePwd(true)}>
+            <KeyRound className="w-3.5 h-3.5" /> Change Password
+          </Button>
         </div>
       </div>
 
@@ -291,41 +348,48 @@ export default function ProfileWorkspaceSection() {
 
         <div className="space-y-3">
           <Field label="Business / Workspace Name"><Input value={form.name} onChange={(e) => set("name", e.target.value)} /></Field>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Field label="Business Phone"><Input value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="10-digit mobile (e.g. 9876543210)" inputMode="tel" maxLength="13" /></Field>
-            <Field label="Business Email">
-              <div className="flex items-center gap-2">
-                <Input
-                  value={form.email}
-                  onChange={(e) => set("email", e.target.value)}
-                  readOnly={!emailEditing}
-                  placeholder="you@example.com"
-                  className={emailEditing ? "" : "bg-muted/50 cursor-not-allowed text-muted-foreground"}
-                />
-                {emailEditing ? (
-                  <button
-                    type="button"
-                    onClick={() => setEmailEditing(false)}
-                    className="shrink-0 w-9 h-9 rounded-md border border-border flex items-center justify-center text-success hover:bg-success/10 transition-colors"
-                    aria-label="Confirm email edit"
-                    title="Done"
-                  >
-                    <Check className="w-4 h-4" />
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setEmailEditing(true)}
-                    className="shrink-0 w-9 h-9 rounded-md border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                    aria-label="Edit email"
-                    title="Edit email"
-                  >
-                    <Pencil className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-            </Field>
-          </div>
+
+          {/* Tagline */}
+          <Field label="Tagline"><Input value={form.tagline} onChange={(e) => set("tagline", e.target.value)} placeholder="e.g. Capturing moments that last forever" /></Field>
+
+          {/* Website */}
+          <Field label="Website">
+            <div className="relative">
+              <Globe className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+              <Input value={form.website} onChange={(e) => set("website", e.target.value)} placeholder="https://yourwebsite.com" className="pl-9" />
+            </div>
+          </Field>
+
+          {/* Phone — locked once set */}
+          <Field label="Business Phone">
+            <div className="relative">
+              <Input
+                value={form.phone}
+                onChange={(e) => set("phone", e.target.value)}
+                readOnly={isPhoneLocked}
+                placeholder="10-digit mobile (e.g. 9876543210)"
+                inputMode="tel"
+                maxLength="13"
+                className={isPhoneLocked ? "bg-muted/50 cursor-not-allowed text-muted-foreground pr-8" : "pr-8"}
+              />
+              {isPhoneLocked && <Lock className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />}
+            </div>
+          </Field>
+
+          {/* Email — locked once set */}
+          <Field label="Business Email">
+            <div className="relative">
+              <Input
+                value={form.email}
+                onChange={(e) => set("email", e.target.value)}
+                readOnly={isEmailLocked}
+                placeholder="you@example.com"
+                className={isEmailLocked ? "bg-muted/50 cursor-not-allowed text-muted-foreground pr-8" : "pr-8"}
+              />
+              {isEmailLocked && <Lock className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />}
+            </div>
+          </Field>
+
           <Field label="Business Address"><Input value={form.address} onChange={(e) => set("address", e.target.value)} /></Field>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field label="City"><Input value={form.city} onChange={(e) => set("city", e.target.value)} /></Field>
@@ -339,11 +403,33 @@ export default function ProfileWorkspaceSection() {
               </Select>
             </Field>
           </div>
-          <Field label="Timezone">
-            <Select value={form.timezone} onChange={(e) => set("timezone", e.target.value)}>
-              {timezones.map((t) => <option key={t}>{t}</option>)}
-            </Select>
-          </Field>
+
+          {/* Region Settings */}
+          <div className="pt-3 mt-3 border-t border-border">
+            <h4 className="text-sm font-semibold text-foreground mb-3">Region Settings</h4>
+            <div className="space-y-3">
+              <Field label="Timezone">
+                <Select value={form.timezone} onChange={(e) => set("timezone", e.target.value)}>
+                  {timezones.map((t) => <option key={t}>{t}</option>)}
+                </Select>
+              </Field>
+              <Field label="Date Format">
+                <Select value={form.date_format} onChange={(e) => set("date_format", e.target.value)}>
+                  {dateFormats.map((d) => <option key={d.v} value={d.v}>{d.l}</option>)}
+                </Select>
+              </Field>
+              <Field label="Number Format">
+                <Select value={form.number_format} onChange={(e) => set("number_format", e.target.value)}>
+                  {numberFormats.map((n) => <option key={n.v} value={n.v}>{n.l}</option>)}
+                </Select>
+              </Field>
+              <Field label="Financial Year Start Month">
+                <Select value={form.fy_start_month} onChange={(e) => set("fy_start_month", Number(e.target.value))}>
+                  {MONTHS.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
+                </Select>
+              </Field>
+            </div>
+          </div>
 
           {/* GST */}
           <div className="pt-3 mt-3 border-t border-border">
@@ -373,6 +459,8 @@ export default function ProfileWorkspaceSection() {
           </Button>
         </div>
       </div>
+
+      <ChangePasswordDialog open={showChangePwd} onClose={() => setShowChangePwd(false)} />
     </div>
   );
 }

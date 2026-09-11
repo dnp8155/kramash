@@ -18,6 +18,7 @@ import InvoiceProductsSection from "@/components/invoice/InvoiceProductsSection"
 import InvoiceFinancials from "@/components/invoice/InvoiceFinancials";
 import InvoicePrintView from "@/components/invoice/InvoicePrintView";
 import RecordInvoicePaymentDialog from "@/components/invoice/RecordInvoicePaymentDialog";
+import RichTextEditor from "@/components/common/RichTextEditor";
 import InvoicePublicLinkPanel from "@/components/invoice/InvoicePublicLinkPanel";
 import Toggle from "@/components/common/Toggle";
 import {
@@ -515,13 +516,11 @@ export default function InvoiceEditor() {
       {/* Payment Terms (client-visible) */}
       <div className="bg-card border border-border rounded-lg p-4">
         <label className="block text-xs font-medium text-muted-foreground mb-1.5">Payment Terms (client-visible)</label>
-        <textarea
+        <RichTextEditor
           value={paymentTerms}
-          onChange={(e) => setPaymentTerms(e.target.value)}
-          disabled={readOnly}
-          rows={3}
+          onChange={setPaymentTerms}
+          readOnly={readOnly}
           placeholder="Payment terms shown to client on PDF and public link"
-          className="w-full bg-card border border-border rounded-md p-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
         />
       </div>
 

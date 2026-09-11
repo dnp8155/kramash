@@ -10,6 +10,12 @@ function escapeHtml(str) {
     .replace(/'/g, "&#039;");
 }
 
+function safeRichHtml(text) {
+  if (!text) return "";
+  if (/<[a-z][\s\S]*>/i.test(text)) return text;
+  return escapeHtml(text).replace(/\n/g, "<br>");
+}
+
 function fmtDate(iso) {
   if (!iso) return "";
   const d = new Date(iso + "T00:00:00");
@@ -107,7 +113,7 @@ export function renderInvoiceGoldPremium(data) {
   const gstRate = workspace?.default_gst_rate || 18;
 
   const notesHtml = textToBulletList(invoice?.notes);
-  const termsHtml = textToBulletList(invoice?.terms_and_conditions);
+  const termsHtml = safeRichHtml(invoice?.terms_and_conditions);
 
   // Build package sections
   const packageSections = packages.map((pkg, idx) => {

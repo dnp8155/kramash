@@ -10,6 +10,12 @@ function escapeHtml(str) {
     .replace(/'/g, "&#039;");
 }
 
+function safeRichHtml(text) {
+  if (!text) return "";
+  if (/<[a-z][\s\S]*>/i.test(text)) return text;
+  return escapeHtml(text).replace(/\n/g, "<br>");
+}
+
 function fmtDateLong(iso) {
   if (!iso) return "";
   const d = new Date(iso + "T00:00:00");
@@ -127,7 +133,7 @@ export function renderInvoiceSimpleBw(data) {
   const totalWords = `(${currency === "INR" ? "INR " : ""}${amountInWords(grandTotal)})`;
 
   const notesHtml = textToBullets(invoice?.notes);
-  const termsHtml = textToBullets(invoice?.terms_and_conditions || invoice?.payment_terms);
+  const termsHtml = safeRichHtml(invoice?.terms_and_conditions || invoice?.payment_terms);
 
   // Item rows
   const itemRows = allItems.map((it, i) => {

@@ -255,6 +255,33 @@
   }
 }
 
+/* ---- Rich Text Editor (Quill) ---- */
+.rich-text-editor-wrapper .ql-toolbar {
+  border: 1px solid hsl(var(--border));
+  border-bottom: none;
+  border-radius: var(--radius) var(--radius) 0 0;
+  background: hsl(var(--card));
+}
+.rich-text-editor-wrapper .ql-container {
+  border: 1px solid hsl(var(--border));
+  border-radius: 0 0 var(--radius) var(--radius);
+  background: hsl(var(--card));
+  font-family: var(--font-body);
+  font-size: 14px;
+  min-height: 100px;
+}
+.rich-text-editor-wrapper .ql-editor {
+  min-height: 100px;
+  padding: 10px 12px;
+}
+.rich-text-editor-wrapper .ql-editor.ql-blank::before {
+  color: hsl(var(--muted-foreground));
+  font-style: normal;
+}
+.rich-text-editor-wrapper .ql-snow .ql-tooltip {
+  z-index: 100;
+}
+
 /* ---- Quotation Print (URL 2) ---- */
 @media print {
   body.printing-quotation * {
