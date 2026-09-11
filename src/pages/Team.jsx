@@ -141,6 +141,17 @@ export default function Team() {
     [members, assignments, serviceAssignments, transactions, expenseTransactions, eventsById]
   );
 
+  const statementByMemberId = useMemo(() => {
+    const m = {};
+    personStatements.forEach((ps) => { if (ps.member) m[ps.member.id] = ps; });
+    return m;
+  }, [personStatements]);
+
+  const standaloneStatements = useMemo(
+    () => personStatements.filter((ps) => !ps.member),
+    [personStatements]
+  );
+
   const openNew = () => { setEditing(null); setShowForm(true); };
   const openEdit = (m) => { setEditing(m); setShowForm(true); };
   const openMember = (m) => navigate(`/team/${m.id}`);
@@ -198,7 +209,7 @@ export default function Team() {
       </div>
 
       <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-lg w-full sm:w-auto">
-        {["Roster", "Statements", "Availability Calendar"].map((t) => (
+        {["Roster", "Availability Calendar"].map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -259,19 +270,23 @@ export default function Team() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {filtered.map((m) => (
-                <TeamMemberCard
-                  key={m.id}
-                  member={m}
-                  assignments={assignments}
-                  transactions={transactions}
-                  eventsById={eventsById}
-                  currentUser={user}
-                  currency={currency}
-                  onEdit={openEdit}
-                  onArchive={toggleArchive}
-                  onDelete={(mem) => setConfirmDelete(mem)}
-                  onOpen={openMember}
-                />
+                <div key={m.id} className="space-y-2">
+                  <TeamMemberCard
+                    member={m}
+                    assignments={assignments}
+                    transactions={transactions}
+                    eventsById={eventsById}
+                    currentUser={user}
+                    currency={currency}
+                    onEdit={openEdit}
+                    onArchive={toggleArchive}
+                    onDelete={(mem) => setConfirmDelete(mem)}
+                    onOpen={openMember}
+                  />
+                  {statementByMemberId[m.id] && (
+                    <PersonStatementCard statement={statementByMemberId[m.id]} currency={currency} />
+                  )}
+                </div>
               ))}
             </div>
           )}
@@ -287,31 +302,21 @@ export default function Team() {
               </div>
             );
           })()}
+
+          {/* Standalone service-provider statements (not in team roster) */}
+          {standaloneStatements.length > 0 && (
+            <div className="space-y-3 pt-2">
+              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Service Provider Statements
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {standaloneStatements.map((ps) => (
+                  <PersonStatementCard key={ps.key} statement={ps} currency={currency} />
+                ))}
+              </div>
+            </div>
+          )}
         </>
-      ) : tab === "Statements" ? (
-        isLoading ? (
-          <CardGridSkeleton count={6} />
-        ) : personStatements.length === 0 ? (
-          <Card className="p-0">
-            <EmptyState
-              title="No statements yet"
-              description="Consolidated person-wise payment statements will appear here once team members or service providers have assignments."
-            />
-          </Card>
-        ) : (
-          <>
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <p className="text-sm text-muted-foreground">
-                {personStatements.length} person{personStatements.length !== 1 ? "s" : ""} · consolidated across team & service assignments
-              </p>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {personStatements.map((ps) => (
-                <PersonStatementCard key={ps.key} statement={ps} currency={currency} />
-              ))}
-            </div>
-          </>
-        )
       ) : (
         isLoading ? (
           <Skeleton className="h-96 w-full rounded-lg" />
