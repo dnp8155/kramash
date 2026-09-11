@@ -8,6 +8,9 @@ export default function RichTextEditor({ value, onChange, placeholder = "", minH
       toolbar: [
         ["bold", "italic", "underline"],
         [{ list: "bullet" }, { list: "ordered" }],
+        [{ align: "" }, { align: "center" }, { align: "right" }],
+        [{ size: ["small", false, "large", "huge"] }],
+        ["link"],
         ["clean"],
       ],
     },

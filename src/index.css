@@ -282,6 +282,14 @@
   z-index: 100;
 }
 
+/* ---- Quill Rich Text Content Rendering (public views + read-only display) ---- */
+.ql-align-center { text-align: center; }
+.ql-align-right { text-align: right; }
+.ql-align-justify { text-align: justify; }
+.ql-size-small { font-size: 0.75em; }
+.ql-size-large { font-size: 1.5em; }
+.ql-size-huge { font-size: 2.5em; }
+
 /* ---- Quotation Print (URL 2) ---- */
 @media print {
   body.printing-quotation * {

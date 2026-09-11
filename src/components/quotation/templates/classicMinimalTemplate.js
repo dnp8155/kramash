@@ -1,4 +1,5 @@
 import { includedDates, formatDateFull } from "@/lib/quotationCalc";
+import { quillContentCss } from "@/lib/quillContentStyles";
 
 function escapeHtml(str) {
   return String(str || "")
@@ -215,6 +216,7 @@ export function renderClassicMinimal(data) {
       @page { size: A4; margin: 12mm; }
       .quotation-page { width: 100%; padding: 0; }
     }
+    ${quillContentCss}
   </style>
 </head>
 <body>

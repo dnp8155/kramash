@@ -1,5 +1,6 @@
 import { CURRENCY_SYMBOLS } from "@/constants/financeConfig";
 import { invoiceLineTotal } from "@/lib/invoiceService";
+import { quillContentCss } from "@/lib/quillContentStyles";
 
 function escapeHtml(str) {
   return String(str || "")
@@ -254,6 +255,7 @@ ${eventRows}
       body { background: white; }
       .invoice { width: 210mm; max-width: 210mm; margin: 0; padding: 10mm 10mm 0; box-shadow: none; }
     }
+    ${quillContentCss}
   </style>
 </head>
 <body>

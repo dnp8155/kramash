@@ -1,5 +1,6 @@
 import { CURRENCY_SYMBOLS } from "@/constants/financeConfig";
 import { invoiceLineTotal } from "@/lib/invoiceService";
+import { quillContentCss } from "@/lib/quillContentStyles";
 
 function escapeHtml(str) {
   return String(str || "")
@@ -201,6 +202,7 @@ export function renderInvoiceSimpleBw(data) {
       @page { size: A4; margin: 12mm; }
       .invoice-page { width: 100%; padding: 0; }
     }
+    ${quillContentCss}
   </style>
 </head>
 <body>

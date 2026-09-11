@@ -1,4 +1,5 @@
 import { CURRENCY_SYMBOLS } from "@/constants/financeConfig";
+import { quillContentCss } from "@/lib/quillContentStyles";
 
 function escapeHtml(str) {
   return String(str || "")
@@ -234,6 +235,7 @@ export function renderGoldPremium(data) {
       .quotation { width: 210mm; max-width: 210mm; margin: 0; padding: 10mm 10mm 0; box-shadow: none; }
       .developer-footer { margin-left: -10mm; margin-right: -10mm; }
     }
+    ${quillContentCss}
   </style>
 </head>
 <body>

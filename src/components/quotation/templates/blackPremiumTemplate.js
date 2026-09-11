@@ -1,4 +1,5 @@
 import { CURRENCY_SYMBOLS } from "@/constants/financeConfig";
+import { quillContentCss } from "@/lib/quillContentStyles";
 
 function escapeHtml(str) {
   return String(str || "")
@@ -122,7 +123,7 @@ export function renderBlackPremium(data) {
 
   // Notes & terms
   const notesHtml = textToBulletList(quotation?.notes);
-  const termsHtml = textToBulletList(quotation?.terms_and_conditions);
+  const termsHtml = safeRichHtml(quotation?.terms_and_conditions);
 
   // Payment
   const paymentMethod = cfg.payment_method || "Bank Transfer / UPI / Cheque\nDetails will be shared upon confirmation.";
@@ -267,6 +268,7 @@ export function renderBlackPremium(data) {
       .quotation { width: 210mm; max-width: 210mm; margin: 0; padding: 8mm 10mm 0; box-shadow: none; }
       .developer-footer { margin-left: -10mm; margin-right: -10mm; }
     }
+    ${quillContentCss}
   </style>
 </head>
 <body>

@@ -1,4 +1,5 @@
 import { CURRENCY_SYMBOLS } from "@/constants/financeConfig";
+import { quillContentCss } from "@/lib/quillContentStyles";
 
 function escapeHtml(str) {
   return String(str || "")
@@ -225,6 +226,7 @@ body{margin:0;background:#ffffff;font-family:Arial,Helvetica,sans-serif;color:va
 .footer-bottom span{color:var(--gold);}
 @page{size:A4;margin:0;}
 @media print{body{background:#fff;}.quotation-page{width:210mm;min-height:297mm;margin:0;}}
+${quillContentCss}
 </style>
 </head>
 <body>
