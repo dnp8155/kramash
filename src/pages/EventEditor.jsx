@@ -18,7 +18,7 @@ import ChipPicker from "@/components/common/ChipPicker";
 import DateRangeChips from "@/components/common/DateRangeChips";
 import ClientForm from "@/components/clients/ClientForm";
 import QuickClientForm from "@/components/clients/QuickClientForm";
-import { EVENT_STATUS, EVENT_STATUS_ORDER } from "@/constants/statusConfig";
+import EventTypeAutocomplete from "@/components/events/EventTypeAutocomplete";
 import { CURRENCY_SYMBOLS } from "@/constants/financeConfig";
 import { getEventTypes, buildAllEventTypes, mergeEventTypes, normalizeEventType } from "@/lib/eventTypeService";
 import { fyForDate, todayISO } from "@/lib/dates";
@@ -26,15 +26,8 @@ import { cn } from "@/lib/utils";
 import {
   ArrowLeft, Plus, Users, Briefcase, Save, Loader2, AlertCircle,
   FolderPlus, FolderOpen, HelpCircle, MapPin, CalendarDays, FileText,
-  Wallet, Calendar, Clock, CheckCircle2, XCircle, User
+  Wallet, User
 } from "lucide-react";
-
-const STATUS_ICONS = {
-  upcoming: Calendar,
-  "in-progress": Clock,
-  completed: CheckCircle2,
-  cancelled: XCircle
-};
 
 const empty = {
   client_id: "", title: "", event_type: "",
@@ -66,8 +59,6 @@ export default function EventEditor() {
   const isEdit = !!id;
 
   const [usedEventTypes, setUsedEventTypes] = useState([]);
-  const [showCustomType, setShowCustomType] = useState(false);
-  const [customTypeInput, setCustomTypeInput] = useState("");
 
   const [form, setForm] = useState(empty);
   const [clients, setClients] = useState([]);
@@ -378,78 +369,12 @@ export default function EventEditor() {
 
                     <div className="space-y-1.5">
                       <Label className="text-xs">Project Type</Label>
-                      <div className="flex flex-wrap gap-2">
-                        {workTypes.map((wt) => {
-                          const active = form.event_type === wt;
-                          return (
-                            <button key={wt} type="button" onClick={() => set("event_type", wt)}
-                              className={cn("px-3 py-1.5 rounded-lg text-xs font-medium border transition-all",
-                                active ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                                  : "bg-card text-muted-foreground border-border hover:border-primary/40 hover:text-foreground")}>
-                              {wt}
-                            </button>
-                          );
-                        })}
-                        {/* Show custom type as active chip if set and not in list */}
-                        {form.event_type && !workTypes.some((wt) => wt.toLowerCase() === form.event_type.toLowerCase()) && (
-                          <span className="px-3 py-1.5 rounded-lg text-xs font-medium bg-primary text-primary-foreground border-primary shadow-sm">
-                            {form.event_type}
-                          </span>
-                        )}
-                        <button type="button" onClick={() => setShowCustomType((v) => !v)}
-                          className={cn("inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all",
-                            showCustomType ? "bg-muted text-foreground border-border" : "bg-card text-primary border-dashed border-primary/40 hover:bg-primary/5")}>
-                          <Plus className="w-3 h-3" /> Custom
-                        </button>
-                      </div>
-                      {showCustomType && (
-                        <div className="flex gap-2 mt-2">
-                          <Input
-                            value={customTypeInput}
-                            onChange={(e) => setCustomTypeInput(e.target.value)}
-                            placeholder="Type custom type name"
-                            className="flex-1"
-                            autoFocus
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") {
-                                e.preventDefault();
-                                if (customTypeInput.trim()) {
-                                  set("event_type", normalizeEventType(customTypeInput));
-                                  setCustomTypeInput("");
-                                  setShowCustomType(false);
-                                }
-                              }
-                            }}
-                          />
-                          <Button type="button" size="sm" onClick={() => {
-                            if (customTypeInput.trim()) {
-                              set("event_type", normalizeEventType(customTypeInput));
-                              setCustomTypeInput("");
-                              setShowCustomType(false);
-                            }
-                          }}>Add</Button>
-                          <Button type="button" variant="outline" size="sm" onClick={() => { setShowCustomType(false); setCustomTypeInput(""); }}>Cancel</Button>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Status</Label>
-                      <div className="flex flex-wrap gap-2">
-                        {EVENT_STATUS_ORDER.map((s) => {
-                          const Icon = STATUS_ICONS[s];
-                          const active = form.status === s;
-                          return (
-                            <button key={s} type="button" onClick={() => set("status", s)}
-                              className={cn("inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all",
-                                active ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                                  : "bg-card text-muted-foreground border-border hover:border-primary/40 hover:text-foreground")}>
-                              {Icon && <Icon className="w-3.5 h-3.5" />}
-                              {EVENT_STATUS[s].label}
-                            </button>
-                          );
-                        })}
-                      </div>
+                      <EventTypeAutocomplete
+                        value={form.event_type}
+                        onChange={(v) => set("event_type", v)}
+                        suggestions={workTypes}
+                        placeholder="Type or select a project type"
+                      />
                     </div>
                   </div>
                 </div>

@@ -145,10 +145,15 @@ export default function EventDetails() {
   const notFound = !!data?.notFound;
   const hasError = !!error && !data;
   const load = () => {
-    queryClient.invalidateQueries({ queryKey: ["event", id, workspaceId] });
-    // Also refresh every other page that depends on this event's data:
-    // dashboard stats/calendar, events list, financial totals, team-member bookings.
-    invalidateEntities(queryClient, ["Event", "EventTeamAssignment", "EventDayAssignment", "EventServiceAssignment", "FinancialTransaction"]);
+    // Small delay to allow backend to fully commit changes before re-fetching.
+    // Without this, the re-fetch can race ahead of the write and return stale data,
+    // making it look like the add/update didn't work until a manual page refresh.
+    setTimeout(() => {
+      queryClient.invalidateQueries({ queryKey: ["event", id, workspaceId] });
+      // Also refresh every other page that depends on this event's data:
+      // dashboard stats/calendar, events list, financial totals, team-member bookings.
+      invalidateEntities(queryClient, ["Event", "EventTeamAssignment", "EventDayAssignment", "EventServiceAssignment", "FinancialTransaction"]);
+    }, 300);
   };
 
   const eventAssignments = useMemo(
