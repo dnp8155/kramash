@@ -58,30 +58,67 @@ export default function ClientProjectPortal() {
   const [error, setError] = useState("");
   const [unavailable, setUnavailable] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [needsPassword, setNeedsPassword] = useState(false);
+  const [passwordInput, setPasswordInput] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [verifying, setVerifying] = useState(false);
+
+  const loadData = async (pwd) => {
+    setLoading(true);
+    setError("");
+    setUnavailable(false);
+    setNeedsPassword(false);
+    try {
+      const res = await base44.functions.invoke("getPortalData", { public_token: token, skip_tracking: isPreview, password: pwd || "" });
+      const d = res?.data || res;
+      if (d.unavailable) {
+        setUnavailable(true);
+        setData(null);
+      } else if (d.requires_password) {
+        setNeedsPassword(true);
+        setData(null);
+      } else {
+        setData(d);
+        setNeedsPassword(false);
+      }
+    } catch (e) {
+      setError(e?.message || "Failed to load project portal");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      setLoading(true);
-      setError("");
-      setUnavailable(false);
-      try {
-        const res = await base44.functions.invoke("getPortalData", { public_token: token, skip_tracking: isPreview });
-        const d = res?.data || res;
-        if (d.unavailable) {
-          setUnavailable(true);
-          setData(null);
-        } else {
-          setData(d);
-        }
-      } catch (e) {
-        setError(e?.message || "Failed to load project portal");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
+      if (cancelled) return;
+      await loadData("");
     })();
     return () => { cancelled = true; };
   }, [token]);
+
+  const submitPassword = async (e) => {
+    e.preventDefault();
+    setVerifying(true);
+    setPasswordError("");
+    try {
+      const res = await base44.functions.invoke("getPortalData", { public_token: token, skip_tracking: isPreview, password: passwordInput });
+      const d = res?.data || res;
+      if (d.requires_password) {
+        setPasswordError("Incorrect password. Please try again.");
+      } else if (d.unavailable) {
+        setUnavailable(true);
+        setNeedsPassword(false);
+      } else {
+        setData(d);
+        setNeedsPassword(false);
+      }
+    } catch (e) {
+      setPasswordError(e?.message || "Verification failed");
+    } finally {
+      setVerifying(false);
+    }
+  };
 
   const goToQuotation = () => {
     if (data?.quotation?.public_token) {
@@ -118,6 +155,44 @@ export default function ClientProjectPortal() {
       <div className="min-h-dvh flex items-center justify-center bg-muted/30">
         <div className="flex items-center gap-2 text-muted-foreground">
           <Loader2 className="w-5 h-5 animate-spin" /> Loading project…
+        </div>
+      </div>
+    );
+  }
+
+  // ---- Password Gate ----
+  if (needsPassword) {
+    return (
+      <div className="min-h-dvh flex items-center justify-center bg-muted/30 p-4">
+        <div className="max-w-md w-full bg-card border border-border rounded-xl p-8 text-center">
+          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+            <ShieldCheck className="w-6 h-6 text-primary" />
+          </div>
+          <h1 className="text-lg font-semibold text-foreground">Password Protected</h1>
+          <p className="text-sm text-muted-foreground mt-1 mb-5">
+            This project portal is protected. Please enter the password your service provider shared with you.
+          </p>
+          <form onSubmit={submitPassword} className="space-y-3 text-left">
+            <input
+              type="password"
+              autoFocus
+              value={passwordInput}
+              onChange={(e) => setPasswordInput(e.target.value)}
+              placeholder="Enter password"
+              className="w-full bg-card border border-border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
+            />
+            {passwordError && (
+              <p className="text-xs text-destructive">{passwordError}</p>
+            )}
+            <button
+              type="submit"
+              disabled={verifying || !passwordInput}
+              className="w-full bg-primary text-primary-foreground rounded-lg py-2.5 text-sm font-medium hover:bg-primary-hover disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {verifying ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
+              {verifying ? "Verifying…" : "Unlock Portal"}
+            </button>
+          </form>
         </div>
       </div>
     );

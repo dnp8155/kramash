@@ -11,6 +11,7 @@ export default async function(req) {
     const body = await req.json().catch(() => ({}));
     const token = body.public_token || body.token;
     const skipTracking = !!body.skip_tracking;
+    const providedPassword = body.password || "";
     if (!token) return Response.json({ error: "Token required" }, { status: 400 });
 
     // Find quotation by public_token (service role — public, no auth)
@@ -25,6 +26,13 @@ export default async function(req) {
     // Admin master control — if public link is disabled, show unavailable message
     if (!q.public_link_enabled) {
       return Response.json({ unavailable: true, message: "This project link is currently unavailable." });
+    }
+
+    // Password protection gate — if a portal password is set, require it
+    if (q.client_access_password) {
+      if (!providedPassword || providedPassword !== q.client_access_password) {
+        return Response.json({ requires_password: true });
+      }
     }
 
     // Record view tracking (non-blocking via waitUntil) — skip for admin previews

@@ -556,6 +556,8 @@ export default function EventDetails() {
           otherDayAssignments={dayAssignments.filter((a) => a.event_id !== event.id)}
           blockDates={blockDates}
           onChanged={load}
+          fin={fin}
+          currency={currency}
         />
       )}
 

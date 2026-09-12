@@ -10,7 +10,7 @@ export default async function(req) {
     if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json().catch(() => ({}));
-    const { quotation_id, enabled, hide_team_names } = body;
+    const { quotation_id, enabled, hide_team_names, portal_password } = body;
     if (!quotation_id) return Response.json({ error: "Quotation id required" }, { status: 400 });
 
     // Verify the quotation belongs to the user (RLS check via user-scoped get)
@@ -34,12 +34,18 @@ export default async function(req) {
       updates.hide_team_names = !!hide_team_names;
     }
 
+    // Portal password protection — set, update, or clear
+    if (portal_password !== undefined) {
+      updates.client_access_password = portal_password ? String(portal_password).trim() : "";
+    }
+
     const updated = await base44.entities.Quotation.update(quotation_id, updates);
 
     return Response.json({
       public_link_enabled: !!updated.public_link_enabled,
       public_token: updated.public_token || "",
       hide_team_names: !!updated.hide_team_names,
+      client_access_password: updated.client_access_password || "",
       portal_view_count: Number(updated.portal_view_count) || 0,
       portal_first_viewed_at: updated.portal_first_viewed_at || "",
       portal_latest_viewed_at: updated.portal_latest_viewed_at || ""
