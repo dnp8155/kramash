@@ -192,6 +192,18 @@
     -webkit-text-fill-color: transparent;
   }
 
+  /* Logo-inspired gradient (orange → blue → purple) */
+  .bg-logo-gradient {
+    background: linear-gradient(135deg, #F58220 0%, #2D7FF9 55%, #8B2BE2 100%);
+  }
+  .text-logo-gradient {
+    background: linear-gradient(135deg, #F58220 0%, #2D7FF9 55%, #8B2BE2 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+
   /* Refined focus ring */
   .focus-ring {
     outline: none;

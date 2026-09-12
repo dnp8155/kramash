@@ -48,7 +48,7 @@ export default function Landing() {
             </Link>
             <Link
               to="/register"
-              className="h-9 px-4 sm:px-5 inline-flex items-center justify-center text-sm font-semibold bg-[#F58220] text-white hover:bg-[#E0741F] rounded-full shadow-sm transition-all"
+              className="h-9 px-4 sm:px-5 inline-flex items-center justify-center text-sm font-semibold bg-logo-gradient text-white hover:opacity-90 rounded-full shadow-sm transition-all"
             >
               Start Free
             </Link>

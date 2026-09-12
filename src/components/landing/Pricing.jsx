@@ -89,7 +89,7 @@ export default function Pricing() {
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="max-w-2xl mx-auto text-center mb-16">
           <div className="inline-flex items-center gap-2 rounded-full border border-[#E5E5E5] bg-[#F9F9F9] px-3.5 py-1.5 text-xs font-medium text-[#666] mb-5">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#F58220]" />
+            <span className="w-1.5 h-1.5 rounded-full bg-logo-gradient" />
             Pricing
           </div>
           <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight text-foreground mb-4 leading-tight">
@@ -125,12 +125,12 @@ export default function Pricing() {
               }`}
               >
                 {isPopular && (
-                  <div className="absolute -top-3.5 right-8 inline-flex items-center gap-1.5 rounded-full bg-[#F58220] text-white px-3 py-1 text-[10px] font-semibold uppercase tracking-wider shadow-md">
+                  <div className="absolute -top-3.5 right-8 inline-flex items-center gap-1.5 rounded-full bg-logo-gradient text-white px-3 py-1 text-[10px] font-semibold uppercase tracking-wider shadow-md">
                     <Sparkles className="w-3 h-3" />
                     Most Popular
                   </div>
                 )}
-                <span className={`text-xs font-semibold uppercase tracking-wider block mb-2 ${isPopular ? "text-[#F58220]" : "text-[#999]"}`}>
+                <span className={`text-xs font-semibold uppercase tracking-wider block mb-2 ${isPopular ? "text-logo-gradient" : "text-[#999]"}`}>
                   {plan.name}
                 </span>
                 <div className="flex items-baseline gap-1.5 mb-4">
@@ -156,13 +156,17 @@ export default function Pricing() {
                 </Link>
 
                 <ul className="space-y-3 border-t border-[#E5E5E5] pt-6">
-                  {limitEntries.map((entry, j) => (
+                  {limitEntries.map((entry, j) => {
+                    const colors = ["#F58220", "#2D7FF9", "#8B2BE2", "#0EA5A4"];
+                    const color = colors[j % colors.length];
+                    return (
                     <li key={j} className="flex items-center gap-2.5 text-sm text-foreground">
-                      <Check className="w-4 h-4 text-[#F58220] shrink-0" />
+                      <Check className="w-4 h-4 shrink-0" style={{ color }} />
                       <span className="font-medium">{entry.value}</span>
                       <span className="text-[#999]">{entry.label}</span>
                     </li>
-                  ))}
+                    );
+                  })}
                 </ul>
               </div>
             );

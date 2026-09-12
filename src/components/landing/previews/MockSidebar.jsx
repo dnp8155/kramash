@@ -40,12 +40,13 @@ export default function MockSidebar({ active = "Dashboard", workspaceName = "Kra
           return (
             <div
               key={item.label}
-              className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-xs transition-colors ${
+              className={`relative flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-xs transition-colors ${
                 isActive
                   ? "bg-white text-[#0B2125] font-semibold"
                   : "text-[#8FA0A4] hover:text-white"
               }`}
             >
+              {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-full bg-logo-gradient" />}
               <item.icon className="w-4 h-4 shrink-0" />
               <span>{item.label}</span>
             </div>

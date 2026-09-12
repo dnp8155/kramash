@@ -16,10 +16,10 @@ export default function ComparisonTable() {
     <section className="py-20 sm:py-28 border-t border-[#E5E5E5] bg-[#FDFCF8]">
       <div className="mx-auto max-w-4xl px-4 sm:px-6">
         <div className="max-w-2xl mx-auto text-center mb-12">
-          <div className="text-xs font-semibold uppercase tracking-wider text-[#F58220] mb-3">Why Kramasha</div>
+          <div className="text-xs font-semibold uppercase tracking-wider mb-3"><span className="text-logo-gradient">Why Kramasha</span></div>
           <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight text-[#0B2125] mb-4 leading-tight">
             Stop paying for ten tools. Start using{" "}
-            <span className="text-[#F58220]">one.</span>
+            <span className="text-logo-gradient">one.</span>
           </h2>
           <p className="text-[#666] text-base sm:text-lg leading-relaxed">
             Everything scattered across Excel, WhatsApp, Google Calendar, Trello, Notion, Drive and separate accounting software, unified.

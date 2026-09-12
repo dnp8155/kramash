@@ -6,9 +6,11 @@ export default function CTA() {
   return (
     <section className="py-20 sm:py-28">
       <div className="mx-auto max-w-5xl px-4 sm:px-6">
-        <div className="rounded-[2rem] bg-[#1A1A1A] px-6 py-14 sm:px-12 sm:py-20 text-center relative overflow-hidden">
-          {/* Subtle orange glow */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-[#F58220]/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="rounded-[2rem] bg-[#0B2125] px-6 py-14 sm:px-12 sm:py-20 text-center relative overflow-hidden">
+          {/* Mixed logo-color glows */}
+          <div className="absolute top-0 left-1/4 w-72 h-72 bg-[#F58220]/20 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute bottom-0 right-1/4 w-72 h-72 bg-[#2D7FF9]/20 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-72 h-72 bg-[#8B2BE2]/15 rounded-full blur-3xl pointer-events-none" />
           <div className="relative">
             <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight text-white max-w-2xl mx-auto leading-tight">
               Stop managing your business across 10 different apps.

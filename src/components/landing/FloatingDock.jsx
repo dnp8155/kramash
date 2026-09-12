@@ -78,7 +78,7 @@ export default function FloatingDock() {
         {/* Sliding pill */}
         <div
           ref={pillRef}
-          className="absolute top-1.5 bottom-1.5 left-0 bg-[#F58220] rounded-full z-0 pointer-events-none will-change-transform"
+          className="absolute top-1.5 bottom-1.5 left-0 bg-logo-gradient rounded-full z-0 pointer-events-none will-change-transform"
           style={{ width: 0, transform: "translateX(0)" }}
         />
         {TABS.map((t) => {
