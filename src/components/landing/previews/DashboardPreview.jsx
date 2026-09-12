@@ -16,15 +16,15 @@ export default function DashboardPreview() {
   return (
     <BrowserFrame url="app.kramasha.com/dashboard">
       <MockSidebar active="Dashboard" />
-      <div className="flex-1 p-5 overflow-hidden bg-[#FDFCF8]">
+      <div className="flex-1 p-6 overflow-hidden bg-[#FDFCF8]">
         {/* Greeting */}
-        <div className="mb-5">
+        <div className="mb-6">
           <div className="text-base font-bold text-[#0B2125]">Good morning, Aarav.</div>
           <div className="text-xs text-[#999] mt-0.5">Saturday, 12 Oct 2026</div>
         </div>
 
         {/* Stat cards */}
-        <div className="grid grid-cols-2 gap-3 mb-5">
+        <div className="grid grid-cols-2 gap-3 mb-6">
           {stats.map((s, i) => (
             <div key={i} className="rounded-xl border border-[#E5E5E5] bg-white p-3.5">
               <div className="flex items-center justify-between mb-2">

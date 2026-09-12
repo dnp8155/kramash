@@ -15,7 +15,7 @@ export default function BrowserFrame({ url = "app.kramasha.com", children, class
         </div>
       </div>
       {/* Content */}
-      <div className="flex min-h-[360px]">{children}</div>
+      <div className="flex min-h-[420px]">{children}</div>
     </div>
   );
 }

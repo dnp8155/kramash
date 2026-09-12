@@ -28,9 +28,9 @@ export default function FinancePreview() {
   return (
     <BrowserFrame url="app.kramasha.com/finance">
       <MockSidebar active="Finance" />
-      <div className="flex-1 p-5 overflow-hidden bg-[#FDFCF8]">
+      <div className="flex-1 p-6 overflow-hidden bg-[#FDFCF8]">
         {/* Tabs */}
-        <div className="flex items-center gap-1 mb-4 border-b border-[#E5E5E5]">
+        <div className="flex items-center gap-1 mb-5 border-b border-[#E5E5E5]">
           {["Overview", "Payments", "Expenses", "Team", "Staff"].map((tab, i) => (
             <div
               key={tab}
@@ -45,7 +45,7 @@ export default function FinancePreview() {
         </div>
 
         {/* Metrics grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mb-5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
           {metrics.map((m, i) => (
             <div key={i} className="rounded-lg border border-[#E5E5E5] bg-white p-2.5">
               <div className="text-[8px] text-[#999] uppercase tracking-wide font-semibold">{m.label}</div>

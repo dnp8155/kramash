@@ -16,9 +16,9 @@ export default function LeadsCRMPreview() {
   return (
     <BrowserFrame url="app.kramasha.com/leads">
       <MockSidebar active="Leads" />
-      <div className="flex-1 p-5 overflow-hidden bg-[#FDFCF8]">
+      <div className="flex-1 p-6 overflow-hidden bg-[#FDFCF8]">
         {/* Header */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-5">
           <div className="text-base font-bold text-[#0B2125]">Leads (7)</div>
           <button className="flex items-center gap-1.5 text-xs font-semibold bg-[#F58220] text-white px-3 py-2 rounded-lg">
             <Plus className="w-3.5 h-3.5" /> New Lead
@@ -26,7 +26,7 @@ export default function LeadsCRMPreview() {
         </div>
 
         {/* Filters */}
-        <div className="flex items-center gap-2 mb-4 flex-wrap">
+        <div className="flex items-center gap-2 mb-5 flex-wrap">
           <div className="flex items-center gap-1.5 bg-white border border-[#E5E5E5] rounded-lg px-3 py-1.5 flex-1 min-w-[120px]">
             <Search className="w-3.5 h-3.5 text-[#999]" />
             <span className="text-[10px] text-[#999]">Search leads...</span>

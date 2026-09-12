@@ -15,9 +15,9 @@ export default function TeamPreview() {
   return (
     <BrowserFrame url="app.kramasha.com/team">
       <MockSidebar active="Events" />
-      <div className="flex-1 p-5 overflow-hidden bg-[#FDFCF8]">
+      <div className="flex-1 p-6 overflow-hidden bg-[#FDFCF8]">
         {/* Header */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-5">
           <div>
             <div className="text-base font-bold text-[#0B2125]">Team Availability</div>
             <div className="text-[10px] text-[#999]">October 2026 · Week 2</div>
@@ -33,15 +33,15 @@ export default function TeamPreview() {
         </div>
 
         {/* Calendar grid */}
-        <div className="rounded-xl border border-[#E5E5E5] bg-white p-4 mb-3">
-          <div className="grid grid-cols-[80px_repeat(7,1fr)] gap-1.5 mb-2">
+        <div className="rounded-xl border border-[#E5E5E5] bg-white p-5 mb-4">
+          <div className="grid grid-cols-[90px_repeat(7,1fr)] gap-2 mb-3">
             <div />
             {days.map((d) => (
               <div key={d} className="text-[9px] font-semibold text-[#999] uppercase text-center">{d}</div>
             ))}
           </div>
           {members.map((m, i) => (
-            <div key={i} className="grid grid-cols-[80px_repeat(7,1fr)] gap-1.5 mb-1.5 last:mb-0">
+            <div key={i} className="grid grid-cols-[90px_repeat(7,1fr)] gap-2 mb-2 last:mb-0">
               <div className="min-w-0">
                 <div className="text-[10px] font-medium text-[#0B2125] truncate">{m.name}</div>
                 <div className="text-[8px] text-[#999] truncate">{m.role}</div>
@@ -49,11 +49,11 @@ export default function TeamPreview() {
               {m.pattern.map((status, j) => (
                 <div
                   key={j}
-                  className={`h-7 rounded-md flex items-center justify-center ${
+                  className={`h-9 rounded-md flex items-center justify-center ${
                     status === "booked" ? "bg-[#F58220]" : "bg-[#F58220]/15"
                   }`}
                 >
-                  {status === "booked" ? <X className="w-3 h-3 text-white" /> : <Check className="w-3 h-3 text-[#F58220]" />}
+                  {status === "booked" ? <X className="w-3.5 h-3.5 text-white" /> : <Check className="w-3.5 h-3.5 text-[#F58220]" />}
                 </div>
               ))}
             </div>
@@ -61,7 +61,7 @@ export default function TeamPreview() {
         </div>
 
         {/* Conflict alert */}
-        <div className="rounded-xl border border-[#F58220]/20 bg-[#FFF3E8] px-4 py-3 flex items-center gap-3">
+        <div className="rounded-xl border border-[#F58220]/20 bg-[#FFF3E8] px-4 py-3.5 flex items-center gap-3">
           <div className="w-7 h-7 rounded-full bg-[#F58220]/15 flex items-center justify-center shrink-0">
             <AlertTriangle className="w-3.5 h-3.5 text-[#F58220]" />
           </div>

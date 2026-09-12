@@ -13,7 +13,7 @@ export default function QuotationPreview() {
   return (
     <BrowserFrame url="app.kramasha.com/quotations">
       <MockSidebar active="Quotations" />
-      <div className="flex-1 p-5 overflow-hidden bg-[#FDFCF8]">
+      <div className="flex-1 p-6 overflow-hidden bg-[#FDFCF8]">
         {/* Quotation document */}
         <div className="rounded-xl border border-[#E5E5E5] bg-white overflow-hidden">
           {/* Header */}

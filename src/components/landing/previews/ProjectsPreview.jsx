@@ -16,9 +16,9 @@ export default function ProjectsPreview() {
   return (
     <BrowserFrame url="app.kramasha.com/projects">
       <MockSidebar active="Projects" />
-      <div className="flex-1 p-5 overflow-hidden bg-[#FDFCF8]">
+      <div className="flex-1 p-6 overflow-hidden bg-[#FDFCF8]">
         {/* Header */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-5">
           <div className="text-base font-bold text-[#0B2125]">Projects</div>
           <div className="flex items-center gap-2">
             <button className="hidden sm:flex items-center gap-1.5 text-[10px] font-medium text-[#666] bg-white border border-[#E5E5E5] px-3 py-2 rounded-lg">

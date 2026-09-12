@@ -24,7 +24,7 @@ export default function MockSidebar({ active = "Dashboard", workspaceName = "Kra
   ];
 
   return (
-    <div className="w-44 bg-[#0B2125] shrink-0 p-3 hidden sm:flex flex-col">
+    <div className="w-48 bg-[#0B2125] shrink-0 p-3 hidden sm:flex flex-col">
       {/* Workspace */}
       <div className="flex items-center gap-2.5 px-2 py-2.5 mb-4">
         <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shrink-0 overflow-hidden">
