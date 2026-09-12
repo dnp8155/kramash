@@ -13,10 +13,11 @@ import SearchInput from "@/components/common/SearchInput";
 import Select from "@/components/common/Select";
 import Button from "@/components/common/Button";
 import PageHeader from "@/components/common/PageHeader";
-import { Users, Plus, Download, CalendarCheck, Clock, CheckCircle2, CalendarDays } from "lucide-react";
+import { Users, Plus, Download, CalendarCheck, Clock, CheckCircle2, CalendarDays, IndianRupee } from "lucide-react";
 import StatCard from "@/components/common/StatCard";
 import { isToday, isThisWeek, isUpcomingDate, isPastDate, isWithinFY } from "@/lib/dates";
 import { exportEventsCsv } from "@/lib/exportUtils";
+import { formatMoney } from "@/utils/format";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
 import { useT } from "@/hooks/useT";
 import { invalidateEntities } from "@/lib/queryInvalidation";
@@ -41,12 +42,13 @@ export default function Events() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["events", workspaceId],
     queryFn: async () => {
-      const [evList, clList, tmList, svList, asgList] = await Promise.all([
+      const [evList, clList, tmList, svList, asgList, txList] = await Promise.all([
         base44.entities.Event.filter({ workspace_id: workspaceId }, "-start_date", 500),
         base44.entities.Client.filter({ workspace_id: workspaceId }, "name", 500),
         base44.entities.TeamMember.filter({ workspace_id: workspaceId }, "name", 500),
         base44.entities.Service.filter({ workspace_id: workspaceId }, "name", 500),
-        base44.entities.EventTeamAssignment.filter({ workspace_id: workspaceId }, "-created_date", 1000)
+        base44.entities.EventTeamAssignment.filter({ workspace_id: workspaceId }, "-created_date", 1000),
+        base44.entities.FinancialTransaction.filter({ workspace_id: workspaceId, transaction_type: "CLIENT_RECEIPT", status: "ACTIVE" }, "-transaction_date", 2000)
       ]);
       const map = {};
       (clList || []).forEach((c) => { map[c.id] = c; });
@@ -62,7 +64,13 @@ export default function Events() {
         if (!assignmentsByEvent[a.event_id]) assignmentsByEvent[a.event_id] = [];
         assignmentsByEvent[a.event_id].push(a);
       });
-      return { events: evList || [], clients: map, teamMap, serviceMap, assignmentsByEvent };
+      // Client receipts grouped by event — powers payment-remaining display.
+      const receiptsByEvent = {};
+      (txList || []).forEach((t) => {
+        if (!receiptsByEvent[t.event_id]) receiptsByEvent[t.event_id] = 0;
+        receiptsByEvent[t.event_id] += Number(t.amount) || 0;
+      });
+      return { events: evList || [], clients: map, teamMap, serviceMap, assignmentsByEvent, receiptsByEvent };
     },
     enabled: !!workspaceId
   });
@@ -71,6 +79,8 @@ export default function Events() {
   const teamMap = data?.teamMap || {};
   const serviceMap = data?.serviceMap || {};
   const assignmentsByEvent = data?.assignmentsByEvent || {};
+  const receiptsByEvent = data?.receiptsByEvent || {};
+  const currency = workspace?.currency || "INR";
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ["events", workspaceId] });
     invalidateEntities(queryClient, ["Event", "EventTeamAssignment"]);
@@ -197,6 +207,8 @@ export default function Events() {
           teamMap={teamMap}
           serviceMap={serviceMap}
           assignmentsByEvent={assignmentsByEvent}
+          receiptsByEvent={receiptsByEvent}
+          currency={currency}
           loading={isLoading}
           onEventClick={openEvent}
           onEditEvent={openEdit}

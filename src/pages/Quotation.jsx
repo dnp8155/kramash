@@ -11,12 +11,12 @@ import EmptyState from "@/components/common/EmptyState";
 import { StatGridSkeleton, TableSkeleton } from "@/components/common/Skeletons";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatMoney } from "@/utils/format";
-import { loadQuotations, deleteQuotation, loadQuotationItems } from "@/lib/quotationService";
+import { loadQuotations, deleteQuotation, loadQuotationItems, duplicateQuotation } from "@/lib/quotationService";
 import { createFromQuotation } from "@/lib/invoiceService";
 import { QUOTATION_STATUSES, QUOTATION_STATUS_META } from "@/constants/quotationConfig";
 import { generateQuotationPdf } from "@/lib/quotationPdf";
 import { base44 } from "@/api/base44Client";
-import { Plus, Search, Trash2, FileDown, Eye, FileText, IndianRupee, CheckCircle2, Pencil, Receipt } from "lucide-react";
+import { Plus, Search, Trash2, FileDown, Eye, FileText, IndianRupee, CheckCircle2, Pencil, Receipt, Copy } from "lucide-react";
 import PdfPreviewModal from "@/components/common/PdfPreviewModal";
 import PageHeader from "@/components/common/PageHeader";
 import StatCard from "@/components/common/StatCard";
@@ -129,6 +129,18 @@ export default function Quotation() {
       navigate(`/invoices/${inv.id}`);
     } catch (e) {
       toast({ title: "Failed to create invoice", description: e?.message, variant: "destructive" });
+    }
+  };
+
+  const onDuplicate = async (qt) => {
+    try {
+      const items = await loadQuotationItems(workspaceId, qt.id);
+      const dup = await duplicateQuotation(workspaceId, qt, items);
+      toast({ title: "Quotation duplicated", description: dup.quotation_number });
+      invalidate();
+      navigate(`/quotation/${dup.id}`);
+    } catch (e) {
+      toast({ title: "Failed to duplicate", description: e?.message, variant: "destructive" });
     }
   };
 
@@ -246,6 +258,7 @@ export default function Quotation() {
                         <button onClick={() => downloadPdf(qt)} disabled={generatingId === qt.id} className="text-muted-foreground hover:text-primary p-1" title="Download PDF"><FileDown className="w-4 h-4" /></button>
                       </>
                     )}
+                    <button onClick={() => onDuplicate(qt)} className="text-muted-foreground hover:text-primary p-1" title="Duplicate"><Copy className="w-4 h-4" /></button>
                     <button onClick={() => onDelete(qt)} className="text-muted-foreground hover:text-destructive p-1" title="Delete"><Trash2 className="w-4 h-4" /></button>
                   </div>
                 </div>
@@ -322,6 +335,13 @@ export default function Quotation() {
                               </button>
                             </>
                           )}
+                          <button
+                            onClick={() => onDuplicate(qt)}
+                            className="text-muted-foreground hover:text-primary p-1.5 rounded-md hover:bg-muted transition-colors"
+                            title="Duplicate"
+                          >
+                            <Copy className="w-4 h-4" />
+                          </button>
                           <button
                             onClick={() => onDelete(qt)}
                             className="text-muted-foreground hover:text-destructive p-1.5 rounded-md hover:bg-muted transition-colors"

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, ChevronUp, Pencil, MapPin, FileText, StickyNote, ArrowRight, Users, Briefcase, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Pencil, MapPin, FileText, StickyNote, ArrowRight, Users, Briefcase, Trash2, IndianRupee } from "lucide-react";
 import StatusBadge from "@/components/common/StatusBadge";
 import LoadingState from "@/components/common/LoadingState";
 import EmptyState from "@/components/common/EmptyState";
@@ -7,9 +7,10 @@ import Button from "@/components/common/Button";
 import { EVENT_STATUS } from "@/constants/statusConfig";
 import { formatEventDates, isThisWeek, formatAssignedDates } from "@/lib/dates";
 import { useDisplayPreferences } from "@/hooks/useDisplayPreferences";
+import { formatMoney } from "@/utils/format";
 import { cn } from "@/lib/utils";
 
-export default function EventsTable({ events, clients, teamMap = {}, serviceMap = {}, assignmentsByEvent = {}, loading, onEventClick, onEditEvent, onDeleteEvent, onAdd, canAdd, term }) {
+export default function EventsTable({ events, clients, teamMap = {}, serviceMap = {}, assignmentsByEvent = {}, receiptsByEvent = {}, currency = "INR", loading, onEventClick, onEditEvent, onDeleteEvent, onAdd, canAdd, term }) {
   const t = term || {};
   const prefs = useDisplayPreferences();
   if (loading) {
@@ -57,7 +58,7 @@ export default function EventsTable({ events, clients, teamMap = {}, serviceMap 
                 {weekEvents.length} {t.workItemSingular || "Event"}{weekEvents.length > 1 ? "s" : ""} This Week
               </div>
               {weekEvents.map((e) => (
-                <Row key={e.id} event={e} term={t} prefs={prefs} clientName={clientName(e.client_id)} teamMap={teamMap} serviceMap={serviceMap} assignmentsByEvent={assignmentsByEvent} onClick={() => onEventClick(e)} onEdit={() => onEditEvent(e)} onDelete={() => onDeleteEvent(e)} />
+                <Row key={e.id} event={e} term={t} prefs={prefs} clientName={clientName(e.client_id)} teamMap={teamMap} serviceMap={serviceMap} assignmentsByEvent={assignmentsByEvent} receiptsByEvent={receiptsByEvent} currency={currency} onClick={() => onEventClick(e)} onEdit={() => onEditEvent(e)} onDelete={() => onDeleteEvent(e)} />
               ))}
             </>
           )}
@@ -68,14 +69,14 @@ export default function EventsTable({ events, clients, teamMap = {}, serviceMap 
                 All {t.workItemPlural || "Events"}
               </div>
               {laterEvents.map((e) => (
-                <Row key={e.id} event={e} term={t} prefs={prefs} clientName={clientName(e.client_id)} teamMap={teamMap} serviceMap={serviceMap} assignmentsByEvent={assignmentsByEvent} onClick={() => onEventClick(e)} onEdit={() => onEditEvent(e)} onDelete={() => onDeleteEvent(e)} />
+                <Row key={e.id} event={e} term={t} prefs={prefs} clientName={clientName(e.client_id)} teamMap={teamMap} serviceMap={serviceMap} assignmentsByEvent={assignmentsByEvent} receiptsByEvent={receiptsByEvent} currency={currency} onClick={() => onEventClick(e)} onEdit={() => onEditEvent(e)} onDelete={() => onDeleteEvent(e)} />
               ))}
             </>
           )}
         </>
       ) : (
         events.map((e) => (
-          <Row key={e.id} event={e} term={t} prefs={prefs} clientName={clientName(e.client_id)} teamMap={teamMap} serviceMap={serviceMap} assignmentsByEvent={assignmentsByEvent} onClick={() => onEventClick(e)} onEdit={() => onEditEvent(e)} onDelete={() => onDeleteEvent(e)} />
+          <Row key={e.id} event={e} term={t} prefs={prefs} clientName={clientName(e.client_id)} teamMap={teamMap} serviceMap={serviceMap} assignmentsByEvent={assignmentsByEvent} receiptsByEvent={receiptsByEvent} currency={currency} onClick={() => onEventClick(e)} onEdit={() => onEditEvent(e)} onDelete={() => onDeleteEvent(e)} />
         ))
       )}
     </div>
