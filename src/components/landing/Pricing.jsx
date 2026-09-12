@@ -72,9 +72,9 @@ export default function Pricing() {
 
   if (loading) {
     return (
-      <section id="pricing" className="py-20 sm:py-24 border-t border-border">
+      <section id="pricing" className="py-20 sm:py-28 border-t border-[#E5E5E5]">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 text-center">
-          <Loader2 className="w-6 h-6 text-muted-foreground animate-spin mx-auto" />
+          <Loader2 className="w-6 h-6 text-[#999] animate-spin mx-auto" />
         </div>
       </section>
     );
@@ -85,13 +85,17 @@ export default function Pricing() {
   const popularIndex = planData.length >= 3 ? Math.floor(planData.length / 2) : 0;
 
   return (
-    <section id="pricing" className="py-20 sm:py-24 border-t border-border">
+    <section id="pricing" className="py-20 sm:py-28 border-t border-[#E5E5E5]">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="max-w-2xl mx-auto text-center mb-16">
-          <h2 className="font-heading text-3xl sm:text-5xl font-semibold tracking-tight text-foreground mb-4">
+          <div className="inline-flex items-center gap-2 rounded-full border border-[#E5E5E5] bg-[#F9F9F9] px-3.5 py-1.5 text-xs font-medium text-[#666] mb-5">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#F58220]" />
+            Pricing
+          </div>
+          <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight text-foreground mb-4 leading-tight">
             Plans that fit your business.
           </h2>
-          <p className="text-muted-foreground text-base sm:text-lg leading-relaxed">
+          <p className="text-[#666] text-base sm:text-lg leading-relaxed">
             Start free, upgrade when you grow. No hidden fees, cancel anytime.
           </p>
         </div>
@@ -113,12 +117,12 @@ export default function Pricing() {
 
             return (
               <div
-                key={plan.id}
-                className={`relative rounded-3xl border p-8 sm:p-10 flex flex-col transition-all ${
-                  isPopular
-                    ? "border-[#F58220] bg-card shadow-xl shadow-[#F58220]/10 lg:scale-[1.03] border-2"
-                    : "border-[#E5E5E5] bg-card shadow-sm"
-                }`}
+              key={plan.id}
+              className={`relative rounded-2xl border p-6 sm:p-8 flex flex-col transition-all ${
+                isPopular
+                  ? "border-[#F58220] bg-white shadow-xl shadow-[#F58220]/10 lg:scale-[1.03] border-2"
+                  : "border-[#E5E5E5] bg-white shadow-sm"
+              }`}
               >
                 {isPopular && (
                   <div className="absolute -top-3.5 right-8 inline-flex items-center gap-1.5 rounded-full bg-[#F58220] text-white px-3 py-1 text-[10px] font-semibold uppercase tracking-wider shadow-md">
@@ -133,10 +137,10 @@ export default function Pricing() {
                   <span className="font-heading text-4xl font-semibold text-foreground">
                     {price === 0 ? "Free" : `${currency === "INR" ? "₹" : ""}${price.toLocaleString("en-IN")}`}
                   </span>
-                  {price > 0 && <span className="text-sm font-normal text-muted-foreground">{cycleLabel}</span>}
+                  {price > 0 && <span className="text-sm font-normal text-[#999]">{cycleLabel}</span>}
                 </div>
                 {plan.description && (
-                  <p className="text-sm text-muted-foreground mb-8">{plan.description}</p>
+                  <p className="text-sm text-[#666] mb-8">{plan.description}</p>
                 )}
 
                 <Link
@@ -151,12 +155,12 @@ export default function Pricing() {
                   <ArrowRight className="w-4 h-4" />
                 </Link>
 
-                <ul className="space-y-3 border-t border-border pt-6">
+                <ul className="space-y-3 border-t border-[#E5E5E5] pt-6">
                   {limitEntries.map((entry, j) => (
                     <li key={j} className="flex items-center gap-2.5 text-sm text-foreground">
                       <Check className="w-4 h-4 text-[#F58220] shrink-0" />
                       <span className="font-medium">{entry.value}</span>
-                      <span className="text-muted-foreground">{entry.label}</span>
+                      <span className="text-[#999]">{entry.label}</span>
                     </li>
                   ))}
                 </ul>
@@ -165,7 +169,7 @@ export default function Pricing() {
           })}
         </div>
 
-        <p className="mt-8 text-center text-xs text-muted-foreground">
+        <p className="mt-8 text-center text-xs text-[#999]">
           Your existing business data is never deleted if you choose to downgrade.
         </p>
       </div>

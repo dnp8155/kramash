@@ -11,24 +11,24 @@ export default function TeamPreview() {
   ];
 
   const cellColor = (status) => {
-    if (status === "booked") return "bg-primary/80 text-primary-foreground";
-    return "bg-success/10 text-success/70";
+    if (status === "booked") return "bg-[#F58220] text-white";
+    return "bg-[#F58220]/10 text-[#F58220]";
   };
 
   return (
-    <div className="rounded-xl border border-border bg-card shadow-xl overflow-hidden">
+    <div className="rounded-2xl border border-[#E5E5E5] bg-white shadow-xl overflow-hidden">
       {/* Header */}
-      <div className="px-5 py-3.5 border-b border-border flex items-center justify-between">
+      <div className="px-5 py-3.5 border-b border-[#E5E5E5] flex items-center justify-between">
         <div>
           <div className="text-sm font-bold text-foreground">Team Availability</div>
-          <div className="text-[10px] text-muted-foreground">October 2026 · Week 2</div>
+          <div className="text-[10px] text-[#999]">October 2026 · Week 2</div>
         </div>
         <div className="flex items-center gap-3 text-[10px]">
-          <span className="flex items-center gap-1.5 text-muted-foreground">
-            <span className="w-2.5 h-2.5 rounded bg-success/40" /> Available
+          <span className="flex items-center gap-1.5 text-[#666]">
+            <span className="w-2.5 h-2.5 rounded bg-[#F58220]/30" /> Available
           </span>
-          <span className="flex items-center gap-1.5 text-muted-foreground">
-            <span className="w-2.5 h-2.5 rounded bg-primary/80" /> Booked
+          <span className="flex items-center gap-1.5 text-[#666]">
+            <span className="w-2.5 h-2.5 rounded bg-[#F58220]" /> Booked
           </span>
         </div>
       </div>
@@ -37,9 +37,9 @@ export default function TeamPreview() {
       <div className="p-4">
         {/* Day headers */}
         <div className="grid grid-cols-8 gap-1.5 mb-2">
-          <div className="text-[10px] font-semibold text-muted-foreground uppercase" />
+          <div className="text-[10px] font-semibold text-[#999] uppercase" />
           {days.map((d) => (
-            <div key={d} className="text-[10px] font-semibold text-muted-foreground uppercase text-center">
+            <div key={d} className="text-[10px] font-semibold text-[#999] uppercase text-center">
               {d}
             </div>
           ))}
@@ -50,7 +50,7 @@ export default function TeamPreview() {
           <div key={i} className="grid grid-cols-8 gap-1.5 mb-1.5 last:mb-0">
             <div className="min-w-0">
               <div className="text-[11px] font-medium text-foreground truncate">{m.name}</div>
-              <div className="text-[9px] text-muted-foreground truncate">{m.role}</div>
+              <div className="text-[9px] text-[#999] truncate">{m.role}</div>
             </div>
             {m.pattern.map((status, j) => (
               <div
@@ -66,13 +66,13 @@ export default function TeamPreview() {
 
       {/* Conflict alert */}
       <div className="px-4 pb-4">
-        <div className="rounded-lg bg-warning/10 border border-warning/20 px-3 py-2.5 flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-full bg-warning/20 flex items-center justify-center shrink-0">
-            <span className="text-warning text-xs font-bold">!</span>
+        <div className="rounded-lg bg-[#FFF3E8] border border-[#F58220]/20 px-3 py-2.5 flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-full bg-[#F58220]/20 flex items-center justify-center shrink-0">
+            <span className="text-[#F58220] text-xs font-bold">!</span>
           </div>
           <div>
             <div className="text-[11px] font-semibold text-foreground">Scheduling conflict detected</div>
-            <div className="text-[10px] text-muted-foreground">Rahul Kumar is double-booked on Thursday</div>
+            <div className="text-[10px] text-[#666]">Rahul Kumar is double-booked on Thursday</div>
           </div>
         </div>
       </div>

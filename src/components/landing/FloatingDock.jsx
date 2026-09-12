@@ -1,10 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Layers, Compass, GitBranch, Tag, HelpCircle } from "lucide-react";
+import { Layers, Compass, Eye, Tag, HelpCircle } from "lucide-react";
 
 const TABS = [
   { id: "features", label: "Features", icon: Layers },
+  { id: "showcase", label: "Showcase", icon: Eye },
   { id: "industries", label: "Industries", icon: Compass },
-  { id: "workflow", label: "Workflow", icon: GitBranch },
   { id: "pricing", label: "Pricing", icon: Tag },
   { id: "faq", label: "FAQ", icon: HelpCircle },
 ];
@@ -74,8 +74,8 @@ export default function FloatingDock() {
 
   return (
     <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 w-[94%] max-w-md flex justify-center pointer-events-none">
-      <div className="pointer-events-auto bg-card/90 backdrop-blur-xl border border-border rounded-full p-1.5 shadow-2xl grid grid-cols-5 relative w-full">
-        {/* Sliding pill — uses transform for GPU-accelerated, stable motion */}
+      <div className="pointer-events-auto bg-white/90 backdrop-blur-xl border border-[#E5E5E5] rounded-full p-1.5 shadow-2xl grid grid-cols-5 relative w-full">
+        {/* Sliding pill */}
         <div
           ref={pillRef}
           className="absolute top-1.5 bottom-1.5 left-0 bg-[#F58220] rounded-full z-0 pointer-events-none will-change-transform"
@@ -90,7 +90,7 @@ export default function FloatingDock() {
               onClick={(e) => handleClick(e, t.id)}
               ref={(el) => (btnRefs.current[t.id] = el)}
               className={`relative z-10 py-2.5 rounded-full flex flex-col items-center justify-center gap-1 transition-colors duration-200 ${
-                isActive ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                isActive ? "text-white" : "text-[#666] hover:text-foreground"
               }`}
             >
               <t.icon className="w-4 h-4" />
