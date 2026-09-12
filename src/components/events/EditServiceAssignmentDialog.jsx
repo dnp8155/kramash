@@ -17,6 +17,8 @@ import {
   buildProviderSuggestions
 } from "@/lib/serviceProviderService";
 import { Crown } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { invalidateEntity } from "@/lib/queryInvalidation";
 
 // Edit an existing Event Service Assignment.
 // Edits: provider, service, rate, rate type, add-on, notes.
@@ -35,6 +37,7 @@ export default function EditServiceAssignmentDialog({
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const queryClient = useQueryClient();
 
   const suggestions = useMemo(
     () => buildProviderSuggestions(members, providers),
@@ -116,6 +119,7 @@ export default function EditServiceAssignmentDialog({
         notes: notes.trim()
       };
       const saved = await base44.entities.EventServiceAssignment.update(assignment.id, payload);
+      invalidateEntity(queryClient, "EventServiceAssignment");
       onSaved?.(saved);
       onClose?.();
     } catch (err) {

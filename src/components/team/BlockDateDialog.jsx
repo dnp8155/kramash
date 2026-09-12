@@ -6,6 +6,8 @@ import Input from "@/components/common/Input";
 import { useToast } from "@/components/ui/use-toast";
 import { X, Ban } from "lucide-react";
 import { todayISO } from "@/lib/dates";
+import { useQueryClient } from "@tanstack/react-query";
+import { invalidateEntity } from "@/lib/queryInvalidation";
 
 const REASONS = ["Leave", "Sick", "Personal", "Holiday", "Other"];
 
@@ -17,6 +19,7 @@ export default function BlockDateDialog({ open, onClose, onSaved, workspaceId, m
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (open) {
@@ -47,6 +50,7 @@ export default function BlockDateDialog({ open, onClose, onSaved, workspaceId, m
         reason,
         status: "active"
       });
+      invalidateEntity(queryClient, "TeamBlockDate");
       toast({ title: "Dates blocked", description: "Team member marked unavailable." });
       onSaved?.();
       onClose();

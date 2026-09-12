@@ -9,6 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { lookupCity } from "@/lib/cityMapping";
 import { isValidIndianPhone, isValidEmail } from "@/lib/validation";
+import { useQueryClient } from "@tanstack/react-query";
+import { invalidateEntity } from "@/lib/queryInvalidation";
 
 const empty = {
   name: "", phone: "", alternate_phone: "", email: "",
@@ -26,6 +28,7 @@ function coerceStrings(client) {
 }
 
 export default function ClientForm({ open, onClose, onSaved, client = null, workspaceId }) {
+  const queryClient = useQueryClient();
   const [form, setForm] = useState(empty);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -82,6 +85,7 @@ export default function ClientForm({ open, onClose, onSaved, client = null, work
       } else {
         saved = await base44.entities.Client.create(payload);
       }
+      invalidateEntity(queryClient, "Client");
       onSaved?.(saved);
       onClose?.();
     } catch (err) {

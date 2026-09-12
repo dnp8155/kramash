@@ -18,6 +18,8 @@ import { useFinancialYear } from "@/hooks/useFinancialYear";
 import { fyDisplayLabel, fyRecordValue } from "@/lib/financialYearService";
 import { getEventTypes, buildAllEventTypes, normalizeEventType, mergeEventTypes } from "@/lib/eventTypeService";
 import EventTypeAutocomplete from "@/components/events/EventTypeAutocomplete";
+import { useQueryClient } from "@tanstack/react-query";
+import { invalidateEntity } from "@/lib/queryInvalidation";
 
 const empty = {
   client_id: "", title: "", event_type: "",
@@ -30,6 +32,7 @@ const empty = {
 
 export default function EventForm({ open, onClose, onSaved, event = null, workspaceId, workspace, term, currency = "INR" }) {
   const t = term || {};
+  const queryClient = useQueryClient();
   const { fiscalYears } = useFinancialYear();
   const { toast } = useToast();
   const [usedEventTypes, setUsedEventTypes] = useState([]);
@@ -145,6 +148,7 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
           }
         } catch { /* non-critical — event is already saved */ }
       }
+      invalidateEntity(queryClient, "Event");
       toast({ title: event ? `${t.workItemSingular || "Event"} updated` : `${t.workItemSingular || "Event"} created` });
       onSaved?.(saved);
       onClose?.();

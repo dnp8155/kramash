@@ -8,6 +8,8 @@ import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
 import { Label } from "@/components/ui/label";
 import { SERVICE_RATE_TYPES, GST_RATE_OPTIONS } from "@/constants/quotationConfig";
+import { useQueryClient } from "@tanstack/react-query";
+import { invalidateEntity } from "@/lib/queryInvalidation";
 
 const empty = {
   name: "",
@@ -27,6 +29,7 @@ export default function ServiceForm({
   workspaceId,
   gstEnabled = false
 }) {
+  const queryClient = useQueryClient();
   const [form, setForm] = useState(empty);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -70,6 +73,7 @@ export default function ServiceForm({
         const res = await base44.functions.invoke("createService", payload);
         saved = res?.data || res;
       }
+      invalidateEntity(queryClient, "Service");
       onSaved?.(saved);
       onClose?.();
     } catch (err) {

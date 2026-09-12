@@ -7,6 +7,8 @@ import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Loader2 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { invalidateEntity } from "@/lib/queryInvalidation";
 
 const SOURCES = [
   { value: "referral", label: "Referral" },
@@ -48,6 +50,7 @@ const empty = {
 
 export default function LeadForm({ open, onClose, editingLead, onSaved }) {
   const { workspaceId } = useWorkspace();
+  const queryClient = useQueryClient();
   const { toast } = useToast();
   const [form, setForm] = useState(empty);
   const [saving, setSaving] = useState(false);
@@ -110,6 +113,7 @@ export default function LeadForm({ open, onClose, editingLead, onSaved }) {
         await base44.entities.Lead.create(payload);
         toast({ title: "Lead created successfully" });
       }
+      invalidateEntity(queryClient, "Lead");
       onSaved?.();
       onClose();
     } catch (err) {

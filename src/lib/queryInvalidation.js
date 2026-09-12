@@ -33,6 +33,9 @@ export const ENTITY_INVALIDATION_KEYS = {
     ["dashboard-members"],
     ["financial"]
   ],
+  Lead: [
+    ["leads"]
+  ],
   TeamRole: [
     ["team"],
     ["rate-estimator"]
@@ -88,6 +91,17 @@ export const ENTITY_INVALIDATION_KEYS = {
   ],
   EventReminder: [
     ["event"]
+  ],
+  PaymentMilestone: [
+    ["event"],
+    ["financial"],
+    ["dashboard-transactions"]
+  ],
+  QuotationPackage: [
+    ["quotation"]
+  ],
+  FinancialYear: [
+    ["financial"]
   ]
 };
 

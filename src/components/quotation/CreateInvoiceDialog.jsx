@@ -7,6 +7,8 @@ import Select from "@/components/common/Select";
 import { X, FilePlus, Loader2, AlertCircle } from "lucide-react";
 import { createInvoiceFromQuotation } from "@/lib/invoiceService";
 import { CURRENCY_SYMBOLS } from "@/constants/financeConfig";
+import { useQueryClient } from "@tanstack/react-query";
+import { invalidateEntities } from "@/lib/queryInvalidation";
 
 function money(n, currency) {
   const sym = CURRENCY_SYMBOLS[currency] || currency || "₹";
@@ -24,6 +26,7 @@ function parseMilestones(json) {
 
 export default function CreateInvoiceDialog({ open, onClose, quotation, workspaceId, currency, onCreated }) {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [mode, setMode] = useState("full");
   const [milestones, setMilestones] = useState([]);
   const [selectedMilestoneId, setSelectedMilestoneId] = useState("");
@@ -88,6 +91,7 @@ export default function CreateInvoiceDialog({ open, onClose, quotation, workspac
         setCreating(false);
         return;
       }
+      invalidateEntities(queryClient, ["Invoice", "InvoiceItem"]);
       toast({ title: "Invoice created", description: data.invoice_number });
       onCreated?.(data.invoice_id, data.invoice_number);
     } catch (e) {

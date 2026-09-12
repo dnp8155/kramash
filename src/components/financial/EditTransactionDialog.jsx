@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label";
 import { PAYMENT_METHOD_LIST, TRANSACTION_TYPES } from "@/constants/financeConfig";
 import { resolveFYForDate } from "@/lib/financialYearService";
 import { useFinancialYear } from "@/hooks/useFinancialYear";
+import { useQueryClient } from "@tanstack/react-query";
+import { invalidateEntity } from "@/lib/queryInvalidation";
 
 // Edit an existing transaction: amount, date, method, reference, notes.
 // Type and parties are not editable (preserves audit integrity).
@@ -25,6 +27,7 @@ export default function EditTransactionDialog({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const { fiscalYears } = useFinancialYear();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (open && transaction) {
@@ -72,6 +75,7 @@ export default function EditTransactionDialog({
         notes: notes.trim(),
         financial_year_id: fy.id
       });
+      invalidateEntity(queryClient, "FinancialTransaction");
       onSaved?.(updated);
       onClose?.();
     } catch (err) {

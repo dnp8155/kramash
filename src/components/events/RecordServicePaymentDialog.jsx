@@ -14,6 +14,8 @@ import { formatMoney } from "@/utils/format";
 import { todayISO } from "@/lib/dates";
 import { serviceAssignmentPaid } from "@/lib/financeService";
 import { isSelfMember } from "@/lib/teamService";
+import { useQueryClient } from "@tanstack/react-query";
+import { invalidateEntity } from "@/lib/queryInvalidation";
 
 // Record a payment for a specific Service Assignment.
 // Routed through the backend recordPayment function (kind="service") which
@@ -31,6 +33,7 @@ export default function RecordServicePaymentDialog({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const { fiscalYears } = useFinancialYear();
+  const queryClient = useQueryClient();
 
   const providerMember = assignment?.provider_id ? membersById[assignment.provider_id] : null;
   const isSelf = isSelfMember(providerMember);
@@ -90,6 +93,7 @@ export default function RecordServicePaymentDialog({
         financial_year_id: fy.id
       });
       const saved = _res?.data || _res;
+      invalidateEntity(queryClient, "FinancialTransaction");
       onSaved?.(saved);
       onClose?.();
     } catch (err) {

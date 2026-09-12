@@ -21,6 +21,8 @@ import {
 import ServiceProviderAutocomplete from "@/components/events/ServiceProviderAutocomplete";
 import { Wallet, Plus, Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useQueryClient } from "@tanstack/react-query";
+import { invalidateEntities } from "@/lib/queryInvalidation";
 
 export default function AssignServiceDialog({
   open, onClose, onSaved,
@@ -43,6 +45,7 @@ export default function AssignServiceDialog({
   const [paymentDate, setPaymentDate] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("Cash");
   const { fiscalYears } = useFinancialYear();
+  const queryClient = useQueryClient();
 
   const suggestions = useMemo(
     () => buildProviderSuggestions(members, providers),
@@ -169,6 +172,7 @@ export default function AssignServiceDialog({
           financial_year_id: fy.id
         });
       }
+      invalidateEntities(queryClient, ["EventServiceAssignment", "Event", "FinancialTransaction"]);
       onSaved?.(saved);
       onClose?.();
     } catch (err) {

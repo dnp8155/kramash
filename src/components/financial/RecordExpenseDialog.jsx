@@ -11,6 +11,8 @@ import { PAYMENT_METHOD_LIST } from "@/constants/financeConfig";
 import { resolveFYForDate } from "@/lib/financialYearService";
 import { useFinancialYear } from "@/hooks/useFinancialYear";
 import { todayISO } from "@/lib/dates";
+import { useQueryClient } from "@tanstack/react-query";
+import { invalidateEntity } from "@/lib/queryInvalidation";
 
 // Record a business / event expense. Event is required (Beta is event-level).
 export default function RecordExpenseDialog({
@@ -31,6 +33,7 @@ export default function RecordExpenseDialog({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const { fiscalYears } = useFinancialYear();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (open) {
@@ -108,6 +111,7 @@ export default function RecordExpenseDialog({
         status: "ACTIVE"
       };
       const saved = await base44.entities.FinancialTransaction.create(payload);
+      invalidateEntity(queryClient, "FinancialTransaction");
       onSaved?.(saved);
       onClose?.();
     } catch (err) {

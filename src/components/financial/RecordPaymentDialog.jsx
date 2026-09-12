@@ -17,6 +17,8 @@ import { formatMoney } from "@/utils/format";
 import { todayISO } from "@/lib/dates";
 import { isSelfMember } from "@/lib/teamService";
 import { AlertTriangle, Crown } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { invalidateEntity } from "@/lib/queryInvalidation";
 
 // Unified dialog for recording a Client Payment or a Team Payment.
 // mode = "client" | "team"
@@ -43,6 +45,7 @@ export default function RecordPaymentDialog({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const { fiscalYears } = useFinancialYear();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (open) {
@@ -160,6 +163,7 @@ export default function RecordPaymentDialog({
         });
         saved = _res?.data || _res;
       }
+      invalidateEntity(queryClient, "FinancialTransaction");
       onSaved?.(saved);
       onClose?.();
     } catch (err) {

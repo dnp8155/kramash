@@ -13,6 +13,8 @@ import { formatMoney } from "@/utils/format";
 import { Info, Crown } from "lucide-react";
 import { isSelfMember } from "@/lib/teamService";
 import { cn } from "@/lib/utils";
+import { useQueryClient } from "@tanstack/react-query";
+import { invalidateEntity } from "@/lib/queryInvalidation";
 
 const DEFAULT_MEMBER_TYPES = [
   { id: "mt1", title: "Bride Side", color: "#ec4899" },
@@ -37,6 +39,7 @@ export default function EditTeamAssignmentDialog({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [rateManuallyEdited, setRateManuallyEdited] = useState(false);
+  const queryClient = useQueryClient();
 
   const memberTypes = useMemo(() => {
     try {
@@ -150,6 +153,7 @@ export default function EditTeamAssignmentDialog({
       };
       // Only update the assignment — payments are NOT touched
       const saved = await base44.entities.EventTeamAssignment.update(assignment.id, payload);
+      invalidateEntity(queryClient, "EventTeamAssignment");
       onSaved?.(saved);
       onClose?.();
     } catch (err) {

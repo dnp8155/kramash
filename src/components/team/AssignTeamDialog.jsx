@@ -17,6 +17,8 @@ import { useFinancialYear } from "@/hooks/useFinancialYear";
 import { formatMoney } from "@/utils/format";
 import { AlertTriangle, Ban, Wallet, Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useQueryClient } from "@tanstack/react-query";
+import { invalidateEntities } from "@/lib/queryInvalidation";
 
 const DEFAULT_MEMBER_TYPES = [
   { id: "mt1", title: "Bride Side", color: "#ec4899" },
@@ -45,6 +47,7 @@ export default function AssignTeamDialog({
   const [paymentDate, setPaymentDate] = useState(todayISO());
   const [paymentMethod, setPaymentMethod] = useState("Cash");
   const { fiscalYears } = useFinancialYear();
+  const queryClient = useQueryClient();
   const currency = workspace?.currency || "INR";
 
   // Parse member types from workspace config
@@ -256,6 +259,7 @@ export default function AssignTeamDialog({
           financial_year_id: fy.id
         });
       }
+      invalidateEntities(queryClient, ["EventTeamAssignment", "FinancialTransaction", "Event"]);
       onSaved?.(saved);
       onClose?.();
     } catch (err) {

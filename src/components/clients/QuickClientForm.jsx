@@ -3,8 +3,11 @@ import { base44 } from "@/api/base44Client";
 import { Loader2, Check, X } from "lucide-react";
 import Input from "@/components/common/Input";
 import { isValidIndianPhone, isValidEmail } from "@/lib/validation";
+import { useQueryClient } from "@tanstack/react-query";
+import { invalidateEntity } from "@/lib/queryInvalidation";
 
 export default function QuickClientForm({ workspaceId, onSaved, onCancel }) {
+  const queryClient = useQueryClient();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
@@ -33,6 +36,7 @@ export default function QuickClientForm({ workspaceId, onSaved, onCancel }) {
         phone: phone.trim(),
         email: email.trim()
       });
+      invalidateEntity(queryClient, "Client");
       onSaved?.(created);
     } catch (e) {
       setError(e?.message || "Failed to add client.");

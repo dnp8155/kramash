@@ -14,6 +14,8 @@ import { loadActiveRoles, clearOtherSelfMembers } from "@/lib/teamService";
 import { useAuth } from "@/lib/AuthContext";
 import { Crown } from "lucide-react";
 import { isValidIndianPhone, isValidEmail } from "@/lib/validation";
+import { useQueryClient } from "@tanstack/react-query";
+import { invalidateEntity } from "@/lib/queryInvalidation";
 
 // Master Team Member form — identity + role + contact + status + notes only.
 // Rate and Member Type are NOT collected here:
@@ -30,6 +32,7 @@ const empty = {
 
 export default function TeamMemberForm({ open, onClose, onSaved, member = null, workspaceId }) {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [form, setForm] = useState(empty);
   const [roles, setRoles] = useState([]);
   const [loadingRoles, setLoadingRoles] = useState(false);
@@ -119,6 +122,7 @@ export default function TeamMemberForm({ open, onClose, onSaved, member = null, 
         const res = await base44.functions.invoke("createTeamMember", payload);
         saved = res?.data || res;
       }
+      invalidateEntity(queryClient, "TeamMember");
       onSaved?.(saved);
       onClose?.();
     } catch (err) {
