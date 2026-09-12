@@ -46,7 +46,11 @@ export default function RecordExpenseDialog({
   }, [open, preselectedEventId]);
 
   const validate = () => {
-    if (!categoryId) return "Please select an expense category.";
+    if (miscMode) {
+      if (!categoryId.trim()) return "Please enter an expense category.";
+    } else {
+      if (!categoryId) return "Please select an expense category.";
+    }
     const amt = Number(amount);
     if (!amount || isNaN(amt) || amt <= 0) return "Amount must be greater than zero.";
     if (!date) return "Please select an expense date.";
@@ -72,20 +76,30 @@ export default function RecordExpenseDialog({
           return;
         }
       }
-      const cat = categories.find((c) => c.id === categoryId);
       const fy = resolveFYForDate(date, fiscalYears);
       if (!fy) {
         setError("No Financial Year is available for this transaction date. Please create the applicable Financial Year first.");
         setSaving(false);
         return;
       }
+      let expenseCategoryId = categoryId;
+      let expenseCategoryName = "";
+      if (miscMode) {
+        // In misc mode, categoryId is the typed text — use it as the category name snapshot.
+        expenseCategoryId = "";
+        expenseCategoryName = categoryId.trim();
+      } else {
+        const cat = categories.find((c) => c.id === categoryId);
+        expenseCategoryId = categoryId;
+        expenseCategoryName = cat?.name || "";
+      }
       const payload = {
         workspace_id: workspaceId,
         financial_year_id: fy.id,
         event_id: eventId,
         transaction_type: "BUSINESS_EXPENSE",
-        expense_category_id: categoryId,
-        expense_category_name_snapshot: cat?.name || "",
+        expense_category_id: expenseCategoryId,
+        expense_category_name_snapshot: expenseCategoryName,
         amount: Number(amount),
         payment_method: method,
         transaction_date: date,
@@ -124,15 +138,33 @@ export default function RecordExpenseDialog({
             </div>
           )}
 
-          <div className="space-y-1.5">
-            <Label>Expense Category <span className="text-destructive">*</span></Label>
-            <Select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className="w-full">
-              <option value="">Select a category</option>
-              {categories.filter((c) => c.status === "active").map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </Select>
-          </div>
+          {miscMode ? (
+            <div className="space-y-1.5">
+              <Label>Expense Category <span className="text-destructive">*</span></Label>
+              <Input
+                value={categoryId}
+                onChange={(e) => setCategoryId(e.target.value)}
+                placeholder="Type a category name (e.g. Travel, Equipment)"
+                list="misc-category-suggestions"
+              />
+              <datalist id="misc-category-suggestions">
+                {categories.filter((c) => c.status === "active").map((c) => (
+                  <option key={c.id} value={c.name} />
+                ))}
+              </datalist>
+              <p className="text-xs text-muted-foreground">This text will appear as the category in the FY payments list.</p>
+            </div>
+          ) : (
+            <div className="space-y-1.5">
+              <Label>Expense Category <span className="text-destructive">*</span></Label>
+              <Select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className="w-full">
+                <option value="">Select a category</option>
+                {categories.filter((c) => c.status === "active").map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </Select>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">

@@ -11,7 +11,7 @@ const MONTHS = ["January", "February", "March", "April", "May", "June", "July", 
 export default function AvailabilityCalendar({
   members = [], assignments = [], eventsById = {}, blockDates = [],
   serviceAssignments = [], dayAssignments = [], services = [],
-  onEventClick, onBlockDate, currency = "INR"
+  onEventClick, onBlockDate, onUnblockDate, currency = "INR"
 }) {
   const allEvents = useMemo(() => Object.values(eventsById || {}).filter((e) => e && e.status !== "cancelled"), [eventsById]);
 
@@ -319,9 +319,20 @@ export default function AvailabilityCalendar({
                   </div>
                   <ul className="space-y-1.5 pl-3.5">
                     {selectedInfo.blocked.map(({ member, block }) => (
-                      <li key={member.id} className="text-sm">
-                        <span className="text-foreground font-medium">{member.name}</span>
-                        {block?.reason ? <span className="text-muted-foreground"> — {block.reason}</span> : null}
+                      <li key={member.id} className="text-sm flex items-center justify-between gap-2">
+                        <span className="min-w-0">
+                          <span className="text-foreground font-medium">{member.name}</span>
+                          {block?.reason ? <span className="text-muted-foreground"> — {block.reason}</span> : null}
+                        </span>
+                        {onUnblockDate && block?.id && (
+                          <button
+                            onClick={() => onUnblockDate(block.id)}
+                            className="text-xs font-medium text-success hover:underline shrink-0 flex items-center gap-0.5"
+                            title="Unblock this member"
+                          >
+                            Unblock
+                          </button>
+                        )}
                       </li>
                     ))}
                   </ul>

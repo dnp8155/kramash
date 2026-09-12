@@ -152,6 +152,16 @@ export default function Team() {
     [personStatements]
   );
 
+  const unblockDate = async (blockId) => {
+    try {
+      await base44.entities.TeamBlockDate.update(blockId, { status: "cancelled" });
+      toast({ title: "Dates unblocked", description: "Team member is available again." });
+      invalidate();
+    } catch (e) {
+      toast({ title: "Failed to unblock", description: e?.message, variant: "destructive" });
+    }
+  };
+
   const openNew = () => { setEditing(null); setShowForm(true); };
   const openEdit = (m) => { setEditing(m); setShowForm(true); };
   const openMember = (m) => navigate(`/team/${m.id}`);
@@ -335,6 +345,7 @@ export default function Team() {
               currency={currency}
               onEventClick={(ev) => navigate(`/events/${ev.id}`)}
               onBlockDate={(date) => { setBlockPreselect({ memberId: null, date }); setShowBlock(true); }}
+              onUnblockDate={unblockDate}
             />
             <UpcomingBookingsList
               members={members}
