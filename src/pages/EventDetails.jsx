@@ -13,6 +13,7 @@ import EventAssignmentCard from "@/components/events/EventAssignmentCard";
 import EventServicesTab from "@/components/events/EventServicesTab";
 import EventProgressTab from "@/components/events/EventProgressTab";
 import EventFinancialsTab from "@/components/events/EventFinancialsTab";
+import EventPaymentsTab from "@/components/events/EventPaymentsTab";
 import FinancialSummaryCards from "@/components/events/FinancialSummaryCards";
 import TeamBookingBySide from "@/components/events/TeamBookingBySide";
 import AssignTeamDialog from "@/components/team/AssignTeamDialog";
@@ -626,44 +627,17 @@ export default function EventDetails() {
       )}
 
       {tab === "Payments" && (
-        <Card className="p-5">
-          <div className="flex items-center justify-between mb-3">
-            <div className="text-sm font-semibold text-foreground">
-              Transactions ({eventTransactions.length})
-            </div>
-            <div className="flex gap-2">
-              <Button size="sm" onClick={() => setShowClientPayment(true)}>
-                <Wallet className="w-3.5 h-3.5" /> Client Payment
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => setShowExpense(true)}>
-                <Receipt className="w-3.5 h-3.5" /> Expense
-              </Button>
-            </div>
-          </div>
-          {eventTransactions.length === 0 ? (
-            <EmptyState title="No transactions yet" description={`Record client payments or expenses for this ${term.workItemSingular.toLowerCase()}.`} />
-          ) : (
-            <div className="divide-y divide-border">
-              {eventTransactions.map((t) => (
-                <div key={t.id} className="flex items-center justify-between gap-3 py-2.5">
-                  <div className="min-w-0 flex-1">
-                    <div className="text-sm font-medium text-foreground">
-                      {t.transaction_type === "CLIENT_RECEIPT" ? "Client Payment" :
-                       t.transaction_type === "TEAM_PAYMENT" ? "Team Payment" : "Expense"}
-                    </div>
-                    <div className="text-xs text-muted-foreground">{formatEventDate(t.transaction_date)} · {t.payment_method}</div>
-                  </div>
-                  <div className={cn(
-                    "text-sm font-semibold shrink-0",
-                    t.transaction_type === "CLIENT_RECEIPT" ? "text-success" : "text-warning"
-                  )}>
-                    {t.transaction_type === "CLIENT_RECEIPT" ? "+" : "-"}{formatMoney(t.amount, currency)}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </Card>
+        <EventPaymentsTab
+          event={event}
+          transactions={transactions}
+          membersById={membersById}
+          client={client}
+          assignments={eventAssignments}
+          currency={currency}
+          onAddClientPayment={() => setShowClientPayment(true)}
+          onAddExpense={() => setShowExpense(true)}
+          onRefresh={load}
+        />
       )}
 
       {tab === "Milestones" && (

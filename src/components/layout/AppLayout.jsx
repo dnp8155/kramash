@@ -76,7 +76,8 @@ export default function AppLayout() {
         </main>
       </div>
 
-      <MobileNavigation />
+      {/* Hide bottom nav on event detail pages (mobile) for a focused view */}
+      {!/^\/events\/(?!new$)[^/]+$/.test(location.pathname) && <MobileNavigation />}
       <InstallPrompt />
     </div>
   );
