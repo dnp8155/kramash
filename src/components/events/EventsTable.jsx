@@ -96,23 +96,35 @@ function Row({ event, clientName, teamMap, serviceMap, assignmentsByEvent, recei
   return (
     <div className="border-b border-border last:border-0">
       <div
-        className="grid grid-cols-[auto_1fr] sm:grid-cols-[110px_1.4fr_1fr_1.2fr_120px_auto] gap-3 sm:gap-4 items-center px-4 py-3 hover:bg-muted/40 transition-colors cursor-pointer"
+        className="grid grid-cols-[1fr_auto] sm:grid-cols-[110px_1.4fr_1fr_1.2fr_120px_auto] gap-3 sm:gap-4 items-center px-4 py-3 hover:bg-muted/40 transition-colors cursor-pointer"
         onClick={onClick}
       >
+        {/* Mobile — stacked: ID / bullet+name / type · dates */}
+        <div className="min-w-0 sm:hidden">
+          <div className="text-xs text-muted-foreground font-medium">{shortId}</div>
+          <div className="flex items-center gap-2 mt-1">
+            {prefs?.showStatusDots && (
+              <span className={cn("w-2 h-2 rounded-full shrink-0", EVENT_STATUS[event.status]?.dot)} />
+            )}
+            <span className="text-sm font-semibold text-foreground truncate">{event.title}</span>
+          </div>
+          <div className="text-xs text-muted-foreground mt-0.5">{event.event_type} · {formatEventDates(event)}</div>
+        </div>
+
+        {/* Desktop columns */}
         <span className="text-sm text-muted-foreground font-medium hidden sm:block">{shortId}</span>
-        <div className="flex items-center gap-2.5 min-w-0">
+        <div className="hidden sm:flex items-center gap-2.5 min-w-0">
           {prefs?.showStatusDots && (
             <span className={cn("w-2 h-2 rounded-full shrink-0", EVENT_STATUS[event.status]?.dot)} />
           )}
           <div className="min-w-0">
             <div className="text-sm font-medium text-foreground truncate">{event.title}</div>
-            <div className="text-xs text-muted-foreground sm:hidden">{event.event_type} · {formatEventDates(event)}</div>
-            <div className="text-xs text-muted-foreground hidden sm:block">{clientName}</div>
+            <div className="text-xs text-muted-foreground">{clientName}</div>
           </div>
         </div>
         <span className="text-sm text-foreground hidden sm:block">{event.event_type}</span>
         <span className="text-sm text-muted-foreground hidden sm:block">{formatEventDates(event)}</span>
-        <StatusBadge status={event.status} />
+        <div className="hidden sm:flex"><StatusBadge status={event.status} /></div>
         <button
           className="text-muted-foreground hover:text-foreground justify-self-end"
           onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}
