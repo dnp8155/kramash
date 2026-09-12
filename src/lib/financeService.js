@@ -196,6 +196,33 @@ export async function loadExpenseCategories(workspaceId) {
   return list || [];
 }
 
+// ---- Backend function wrappers (void / edit with reconciliation) ----
+
+// Void (soft-delete) a transaction. Backend reconciles invoice + milestone.
+export async function voidTransaction(workspaceId, transactionId) {
+  const res = await base44.functions.invoke("voidTransaction", {
+    workspace_id: workspaceId,
+    transaction_id: transactionId
+  });
+  return res?.data || res;
+}
+
+// Edit a transaction (amount, date, method, reference, notes, FY).
+// Backend reconciles invoice + milestone after the edit.
+export async function editTransaction(workspaceId, transactionId, changes) {
+  const res = await base44.functions.invoke("editTransaction", {
+    workspace_id: workspaceId,
+    transaction_id: transactionId,
+    amount: changes.amount,
+    payment_method: changes.payment_method,
+    transaction_date: changes.transaction_date,
+    reference_number: changes.reference_number || "",
+    notes: changes.notes || "",
+    financial_year_id: changes.financial_year_id || ""
+  });
+  return res?.data || res;
+}
+
 // ---- Relationship security (client-side guard before create) ----
 
 // Verify event + client belong to the workspace and are linked.

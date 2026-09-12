@@ -762,6 +762,8 @@ export default function QuotationEditor() {
         grandTotal={totals.grandTotal}
         currency={currency}
         readOnly={readOnly}
+        eventStartDate={startDate}
+        eventEndDate={endDate}
       />
 
       {/* Presentation Settings */}

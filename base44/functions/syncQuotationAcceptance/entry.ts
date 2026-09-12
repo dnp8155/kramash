@@ -227,6 +227,23 @@ export default async function (req) {
         ? round2(value)
         : round2((grandTotal * value) / 100);
 
+      // Calculate actual due_date from due_date_type + event dates
+      let calculatedDueDate = m.due_date || "";
+      const dtype = m.due_date_type || "";
+      if (dtype === "on_signing") {
+        calculatedDueDate = quotation.quotation_date || "";
+      } else if (dtype === "event_day") {
+        calculatedDueDate = event.start_date || quotation.start_date || "";
+      } else if (dtype === "day_after_event") {
+        const endDate = event.end_date || event.start_date || quotation.end_date || quotation.start_date || "";
+        if (endDate) {
+          const d = new Date(endDate + "T00:00:00");
+          d.setDate(d.getDate() + 1);
+          calculatedDueDate = d.toISOString().slice(0, 10);
+        }
+      }
+      // dtype === "custom" → use m.due_date as-is
+
       // Find existing milestone by name (idempotent)
       const existing = (existingMilestones || []).find(
         (em) => em.name === m.name && em.quotation_id === quotation_id
@@ -242,7 +259,7 @@ export default async function (req) {
         milestone_value: value,
         due_amount: dueAmount,
         due_condition: m.due_condition || "",
-        due_date: m.due_date || "",
+        due_date: calculatedDueDate,
         financial_year_id: financialYearId
       };
 

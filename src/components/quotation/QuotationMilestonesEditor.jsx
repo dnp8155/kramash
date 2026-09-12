@@ -8,11 +8,34 @@ import { useWorkspace } from "@/lib/WorkspaceContext";
 import { Plus, Trash2, AlertTriangle, CalendarCheck } from "lucide-react";
 
 export default function QuotationMilestonesEditor({
-  schedule, setSchedule, grandTotal, currency, readOnly
+  schedule, setSchedule, grandTotal, currency, readOnly,
+  eventStartDate = "", eventEndDate = ""
 }) {
   const { workspace } = useWorkspace();
   const milestones = calculateMilestones(schedule, grandTotal);
   const validationError = validateMilestones(schedule, grandTotal);
+
+  const DUE_DATE_TYPES = [
+    { value: "on_signing", label: "On Signing" },
+    { value: "event_day", label: "Event Day" },
+    { value: "day_after_event", label: "Day After Event" },
+    { value: "custom", label: "Custom Date" }
+  ];
+
+  // Calculate the actual due_date from due_date_type + event dates
+  const computeDueDate = (m) => {
+    const dtype = m.due_date_type || "";
+    if (dtype === "custom") return m.due_date || "";
+    if (dtype === "on_signing") return ""; // set at sync time (quotation date)
+    if (dtype === "event_day") return eventStartDate || "";
+    if (dtype === "day_after_event") {
+      if (!eventEndDate) return "";
+      const d = new Date(eventEndDate + "T00:00:00");
+      d.setDate(d.getDate() + 1);
+      return d.toISOString().slice(0, 10);
+    }
+    return m.due_date || "";
+  };
 
   const templates = (() => {
     try {
@@ -33,7 +56,7 @@ export default function QuotationMilestonesEditor({
   };
 
   const addMilestone = () => {
-    setSchedule([...schedule, { name: "", type: "percent", value: 0, due_condition: "" }]);
+    setSchedule([...schedule, { name: "", type: "percent", value: 0, due_condition: "", due_date_type: "on_signing", due_date: "" }]);
   };
 
   const updateMilestone = (idx, field, value) => {
@@ -88,6 +111,24 @@ export default function QuotationMilestonesEditor({
                 <span className="text-[10px] text-muted-foreground uppercase">Due Condition</span>
                 <Input value={m.due_condition || ""} onChange={(e) => updateMilestone(idx, "due_condition", e.target.value)} disabled={readOnly} placeholder="e.g. On signing" className="h-8 text-xs" />
               </div>
+              <div className="flex flex-col gap-0.5 w-32">
+                <span className="text-[10px] text-muted-foreground uppercase">Due Date Type</span>
+                <Select value={m.due_date_type || "on_signing"} onChange={(e) => updateMilestone(idx, "due_date_type", e.target.value)} disabled={readOnly} className="h-8 text-xs py-0">
+                  {DUE_DATE_TYPES.map((d) => <option key={d.value} value={d.value}>{d.label}</option>)}
+                </Select>
+              </div>
+              {(m.due_date_type === "custom" || m.due_date) && (
+                <div className="flex flex-col gap-0.5 w-32">
+                  <span className="text-[10px] text-muted-foreground uppercase">Due Date</span>
+                  <Input
+                    type="date"
+                    value={m.due_date || ""}
+                    onChange={(e) => updateMilestone(idx, "due_date", e.target.value)}
+                    disabled={readOnly || m.due_date_type !== "custom"}
+                    className="h-8 text-xs"
+                  />
+                </div>
+              )}
               <div className="flex flex-col gap-0.5 w-24">
                 <span className="text-[10px] text-muted-foreground uppercase">Calculated</span>
                 <span className="text-sm font-medium tabular-nums h-8 flex items-center">{formatMoney(m.calculated_amount || 0, currency)}</span>

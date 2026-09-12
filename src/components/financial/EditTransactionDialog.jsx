@@ -12,6 +12,8 @@ import { resolveFYForDate } from "@/lib/financialYearService";
 import { useFinancialYear } from "@/hooks/useFinancialYear";
 import { useQueryClient } from "@tanstack/react-query";
 import { invalidateEntity } from "@/lib/queryInvalidation";
+import { editTransaction } from "@/lib/financeService";
+import { useWorkspace } from "@/lib/WorkspaceContext";
 
 // Edit an existing transaction: amount, date, method, reference, notes.
 // Type and parties are not editable (preserves audit integrity).
@@ -28,6 +30,7 @@ export default function EditTransactionDialog({
   const [error, setError] = useState("");
   const { fiscalYears } = useFinancialYear();
   const queryClient = useQueryClient();
+  const { workspaceId } = useWorkspace();
 
   useEffect(() => {
     if (open && transaction) {
@@ -67,7 +70,7 @@ export default function EditTransactionDialog({
         setSaving(false);
         return;
       }
-      const updated = await base44.entities.FinancialTransaction.update(transaction.id, {
+      const res = await editTransaction(workspaceId, transaction.id, {
         amount: Number(amount),
         transaction_date: date,
         payment_method: method,
@@ -75,8 +78,16 @@ export default function EditTransactionDialog({
         notes: notes.trim(),
         financial_year_id: fy.id
       });
+      const data = res?.data || res;
+      if (data?.error) {
+        setError(data.message || data.error);
+        setSaving(false);
+        return;
+      }
       invalidateEntity(queryClient, "FinancialTransaction");
-      onSaved?.(updated);
+      invalidateEntity(queryClient, "Invoice");
+      invalidateEntity(queryClient, "PaymentMilestone");
+      onSaved?.(data);
       onClose?.();
     } catch (err) {
       setError(err?.message || "Failed to update transaction. Please try again.");

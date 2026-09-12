@@ -4,6 +4,8 @@ import { base44 } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { invalidateEntity } from "@/lib/queryInvalidation";
+import { voidTransaction } from "@/lib/financeService";
+import { useWorkspace } from "@/lib/WorkspaceContext";
 import { formatMoney } from "@/utils/format";
 import { formatEventDate } from "@/lib/dates";
 import EditTransactionDialog from "@/components/financial/EditTransactionDialog";
@@ -27,7 +29,9 @@ export default function EventPaymentsTab({
 }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { workspaceId } = useWorkspace();
   const [editing, setEditing] = useState(null);
+  const [voiding, setVoiding] = useState(false);
 
   const activeTx = transactions.filter((t) => t.status === "ACTIVE");
 
@@ -47,14 +51,25 @@ export default function EventPaymentsTab({
   const typeLabel = (t) => (t.transaction_type === "CLIENT_RECEIPT" ? "Received" : "Paid");
 
   const handleDelete = async (t) => {
-    if (!confirm("Delete this transaction? This cannot be undone.")) return;
+    if (!confirm("Delete this transaction? This will recalculate invoice and milestone balances.")) return;
+    setVoiding(true);
     try {
-      await base44.entities.FinancialTransaction.delete(t.id);
+      const res = await voidTransaction(workspaceId, t.id);
+      const data = res?.data || res;
+      if (data?.error) {
+        toast({ title: data.message || data.error, variant: "destructive" });
+        return;
+      }
       invalidateEntity(queryClient, "FinancialTransaction");
-      toast({ title: "Transaction deleted" });
+      invalidateEntity(queryClient, "Invoice");
+      invalidateEntity(queryClient, "PaymentMilestone");
+      toast({ title: "Transaction voided", description: "Invoice and milestone balances recalculated." });
       onRefresh?.();
     } catch (e) {
-      toast({ title: "Failed to delete", description: e?.message, variant: "destructive" });
+      const msg = e?.data?.message || e?.data?.error || e?.message || "Failed to void transaction.";
+      toast({ title: msg, variant: "destructive" });
+    } finally {
+      setVoiding(false);
     }
   };
 

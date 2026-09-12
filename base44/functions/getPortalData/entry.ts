@@ -68,7 +68,7 @@ export default async function(req) {
       if (ws?.currency) currency = ws.currency;
     } catch (e) { /* default INR */ }
 
-    // Get actual client receipts for the event to determine milestone payment states
+    // Get actual client receipts for the event to determine total received
     let totalReceived = 0;
     if (q.event_id) {
       try {
@@ -80,18 +80,50 @@ export default async function(req) {
       } catch (e) { /* no transactions */ }
     }
 
-    // Calculate milestone states — mark Paid only when actual transactions cover the amount
+    // Calculate milestone states from PaymentMilestone records (source of truth).
+    // Each milestone's paid_amount is reconciled from milestone_id-linked transactions,
+    // NOT sequential allocation — a milestone is Paid only when its own linked
+    // payments cover its due_amount.
     const grandTotal = Number(q.grand_total) || 0;
-    const milestoneStates = [];
-    let remaining = totalReceived;
-    for (const m of milestones) {
-      if (!m.name) continue;
-      const amount = calculateMilestoneAmount(m, grandTotal);
-      if (amount > 0 && remaining >= amount) {
-        milestoneStates.push({ name: m.name, amount, due_date: m.due_date || "", paid: true });
-        remaining = round2(remaining - amount);
-      } else {
-        milestoneStates.push({ name: m.name, amount, due_date: m.due_date || "", paid: false });
+    let milestoneStates = [];
+
+    // Try to load PaymentMilestone records (created by syncQuotationAcceptance)
+    if (q.event_id) {
+      try {
+        const dbMilestones = await base44.asServiceRole.entities.PaymentMilestone.filter(
+          { workspace_id: q.workspace_id, event_id: q.event_id },
+          "sort_order", 100
+        );
+        if (dbMilestones && dbMilestones.length > 0) {
+          milestoneStates = dbMilestones.map((m) => {
+            const due = Number(m.due_amount) || 0;
+            const paid = Number(m.paid_amount) || 0;
+            return {
+              name: m.name || "",
+              amount: round2(due),
+              due_date: m.due_date || "",
+              paid: due > 0 && paid >= due,
+              paid_amount: round2(paid),
+              status: m.status || "upcoming"
+            };
+          });
+        }
+      } catch (e) { /* fall back to JSON */ }
+    }
+
+    // Fallback: if no PaymentMilestone records, parse from quotation JSON
+    if (milestoneStates.length === 0 && milestones.length > 0) {
+      let remaining = totalReceived;
+      for (const m of milestones) {
+        if (!m.name) continue;
+        const amount = calculateMilestoneAmount(m, grandTotal);
+        if (amount > 0 && remaining >= amount) {
+          milestoneStates.push({ name: m.name, amount, due_date: m.due_date || "", paid: true, paid_amount: amount, status: "paid" });
+          remaining = round2(remaining - amount);
+        } else {
+          milestoneStates.push({ name: m.name, amount, due_date: m.due_date || "", paid: false, paid_amount: round2(Math.max(0, remaining)), status: remaining > 0 ? "partially_paid" : "upcoming" });
+          remaining = 0;
+        }
       }
     }
 
