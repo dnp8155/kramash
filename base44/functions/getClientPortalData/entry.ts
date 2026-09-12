@@ -77,7 +77,7 @@ export default async function(req) {
 
     // Calculate summary totals
     const totalQuoted = (quotations || [])
-      .filter((q) => q.status === 'accepted' || q.status === 'finalized')
+      .filter((q) => q.status === 'accepted')
       .reduce((sum, q) => sum + (Number(q.grand_total) || 0), 0);
 
     const totalInvoiced = (invoices || [])

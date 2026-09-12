@@ -55,8 +55,7 @@ export default function ClientDetails() {
       } else {
         toast({
           title: "Invitation link ready",
-          description: "Email could not be sent automatically. Share the link below with your client.",
-          variant: "default"
+          description: "Share the registration link below with your client via WhatsApp or SMS."
         });
       }
     } catch (e) {

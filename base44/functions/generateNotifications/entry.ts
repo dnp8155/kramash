@@ -19,7 +19,7 @@ export default async function (req) {
     if (!user) return Response.json({ error: "Authentication required" }, { status: 401 });
 
     const body = await req.json().catch(() => ({}));
-    const workspaceId = body?.workspace_id || user.data?.active_workspace_id;
+    const workspaceId = body?.workspace_id;
 
     if (!workspaceId) {
       return Response.json({ error: "No active workspace" }, { status: 400 });
@@ -80,18 +80,22 @@ export default async function (req) {
     });
 
     for (const ev of events || []) {
-      if (!ev.start_date) continue;
-      if (ev.start_date >= todayISO && ev.start_date <= in48h) {
+      const evDates = (ev.event_dates && ev.event_dates.length > 0)
+        ? ev.event_dates
+        : (ev.start_date ? [ev.start_date] : []);
+      if (evDates.length === 0) continue;
+      const firstDate = evDates.slice().sort()[0];
+      if (firstDate >= todayISO && firstDate <= in48h) {
         for (const m of members) {
           const key = `${m.user_id}:event_reminder:${ev.id}`;
           if (existingKeys.has(key)) { skipped++; continue; }
-          const is24 = ev.start_date <= in24h;
+          const is24 = firstDate <= in24h;
           await base44.asServiceRole.entities.Notification.create({
             workspace_id: workspaceId,
             user_id: m.user_id,
             type: "event_reminder",
             title: is24 ? reminderTomorrow : reminderComing,
-            message: `"${ev.title}" ${reminderVerb} ${ev.start_date}${ev.venue ? ` at ${ev.venue}` : ""}.`,
+            message: `"${ev.title}" ${reminderVerb} ${firstDate}${ev.venue ? ` at ${ev.venue}` : ""}.`,
             related_entity_type: "event",
             related_entity_id: ev.id,
             read: false

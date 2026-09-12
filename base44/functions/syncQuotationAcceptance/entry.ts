@@ -64,7 +64,7 @@ export default async function (req) {
       title: quotation.project_title || eventSnapshot?.title || clientSnapshot?.name
         ? `${clientSnapshot?.name || ""} — ${quotation.project_title || eventSnapshot?.title || quotation.quotation_number}`
         : quotation.quotation_number,
-      event_type: quotation.category || "",
+      event_type: eventSnapshot?.event_type || "",
       start_date: quotation.start_date || eventSnapshot?.start_date || quotation.quotation_date,
       end_date: quotation.end_date || eventSnapshot?.end_date || quotation.start_date || quotation.quotation_date,
       event_dates: eventDates,

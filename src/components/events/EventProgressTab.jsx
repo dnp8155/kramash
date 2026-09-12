@@ -221,7 +221,8 @@ export default function EventProgressTab({
         <div className="text-sm font-semibold text-foreground mb-4">Status Timeline</div>
         <div className="flex items-center gap-2 flex-wrap">
           {STAGES.map((stage, i) => {
-            const isDone = i < currentStageIndex;
+            const isCancelled = event?.status === "cancelled";
+            const isDone = !isCancelled && i < currentStageIndex;
             const isCurrent = i === currentStageIndex;
             return (
               <div key={stage.key} className="flex items-center gap-2">

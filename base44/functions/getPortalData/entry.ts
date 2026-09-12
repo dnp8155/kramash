@@ -142,6 +142,9 @@ export default async function(req) {
         context_type: q.context_type || "",
         event_date: event?.start_date || q.start_date || "",
         event_end_date: event?.end_date || q.end_date || "",
+        event_dates: Array.isArray(event?.event_dates) && event.event_dates.length > 0
+          ? event.event_dates
+          : [event?.start_date || q.start_date || ""].filter(Boolean),
         venue: event?.venue || "",
         venue_address: event?.venue_address || ""
       },

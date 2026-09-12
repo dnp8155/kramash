@@ -208,6 +208,7 @@ export function buildEventSnapshot(event: any): string {
     event_type: event.event_type || "",
     start_date: event.start_date || "",
     end_date: event.end_date || "",
+    event_dates: Array.isArray(event.event_dates) ? event.event_dates : [],
     venue: event.venue || "",
     venue_address: event.venue_address || ""
   });

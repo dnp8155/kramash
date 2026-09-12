@@ -25,6 +25,13 @@ function formatDateRange(start, end) {
   return `${formatDate(start)} – ${formatDate(end)}`;
 }
 
+function formatSelectedDates(dates, start, end) {
+  if (dates && dates.length > 0) {
+    return dates.map(formatDate).join(", ");
+  }
+  return formatDateRange(start, end);
+}
+
 function categoryLabel(cat) {
   const map = {
     PHOTOGRAPHY: "Photography / Videography",
@@ -267,7 +274,7 @@ export default function ClientProjectPortal() {
           <div className="flex flex-wrap gap-x-5 gap-y-2 mt-3 text-sm text-muted-foreground">
             <span className="inline-flex items-center gap-1.5">
               <Calendar className="w-4 h-4 shrink-0" />
-              {formatDateRange(project.event_date, project.event_end_date)}
+              {formatSelectedDates(project.event_dates, project.event_date, project.event_end_date)}
             </span>
             {project.venue && (
               <span className="inline-flex items-center gap-1.5">
