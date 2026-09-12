@@ -36,19 +36,20 @@ export default function FAQ() {
   const [open, setOpen] = useState(0);
 
   return (
-    <section id="faq" className="py-20 sm:py-24 border-t border-border">
+    <section id="faq" className="py-20 sm:py-24 border-t border-[#E5E5E5] bg-[#F9F9F9]">
       <div className="mx-auto max-w-3xl px-4 sm:px-6">
-        <div className="text-center mb-12">
-          <h2 className="font-heading text-3xl sm:text-5xl font-semibold tracking-tight text-foreground">
+        <div className="mb-12">
+          <h2 className="font-heading text-3xl sm:text-4xl font-semibold tracking-tight text-foreground mb-3">
             Frequently asked questions.
           </h2>
+          <p className="text-[#666] text-base">Everything else you might want to know.</p>
         </div>
 
         <div className="space-y-3">
           {faqs.map((f, i) => (
             <div
               key={i}
-              className="rounded-2xl border border-border bg-card shadow-xs overflow-hidden"
+              className="rounded-2xl border border-[#E5E5E5] bg-white overflow-hidden"
             >
               <button
                 onClick={() => setOpen(open === i ? -1 : i)}
@@ -57,13 +58,13 @@ export default function FAQ() {
               >
                 <span className="font-heading text-sm font-semibold text-foreground">{f.q}</span>
                 <ChevronDown
-                  className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${
+                  className={`w-4 h-4 text-[#999] shrink-0 transition-transform ${
                     open === i ? "rotate-180" : ""
                   }`}
                 />
               </button>
               {open === i && (
-                <div className="px-6 pb-5 text-sm text-muted-foreground leading-relaxed">
+                <div className="px-6 pb-5 text-sm text-[#666] leading-relaxed">
                   {f.a}
                 </div>
               )}

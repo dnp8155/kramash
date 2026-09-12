@@ -26,25 +26,25 @@ export default function DashboardPreview({ terminology: term }) {
   ];
 
   const toneStyles = {
-    primary: "bg-primary/10 text-primary",
-    purple: "bg-muted text-foreground",
-    red: "bg-muted text-foreground",
+    primary: "bg-[#F58220]/10 text-[#F58220]",
+    purple: "bg-[#F9F9F9] text-foreground",
+    red: "bg-[#F9F9F9] text-foreground",
   };
 
   return (
     <div className="relative max-w-5xl mx-auto">
       {/* Browser frame */}
-      <div className="rounded-3xl border border-border bg-card shadow-xl overflow-hidden">
+      <div className="rounded-2xl border border-[#E5E5E5] bg-white shadow-xl overflow-hidden">
         {/* Browser bar */}
-        <div className="h-10 bg-[#F1F1F2] border-b border-border flex items-center px-5 gap-2">
+        <div className="h-10 bg-[#F9F9F9] border-b border-[#E5E5E5] flex items-center px-5 gap-2">
           <div className="w-3 h-3 rounded-full bg-[#FF5F56]" />
           <div className="w-3 h-3 rounded-full bg-[#FFBD2E]" />
           <div className="w-3 h-3 rounded-full bg-[#27C93F]" />
-          <div className="ml-3 flex-1 max-w-xs h-5 rounded-md bg-card border border-border/60 text-[10px] text-muted-foreground flex items-center px-2">
+          <div className="ml-3 flex-1 max-w-xs h-5 rounded-md bg-white border border-[#E5E5E5] text-[10px] text-[#999] flex items-center px-2">
             app.kramasha.com/dashboard
           </div>
-          <div className="hidden sm:flex items-center gap-1.5 text-[10px] font-semibold text-success bg-success/10 px-2.5 py-1 rounded-full">
-            <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
+          <div className="hidden sm:flex items-center gap-1.5 text-[10px] font-semibold text-foreground bg-[#F9F9F9] px-2.5 py-1 rounded-full border border-[#E5E5E5]">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#F58220]" />
             Good morning, Aarav
           </div>
         </div>
@@ -52,20 +52,20 @@ export default function DashboardPreview({ terminology: term }) {
         {/* Content: sidebar + main */}
         <div className="flex h-auto sm:h-[400px]">
           {/* Sidebar */}
-          <div className="w-44 bg-sidebar shrink-0 p-3 hidden sm:flex flex-col gap-0.5">
+          <div className="w-44 bg-[#1A1A1A] shrink-0 p-3 hidden sm:flex flex-col gap-0.5">
             <div className="flex items-center gap-2 px-1.5 py-2 mb-2">
               <div className="w-7 h-7 rounded-lg bg-white flex items-center justify-center shrink-0 overflow-hidden">
                 <Logo size={18} />
               </div>
-              <span className="text-sidebar-foreground text-xs font-bold">Kramasha</span>
+              <span className="text-white text-xs font-bold">Kramasha</span>
             </div>
             {navItems.map((item, i) => (
               <div
                 key={i}
                 className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs transition-colors ${
                   item.active
-                    ? "bg-sidebar-primary/20 text-sidebar-primary font-medium"
-                    : "text-sidebar-muted hover:text-sidebar-foreground"
+                    ? "bg-[#F58220] text-white font-medium"
+                    : "text-[#999] hover:text-white"
                 }`}
               >
                 <item.icon className="w-3.5 h-3.5 shrink-0" />
@@ -75,16 +75,16 @@ export default function DashboardPreview({ terminology: term }) {
           </div>
 
           {/* Main */}
-          <div className="flex-1 p-5 overflow-hidden bg-background">
-            <div className="text-xs text-muted-foreground mb-4">
+          <div className="flex-1 p-5 overflow-hidden bg-white">
+            <div className="text-xs text-[#999] mb-4">
               Good morning, Aarav · Saturday, 12 Oct 2026
             </div>
             {/* Stat cards */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
               {stats.map((s, i) => (
-                <div key={i} className="rounded-2xl border border-border bg-[#F7F7F8] p-4 flex items-center justify-between">
+                <div key={i} className="rounded-2xl border border-[#E5E5E5] bg-[#F7F7F8] p-4 flex items-center justify-between">
                   <div>
-                    <div className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">{s.label}</div>
+                    <div className="text-[10px] text-[#999] uppercase tracking-wide font-medium">{s.label}</div>
                     <div className="text-xl font-bold text-foreground mt-1 leading-none">{s.value}</div>
                   </div>
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center ${toneStyles[s.tone]}`}>
@@ -94,18 +94,18 @@ export default function DashboardPreview({ terminology: term }) {
               ))}
             </div>
             {/* Event list */}
-            <div className="rounded-2xl border border-border bg-[#F7F7F8] p-4 mb-3">
-              <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+            <div className="rounded-2xl border border-[#E5E5E5] bg-[#F7F7F8] p-4 mb-3">
+              <div className="text-[11px] font-semibold text-[#999] uppercase tracking-wider mb-3">
                 Upcoming {term.workItemPlural}
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                 {events.map((e, i) => (
-                  <div key={i} className="rounded-xl border border-border bg-card p-3">
+                  <div key={i} className="rounded-xl border border-[#E5E5E5] bg-white p-3">
                     <div className="text-xs font-semibold text-foreground">{e.title}</div>
-                    <div className="text-[10px] text-muted-foreground mt-1 flex items-center gap-1">
+                    <div className="text-[10px] text-[#999] mt-1 flex items-center gap-1">
                       <MapPin className="w-2.5 h-2.5" /> {e.venue}
                     </div>
-                    <div className={`text-[10px] font-medium mt-2 ${e.status === "In Progress" ? "text-warning" : "text-primary"}`}>
+                    <div className={`text-[10px] font-medium mt-2 ${e.status === "In Progress" ? "text-[#999]" : "text-[#F58220]"}`}>
                       {e.date}
                     </div>
                   </div>

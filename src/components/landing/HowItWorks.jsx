@@ -1,48 +1,49 @@
 import React from "react";
-import { Rocket, Layers, Receipt } from "lucide-react";
 
 const steps = [
   {
-    icon: Rocket,
     step: "01",
-    title: "Set up your workspace",
-    desc: "Choose your business category, configure services and set up your team roles.",
+    title: "Capture leads",
+    desc: "Log every enquiry, track follow-ups and convert qualified leads into clients.",
   },
   {
-    icon: Layers,
     step: "02",
-    title: "Add clients and work",
-    desc: "Create projects or events, assign team members and keep every detail connected.",
+    title: "Manage projects",
+    desc: "Plan events, assign your team, send quotations and schedule every detail.",
   },
   {
-    icon: Receipt,
     step: "03",
-    title: "Quote, collect and track",
-    desc: "Create quotations, record payments and understand your real profitability.",
+    title: "Deliver & grow",
+    desc: "Collect payments, track profitability and let clients follow along in their portal.",
   },
 ];
 
 export default function HowItWorks() {
   return (
-    <section id="how-it-works" className="py-20 sm:py-24 border-t border-border">
+    <section id="how-it-works" className="py-20 sm:py-24 border-t border-[#E5E5E5]">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="max-w-2xl mx-auto text-center mb-14">
-          <h2 className="font-heading text-3xl sm:text-5xl font-semibold tracking-tight text-foreground mb-4">
-            From setup to getting paid in three simple steps.
+        <div className="max-w-2xl mb-14">
+          <h2 className="font-heading text-3xl sm:text-4xl font-semibold tracking-tight text-foreground mb-3">
+            From setup to getting paid.
           </h2>
+          <p className="text-[#666] text-base sm:text-lg leading-relaxed">
+            Three steps. No spreadsheet gymnastics required.
+          </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
-          {steps.map((s) => (
-            <div key={s.step} className="bg-card rounded-3xl border border-border p-8 text-center shadow-sm hover-lift">
-              <div className="text-primary font-heading text-4xl font-semibold mb-5 pb-4 border-b border-border inline-block px-4">
-                {s.step}
-              </div>
-              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-5">
-                <s.icon className="w-7 h-7 text-primary" />
+        <div className="grid md:grid-cols-3 gap-8 lg:gap-12">
+          {steps.map((s, i) => (
+            <div key={s.step} className="relative">
+              {i < steps.length - 1 && (
+                <div className="hidden md:block absolute top-7 left-[calc(50%+2rem)] right-[-1.5rem] h-px bg-[#E5E5E5]" />
+              )}
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-14 h-14 rounded-2xl bg-[#F58220] text-white flex items-center justify-center font-heading text-xl font-semibold shrink-0">
+                  {s.step}
+                </div>
               </div>
               <h3 className="font-heading text-xl font-semibold text-foreground mb-2">{s.title}</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed max-w-xs mx-auto">{s.desc}</p>
+              <p className="text-sm text-[#666] leading-relaxed max-w-xs">{s.desc}</p>
             </div>
           ))}
         </div>

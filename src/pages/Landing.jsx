@@ -3,13 +3,9 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import Logo from "@/components/common/Logo";
 import Hero from "@/components/landing/Hero";
-import ProductProof from "@/components/landing/ProductProof";
-import IndustrySection from "@/components/landing/IndustrySection";
-import ProblemSolution from "@/components/landing/ProblemSolution";
 import Features from "@/components/landing/Features";
-import Showcase from "@/components/landing/Showcase";
 import HowItWorks from "@/components/landing/HowItWorks";
-import TrustSection from "@/components/landing/TrustSection";
+import ComparisonTable from "@/components/landing/ComparisonTable";
 import Pricing from "@/components/landing/Pricing";
 import FAQ from "@/components/landing/FAQ";
 import CTA from "@/components/landing/CTA";
@@ -51,7 +47,7 @@ export default function Landing() {
             </Link>
             <Link
               to="/register"
-              className="h-9 px-5 inline-flex items-center justify-center text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary-hover rounded-full shadow-sm transition-all"
+              className="h-9 px-5 inline-flex items-center justify-center text-sm font-semibold bg-[#F58220] text-white hover:bg-[#E0741F] rounded-full shadow-sm transition-all"
             >
               Start Free
             </Link>
@@ -60,13 +56,9 @@ export default function Landing() {
       </header>
       <main>
         <Hero />
-        <ProductProof />
-        <IndustrySection />
-        <ProblemSolution />
         <Features />
-        <Showcase />
         <HowItWorks />
-        <TrustSection />
+        <ComparisonTable />
         <Pricing />
         <FAQ />
         <CTA />

@@ -116,17 +116,17 @@ export default function Pricing() {
                 key={plan.id}
                 className={`relative rounded-3xl border p-8 sm:p-10 flex flex-col transition-all ${
                   isPopular
-                    ? "border-primary bg-card shadow-xl shadow-primary/10 lg:scale-[1.03] border-2"
-                    : "border-border bg-card shadow-sm"
+                    ? "border-[#F58220] bg-card shadow-xl shadow-[#F58220]/10 lg:scale-[1.03] border-2"
+                    : "border-[#E5E5E5] bg-card shadow-sm"
                 }`}
               >
                 {isPopular && (
-                  <div className="absolute -top-3.5 right-8 inline-flex items-center gap-1.5 rounded-full bg-primary text-primary-foreground px-3 py-1 text-[10px] font-semibold uppercase tracking-wider shadow-md">
+                  <div className="absolute -top-3.5 right-8 inline-flex items-center gap-1.5 rounded-full bg-[#F58220] text-white px-3 py-1 text-[10px] font-semibold uppercase tracking-wider shadow-md">
                     <Sparkles className="w-3 h-3" />
                     Most Popular
                   </div>
                 )}
-                <span className={`text-xs font-semibold uppercase tracking-wider block mb-2 ${isPopular ? "text-primary" : "text-muted-foreground"}`}>
+                <span className={`text-xs font-semibold uppercase tracking-wider block mb-2 ${isPopular ? "text-[#F58220]" : "text-[#999]"}`}>
                   {plan.name}
                 </span>
                 <div className="flex items-baseline gap-1.5 mb-4">
@@ -143,8 +143,8 @@ export default function Pricing() {
                   to="/register"
                   className={`pricing_plan_select h-12 w-full inline-flex items-center justify-center gap-2 text-sm font-medium rounded-full transition-all mb-8 ${
                     isPopular
-                      ? "bg-primary text-primary-foreground hover:bg-primary-hover shadow-md shadow-primary/25"
-                      : "bg-muted text-foreground hover:bg-muted/70"
+                      ? "bg-[#F58220] text-white hover:bg-[#E0741F] shadow-md shadow-[#F58220]/25"
+                      : "bg-[#F9F9F9] text-foreground hover:bg-[#F1F1F1] border border-[#E5E5E5]"
                   }`}
                 >
                   {price === 0 ? "Start Free" : `Choose ${plan.name}`}
@@ -154,7 +154,7 @@ export default function Pricing() {
                 <ul className="space-y-3 border-t border-border pt-6">
                   {limitEntries.map((entry, j) => (
                     <li key={j} className="flex items-center gap-2.5 text-sm text-foreground">
-                      <Check className="w-4 h-4 text-primary shrink-0" />
+                      <Check className="w-4 h-4 text-[#F58220] shrink-0" />
                       <span className="font-medium">{entry.value}</span>
                       <span className="text-muted-foreground">{entry.label}</span>
                     </li>
