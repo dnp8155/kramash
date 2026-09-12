@@ -1,53 +1,56 @@
 import React from "react";
-import { Check } from "lucide-react";
+import { Link } from "react-router-dom";
+import { ArrowRight } from "lucide-react";
 import DashboardPreview from "@/components/landing/previews/DashboardPreview";
-import QuotationPreview from "@/components/landing/previews/QuotationPreview";
+import LeadsCRMPreview from "@/components/landing/previews/LeadsCRMPreview";
+import ProjectsPreview from "@/components/landing/previews/ProjectsPreview";
+import FinancePreview from "@/components/landing/previews/FinancePreview";
 import TeamPreview from "@/components/landing/previews/TeamPreview";
-import FinancialPreview from "@/components/landing/previews/FinancialPreview";
-import { getBusinessTerminology } from "@/lib/businessTerminology";
 
 const blocks = [
   {
-    eyebrow: "Dashboard",
-    title: "Your business at a glance.",
-    desc: "Track revenue, active team, outstanding dues and upcoming projects — all on one clean dashboard.",
-    points: ["Live revenue & expense stats", "Upcoming events overview", "Scheduling conflict alerts"],
-    Preview: () => <DashboardPreview terminology={getBusinessTerminology({ business_category: "PHOTOGRAPHY" })} />,
+    eyebrow: "DASHBOARD",
+    title: "Booked, collected, and still owed — on one screen.",
+    desc: "Total revenue against what has actually arrived, what is still to collect, and exactly which of your team you owe money to today.",
+    Preview: DashboardPreview,
   },
   {
-    eyebrow: "Quotations",
-    title: "Branded quotations that close deals.",
-    desc: "Build professional quotations with line items, packages, GST breakdowns and payment milestones. Clients sign online.",
-    points: ["GST-ready with CGST/SGST & IGST", "Online acceptance & e-signature", "Polished PDF templates"],
-    Preview: QuotationPreview,
+    eyebrow: "LEAD CRM",
+    title: "Nobody falls through the cracks.",
+    desc: "Every enquiry with its stage, source and owner, and overdue follow-ups in red so the ones going cold are the ones you see first.",
+    Preview: LeadsCRMPreview,
   },
   {
-    eyebrow: "Team",
+    eyebrow: "PROJECTS",
+    title: "Package, received, balance and profit, per event.",
+    desc: "One row per booking showing what they agreed, what they have paid, what is outstanding and what you actually kept.",
+    Preview: ProjectsPreview,
+  },
+  {
+    eyebrow: "FINANCE",
+    title: "Revenue, wages, expenses, overhead, net profit.",
+    desc: "A real profit and loss statement built from your own bookings and payments, not a spreadsheet you maintain by hand.",
+    Preview: FinancePreview,
+  },
+  {
+    eyebrow: "TEAM",
     title: "Know who's free, who's booked.",
     desc: "Visual availability calendar shows every team member's schedule. Detect double-bookings before they happen.",
-    points: ["Weekly availability grid", "Conflict detection", "Role-based assignments"],
     Preview: TeamPreview,
-  },
-  {
-    eyebrow: "Financials",
-    title: "Real numbers, real profit.",
-    desc: "Track every receipt, team payment and expense. See net profit per project and across your financial year.",
-    points: ["Revenue & expense tracking", "Per-project profitability", "Financial year management"],
-    Preview: FinancialPreview,
   },
 ];
 
 export default function Showcase() {
   return (
-    <section id="showcase" className="py-20 sm:py-28 border-t border-[#E5E5E5]">
+    <section id="showcase" className="py-20 sm:py-28 border-t border-[#E5E5E5] bg-white">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="max-w-2xl mx-auto text-center mb-16">
-          <div className="inline-flex items-center gap-2 rounded-full border border-[#E5E5E5] bg-[#F9F9F9] px-3.5 py-1.5 text-xs font-medium text-[#666] mb-5">
+          <div className="inline-flex items-center gap-2 rounded-full border border-[#E5E5E5] bg-white px-3.5 py-1.5 text-xs font-medium text-[#666] mb-5">
             <span className="w-1.5 h-1.5 rounded-full bg-[#F58220]" />
             See it in action
           </div>
-          <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight text-foreground mb-4 leading-tight">
-            Built for how service businesses actually work.
+          <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight text-[#0B2125] mb-4 leading-tight">
+            Polished, purpose-built screens for every part of your day.
           </h2>
         </div>
 
@@ -59,23 +62,22 @@ export default function Showcase() {
                 key={b.eyebrow}
                 className={`grid lg:grid-cols-2 gap-10 lg:gap-16 items-center ${reversed ? "lg:[&>*:first-child]:order-2" : ""}`}
               >
+                {/* Text */}
                 <div>
                   <div className="text-xs font-semibold uppercase tracking-wider text-[#F58220] mb-3">{b.eyebrow}</div>
-                  <h3 className="font-heading text-2xl sm:text-3xl font-semibold tracking-tight text-foreground mb-4 leading-tight">
+                  <h3 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-semibold tracking-tight text-[#0B2125] mb-4 leading-tight">
                     {b.title}
                   </h3>
-                  <p className="text-[#666] text-base leading-relaxed mb-6">{b.desc}</p>
-                  <ul className="space-y-3">
-                    {b.points.map((p) => (
-                      <li key={p} className="flex items-center gap-3 text-sm text-foreground">
-                        <div className="w-5 h-5 rounded-full bg-[#F58220]/10 flex items-center justify-center shrink-0">
-                          <Check className="w-3 h-3 text-[#F58220]" strokeWidth={2.5} />
-                        </div>
-                        {p}
-                      </li>
-                    ))}
-                  </ul>
+                  <p className="text-[#666] text-base leading-relaxed mb-6 max-w-md">{b.desc}</p>
+                  <Link
+                    to="/register"
+                    className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#F58220] hover:gap-2.5 transition-all"
+                  >
+                    Try it free
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
                 </div>
+                {/* Mockup */}
                 <div className="relative">
                   <div className="absolute -inset-3 bg-[#F58220]/5 rounded-3xl blur-2xl" />
                   <div className="relative">

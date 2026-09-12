@@ -30,7 +30,7 @@ const industries = [
 
 export default function Industries() {
   return (
-    <section id="industries" className="py-20 sm:py-28 border-t border-[#E5E5E5] bg-[#F9F9F9]">
+    <section id="industries" className="py-20 sm:py-28 border-t border-[#E5E5E5] bg-white">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="max-w-2xl mb-14">
           <div className="inline-flex items-center gap-2 rounded-full border border-[#E5E5E5] bg-white px-3.5 py-1.5 text-xs font-medium text-[#666] mb-5">

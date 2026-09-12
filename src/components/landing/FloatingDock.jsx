@@ -2,18 +2,18 @@ import React, { useEffect, useRef, useState } from "react";
 import { Layers, Compass, Eye, Tag, HelpCircle } from "lucide-react";
 
 const TABS = [
-  { id: "features", label: "Features", icon: Layers },
-  { id: "showcase", label: "Showcase", icon: Eye },
+  { id: "showcase", label: "Features", icon: Eye },
+  { id: "how-it-works", label: "How", icon: Layers },
   { id: "industries", label: "Industries", icon: Compass },
   { id: "pricing", label: "Pricing", icon: Tag },
   { id: "faq", label: "FAQ", icon: HelpCircle },
 ];
 
 export default function FloatingDock() {
-  const [active, setActive] = useState("features");
+  const [active, setActive] = useState("showcase");
   const pillRef = useRef(null);
   const btnRefs = useRef({});
-  const activeRef = useRef("features");
+  const activeRef = useRef("showcase");
 
   const movePill = (id) => {
     const btn = btnRefs.current[id];

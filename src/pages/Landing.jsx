@@ -3,7 +3,6 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import Logo from "@/components/common/Logo";
 import Hero from "@/components/landing/Hero";
-import Features from "@/components/landing/Features";
 import Showcase from "@/components/landing/Showcase";
 import HowItWorks from "@/components/landing/HowItWorks";
 import Industries from "@/components/landing/Industries";
@@ -58,7 +57,6 @@ export default function Landing() {
       </header>
       <main>
         <Hero />
-        <Features />
         <Showcase />
         <HowItWorks />
         <Industries />
