@@ -2,14 +2,13 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Check, ArrowRight, Sparkles, Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import Reveal from "@/components/landing/Reveal";
 
 const BOOLEAN_KEYS = new Set(["pdf_export_enabled", "reminders_enabled"]);
 
 function formatLimitValue(key, value) {
   if (value === undefined || value === null) return null;
-  if (BOOLEAN_KEYS.has(key)) {
-    return value === true || value === "true" ? "Included" : null;
-  }
+  if (BOOLEAN_KEYS.has(key)) return value === true || value === "true" ? "Included" : null;
   const num = parseInt(String(value), 10);
   if (num >= 999999) return "Unlimited";
   return String(num);
@@ -58,7 +57,7 @@ export default function Pricing() {
                 : parseInt(String(l.limit_value), 10);
             });
 
-          return { plan, monthly, limits, pricings: planPricings };
+          return { plan, pricings: planPricings, monthly, limits };
         });
 
         setPlanData(data);
@@ -72,9 +71,9 @@ export default function Pricing() {
 
   if (loading) {
     return (
-      <section id="pricing" className="py-20 sm:py-28 border-t border-[#E5E5E5]">
+      <section id="pricing" className="py-20 sm:py-28 bg-[#FAF8F4]">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 text-center">
-          <Loader2 className="w-6 h-6 text-[#999] animate-spin mx-auto" />
+          <Loader2 className="w-6 h-6 text-[#C8A95E] animate-spin mx-auto" />
         </div>
       </section>
     );
@@ -82,26 +81,23 @@ export default function Pricing() {
 
   if (planData.length === 0) return null;
 
-  const popularIndex = planData.length >= 3 ? Math.floor(planData.length / 2) : 0;
+  const popularIndex = planData.length >= 2 ? 1 : 0;
 
   return (
-    <section id="pricing" className="py-20 sm:py-28 border-t border-[#E5E5E5]">
+    <section id="pricing" className="py-20 sm:py-28 bg-[#FAF8F4]">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="max-w-2xl mx-auto text-center mb-16">
-          <div className="inline-flex items-center gap-2 rounded-full border border-[#E5E5E5] bg-[#F9F9F9] px-3.5 py-1.5 text-xs font-medium text-[#666] mb-5">
-            <span className="w-1.5 h-1.5 rounded-full bg-logo-gradient" />
-            Pricing
-          </div>
-          <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight text-foreground mb-4 leading-tight">
+        <Reveal className="max-w-2xl mx-auto text-center mb-14">
+          <div className="text-xs font-semibold uppercase tracking-wider text-[#C8A95E] mb-4">Pricing</div>
+          <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight text-[#1A1A1A] mb-4 leading-tight">
             Plans that fit your business.
           </h2>
-          <p className="text-[#666] text-base sm:text-lg leading-relaxed">
+          <p className="text-[#8A8580] text-base sm:text-lg leading-relaxed">
             Start free, upgrade when you grow. No hidden fees, cancel anytime.
           </p>
-        </div>
+        </Reveal>
 
         <div className={`grid gap-6 ${planData.length === 3 ? "lg:grid-cols-3" : "sm:grid-cols-2 max-w-3xl mx-auto"}`}>
-          {planData.map(({ plan, monthly, limits }, i) => {
+          {planData.map(({ plan, pricings, monthly, limits }, i) => {
             const isPopular = i === popularIndex;
             const price = monthly?.price || 0;
             const currency = monthly?.currency || "INR";
@@ -116,64 +112,70 @@ export default function Pricing() {
               .filter(Boolean);
 
             return (
-              <div
-              key={plan.id}
-              className={`relative rounded-2xl border p-6 sm:p-8 flex flex-col transition-all ${
-                isPopular
-                  ? "border-[#F58220] bg-white shadow-xl shadow-[#F58220]/10 lg:scale-[1.03] border-2"
-                  : "border-[#E5E5E5] bg-white shadow-sm"
-              }`}
-              >
-                {isPopular && (
-                  <div className="absolute -top-3.5 right-8 inline-flex items-center gap-1.5 rounded-full bg-logo-gradient text-white px-3 py-1 text-[10px] font-semibold uppercase tracking-wider shadow-md">
-                    <Sparkles className="w-3 h-3" />
-                    Most Popular
-                  </div>
-                )}
-                <span className={`text-xs font-semibold uppercase tracking-wider block mb-2 ${isPopular ? "text-logo-gradient" : "text-[#999]"}`}>
-                  {plan.name}
-                </span>
-                <div className="flex items-baseline gap-1.5 mb-4">
-                  <span className="font-heading text-4xl font-semibold text-foreground">
-                    {price === 0 ? "Free" : `${currency === "INR" ? "₹" : ""}${price.toLocaleString("en-IN")}`}
+              <Reveal key={plan.id} delay={i * 80}>
+                <div className={`relative rounded-2xl border p-6 sm:p-8 flex flex-col transition-all h-full ${
+                  isPopular
+                    ? "border-[#C8A95E] bg-white shadow-xl lg:scale-[1.03] border-2"
+                    : "border-[#E8E3DB] bg-white shadow-sm"
+                }`}>
+                  {isPopular && (
+                    <div className="absolute -top-3.5 right-8 inline-flex items-center gap-1.5 rounded-full bg-[#C8A95E] text-white px-3 py-1 text-[10px] font-semibold uppercase tracking-wider shadow-md">
+                      <Sparkles className="w-3 h-3" />
+                      Most Popular
+                    </div>
+                  )}
+                  <span className={`text-xs font-semibold uppercase tracking-wider block mb-2 ${isPopular ? "text-[#C8A95E]" : "text-[#8A8580]"}`}>
+                    {plan.name}
                   </span>
-                  {price > 0 && <span className="text-sm font-normal text-[#999]">{cycleLabel}</span>}
+                  <div className="flex items-baseline gap-1.5 mb-4">
+                    <span className="font-heading text-4xl font-semibold text-[#1A1A1A]">
+                      {price === 0 ? "Free" : `${currency === "INR" ? "₹" : ""}${price.toLocaleString("en-IN")}`}
+                    </span>
+                    {price > 0 && <span className="text-sm font-normal text-[#8A8580]">{cycleLabel}</span>}
+                  </div>
+                  {plan.description && (
+                    <p className="text-sm text-[#8A8580] mb-8">{plan.description}</p>
+                  )}
+
+                  <Link
+                    to="/register"
+                    className={`pricing_plan_select h-12 w-full inline-flex items-center justify-center gap-2 text-sm font-medium rounded-full transition-all mb-8 ${
+                      isPopular
+                        ? "bg-[#1A1A1A] text-white hover:bg-[#C8A95E]"
+                        : "bg-[#F5F3EF] text-[#1A1A1A] hover:bg-[#E8E3DB] border border-[#E8E3DB]"
+                    }`}
+                  >
+                    {price === 0 ? "Start Free" : `Choose ${plan.name}`}
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+
+                  <ul className="space-y-3 border-t border-[#E8E3DB] pt-6">
+                    {limitEntries.map((entry, j) => (
+                      <li key={j} className="flex items-center gap-2.5 text-sm text-[#1A1A1A]">
+                        <Check className="w-4 h-4 text-[#C8A95E] shrink-0" strokeWidth={2.5} />
+                        <span className="font-medium">{entry.value}</span>
+                        <span className="text-[#8A8580]">{entry.label}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  {pricings.length > 1 && (
+                    <div className="mt-6 pt-4 border-t border-[#E8E3DB] space-y-1.5">
+                      {pricings.map((p, j) => (
+                        <div key={j} className="flex justify-between text-xs text-[#8A8580]">
+                          <span>{p.billing_cycle === "MONTHLY" ? "Monthly" : p.billing_cycle === "SIX_MONTHS" ? "6 Months" : p.billing_cycle === "ANNUAL" ? "Annual" : p.billing_cycle}</span>
+                          <span className="font-medium text-[#1A1A1A]">{currency === "INR" ? "₹" : ""}{p.price.toLocaleString("en-IN")}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                {plan.description && (
-                  <p className="text-sm text-[#666] mb-8">{plan.description}</p>
-                )}
-
-                <Link
-                  to="/register"
-                  className={`pricing_plan_select h-12 w-full inline-flex items-center justify-center gap-2 text-sm font-medium rounded-full transition-all mb-8 ${
-                    isPopular
-                      ? "bg-[#F58220] text-white hover:bg-[#E0741F] shadow-md shadow-[#F58220]/25"
-                      : "bg-[#F9F9F9] text-foreground hover:bg-[#F1F1F1] border border-[#E5E5E5]"
-                  }`}
-                >
-                  {price === 0 ? "Start Free" : `Choose ${plan.name}`}
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
-
-                <ul className="space-y-3 border-t border-[#E5E5E5] pt-6">
-                  {limitEntries.map((entry, j) => {
-                    const colors = ["#F58220", "#2D7FF9", "#8B2BE2", "#0EA5A4"];
-                    const color = colors[j % colors.length];
-                    return (
-                    <li key={j} className="flex items-center gap-2.5 text-sm text-foreground">
-                      <Check className="w-4 h-4 shrink-0" style={{ color }} />
-                      <span className="font-medium">{entry.value}</span>
-                      <span className="text-[#999]">{entry.label}</span>
-                    </li>
-                    );
-                  })}
-                </ul>
-              </div>
+              </Reveal>
             );
           })}
         </div>
 
-        <p className="mt-8 text-center text-xs text-[#999]">
+        <p className="mt-8 text-center text-xs text-[#8A8580]">
           Your existing business data is never deleted if you choose to downgrade.
         </p>
       </div>

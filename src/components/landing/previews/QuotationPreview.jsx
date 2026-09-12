@@ -1,87 +1,81 @@
 import React from "react";
 import BrowserFrame from "./BrowserFrame";
 import MockSidebar from "./MockSidebar";
-import Logo from "@/components/common/Logo";
 
 export default function QuotationPreview() {
   const items = [
-    { name: "Photography — Full Day", qty: 1, rate: "30,000", amount: "30,000" },
-    { name: "Videography — Cinematic", qty: 1, rate: "25,000", amount: "25,000" },
-    { name: "Album — Premium 40pg", qty: 2, rate: "15,000", amount: "30,000" },
+    { name: "Wedding Photography Package", desc: "2 photographers · full day coverage · 500 edited photos", qty: 1, rate: 50000, total: 50000 },
+    { name: "Drone Coverage Add-on", desc: "Aerial shots · ceremony & reception", qty: 1, rate: 5000, total: 5000 },
+    { name: "Album (Premium)", desc: "30-page hardbound album", qty: 2, rate: 4000, total: 8000 },
   ];
 
+  const subtotal = 63000;
+  const gst = 11340;
+  const grandTotal = 74340;
+
   return (
-    <BrowserFrame url="app.kramasha.com/quotations">
+    <BrowserFrame url="app.kramashah.com/quotation">
       <MockSidebar active="Quotations" />
-      <div className="flex-1 p-6 overflow-hidden bg-[#FDFCF8]">
-        {/* Quotation document */}
-        <div className="rounded-xl border border-[#E5E5E5] bg-white overflow-hidden">
-          {/* Header */}
-          <div className="bg-[#0B2125] px-4 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-lg bg-white flex items-center justify-center overflow-hidden shrink-0">
-                <Logo size={20} />
-              </div>
-              <div>
-                <div className="text-xs font-bold text-white">Kramasha Studio</div>
-                <div className="text-[9px] text-[#8FA0A4]">QUOTATION · QT-2026-0042</div>
-              </div>
+      <div className="flex-1 p-6 overflow-hidden bg-[#F5F3EF]">
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <h3 className="text-lg font-bold text-[#1A1A1A]">Quotation #QT-2026-001</h3>
+            <p className="text-xs text-[#8A8580]">Client: Priya Sharma · Valid until Nov 15, 2026</p>
+          </div>
+          <div className="flex gap-2">
+            <div className="h-8 px-3 rounded-lg border border-[#E8E3DB] bg-white text-xs font-medium flex items-center text-[#1A1A1A]">Preview</div>
+            <div className="h-8 px-3 rounded-lg bg-[#C8A95E] text-white text-xs font-medium flex items-center">Send</div>
+          </div>
+        </div>
+        <div className="rounded-xl border border-[#E8E3DB] bg-white p-5">
+          <div className="grid grid-cols-2 gap-4 mb-5 pb-4 border-b border-[#E8E3DB]">
+            <div>
+              <div className="text-[9px] font-semibold text-[#8A8580] uppercase mb-1">From</div>
+              <div className="text-xs font-semibold text-[#1A1A1A]">Kramasha Studio</div>
+              <div className="text-[10px] text-[#8A8580]">Mumbai, Maharashtra</div>
             </div>
-            <div className="text-right">
-              <div className="text-[9px] text-[#8FA0A4]">Date</div>
-              <div className="text-[10px] text-white font-medium">12 Oct 2026</div>
+            <div>
+              <div className="text-[9px] font-semibold text-[#8A8580] uppercase mb-1">Bill To</div>
+              <div className="text-xs font-semibold text-[#1A1A1A]">Priya Sharma</div>
+              <div className="text-[10px] text-[#8A8580]">Wedding · Oct 15-17, 2026</div>
             </div>
           </div>
-
-          {/* Body */}
-          <div className="p-4">
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <div className="text-[9px] text-[#999] uppercase tracking-wide mb-1">Billed To</div>
-                <div className="text-xs font-semibold text-[#0B2125]">Mr. & Mrs. Sharma</div>
-                <div className="text-[10px] text-[#666]">Sharma Wedding · The Leela Palace</div>
-              </div>
-              <div className="text-right">
-                <div className="text-[9px] text-[#999] uppercase tracking-wide mb-1">Valid Until</div>
-                <div className="text-[10px] text-[#0B2125] font-medium">30 Nov 2026</div>
-              </div>
-            </div>
-
-            {/* Items */}
-            <div className="border border-[#E5E5E5] rounded-lg overflow-hidden">
-              <div className="grid grid-cols-12 gap-2 bg-[#F9F9F9] px-3 py-2 text-[9px] font-semibold text-[#999] uppercase">
-                <div className="col-span-6">Description</div>
-                <div className="col-span-2 text-center">Qty</div>
-                <div className="col-span-2 text-right">Rate</div>
-                <div className="col-span-2 text-right">Amount</div>
-              </div>
+          <table className="w-full mb-4">
+            <thead>
+              <tr className="border-b border-[#E8E3DB]">
+                <th className="text-left text-[9px] font-semibold text-[#8A8580] uppercase pb-2">Item</th>
+                <th className="text-right text-[9px] font-semibold text-[#8A8580] uppercase pb-2">Qty</th>
+                <th className="text-right text-[9px] font-semibold text-[#8A8580] uppercase pb-2">Rate</th>
+                <th className="text-right text-[9px] font-semibold text-[#8A8580] uppercase pb-2">Total</th>
+              </tr>
+            </thead>
+            <tbody>
               {items.map((item, i) => (
-                <div key={i} className="grid grid-cols-12 gap-2 px-3 py-2 text-[10px] border-t border-[#F0F0EE] items-center">
-                  <div className="col-span-6 font-medium text-[#0B2125]">{item.name}</div>
-                  <div className="col-span-2 text-center text-[#666]">{item.qty}</div>
-                  <div className="col-span-2 text-right text-[#666]">₹{item.rate}</div>
-                  <div className="col-span-2 text-right font-semibold text-[#0B2125]">₹{item.amount}</div>
-                </div>
+                <tr key={i} className="border-b border-[#E8E3DB]/50">
+                  <td className="py-2.5">
+                    <div className="text-[11px] font-medium text-[#1A1A1A]">{item.name}</div>
+                    <div className="text-[9px] text-[#8A8580]">{item.desc}</div>
+                  </td>
+                  <td className="text-right text-[11px] text-[#1A1A1A] py-2.5">{item.qty}</td>
+                  <td className="text-right text-[11px] text-[#1A1A1A] py-2.5">₹{item.rate.toLocaleString("en-IN")}</td>
+                  <td className="text-right text-[11px] font-semibold text-[#1A1A1A] py-2.5">₹{item.total.toLocaleString("en-IN")}</td>
+                </tr>
               ))}
-            </div>
-
-            {/* Totals */}
-            <div className="mt-3 ml-auto max-w-[200px] space-y-1">
-              <div className="flex justify-between text-[10px]">
-                <span className="text-[#666]">Subtotal</span>
-                <span className="text-[#0B2125] font-medium">₹85,000</span>
+            </tbody>
+          </table>
+          <div className="flex justify-end">
+            <div className="w-48 space-y-1.5">
+              <div className="flex justify-between text-[11px]">
+                <span className="text-[#8A8580]">Subtotal</span>
+                <span className="font-medium text-[#1A1A1A]">₹{subtotal.toLocaleString("en-IN")}</span>
               </div>
-              <div className="flex justify-between text-[10px]">
-                <span className="text-[#666]">CGST (9%)</span>
-                <span className="text-[#0B2125]">₹7,650</span>
+              <div className="flex justify-between text-[11px]">
+                <span className="text-[#8A8580]">GST (18%)</span>
+                <span className="font-medium text-[#1A1A1A]">₹{gst.toLocaleString("en-IN")}</span>
               </div>
-              <div className="flex justify-between text-[10px]">
-                <span className="text-[#666]">SGST (9%)</span>
-                <span className="text-[#0B2125]">₹7,650</span>
-              </div>
-              <div className="flex justify-between text-xs pt-1.5 border-t border-[#E5E5E5]">
-                <span className="font-bold text-[#0B2125]">Grand Total</span>
-                <span className="font-bold text-[#F58220]">₹1,00,300</span>
+              <div className="flex justify-between pt-2 border-t border-[#E8E3DB]">
+                <span className="text-sm font-bold text-[#1A1A1A]">Grand Total</span>
+                <span className="text-sm font-bold text-[#C8A95E]">₹{grandTotal.toLocaleString("en-IN")}</span>
               </div>
             </div>
           </div>

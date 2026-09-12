@@ -1,60 +1,45 @@
 import React from "react";
+import { Users, CalendarCheck, BarChart3, Wallet } from "lucide-react";
+import Reveal from "@/components/landing/Reveal";
 
-const steps = [
-  {
-    step: "01",
-    title: "Capture leads",
-    desc: "Log every enquiry, track follow-ups and convert qualified leads into clients.",
-    color: "#F58220",
-  },
-  {
-    step: "02",
-    title: "Manage projects",
-    desc: "Plan events, assign your team, send quotations and schedule every detail.",
-    color: "#2D7FF9",
-  },
-  {
-    step: "03",
-    title: "Deliver & grow",
-    desc: "Collect payments, track profitability and let clients follow along in their portal.",
-    color: "#8B2BE2",
-  },
+const STEPS = [
+  { step: "01", title: "Capture Leads & Clients", desc: "Log every enquiry, track follow-ups and convert qualified leads into clients with full contact history.", icon: Users, color: "#C8A95E" },
+  { step: "02", title: "Plan & Assign", desc: "Create events, assign team members, schedule services and set up availability without double-bookings.", icon: CalendarCheck, color: "#D4B876" },
+  { step: "03", title: "Track & Manage", desc: "Monitor progress, manage quotations, send invoices and keep clients updated through their portal.", icon: BarChart3, color: "#C8A95E" },
+  { step: "04", title: "Deliver & Get Paid", desc: "Collect payments against milestones, track expenses and see real-time profit for every project.", icon: Wallet, color: "#D4B876" },
 ];
 
 export default function HowItWorks() {
   return (
-    <section id="how-it-works" className="py-20 sm:py-28 border-t border-[#E5E5E5] bg-[#FDFCF8]">
+    <section id="how-it-works" className="py-20 sm:py-28 bg-[#0A0A0A]">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="max-w-2xl mb-14">
-          <div className="inline-flex items-center gap-2 rounded-full border border-[#E5E5E5] bg-[#F9F9F9] px-3.5 py-1.5 text-xs font-medium text-[#666] mb-5">
-            <span className="w-1.5 h-1.5 rounded-full bg-logo-gradient" />
-            How it works
-          </div>
-          <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight text-foreground mb-4 leading-tight">
-            From setup to getting paid.
+        <Reveal className="max-w-2xl mb-14">
+          <div className="text-xs font-semibold uppercase tracking-wider text-[#C8A95E] mb-4">How It Works</div>
+          <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight text-white mb-4 leading-tight">
+            Simple. Structured. Smart.
           </h2>
-          <p className="text-[#666] text-base sm:text-lg leading-relaxed">
-            Three steps. No spreadsheet gymnastics required.
+          <p className="text-[#888] text-base sm:text-lg leading-relaxed">
+            Four steps from first enquiry to final payment — without the spreadsheet chaos.
           </p>
-        </div>
+        </Reveal>
 
-        <div className="grid sm:grid-cols-3 gap-8 lg:gap-12">
-          {steps.map((s, i) => (
-            <div key={s.step} className="relative">
-              {i < steps.length - 1 && (
-                <div className="hidden sm:block absolute top-7 left-[calc(50%+2rem)] right-[-1.5rem] h-px bg-[#E5E5E5]" />
-              )}
-              <div className="flex items-center gap-4 mb-4">
-                <div
-                  className="w-14 h-14 rounded-2xl text-white flex items-center justify-center font-heading text-xl font-semibold shrink-0 shadow-lg"
-                  style={{ backgroundColor: s.color, boxShadow: `0 10px 24px -6px ${s.color}55` }}
-                >
-                  {s.step}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {STEPS.map((s, i) => (
+            <Reveal key={s.step} delay={i * 80}>
+              <div className="relative">
+                {i < STEPS.length - 1 && (
+                  <div className="hidden lg:block absolute top-7 left-[calc(50%+2.5rem)] right-[-1.5rem] h-px bg-[#2A2A2A]" />
+                )}
+                <div className="relative">
+                  <div className="w-14 h-14 rounded-2xl border border-[#2A2A2A] bg-[#141414] flex items-center justify-center mb-5" style={{ boxShadow: `0 0 0 3px ${s.color}15` }}>
+                    <s.icon className="w-6 h-6" strokeWidth={1.75} style={{ color: s.color }} />
+                  </div>
+                  <div className="text-xs font-bold tracking-wider mb-2" style={{ color: s.color }}>{s.step}</div>
+                  <h3 className="font-heading text-lg font-semibold text-white mb-2">{s.title}</h3>
+                  <p className="text-sm text-[#888] leading-relaxed">{s.desc}</p>
                 </div>
               </div>
-              <h3 className="font-heading text-xl font-semibold text-foreground mb-2">{s.title}</h3>
-              <p className="text-sm text-[#666] leading-relaxed max-w-xs">{s.desc}</p>
-            </div>
+            </Reveal>
           ))}
         </div>
       </div>
