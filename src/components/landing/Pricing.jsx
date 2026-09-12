@@ -72,7 +72,7 @@ export default function Pricing() {
 
   if (loading) {
     return (
-      <section id="pricing" className="py-20 sm:py-24">
+      <section id="pricing" className="py-20 sm:py-24 border-t border-border">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 text-center">
           <Loader2 className="w-6 h-6 text-muted-foreground animate-spin mx-auto" />
         </div>
@@ -82,20 +82,16 @@ export default function Pricing() {
 
   if (planData.length === 0) return null;
 
-  // Determine the "most popular" plan (middle one if 3+, or the one with highest price)
   const popularIndex = planData.length >= 3 ? Math.floor(planData.length / 2) : 0;
 
   return (
-    <section id="pricing" className="py-20 sm:py-24">
+    <section id="pricing" className="py-20 sm:py-24 border-t border-border">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="max-w-2xl mx-auto text-center mb-14">
-          <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs font-semibold text-primary mb-4">
-            PRICING
-          </div>
-          <h2 className="font-heading text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
+        <div className="max-w-2xl mx-auto text-center mb-16">
+          <h2 className="font-heading text-3xl sm:text-5xl font-semibold tracking-tight text-foreground mb-4">
             Plans that fit your business.
           </h2>
-          <p className="mt-4 text-muted-foreground text-base sm:text-lg leading-relaxed">
+          <p className="text-muted-foreground text-base sm:text-lg leading-relaxed">
             Start free, upgrade when you grow. No hidden fees, cancel anytime.
           </p>
         </div>
@@ -118,47 +114,47 @@ export default function Pricing() {
             return (
               <div
                 key={plan.id}
-                className={`relative rounded-2xl border p-7 transition-all ${
+                className={`relative rounded-3xl border p-8 sm:p-10 flex flex-col transition-all ${
                   isPopular
-                    ? "border-primary/40 bg-card shadow-xl shadow-primary/10 lg:scale-[1.03]"
-                    : "border-border bg-card shadow-card hover:shadow-card-hover"
+                    ? "border-primary bg-card shadow-xl shadow-primary/10 lg:scale-[1.03] border-2"
+                    : "border-border bg-card shadow-sm"
                 }`}
               >
                 {isPopular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 rounded-full bg-primary text-primary-foreground px-3 py-1 text-xs font-semibold shadow-md">
+                  <div className="absolute -top-3.5 right-8 inline-flex items-center gap-1.5 rounded-full bg-primary text-primary-foreground px-3 py-1 text-[10px] font-semibold uppercase tracking-wider shadow-md">
                     <Sparkles className="w-3 h-3" />
                     Most Popular
                   </div>
                 )}
-                <h3 className="font-heading text-xl font-bold text-foreground">{plan.name}</h3>
-                {plan.description && (
-                  <p className="mt-1.5 text-sm text-muted-foreground">{plan.description}</p>
-                )}
-                <div className="mt-5 flex items-baseline gap-1.5">
-                  <span className="font-heading text-4xl font-bold text-foreground">
+                <span className={`text-xs font-semibold uppercase tracking-wider block mb-2 ${isPopular ? "text-primary" : "text-muted-foreground"}`}>
+                  {plan.name}
+                </span>
+                <div className="flex items-baseline gap-1.5 mb-4">
+                  <span className="font-heading text-4xl font-semibold text-foreground">
                     {price === 0 ? "Free" : `${currency === "INR" ? "₹" : ""}${price.toLocaleString("en-IN")}`}
                   </span>
-                  {price > 0 && <span className="text-sm text-muted-foreground">{cycleLabel}</span>}
+                  {price > 0 && <span className="text-sm font-normal text-muted-foreground">{cycleLabel}</span>}
                 </div>
+                {plan.description && (
+                  <p className="text-sm text-muted-foreground mb-8">{plan.description}</p>
+                )}
 
                 <Link
                   to="/register"
-                  className={`pricing_plan_select mt-6 h-11 w-full inline-flex items-center justify-center gap-2 text-sm font-semibold rounded-xl transition-all ${
+                  className={`pricing_plan_select h-12 w-full inline-flex items-center justify-center gap-2 text-sm font-medium rounded-full transition-all mb-8 ${
                     isPopular
-                      ? "bg-primary text-primary-foreground hover:bg-primary-hover shadow-md"
-                      : "border border-border bg-card text-foreground hover:bg-muted"
+                      ? "bg-primary text-primary-foreground hover:bg-primary-hover shadow-md shadow-primary/25"
+                      : "bg-muted text-foreground hover:bg-muted/70"
                   }`}
                 >
                   {price === 0 ? "Start Free" : `Choose ${plan.name}`}
                   <ArrowRight className="w-4 h-4" />
                 </Link>
 
-                <ul className="mt-6 space-y-3">
+                <ul className="space-y-3 border-t border-border pt-6">
                   {limitEntries.map((entry, j) => (
-                    <li key={j} className="flex items-center gap-3 text-sm text-foreground">
-                      <div className="w-5 h-5 rounded-full bg-success/15 flex items-center justify-center shrink-0">
-                        <Check className="w-3 h-3 text-success" strokeWidth={3} />
-                      </div>
+                    <li key={j} className="flex items-center gap-2.5 text-sm text-foreground">
+                      <Check className="w-4 h-4 text-primary shrink-0" />
                       <span className="font-medium">{entry.value}</span>
                       <span className="text-muted-foreground">{entry.label}</span>
                     </li>
@@ -169,8 +165,8 @@ export default function Pricing() {
           })}
         </div>
 
-        <p className="mt-8 text-center text-sm text-muted-foreground">
-          Your existing business data isn't deleted if you downgrade.
+        <p className="mt-8 text-center text-xs text-muted-foreground">
+          Your existing business data is never deleted if you choose to downgrade.
         </p>
       </div>
     </section>

@@ -23,15 +23,15 @@ export default function LandingNav() {
 
   return (
     <header
-      className={`sticky top-0 z-40 w-full transition-all duration-200 ${
+      className={`sticky top-0 z-40 w-full transition-all duration-300 ${
         scrolled
-          ? "border-b border-border bg-background/85 backdrop-blur-md shadow-sm"
+          ? "border-b border-border bg-background/80 backdrop-blur-xl shadow-sm"
           : "border-b border-transparent bg-transparent"
       }`}
     >
       <div className="mx-auto max-w-6xl px-4 sm:px-6 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5">
-          <Logo size={36} className="shadow-md" />
+          <Logo size={32} className="shadow-sm" />
           <span className="font-heading text-lg font-bold tracking-tight text-foreground">Kramasha</span>
         </Link>
 
@@ -49,16 +49,16 @@ export default function LandingNav() {
           )}
         </nav>
 
-        <div className="hidden md:flex items-center gap-2">
+        <div className="hidden md:flex items-center gap-2.5">
           <Link
             to="/login"
-            className="nav_login h-9 px-4 inline-flex items-center justify-center text-sm font-medium text-foreground hover:bg-muted rounded-lg transition-colors"
+            className="nav_login h-9 px-5 inline-flex items-center justify-center text-sm font-medium text-foreground hover:bg-muted rounded-full transition-colors"
           >
             Log in
           </Link>
           <Link
             to="/register"
-            className="nav_start_free h-9 px-4 inline-flex items-center justify-center text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary-hover rounded-lg shadow-sm transition-all"
+            className="nav_start_free h-9 px-5 inline-flex items-center justify-center text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary-hover rounded-full shadow-sm transition-all"
           >
             Start Free
           </Link>
@@ -66,7 +66,7 @@ export default function LandingNav() {
 
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
-          className="md:hidden h-9 w-9 inline-flex items-center justify-center rounded-lg hover:bg-muted transition-colors"
+          className="md:hidden h-9 w-9 inline-flex items-center justify-center rounded-full hover:bg-muted transition-colors"
           aria-label="Toggle menu"
         >
           {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -74,7 +74,7 @@ export default function LandingNav() {
       </div>
 
       {mobileOpen && (
-        <div className="md:hidden border-t border-border bg-background">
+        <div className="md:hidden border-t border-border bg-background/95 backdrop-blur-xl">
           <div className="px-4 py-4 space-y-1">
             {links.map((l) =>
               l.href.startsWith("/") ? (
@@ -82,7 +82,7 @@ export default function LandingNav() {
                   key={l.href}
                   to={l.href}
                   onClick={() => setMobileOpen(false)}
-                  className="block px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                  className="block px-3 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
                 >
                   {l.label}
                 </Link>
@@ -91,7 +91,7 @@ export default function LandingNav() {
                   key={l.href}
                   href={l.href}
                   onClick={() => setMobileOpen(false)}
-                  className="block px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                  className="block px-3 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
                 >
                   {l.label}
                 </a>
@@ -101,14 +101,14 @@ export default function LandingNav() {
               <Link
                 to="/login"
                 onClick={() => setMobileOpen(false)}
-                className="flex-1 h-11 inline-flex items-center justify-center text-sm font-medium border border-border rounded-lg"
+                className="flex-1 h-11 inline-flex items-center justify-center text-sm font-medium border border-border rounded-full"
               >
                 Log in
               </Link>
               <Link
                 to="/register"
                 onClick={() => setMobileOpen(false)}
-                className="flex-1 h-11 inline-flex items-center justify-center text-sm font-semibold bg-primary text-primary-foreground rounded-lg"
+                className="flex-1 h-11 inline-flex items-center justify-center text-sm font-semibold bg-primary text-primary-foreground rounded-full"
               >
                 Start Free
               </Link>

@@ -30,7 +30,7 @@ const blocks = [
 
 export default function Showcase() {
   return (
-    <section id="showcase" className="py-20 sm:py-24 bg-[#F7F9FC] border-y border-border/60">
+    <section id="showcase" className="py-20 sm:py-24 border-t border-border bg-muted/20">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 space-y-20 sm:space-y-24">
         {blocks.map((b, i) => (
           <div
@@ -46,7 +46,7 @@ export default function Showcase() {
               <span className="inline-block text-xs font-semibold uppercase tracking-wider text-primary mb-3 px-3 py-1 rounded-full bg-primary/10">
                 {b.eyebrow}
               </span>
-              <h3 className="font-heading text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+              <h3 className="font-heading text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">
                 {b.title}
               </h3>
               <p className="mt-4 text-muted-foreground text-base leading-relaxed">{b.desc}</p>

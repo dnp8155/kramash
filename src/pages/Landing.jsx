@@ -14,6 +14,7 @@ import Pricing from "@/components/landing/Pricing";
 import FAQ from "@/components/landing/FAQ";
 import CTA from "@/components/landing/CTA";
 import LandingFooter from "@/components/landing/LandingFooter";
+import FloatingDock from "@/components/landing/FloatingDock";
 
 export default function Landing() {
   const navigate = useNavigate();
@@ -50,6 +51,7 @@ export default function Landing() {
         <CTA />
       </main>
       <LandingFooter />
+      <FloatingDock />
     </div>
   );
 }

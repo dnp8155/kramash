@@ -1,72 +1,76 @@
 import React from "react";
-import { MessageSquare, Sheet, FileText, StickyNote, Calculator, ArrowRight } from "lucide-react";
+import { MessageSquare, Sheet, FileText, Calculator, CheckCircle } from "lucide-react";
 
 const scattered = [
   { icon: MessageSquare, label: "WhatsApp", sub: "Client details" },
   { icon: Sheet, label: "Spreadsheet", sub: "Team availability" },
   { icon: FileText, label: "Documents", sub: "Quotations" },
-  { icon: StickyNote, label: "Notes", sub: "Payments" },
-  { icon: Calculator, label: "Calculator", sub: "Profit" },
+  { icon: Calculator, label: "Notes & Calc", sub: "Payments & profit" },
 ];
 
-const flow = ["Client", "Project / Event", "Team", "Quotation", "Payment", "Profit"];
+const unified = [
+  { num: "01", title: "Clients & Projects", desc: "Keep client details and every related project organized in one clean timeline." },
+  { num: "02", title: "Team & Availability Matrix", desc: "Assign team members, track roles, and identify conflicts before they become problems." },
+  { num: "03", title: "Professional Quotations & GST", desc: "Build branded quotes with automatic tax breakdowns and instant PDF export." },
+];
 
 export default function ProblemSolution() {
   return (
-    <section className="py-20 sm:py-24 bg-[#F7F9FC] border-y border-border/60">
+    <section id="workflow" className="py-20 sm:py-24 border-t border-border">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="max-w-2xl mx-auto text-center mb-14">
-          <h2 className="font-heading text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
+          <h2 className="font-heading text-3xl sm:text-5xl font-semibold tracking-tight text-foreground mb-4">
             Your business shouldn't run across five different tools.
           </h2>
+          <p className="text-muted-foreground text-base sm:text-lg leading-relaxed">
+            Compare the scattered toolchain against the unified Kramasha approach.
+          </p>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
-          {/* Left: scattered tools */}
-          <div className="relative">
-            <div className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-6 text-center lg:text-left">
-              The scattered way
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+        <div className="grid lg:grid-cols-2 gap-8">
+          {/* Scattered way */}
+          <div className="bg-muted/40 rounded-3xl border border-border p-8 sm:p-10">
+            <span className="text-xs font-semibold uppercase tracking-wider text-destructive block mb-2">
+              The Scattered Way
+            </span>
+            <h3 className="font-heading text-2xl font-semibold text-foreground mb-6">
+              Disconnected and chaotic.
+            </h3>
+            <ul className="space-y-3 text-sm">
               {scattered.map((s, i) => (
-                <div
+                <li
                   key={i}
-                  className="rounded-xl border border-border bg-card p-4 text-center shadow-xs opacity-80"
-                  style={{ transform: `rotate(${i % 2 === 0 ? -2 : 2}deg)` }}
+                  className="flex justify-between items-center bg-card/60 rounded-2xl p-4 border border-border/60"
                 >
-                  <s.icon className="w-7 h-7 text-muted-foreground mx-auto mb-2" />
-                  <div className="text-xs font-semibold text-foreground">{s.label}</div>
-                  <div className="text-[10px] text-muted-foreground mt-0.5">{s.sub}</div>
-                </div>
+                  <span className="font-medium flex items-center gap-2 text-foreground">
+                    <s.icon className="w-4 h-4 text-muted-foreground" />
+                    {s.label}
+                  </span>
+                  <span className="text-xs text-muted-foreground">{s.sub}</span>
+                </li>
               ))}
-            </div>
+            </ul>
           </div>
 
-          {/* Right: Kramasha workflow */}
-          <div>
-            <div className="text-sm font-semibold text-primary uppercase tracking-wider mb-6 text-center lg:text-left">
-              The Kramasha way
-            </div>
-            <div className="rounded-2xl border border-border bg-card p-6 shadow-card">
-              <div className="space-y-3">
-                {flow.map((step, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <div className="flex items-center gap-3 flex-1">
-                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">
-                        {i + 1}
-                      </div>
-                      <span className="text-sm font-medium text-foreground">{step}</span>
+          {/* Kramasha way — dark card */}
+          <div className="bg-sidebar text-sidebar-foreground rounded-3xl p-8 sm:p-10 shadow-xl flex flex-col justify-between">
+            <div>
+              <span className="text-xs font-semibold uppercase tracking-wider text-success block mb-2">
+                The Kramasha Way
+              </span>
+              <h3 className="font-heading text-2xl font-semibold text-sidebar-foreground mb-6">
+                One connected workspace.
+              </h3>
+              <div className="space-y-3 text-sm">
+                {unified.map((u, i) => (
+                  <div key={i} className="bg-white/10 rounded-2xl p-4 border border-white/10">
+                    <div className="font-semibold mb-1 flex items-center gap-2 text-sidebar-foreground">
+                      <CheckCircle className="w-4 h-4 text-success" />
+                      {u.num}. {u.title}
                     </div>
-                    {i < flow.length - 1 && (
-                      <ArrowRight className="w-4 h-4 text-muted-foreground/40" />
-                    )}
+                    <div className="text-xs text-sidebar-muted">{u.desc}</div>
                   </div>
                 ))}
-              </div>
-              <div className="mt-5 pt-5 border-t border-border/60">
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Kramasha turns the entire workflow into one connected system.
-                </p>
               </div>
             </div>
           </div>

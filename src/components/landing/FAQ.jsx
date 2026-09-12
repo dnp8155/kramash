@@ -36,14 +36,11 @@ export default function FAQ() {
   const [open, setOpen] = useState(0);
 
   return (
-    <section id="faq" className="py-20 sm:py-24 bg-[#F7F9FC] border-y border-border/60">
+    <section id="faq" className="py-20 sm:py-24 border-t border-border">
       <div className="mx-auto max-w-3xl px-4 sm:px-6">
         <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs font-semibold text-primary mb-4">
-            FAQ
-          </div>
-          <h2 className="font-heading text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
-            Questions, answered
+          <h2 className="font-heading text-3xl sm:text-5xl font-semibold tracking-tight text-foreground">
+            Frequently asked questions.
           </h2>
         </div>
 
@@ -51,11 +48,11 @@ export default function FAQ() {
           {faqs.map((f, i) => (
             <div
               key={i}
-              className="rounded-xl border border-border bg-card shadow-xs overflow-hidden"
+              className="rounded-2xl border border-border bg-card shadow-xs overflow-hidden"
             >
               <button
                 onClick={() => setOpen(open === i ? -1 : i)}
-                className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left"
+                className="w-full flex items-center justify-between gap-4 px-6 py-5 text-left"
                 aria-expanded={open === i}
               >
                 <span className="font-heading text-sm font-semibold text-foreground">{f.q}</span>
@@ -66,7 +63,7 @@ export default function FAQ() {
                 />
               </button>
               {open === i && (
-                <div className="px-5 pb-4 text-sm text-muted-foreground leading-relaxed">
+                <div className="px-6 pb-5 text-sm text-muted-foreground leading-relaxed">
                   {f.a}
                 </div>
               )}

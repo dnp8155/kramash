@@ -10,12 +10,12 @@ const stats = [
 
 export default function ProductProof() {
   return (
-    <section className="border-y border-border/60 bg-[#F7F9FC]">
+    <section className="border-y border-border bg-muted/30">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 py-10 sm:py-12">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
           {stats.map((s) => (
             <div key={s.label} className="flex items-center gap-3.5">
-              <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+              <div className="w-11 h-11 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0">
                 <s.icon className="w-5 h-5 text-primary" />
               </div>
               <div>
