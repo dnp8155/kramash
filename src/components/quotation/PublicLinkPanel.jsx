@@ -217,7 +217,7 @@ export default function PublicLinkPanel({ quotation, onUpdated }) {
       )}
 
       {/* Hide Team Names Toggle */}
-      {enabled && (
+      {enabled && isPro && (
         <div className="flex items-center justify-between gap-3 pt-2 border-t border-border">
           <div>
             <div className="text-sm font-medium text-foreground flex items-center gap-1.5">
@@ -248,7 +248,7 @@ export default function PublicLinkPanel({ quotation, onUpdated }) {
       )}
 
       {/* Password Protection */}
-      {enabled && (
+      {enabled && isPro && (
         <div className="pt-2 border-t border-border space-y-2">
           <div className="flex items-center gap-1.5">
             <Lock className="w-3.5 h-3.5 text-muted-foreground" />
@@ -278,7 +278,7 @@ export default function PublicLinkPanel({ quotation, onUpdated }) {
       )}
 
       {/* View Tracking */}
-      {enabled && viewCount > 0 && (
+      {enabled && isPro && viewCount > 0 && (
         <div className="pt-2 border-t border-border space-y-1.5">
           <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Client Views</div>
           <div className="flex items-center justify-between text-sm">

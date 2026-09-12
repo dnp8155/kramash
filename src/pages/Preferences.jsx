@@ -25,6 +25,7 @@ import TeamMemberTypeManager from "@/components/preferences/TeamMemberTypeManage
 import EventTypeManager from "@/components/preferences/EventTypeManager";
 import QuotationDefaultsSection from "@/components/settings/QuotationDefaultsSection";
 import MilestoneTemplateManager from "@/components/preferences/MilestoneTemplateManager";
+import PackageSection from "@/components/preferences/PackageSection";
 import DataDeletionSection from "@/components/settings/DataDeletionSection";
 import { usePlan } from "@/hooks/usePlan";
 
@@ -311,6 +312,11 @@ export default function Preferences() {
         <div className="space-y-4">
           <QuotationDefaultsSection />
           <MilestoneTemplateManager />
+          <div className="bg-card border border-border rounded-lg p-4">
+            <h3 className="text-sm font-semibold mb-1">Packages</h3>
+            <p className="text-xs text-muted-foreground mb-3">Reusable quotation templates. Create them from the Quotation Editor ("Save as Package"), then manage their details here.</p>
+            <PackageSection workspaceId={workspaceId} currency={workspace?.currency || "INR"} />
+          </div>
         </div>
       </SectionBlock>
 

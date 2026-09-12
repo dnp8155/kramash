@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Outlet, useLocation } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import Sidebar from "@/components/layout/Sidebar";
 import TopHeader from "@/components/layout/TopHeader";
 import MobileNavigation from "@/components/layout/MobileNavigation";
@@ -39,14 +40,29 @@ export default function AppLayout() {
       </aside>
 
       {/* Mobile drawer */}
-      {mobileOpen && (
-        <div className="lg:hidden fixed inset-0 z-40 flex">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
-          <div className="relative w-64 h-full safe-area-left">
-            <Sidebar mobile onClose={() => setMobileOpen(false)} />
+      <AnimatePresence>
+        {mobileOpen && (
+          <div className="lg:hidden fixed inset-0 z-40 flex">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+              onClick={() => setMobileOpen(false)}
+            />
+            <motion.div
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "spring", stiffness: 360, damping: 34 }}
+              className="relative w-64 h-full safe-area-left"
+            >
+              <Sidebar mobile onClose={() => setMobileOpen(false)} />
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
 
       {/* Main */}
       <div className="flex-1 flex flex-col min-w-0">
