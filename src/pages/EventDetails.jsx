@@ -367,6 +367,11 @@ export default function EventDetails() {
 
   const statusDot = event.status === "completed" ? "bg-success" : event.status === "cancelled" ? "bg-destructive" : "bg-warning";
   const allDates = (event.event_dates?.length ? event.event_dates : [event.start_date]).filter(Boolean);
+  const formatDateShort = (date) => {
+    if (!date) return "";
+    const d = new Date(date + "T00:00:00");
+    return `${d.getDate()} ${d.toLocaleString("en-IN", { month: "short" })}`;
+  };
 
   return (
     <div className="p-4 sm:p-6 space-y-5 max-w-[1100px] mx-auto">
@@ -380,14 +385,8 @@ export default function EventDetails() {
             <h1 className="text-2xl font-bold text-foreground tracking-tight truncate">{event.title}</h1>
           </div>
           <p className="text-sm text-muted-foreground ml-6">
-            <span className="inline-flex items-center gap-1.5">
-              {prefs.showStatusDots && (
-                <span className={cn("w-1.5 h-1.5 rounded-full", statusDot)} />
-              )}
-              <span className="capitalize">{event.status}</span>
-            </span>
-            {event.event_type && <> · {event.event_type}</>}
-            {event.start_date && <> · {formatEventDate(event.start_date, event.end_date)}</>}
+            {event.event_type && <>{event.event_type}</>}
+            {allDates.length > 0 && <> · {allDates.map(formatDateShort).join(", ")}</>}
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
