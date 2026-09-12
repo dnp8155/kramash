@@ -240,12 +240,33 @@ export default function EventEditor() {
       if (eventId) {
         try { await syncTeamAssignments(eventId, payload.team_member_ids); } catch { /* non-fatal */ }
       }
-      // Invalidate all relevant caches so every page that shows this data refreshes:
-      // events list, dashboard (stats, upcoming, availability), event details,
-      // financial (contract value affects totals), team (assignments), and the
-      // team-member detail pages that list this event's bookings.
-      invalidateEntities(queryClient, ["Event", "EventTeamAssignment", "EventDayAssignment"]);
+      // Optimistic update: inject the saved event into the Events list cache
+      // immediately so it appears instantly when the user navigates back —
+      // no waiting for a refetch round-trip. We intentionally do NOT invalidate
+      // the ["events"] query here: the server has a write-commit delay, so a
+      // refetch could return stale data and wipe out this optimistic entry.
+      // The realtime sync will refresh the list once the server pushes the
+      // create event.
+      queryClient.setQueryData(["events", workspaceId], (oldData) => {
+        if (!oldData) return oldData;
+        const events = oldData.events || [];
+        const idx = events.findIndex((e) => e.id === saved.id);
+        if (idx >= 0) {
+          const updated = [...events];
+          updated[idx] = { ...events[idx], ...saved };
+          return { ...oldData, events: updated };
+        }
+        return { ...oldData, events: [saved, ...events] };
+      });
+      // Invalidate related caches (but NOT the events list — see above).
+      invalidateEntities(queryClient, ["EventTeamAssignment", "EventDayAssignment"]);
       queryClient.invalidateQueries({ queryKey: ["event", eventId] });
+      // Delayed refresh of dashboard/financial so they pick up the new event
+      // after the server has committed the write.
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ["dashboard-events"] });
+        queryClient.invalidateQueries({ queryKey: ["dashboard-transactions"] });
+      }, 2000);
       markLeaving();
       setIsDirty(false);
       toast({ title: isEdit ? "Project updated" : "Project created" });

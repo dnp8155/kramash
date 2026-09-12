@@ -82,8 +82,11 @@ export default function Events() {
   const receiptsByEvent = data?.receiptsByEvent || {};
   const currency = workspace?.currency || "INR";
   const invalidate = () => {
-    queryClient.invalidateQueries({ queryKey: ["events", workspaceId] });
-    invalidateEntities(queryClient, ["Event", "EventTeamAssignment"]);
+    // Don't invalidate ["events"] here — the optimistic update in deleteEvent
+    // already handles the list. A refetch could return stale data (server
+    // write-commit delay) and re-add the deleted event. Realtime sync will
+    // eventually refresh.
+    invalidateEntities(queryClient, ["EventTeamAssignment"]);
   };
 
   const clientName = (id) => clients[id]?.name || "";
@@ -116,11 +119,18 @@ export default function Events() {
 
   const deleteEvent = async (e) => {
     if (!window.confirm(`Delete "${e.title}"? This cannot be undone.`)) return;
+    // Optimistic update: remove from cache immediately so the list updates instantly
+    queryClient.setQueryData(["events", workspaceId], (oldData) => {
+      if (!oldData) return oldData;
+      return { ...oldData, events: (oldData.events || []).filter((ev) => ev.id !== e.id) };
+    });
     try {
       await base44.entities.Event.delete(e.id);
       toast({ title: `${term.workItemSingular} deleted` });
       invalidate();
     } catch (err) {
+      // Refetch to restore the event if deletion failed
+      invalidate();
       toast({ title: "Failed to delete", description: err?.message, variant: "destructive" });
     }
   };

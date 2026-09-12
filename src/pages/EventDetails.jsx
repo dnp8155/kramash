@@ -147,13 +147,18 @@ export default function EventDetails() {
   const hasError = !!error && !data;
   const load = () => {
     // Small delay to allow backend to fully commit changes before re-fetching.
-    // Without this, the re-fetch can race ahead of the write and return stale data,
-    // making it look like the add/update didn't work until a manual page refresh.
     setTimeout(() => {
       queryClient.invalidateQueries({ queryKey: ["event", id, workspaceId] });
-      // Also refresh every other page that depends on this event's data:
-      // dashboard stats/calendar, events list, financial totals, team-member bookings.
-      invalidateEntities(queryClient, ["Event", "EventTeamAssignment", "EventDayAssignment", "EventServiceAssignment", "FinancialTransaction"]);
+      // Refresh dashboard and financial caches. We intentionally do NOT
+      // invalidate ["events"] (the events list) here: the server has a
+      // write-commit delay, so a refetch could return stale data and wipe
+      // out an optimistic entry (e.g. a just-created event). The realtime
+      // sync will refresh the events list once the server pushes the change.
+      queryClient.invalidateQueries({ queryKey: ["dashboard-events"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-assignments"] });
+      queryClient.invalidateQueries({ queryKey: ["financial"] });
+      invalidateEntities(queryClient, ["EventTeamAssignment", "EventDayAssignment", "EventServiceAssignment", "FinancialTransaction"]);
     }, 300);
   };
 

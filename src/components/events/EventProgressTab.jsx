@@ -1,5 +1,6 @@
 import { CheckCircle2, Circle, Clock, Calendar, IndianRupee, TrendingUp, AlertCircle } from "lucide-react";
 import { useMemo } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import Card from "@/components/common/Card";
 import EmptyState from "@/components/common/EmptyState";
 import DayScheduleCard from "@/components/events/DayScheduleCard";
@@ -50,6 +51,7 @@ export default function EventProgressTab({
   currency,
 }) {
   const term = useBusinessTerminology();
+  const queryClient = useQueryClient();
   const dates = event?.event_dates?.length
     ? event.event_dates
     : event?.start_date
@@ -124,6 +126,19 @@ export default function EventProgressTab({
   const updateStatus = async (newStatus) => {
     try {
       const { base44 } = await import("@/api/base44Client");
+      // Optimistic update: reflect the status change in the events list cache
+      // immediately so it shows up without waiting for a refetch.
+      queryClient.setQueryData(["events", workspaceId], (oldData) => {
+        if (!oldData) return oldData;
+        const events = oldData.events || [];
+        const idx = events.findIndex((e) => e.id === event.id);
+        if (idx >= 0) {
+          const updated = [...events];
+          updated[idx] = { ...events[idx], status: newStatus };
+          return { ...oldData, events: updated };
+        }
+        return oldData;
+      });
       await base44.entities.Event.update(event.id, { status: newStatus });
       onChanged?.();
     } catch (e) {

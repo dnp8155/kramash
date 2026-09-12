@@ -148,7 +148,21 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
           }
         } catch { /* non-critical — event is already saved */ }
       }
-      invalidateEntity(queryClient, "Event");
+      // Optimistic update: inject the saved event into the Events list cache
+      // immediately so it appears instantly when the user navigates back.
+      // We do NOT invalidate ["events"] here — a refetch could return stale
+      // data (server write-commit delay) and wipe out this optimistic entry.
+      queryClient.setQueryData(["events", workspaceId], (oldData) => {
+        if (!oldData) return oldData;
+        const events = oldData.events || [];
+        const idx = events.findIndex((e) => e.id === saved.id);
+        if (idx >= 0) {
+          const updated = [...events];
+          updated[idx] = { ...events[idx], ...saved };
+          return { ...oldData, events: updated };
+        }
+        return { ...oldData, events: [saved, ...events] };
+      });
       toast({ title: event ? `${t.workItemSingular || "Event"} updated` : `${t.workItemSingular || "Event"} created` });
       onSaved?.(saved);
       onClose?.();
