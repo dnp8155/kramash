@@ -133,7 +133,7 @@ export default function IndustrySection() {
             <div className="bg-muted/40 rounded-2xl border border-border p-5 w-full md:w-72 shrink-0 space-y-2.5 font-mono text-xs">
               <div className="font-bold border-b border-border pb-2 flex justify-between">
                 <span>{current.presetHeader}</span>
-                <span className="text-success">ACTIVE</span>
+                <span className="text-primary">ACTIVE</span>
               </div>
               {current.presets.map((p, i) => (
                 <div key={i} className="text-muted-foreground">{p}</div>

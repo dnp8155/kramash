@@ -62,18 +62,18 @@ const thirdFeature = {
     <div className="bg-muted/40 rounded-2xl p-4 border border-border grid grid-cols-1 sm:grid-cols-2 gap-3">
       <div className="bg-card rounded-xl p-3 border border-border">
         <div className="text-[10px] text-muted-foreground mb-1">NET PROFIT (YTD)</div>
-        <div className="text-lg font-bold text-success">₹2,84,450</div>
+        <div className="text-lg font-bold text-foreground">₹2,84,450</div>
         <div className="text-[10px] text-muted-foreground mt-1">Expenses: ₹1,98,000</div>
       </div>
       <div className="bg-card rounded-xl p-3 border border-border space-y-1.5">
         <div className="text-[10px] font-semibold text-foreground">Recent Transactions</div>
         <div className="flex justify-between text-[10px] border-b border-border pb-1">
           <span className="text-muted-foreground">Sharma (UPI)</span>
-          <span className="text-success font-bold">+₹50k</span>
+          <span className="text-foreground font-bold">+₹50k</span>
         </div>
         <div className="flex justify-between text-[10px]">
           <span className="text-muted-foreground">Rahul (Team)</span>
-          <span className="text-destructive font-bold">-₹8k</span>
+          <span className="text-muted-foreground font-bold">-₹8k</span>
         </div>
       </div>
     </div>

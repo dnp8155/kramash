@@ -1,7 +1,6 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
-import LandingNav from "@/components/landing/LandingNav";
 import Hero from "@/components/landing/Hero";
 import ProductProof from "@/components/landing/ProductProof";
 import IndustrySection from "@/components/landing/IndustrySection";
@@ -35,8 +34,7 @@ export default function Landing() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <LandingNav />
+    <div className="min-h-screen bg-white">
       <main>
         <Hero />
         <ProductProof />

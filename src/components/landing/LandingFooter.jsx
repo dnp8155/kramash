@@ -4,7 +4,7 @@ import Logo from "@/components/common/Logo";
 
 export default function LandingFooter() {
   return (
-    <footer className="border-t border-border bg-muted/30 pb-28">
+    <footer className="border-t border-border bg-[#F7F7F8] pb-28">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 py-12">
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8 pb-12 border-b border-border">
           <div>

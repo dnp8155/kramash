@@ -27,8 +27,8 @@ export default function DashboardPreview({ terminology: term }) {
 
   const toneStyles = {
     primary: "bg-primary/10 text-primary",
-    purple: "bg-purple-100 text-purple-600",
-    red: "bg-red-100 text-red-500",
+    purple: "bg-muted text-foreground",
+    red: "bg-muted text-foreground",
   };
 
   return (
@@ -36,7 +36,7 @@ export default function DashboardPreview({ terminology: term }) {
       {/* Browser frame */}
       <div className="rounded-3xl border border-border bg-card shadow-xl overflow-hidden">
         {/* Browser bar */}
-        <div className="h-10 bg-muted/50 border-b border-border flex items-center px-5 gap-2">
+        <div className="h-10 bg-[#F1F1F2] border-b border-border flex items-center px-5 gap-2">
           <div className="w-3 h-3 rounded-full bg-[#FF5F56]" />
           <div className="w-3 h-3 rounded-full bg-[#FFBD2E]" />
           <div className="w-3 h-3 rounded-full bg-[#27C93F]" />
@@ -82,7 +82,7 @@ export default function DashboardPreview({ terminology: term }) {
             {/* Stat cards */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
               {stats.map((s, i) => (
-                <div key={i} className="rounded-2xl border border-border bg-muted/40 p-4 flex items-center justify-between">
+                <div key={i} className="rounded-2xl border border-border bg-[#F7F7F8] p-4 flex items-center justify-between">
                   <div>
                     <div className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">{s.label}</div>
                     <div className="text-xl font-bold text-foreground mt-1 leading-none">{s.value}</div>
@@ -94,7 +94,7 @@ export default function DashboardPreview({ terminology: term }) {
               ))}
             </div>
             {/* Event list */}
-            <div className="rounded-2xl border border-border bg-muted/40 p-4 mb-3">
+            <div className="rounded-2xl border border-border bg-[#F7F7F8] p-4 mb-3">
               <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">
                 Upcoming {term.workItemPlural}
               </div>

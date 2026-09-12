@@ -10,7 +10,7 @@ const stats = [
 
 export default function ProductProof() {
   return (
-    <section className="border-y border-border bg-muted/30">
+    <section className="border-y border-border bg-[#F7F7F8]">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 py-10 sm:py-12">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
           {stats.map((s) => (

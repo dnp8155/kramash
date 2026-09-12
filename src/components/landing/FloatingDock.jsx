@@ -11,31 +11,35 @@ const TABS = [
 
 export default function FloatingDock() {
   const [active, setActive] = useState("features");
-  const [scrolledDown, setScrolledDown] = useState(false);
   const pillRef = useRef(null);
   const btnRefs = useRef({});
-  const lastScrollY = useRef(0);
+  const activeRef = useRef("features");
 
-  // Move the sliding pill to the active tab
   const movePill = (id) => {
     const btn = btnRefs.current[id];
     const pill = pillRef.current;
     if (!btn || !pill) return;
-    pill.style.left = `${btn.offsetLeft}px`;
+    pill.style.transform = `translateX(${btn.offsetLeft}px)`;
     pill.style.width = `${btn.offsetWidth}px`;
   };
 
-  // Scrollspy via IntersectionObserver
+  // Scrollspy — single rAF-throttled handler, stable rootMargin
   useEffect(() => {
+    let raf = null;
     const observer = new IntersectionObserver(
       (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setActive(entry.target.id);
-          }
+        if (raf) return;
+        raf = requestAnimationFrame(() => {
+          raf = null;
+          entries.forEach((entry) => {
+            if (entry.isIntersecting && entry.target.id !== activeRef.current) {
+              activeRef.current = entry.target.id;
+              setActive(entry.target.id);
+            }
+          });
         });
       },
-      { root: null, rootMargin: "-30% 0px -55% 0px", threshold: 0 }
+      { root: null, rootMargin: "-40% 0px -50% 0px", threshold: 0 }
     );
     TABS.forEach((t) => {
       const el = document.getElementById(t.id);
@@ -44,54 +48,38 @@ export default function FloatingDock() {
     return () => observer.disconnect();
   }, []);
 
-  // Position pill whenever active changes
+  // Position pill on active change
   useEffect(() => {
     movePill(active);
   }, [active]);
 
-  // Reposition on resize
+  // Reposition on resize + initial
   useEffect(() => {
-    const onResize = () => movePill(active);
+    const onResize = () => movePill(activeRef.current);
     window.addEventListener("resize", onResize);
-    // Initial position after mount
-    setTimeout(() => movePill(active), 50);
-    return () => window.removeEventListener("resize", onResize);
-  }, [active]);
-
-  // Shrink dock slightly when scrolling down
-  useEffect(() => {
-    const onScroll = () => {
-      const y = window.scrollY;
-      if (y > 50 && y > lastScrollY.current) {
-        setScrolledDown(true);
-      } else {
-        setScrolledDown(false);
-      }
-      lastScrollY.current = y;
+    const t = setTimeout(() => movePill(activeRef.current), 60);
+    return () => {
+      window.removeEventListener("resize", onResize);
+      clearTimeout(t);
     };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   const handleClick = (e, id) => {
     e.preventDefault();
     const el = document.getElementById(id);
     if (el) el.scrollIntoView({ behavior: "smooth" });
+    activeRef.current = id;
     setActive(id);
   };
 
   return (
-    <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 w-[94%] max-w-xl flex justify-center pointer-events-none">
-      <div
-        className={`pointer-events-auto bg-card/80 backdrop-blur-xl border border-border rounded-full p-1.5 shadow-2xl grid grid-cols-5 relative transition-all duration-300 w-full ${
-          scrolledDown ? "scale-90 translate-y-1.5" : "scale-100 translate-y-0"
-        }`}
-      >
-        {/* Sliding pill */}
+    <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 w-[94%] max-w-md flex justify-center pointer-events-none">
+      <div className="pointer-events-auto bg-card/90 backdrop-blur-xl border border-border rounded-full p-1.5 shadow-2xl grid grid-cols-5 relative w-full">
+        {/* Sliding pill — uses transform for GPU-accelerated, stable motion */}
         <div
           ref={pillRef}
-          className="absolute top-1.5 bottom-1.5 bg-primary rounded-full shadow-md z-0 pointer-events-none transition-all duration-300"
-          style={{ left: 0, width: 0 }}
+          className="absolute top-1.5 bottom-1.5 left-0 bg-primary rounded-full z-0 pointer-events-none will-change-transform"
+          style={{ width: 0, transform: "translateX(0)" }}
         />
         {TABS.map((t) => {
           const isActive = active === t.id;
@@ -101,7 +89,7 @@ export default function FloatingDock() {
               href={`#${t.id}`}
               onClick={(e) => handleClick(e, t.id)}
               ref={(el) => (btnRefs.current[t.id] = el)}
-              className={`relative z-10 py-2.5 rounded-full flex flex-col items-center justify-center gap-1 transition-colors duration-300 ${
+              className={`relative z-10 py-2.5 rounded-full flex flex-col items-center justify-center gap-1 transition-colors duration-200 ${
                 isActive ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground"
               }`}
             >

@@ -30,7 +30,7 @@ const blocks = [
 
 export default function Showcase() {
   return (
-    <section id="showcase" className="py-20 sm:py-24 border-t border-border bg-muted/20">
+    <section id="showcase" className="py-20 sm:py-24 border-t border-border bg-[#F7F7F8]">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 space-y-20 sm:space-y-24">
         {blocks.map((b, i) => (
           <div
