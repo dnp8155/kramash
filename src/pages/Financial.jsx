@@ -29,7 +29,8 @@ import {
   totalReceived,
   totalPaid,
   actualProfit,
-  methodBreakdown
+  methodBreakdown,
+  voidTransaction
 } from "@/lib/financeService";
 import { formatMoney } from "@/utils/format";
 import { Download, Plus, Wallet, Receipt, AlertTriangle, Trash2, Lock } from "lucide-react";
@@ -199,12 +200,19 @@ export default function Financial() {
   const handleVoid = async () => {
     if (!voiding) return;
     try {
-      await base44.entities.FinancialTransaction.update(voiding.id, { status: "VOID" });
-      toast({ title: t("Transaction voided"), description: t("It no longer counts in financial totals.") });
+      const res = await voidTransaction(workspaceId, voiding.id);
+      const data = res?.data || res;
+      if (data?.error) {
+        toast({ title: t("Failed to void transaction"), description: data.message || data.error, variant: "destructive" });
+        return;
+      }
+      invalidateEntities(queryClient, ["FinancialTransaction", "Invoice", "PaymentMilestone"]);
+      toast({ title: t("Transaction voided"), description: t("Invoice and milestone balances recalculated.") });
       setVoiding(null);
       load();
     } catch (e) {
-      toast({ title: t("Failed to void transaction"), description: e?.message, variant: "destructive" });
+      const msg = e?.data?.message || e?.data?.error || e?.message;
+      toast({ title: t("Failed to void transaction"), description: msg, variant: "destructive" });
     }
   };
 

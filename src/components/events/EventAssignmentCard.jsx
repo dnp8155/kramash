@@ -7,6 +7,9 @@ import { useToast } from "@/components/ui/use-toast";
 import MemberTypeTag from "@/components/common/MemberTypeTag";
 import { getMemberColor } from "@/lib/teamColors";
 import EditTransactionDialog from "@/components/financial/EditTransactionDialog";
+import { voidTransaction } from "@/lib/financeService";
+import { useQueryClient } from "@tanstack/react-query";
+import { invalidateEntity } from "@/lib/queryInvalidation";
 import { cn } from "@/lib/utils";
 
 export default function EventAssignmentCard({
@@ -27,6 +30,7 @@ export default function EventAssignmentCard({
   const [deletingId, setDeletingId] = useState(null);
   const [editingTx, setEditingTx] = useState(null);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const paymentHistory = transactions.filter(
     (t) => t.team_assignment_id === assignment.id && t.status === "ACTIVE"
@@ -43,14 +47,23 @@ export default function EventAssignmentCard({
   const datesLabel = memberStart ? formatEventDate(memberStart, memberEnd) : "—";
 
   const handleDeletePayment = async (txId) => {
-    if (!confirm("Delete this payment? This will reduce the paid amount.")) return;
+    if (!confirm("Void this payment? It will be marked void and the paid amount recalculated.")) return;
     setDeletingId(txId);
     try {
-      await base44.entities.FinancialTransaction.delete(txId);
+      const res = await voidTransaction(event?.workspace_id, txId);
+      const data = res?.data || res;
+      if (data?.error) {
+        toast({ title: "Failed to void payment", description: data.message || data.error, variant: "destructive" });
+        return;
+      }
+      invalidateEntity(queryClient, "FinancialTransaction");
+      invalidateEntity(queryClient, "Invoice");
+      invalidateEntity(queryClient, "PaymentMilestone");
       onRefresh?.();
-      toast({ title: "Payment deleted" });
+      toast({ title: "Payment voided" });
     } catch (e) {
-      toast({ title: "Failed to delete payment", description: e?.message, variant: "destructive" });
+      const msg = e?.data?.message || e?.data?.error || e?.message;
+      toast({ title: "Failed to void payment", description: msg, variant: "destructive" });
     } finally {
       setDeletingId(null);
     }
