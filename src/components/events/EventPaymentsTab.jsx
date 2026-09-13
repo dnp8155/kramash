@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { Pencil, Upload, Trash2, Wallet, Receipt } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import { useState, useRef } from "react";
+import { Pencil, Upload, Trash2, Wallet, Receipt, Loader2 } from "lucide-react";
+import html2canvas from "html2canvas";
 import { useToast } from "@/components/ui/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { invalidateEntity } from "@/lib/queryInvalidation";
@@ -32,6 +32,8 @@ export default function EventPaymentsTab({
   const { workspaceId } = useWorkspace();
   const [editing, setEditing] = useState(null);
   const [voiding, setVoiding] = useState(false);
+  const [sharingId, setSharingId] = useState(null);
+  const cardRefs = useRef({});
 
   const activeTx = transactions.filter((t) => t.status === "ACTIVE");
 
@@ -74,17 +76,43 @@ export default function EventPaymentsTab({
   };
 
   const handleShare = async (t) => {
-    const text =
-      `${typeLabel(t)}: ${particularFor(t)}\n` +
-      `Amount: ${formatMoney(t.amount, currency)}\n` +
-      `Date: ${formatEventDate(t.transaction_date)}\n` +
-      `Method: ${t.payment_method || "—"}` +
-      (t.reference_number ? `\nRef: ${t.reference_number}` : "");
-    if (navigator.share) {
-      try { await navigator.share({ text }); } catch (e) { /* cancelled */ }
-    } else {
+    const el = cardRefs.current[t.id];
+    if (!el) return;
+    setSharingId(t.id);
+    try {
+      const canvas = await html2canvas(el, {
+        backgroundColor: "#ffffff",
+        scale: 2,
+        useCORS: true,
+      });
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+      const file = new File([blob], `transaction-${t.id}.png`, { type: "image/png" });
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: "Transaction Receipt",
+        });
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `transaction-${t.id}.png`;
+        a.click();
+        URL.revokeObjectURL(url);
+        toast({ title: "Image downloaded", description: "Share it via WhatsApp or any app." });
+      }
+    } catch (e) {
+      const text =
+        `${typeLabel(t)}: ${particularFor(t)}\n` +
+        `Amount: ${formatMoney(t.amount, currency)}\n` +
+        `Date: ${formatEventDate(t.transaction_date)}\n` +
+        `Method: ${t.payment_method || "—"}` +
+        (t.reference_number ? `\nRef: ${t.reference_number}` : "");
       navigator.clipboard?.writeText(text);
-      toast({ title: "Copied to clipboard" });
+      toast({ title: "Copied to clipboard", description: "Image capture failed, text copied instead." });
+    } finally {
+      setSharingId(null);
     }
   };
 
@@ -110,65 +138,69 @@ export default function EventPaymentsTab({
           <EmptyState title="No transactions yet" description="Record client payments or expenses for this entry." />
         </div>
       ) : (
-        <div className="bg-[#F5F5F5] border border-border rounded-[15px] overflow-hidden">
-          <div className="divide-y divide-[#D3D3D3]">
-            {activeTx.map((t) => {
-              const isOut = t.transaction_type !== "CLIENT_RECEIPT";
-              return (
-                <div key={t.id} className="p-4">
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
-                    <div>
-                      <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Date</div>
-                      <div className="text-sm font-medium text-foreground">{formatEventDate(t.transaction_date)}</div>
-                    </div>
-                    <div>
-                      <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Type</div>
-                      <div className="text-sm font-semibold" style={{ color: OUT_COLOR }}>{typeLabel(t)}</div>
-                    </div>
-                    <div>
-                      <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Amount</div>
-                      <div className="text-sm font-semibold" style={{ color: OUT_COLOR }}>
-                        {isOut ? "-" : "+"}{formatMoney(t.amount, currency)}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Method</div>
-                      <div className="text-sm font-medium text-foreground">{t.payment_method || "—"}</div>
-                    </div>
-                    <div className="col-span-2">
-                      <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Particular</div>
-                      <div className="text-sm font-medium text-foreground break-anywhere">{particularFor(t)}</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {activeTx.map((t) => {
+            const isOut = t.transaction_type !== "CLIENT_RECEIPT";
+            return (
+              <div
+                key={t.id}
+                ref={(el) => (cardRefs.current[t.id] = el)}
+                className="bg-white border border-border rounded-[15px] p-4"
+              >
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
+                  <div>
+                    <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Date</div>
+                    <div className="text-sm font-medium text-foreground">{formatEventDate(t.transaction_date)}</div>
+                  </div>
+                  <div>
+                    <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Type</div>
+                    <div className="text-sm font-semibold" style={{ color: OUT_COLOR }}>{typeLabel(t)}</div>
+                  </div>
+                  <div>
+                    <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Amount</div>
+                    <div className="text-sm font-semibold" style={{ color: OUT_COLOR }}>
+                      {isOut ? "-" : "+"}{formatMoney(t.amount, currency)}
                     </div>
                   </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center gap-2 mt-3.5">
-                    <button
-                      onClick={() => setEditing(t)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-foreground text-foreground text-xs font-medium hover:bg-muted transition-colors"
-                    >
-                      <Pencil className="w-3.5 h-3.5" /> Edit
-                    </button>
-                    <button
-                      onClick={() => handleShare(t)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-white text-xs font-medium hover:opacity-90 transition-opacity"
-                      style={{ backgroundColor: NAVY }}
-                    >
-                      <Upload className="w-3.5 h-3.5" /> Share Invoice
-                    </button>
-                    <button
-                      onClick={() => handleDelete(t)}
-                      className="ml-auto w-8 h-8 rounded-full flex items-center justify-center text-white hover:opacity-90 transition-opacity"
-                      style={{ backgroundColor: RED }}
-                      aria-label="Delete"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                  <div>
+                    <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Method</div>
+                    <div className="text-sm font-medium text-foreground">{t.payment_method || "—"}</div>
+                  </div>
+                  <div className="col-span-2">
+                    <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Particular</div>
+                    <div className="text-sm font-medium text-foreground break-anywhere">{particularFor(t)}</div>
                   </div>
                 </div>
-              );
-            })}
-          </div>
+
+                {/* Actions */}
+                <div className="flex items-center gap-2 mt-3.5">
+                  <button
+                    onClick={() => setEditing(t)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-foreground text-foreground text-xs font-medium hover:bg-muted transition-colors"
+                  >
+                    <Pencil className="w-3.5 h-3.5" /> Edit
+                  </button>
+                  <button
+                    onClick={() => handleShare(t)}
+                    disabled={sharingId === t.id}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-white text-xs font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                    style={{ backgroundColor: NAVY }}
+                  >
+                    {sharingId === t.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />} Share Invoice
+                  </button>
+                  <button
+                    onClick={() => handleDelete(t)}
+                    disabled={voiding}
+                    className="ml-auto w-8 h-8 rounded-full flex items-center justify-center text-white hover:opacity-90 transition-opacity disabled:opacity-50"
+                    style={{ backgroundColor: RED }}
+                    aria-label="Delete"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 

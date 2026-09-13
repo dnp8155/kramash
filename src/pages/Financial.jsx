@@ -49,7 +49,7 @@ export default function Financial() {
   const t = useT();
   const tabs = TAB_KEYS;
 
-  const { fiscalYears, selectedFY, selectFY, activeFY, refresh: refreshFY, dateRange } = useFinancialYear();
+  const { fiscalYears, selectedFY, selectFY, selectDateRange, activeFY, refresh: refreshFY, dateRange } = useFinancialYear();
 
   const [tab, setTab] = useState("Payment Activity");
   const [method, setMethod] = useState("All");
@@ -99,6 +99,13 @@ export default function Financial() {
     try {
       await setActiveFY(workspaceId, fyRecord.id);
       selectFY(fyRecord.id);
+      selectDateRange({
+        type: "fy",
+        label: fyDisplayLabel(fyRecord),
+        startDate: fyRecord.start_date,
+        endDate: fyRecord.end_date,
+        fyId: fyRecord.id,
+      });
       toast({ title: t("Financial year set active"), description: fyRecord.label });
       load();
     } catch (e) {
@@ -183,8 +190,14 @@ export default function Financial() {
     }
     for (const t of allTx) {
       if (t.status !== "ACTIVE") continue;
-      // Find the FY this transaction belongs to
+      // Find the FY this transaction belongs to — try financial_year_id first,
+      // then fall back to date-range matching for robustness.
       let fyId = t.financial_year_id;
+      if (fyId && !map[fyId]) {
+        // financial_year_id might be a stale/foreign key — try matching by fy_id string
+        const fyByString = fiscalYears.find((f) => f.fy_id === fyId);
+        fyId = fyByString?.id || null;
+      }
       if (!fyId) {
         // Fallback: find by date range
         const fy = fiscalYears.find((f) => txInFY(t, f));

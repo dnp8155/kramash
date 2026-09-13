@@ -7,7 +7,8 @@ import CalendarMonthView from "@/components/calendar/CalendarMonthView";
 import CalendarWeekView from "@/components/calendar/CalendarWeekView";
 import CalendarDayView from "@/components/calendar/CalendarDayView";
 import CalendarYearView from "@/components/calendar/CalendarYearView";
-import { ChevronLeft, ChevronRight, CalendarRange } from "lucide-react";
+import CalendarSidePanel from "@/components/calendar/CalendarSidePanel";
+import { ChevronLeft, ChevronRight, CalendarRange, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const VIEWS = ["year", "month", "week", "day"];
@@ -18,6 +19,7 @@ export default function Calendar() {
   const navigate = useNavigate();
   const [view, setView] = useState("month");
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [search, setSearch] = useState("");
 
   const { data: events = [] } = useQuery({
     queryKey: ["calendar-events", workspaceId],
@@ -25,9 +27,19 @@ export default function Calendar() {
     enabled: !!workspaceId,
   });
 
+  const filteredEvents = useMemo(() => {
+    if (!search) return events;
+    const q = search.toLowerCase();
+    return events.filter((e) =>
+      e.title?.toLowerCase().includes(q) ||
+      e.event_type?.toLowerCase().includes(q) ||
+      e.venue?.toLowerCase().includes(q)
+    );
+  }, [events, search]);
+
   const eventsByDate = useMemo(() => {
     const map = {};
-    for (const ev of events) {
+    for (const ev of filteredEvents) {
       if (ev.status === "cancelled") continue;
       const dates = Array.isArray(ev.event_dates) && ev.event_dates.length > 0
         ? ev.event_dates
@@ -38,7 +50,7 @@ export default function Calendar() {
       }
     }
     return map;
-  }, [events]);
+  }, [filteredEvents]);
 
   const navigateDate = (dir) => {
     const d = new Date(currentDate);
@@ -65,7 +77,7 @@ export default function Calendar() {
   const onEventClick = (ev) => navigate(`/events/${ev.id}`);
 
   return (
-    <div className="p-4 sm:p-6 max-w-[1200px] mx-auto space-y-4">
+    <div className="p-4 sm:p-6 max-w-[1400px] mx-auto space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
           <CalendarRange className="w-5 h-5" /> Calendar
@@ -103,36 +115,61 @@ export default function Calendar() {
         </div>
       </div>
 
-      {view === "year" && (
-        <CalendarYearView
-          currentDate={currentDate}
-          eventsByDate={eventsByDate}
-          onMonthClick={(d) => { setCurrentDate(d); setView("month"); }}
+      {/* Search bar */}
+      <div className="relative max-w-sm">
+        <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search events by title, type, or venue..."
+          className="w-full h-9 pl-9 pr-9 text-sm rounded-lg border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/40"
         />
-      )}
-      {view === "month" && (
-        <CalendarMonthView
-          currentDate={currentDate}
-          eventsByDate={eventsByDate}
-          onDayClick={(d) => { setCurrentDate(d); setView("day"); }}
-          onEventClick={onEventClick}
-        />
-      )}
-      {view === "week" && (
-        <CalendarWeekView
-          currentDate={currentDate}
-          eventsByDate={eventsByDate}
-          onDayClick={(d) => { setCurrentDate(d); setView("day"); }}
-          onEventClick={onEventClick}
-        />
-      )}
-      {view === "day" && (
-        <CalendarDayView
-          currentDate={currentDate}
-          eventsByDate={eventsByDate}
-          onEventClick={onEventClick}
-        />
-      )}
+        {search && (
+          <button
+            onClick={() => setSearch("")}
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
+      </div>
+
+      <div className="flex gap-4">
+        <div className="flex-1 min-w-0">
+          {view === "year" && (
+            <CalendarYearView
+              currentDate={currentDate}
+              eventsByDate={eventsByDate}
+              onMonthClick={(d) => { setCurrentDate(d); setView("month"); }}
+            />
+          )}
+          {view === "month" && (
+            <CalendarMonthView
+              currentDate={currentDate}
+              eventsByDate={eventsByDate}
+              onDayClick={(d) => { setCurrentDate(d); setView("day"); }}
+              onEventClick={onEventClick}
+            />
+          )}
+          {view === "week" && (
+            <CalendarWeekView
+              currentDate={currentDate}
+              eventsByDate={eventsByDate}
+              onDayClick={(d) => { setCurrentDate(d); setView("day"); }}
+              onEventClick={onEventClick}
+            />
+          )}
+          {view === "day" && (
+            <CalendarDayView
+              currentDate={currentDate}
+              eventsByDate={eventsByDate}
+              onEventClick={onEventClick}
+            />
+          )}
+        </div>
+        <CalendarSidePanel events={events} search={search} />
+      </div>
     </div>
   );
 }

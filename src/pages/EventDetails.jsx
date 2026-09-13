@@ -24,6 +24,7 @@ import RecordServicePaymentDialog from "@/components/events/RecordServicePayment
 import RecordPaymentDialog from "@/components/financial/RecordPaymentDialog";
 import RecordExpenseDialog from "@/components/financial/RecordExpenseDialog";
 import EventMilestonesTab from "@/components/events/EventMilestonesTab";
+import EventNotesTab from "@/components/events/EventNotesTab";
 import { loadServiceProviders } from "@/lib/serviceProviderService";
 import { useToast } from "@/components/ui/use-toast";
 import { currentFY, fyRange, fyForDate, formatEventDate } from "@/lib/dates";
@@ -659,30 +660,7 @@ export default function EventDetails() {
       )}
 
       {tab === "Notes" && (
-        <Card className="p-5">
-          <div className="flex items-center gap-2 mb-3">
-            <StickyNote className="w-4 h-4 text-muted-foreground" />
-            <span className="text-sm font-semibold text-foreground">Notes</span>
-          </div>
-          {event.notes || event.description ? (
-            <div className="space-y-3">
-              {event.description && (
-                <div>
-                  <div className="text-xs font-medium text-muted-foreground mb-1">Description</div>
-                  <p className="text-sm text-foreground whitespace-pre-wrap">{event.description}</p>
-                </div>
-              )}
-              {event.notes && (
-                <div>
-                  <div className="text-xs font-medium text-muted-foreground mb-1">Notes</div>
-                  <p className="text-sm text-foreground whitespace-pre-wrap">{event.notes}</p>
-                </div>
-              )}
-            </div>
-          ) : (
-            <EmptyState title="No notes" description={`Edit the ${term.workItemSingular.toLowerCase()} to add notes or a description.`} />
-          )}
-        </Card>
+        <EventNotesTab event={event} term={term} />
       )}
 
       {/* Dialogs */}
