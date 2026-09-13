@@ -129,6 +129,19 @@ export default function AvailabilityCalendar({
   const selectedEvents = selected ? (eventsByDate[selected] || []) : [];
   const selectedBlocked = selected ? (blockedByDate[selected] || []) : [];
 
+  // All active blocks across the workspace (for the always-visible "Manage Blocks" section)
+  const allActiveBlocks = useMemo(() => {
+    const today = todayISO();
+    return (blockDates || [])
+      .filter((b) => b.status !== "cancelled")
+      .map((b) => {
+        const m = members.find((mm) => mm.id === b.team_member_id);
+        return m && m.status !== "inactive" ? { member: m, block: b } : null;
+      })
+      .filter(Boolean)
+      .sort((a, b) => (a.block.start_date || "").localeCompare(b.block.start_date || ""));
+  }, [blockDates, members]);
+
   // Upcoming events (today onwards) for the right panel default state
   const upcomingEvents = useMemo(() => {
     const today = todayISO();
@@ -703,6 +716,45 @@ export default function AvailabilityCalendar({
               )}
             </div>
           </>
+        )}
+
+        {/* Always-visible "Manage Blocked Dates" section — lets users unblock any
+            active block without first clicking the exact blocked date. */}
+        {allActiveBlocks.length > 0 && (
+          <div className="mt-4 pt-4 border-t border-border">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+              <Ban className="w-3.5 h-3.5 text-[#6b7280]" />
+              All Blocked Dates ({allActiveBlocks.length})
+            </div>
+            <ul className="space-y-1.5 max-h-48 overflow-y-auto -mr-1 pr-1">
+              {allActiveBlocks.map(({ member, block }) => {
+                const start = block.start_date;
+                const end = block.end_date || block.start_date;
+                const label = start === end
+                  ? new Date(start + "T12:00:00").toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
+                  : `${new Date(start + "T12:00:00").toLocaleDateString("en-IN", { day: "2-digit", month: "short" })} – ${new Date(end + "T12:00:00").toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}`;
+                return (
+                  <li key={block.id} className="text-sm flex items-center justify-between gap-2 p-1.5 rounded-md hover:bg-muted/50">
+                    <div className="min-w-0">
+                      <div className="text-foreground font-medium truncate">{member.name}</div>
+                      <div className="text-xs text-muted-foreground flex items-center gap-1">
+                        <span>{label}</span>
+                        {block.reason ? <span className="truncate">· {block.reason}</span> : null}
+                      </div>
+                    </div>
+                    {onUnblockDate && block.id && (
+                      <button
+                        onClick={() => onUnblockDate(block.id)}
+                        className="text-xs font-medium text-success hover:underline shrink-0 flex items-center gap-0.5 px-2 py-1 rounded-md hover:bg-success/10"
+                      >
+                        <Unlock className="w-3 h-3" /> Unblock
+                      </button>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
         )}
       </div>
     </div>
