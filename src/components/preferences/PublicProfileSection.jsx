@@ -1,7 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useWorkspace } from "@/lib/WorkspaceContext";
-import Button from "@/components/common/Button";
 import Input from "@/components/common/Input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -20,14 +19,15 @@ function slugify(text) {
 }
 
 export default function PublicProfileSection() {
-  const { workspace, workspaceId, refresh, setWorkspace } = useWorkspace();
+  const { workspace, setWorkspace, refresh } = useWorkspace();
   const { toast } = useToast();
   const [enabled, setEnabled] = useState(false);
   const [slug, setSlug] = useState("");
   const [about, setAbout] = useState("");
   const [social, setSocial] = useState({ instagram: "", facebook: "", youtube: "", website: "" });
-  const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [saveState, setSaveState] = useState("idle"); // idle | saving | saved
+  const saveTimerRef = useRef(null);
 
   useEffect(() => {
     if (!workspace) return;
@@ -41,29 +41,41 @@ export default function PublicProfileSection() {
 
   const publicUrl = slug ? `${window.location.origin}/p/${slug}` : "";
 
-  const handleSave = async () => {
-    setSaving(true);
+  // Save a single field patch to the workspace — optimistic + on blur
+  const saveField = async (patch) => {
+    // Optimistic: update local workspace immediately
+    setWorkspace?.({ ...workspace, ...patch });
+    setSaveState("saving");
     try {
-      const finalSlug = slug || slugify(workspace.name);
-      if (!finalSlug) {
-        toast({ title: "Slug required", description: "Enter a URL slug or business name.", variant: "destructive" });
-        setSaving(false);
-        return;
-      }
-      const updated = await base44.entities.Workspace.update(workspace.id, {
-        public_profile_enabled: enabled,
-        public_profile_slug: finalSlug,
-        public_profile_about: about,
-        public_profile_social_links: JSON.stringify(social)
-      });
+      const updated = await base44.entities.Workspace.update(workspace.id, patch);
       setWorkspace?.(updated);
       refresh?.();
-      toast({ title: "Public profile saved" });
+      setSaveState("saved");
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = setTimeout(() => setSaveState("idle"), 1500);
     } catch (e) {
+      // Revert on failure
+      setWorkspace?.(workspace);
+      setSaveState("idle");
       toast({ title: "Failed to save", description: e?.message, variant: "destructive" });
-    } finally {
-      setSaving(false);
     }
+  };
+
+  const handleBlur = (field, value) => {
+    const patch = { [field]: value };
+    saveField(patch);
+  };
+
+  const handleSocialBlur = (key, value) => {
+    const nextSocial = { ...social, [key]: value };
+    setSocial(nextSocial);
+    saveField({ public_profile_social_links: JSON.stringify(nextSocial) });
+  };
+
+  const handleToggle = () => {
+    const next = !enabled;
+    setEnabled(next); // optimistic
+    saveField({ public_profile_enabled: next });
   };
 
   const copyLink = () => {
@@ -76,6 +88,17 @@ export default function PublicProfileSection() {
 
   return (
     <div className="space-y-4">
+      {/* Save indicator */}
+      {saveState !== "idle" && (
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          {saveState === "saving" ? (
+            <><Loader2 className="w-3 h-3 animate-spin" /> Saving…</>
+          ) : (
+            <><Check className="w-3 h-3 text-success" /> Saved</>
+          )}
+        </div>
+      )}
+
       {/* Enable toggle */}
       <div className="flex items-start justify-between gap-3 p-3 rounded-lg bg-muted/40 border border-border">
         <div className="flex-1 min-w-0">
@@ -85,7 +108,7 @@ export default function PublicProfileSection() {
           </p>
         </div>
         <button
-          onClick={() => setEnabled(!enabled)}
+          onClick={handleToggle}
           className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${enabled ? "bg-success" : "bg-muted-foreground/30"}`}
         >
           <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${enabled ? "translate-x-5" : "translate-x-0.5"}`} />
@@ -100,6 +123,7 @@ export default function PublicProfileSection() {
           <Input
             value={slug}
             onChange={(e) => setSlug(slugify(e.target.value))}
+            onBlur={(e) => handleBlur("public_profile_slug", e.target.value || slugify(workspace.name))}
             placeholder="your-business"
             className="flex-1"
           />
@@ -107,12 +131,12 @@ export default function PublicProfileSection() {
         {publicUrl && (
           <div className="flex items-center gap-2 mt-2">
             <div className="flex-1 min-w-0 px-3 py-1.5 rounded-md bg-muted text-xs text-muted-foreground truncate">{publicUrl}</div>
-            <Button size="sm" variant="outline" onClick={copyLink} className="shrink-0">
+            <button onClick={copyLink} className="shrink-0 p-2 rounded-md border border-border hover:bg-muted transition-colors" aria-label="Copy link">
               {copied ? <Check className="w-3.5 h-3.5 text-success" /> : <Copy className="w-3.5 h-3.5" />}
-            </Button>
+            </button>
             {enabled && (
-              <a href={publicUrl} target="_blank" rel="noopener noreferrer" className="shrink-0">
-                <Button size="sm" variant="outline"><ExternalLink className="w-3.5 h-3.5" /></Button>
+              <a href={publicUrl} target="_blank" rel="noopener noreferrer" className="shrink-0 p-2 rounded-md border border-border hover:bg-muted transition-colors" aria-label="Open profile">
+                <ExternalLink className="w-3.5 h-3.5" />
               </a>
             )}
           </div>
@@ -125,6 +149,7 @@ export default function PublicProfileSection() {
         <Textarea
           value={about}
           onChange={(e) => setAbout(e.target.value)}
+          onBlur={(e) => handleBlur("public_profile_about", e.target.value)}
           placeholder="Tell visitors about your business, experience, and what makes you unique..."
           rows={3}
         />
@@ -134,17 +159,32 @@ export default function PublicProfileSection() {
       <div className="space-y-2">
         <Label className="text-xs">Social Links</Label>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <Input value={social.instagram || ""} onChange={(e) => setSocial({ ...social, instagram: e.target.value })} placeholder="Instagram URL" />
-          <Input value={social.facebook || ""} onChange={(e) => setSocial({ ...social, facebook: e.target.value })} placeholder="Facebook URL" />
-          <Input value={social.youtube || ""} onChange={(e) => setSocial({ ...social, youtube: e.target.value })} placeholder="YouTube URL" />
-          <Input value={social.website || ""} onChange={(e) => setSocial({ ...social, website: e.target.value })} placeholder="Website URL" />
+          <Input
+            value={social.instagram || ""}
+            onChange={(e) => setSocial({ ...social, instagram: e.target.value })}
+            onBlur={(e) => handleSocialBlur("instagram", e.target.value)}
+            placeholder="Instagram URL"
+          />
+          <Input
+            value={social.facebook || ""}
+            onChange={(e) => setSocial({ ...social, facebook: e.target.value })}
+            onBlur={(e) => handleSocialBlur("facebook", e.target.value)}
+            placeholder="Facebook URL"
+          />
+          <Input
+            value={social.youtube || ""}
+            onChange={(e) => setSocial({ ...social, youtube: e.target.value })}
+            onBlur={(e) => handleSocialBlur("youtube", e.target.value)}
+            placeholder="YouTube URL"
+          />
+          <Input
+            value={social.website || ""}
+            onChange={(e) => setSocial({ ...social, website: e.target.value })}
+            onBlur={(e) => handleSocialBlur("website", e.target.value)}
+            placeholder="Website URL"
+          />
         </div>
       </div>
-
-      <Button onClick={handleSave} disabled={saving} size="sm" className="w-full">
-        {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Globe className="w-3.5 h-3.5" />}
-        {saving ? "Saving…" : "Save Public Profile"}
-      </Button>
     </div>
   );
 }
