@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Image } from "@/components/ui/image";
-import { MapPin, Phone, Mail, Globe, Instagram, Facebook, Youtube, Briefcase, Users, Sparkles } from "lucide-react";
+import { MapPin, Phone, Mail, Globe, Instagram, Facebook, Youtube, Sparkles } from "lucide-react";
 
 export default function PublicProfile() {
   const { slug } = useParams();
@@ -52,7 +52,7 @@ export default function PublicProfile() {
     );
   }
 
-  const { workspace: ws, services = [], teamMembers = [], socialLinks = {} } = data;
+  const { workspace: ws, socialLinks = {} } = data;
 
   const socials = [
     { key: "instagram", icon: Instagram, url: socialLinks.instagram },
@@ -95,60 +95,6 @@ export default function PublicProfile() {
           </section>
         )}
 
-        {/* Event Types */}
-        {ws.event_types?.length > 0 && (
-          <section>
-            <h2 className="text-lg font-heading font-semibold text-foreground mb-3">What We Do</h2>
-            <div className="flex flex-wrap gap-2">
-              {ws.event_types.map((t, i) => (
-                <span key={i} className="px-3 py-1.5 rounded-lg bg-muted text-sm text-foreground border border-border">
-                  {t}
-                </span>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Services */}
-        {services.length > 0 && (
-          <section>
-            <h2 className="text-lg font-heading font-semibold text-foreground mb-3 flex items-center gap-2">
-              <Briefcase className="w-4 h-4" /> Services
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {services.map((s, i) => (
-                <div key={i} className="bg-card border border-border rounded-xl p-4 shadow-card">
-                  <h3 className="font-medium text-foreground text-sm mb-1">{s.name}</h3>
-                  {s.description && <p className="text-xs text-muted-foreground line-clamp-2">{s.description}</p>}
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Team */}
-        {teamMembers.length > 0 && (
-          <section>
-            <h2 className="text-lg font-heading font-semibold text-foreground mb-3 flex items-center gap-2">
-              <Users className="w-4 h-4" /> Our Team
-            </h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {teamMembers.map((m, i) => (
-                <div key={i} className="bg-card border border-border rounded-xl p-4 text-center shadow-card">
-                  <div
-                    className="w-12 h-12 rounded-full mx-auto mb-2 flex items-center justify-center text-white font-semibold"
-                    style={{ backgroundColor: m.color || '#0d9488' }}
-                  >
-                    {m.name?.charAt(0)?.toUpperCase()}
-                  </div>
-                  <p className="text-sm font-medium text-foreground truncate">{m.name}</p>
-                  {m.profession && <p className="text-xs text-muted-foreground truncate">{m.profession}</p>}
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
         {/* Contact */}
         <section>
           <h2 className="text-lg font-heading font-semibold text-foreground mb-3">Get in Touch</h2>
@@ -163,9 +109,15 @@ export default function PublicProfile() {
                 <Mail className="w-4 h-4 text-muted-foreground shrink-0" /> {ws.email}
               </a>
             )}
-            {(ws.city || ws.state) && (
-              <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                <MapPin className="w-4 h-4 shrink-0" /> {[ws.city, ws.state, ws.country].filter(Boolean).join(", ")}
+            {ws.website && (
+              <a href={ws.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-sm text-foreground hover:text-primary transition-colors">
+                <Globe className="w-4 h-4 text-muted-foreground shrink-0" /> {ws.website}
+              </a>
+            )}
+            {(ws.address || ws.city || ws.state) && (
+              <div className="flex items-start gap-3 text-sm text-muted-foreground">
+                <MapPin className="w-4 h-4 shrink-0 mt-0.5" />
+                <span className="break-anywhere">{[ws.address, ws.city, ws.state, ws.country].filter(Boolean).join(", ")}</span>
               </div>
             )}
             {socials.length > 0 && (

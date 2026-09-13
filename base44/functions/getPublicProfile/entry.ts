@@ -70,6 +70,7 @@ export default async function(req) {
         logo: workspace.logo || '',
         business_type: workspace.business_type || '',
         business_category: workspace.business_category || 'OTHER',
+        address: workspace.address || '',
         city: workspace.city || '',
         state: workspace.state || '',
         country: workspace.country || '',
