@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { parseISODate, toISODate, todayISO } from "@/lib/dates";
 import { splitAvailability } from "@/lib/teamService";
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, MousePointerClick, Ban } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, MousePointerClick, Ban, CalendarDays, Crown } from "lucide-react";
 import CalendarEventDetailPanel from "@/components/team/CalendarEventDetailPanel";
 import { cn } from "@/lib/utils";
 
@@ -105,6 +105,30 @@ export default function AvailabilityCalendar({
 
   const selectedEvents = selected ? (eventsByDate[selected] || []) : [];
   const selectedBlocked = selected ? (blockedByDate[selected] || []) : [];
+
+  // Upcoming events (today onwards) for the right panel default state
+  const upcomingEvents = useMemo(() => {
+    const today = todayISO();
+    const rows = [];
+    for (const ev of allEvents) {
+      const dates = Array.isArray(ev.event_dates) && ev.event_dates.length > 0
+        ? ev.event_dates
+        : (ev.start_date ? [ev.start_date] : []);
+      for (const d of dates) {
+        if (d >= today) {
+          rows.push({ event: ev, date: d });
+        }
+      }
+    }
+    rows.sort((a, b) => a.date.localeCompare(b.date) || (a.event.title || "").localeCompare(b.event.title || ""));
+    return rows.slice(0, 8);
+  }, [allEvents]);
+
+  const fmtUpcoming = (s) => {
+    try {
+      return new Date(s + "T12:00:00").toLocaleDateString("en-IN", { day: "2-digit", month: "short" });
+    } catch { return s; }
+  };
 
   const prevMonth = () => setView((v) => {
     const m = v.m - 1;
@@ -238,17 +262,56 @@ export default function AvailabilityCalendar({
         </div>
       </div>
 
-      {/* Selected date detail / empty state */}
+      {/* Selected date detail / upcoming events */}
       <div className="bg-card border border-border rounded-xl p-5 shadow-card">
         {!selected ? (
-          <div className="flex flex-col items-center justify-center text-center py-12">
-            <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mb-3">
-              <MousePointerClick className="w-7 h-7 text-muted-foreground" />
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <CalendarDays className="w-4 h-4 text-muted-foreground" />
+              <h3 className="text-sm font-bold text-foreground">Upcoming Events</h3>
+              {upcomingEvents.length > 0 && (
+                <span className="text-xs text-muted-foreground ml-auto">{upcomingEvents.length}</span>
+              )}
             </div>
-            <h3 className="text-sm font-bold text-foreground">Tap a date</h3>
-            <p className="text-xs text-muted-foreground mt-1 max-w-[200px]">
-              Pick a day on the calendar to see events, team and services.
-            </p>
+            {upcomingEvents.length === 0 ? (
+              <div className="flex flex-col items-center justify-center text-center py-10">
+                <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mb-3">
+                  <MousePointerClick className="w-7 h-7 text-muted-foreground" />
+                </div>
+                <h3 className="text-sm font-bold text-foreground">Tap a date</h3>
+                <p className="text-xs text-muted-foreground mt-1 max-w-[200px]">
+                  No upcoming events. Pick a day on the calendar to see details.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-[70vh] overflow-y-auto -mr-1 pr-1">
+                {upcomingEvents.map(({ event: ev, date }) => (
+                  <button
+                    key={`${ev.id}-${date}`}
+                    onClick={() => onEventClick?.(ev)}
+                    className="w-full flex items-center gap-3 p-2.5 rounded-lg border border-border hover:border-primary/30 hover:bg-muted/50 transition-colors text-left"
+                  >
+                    <div className="flex flex-col items-center justify-center w-11 h-11 rounded-lg bg-primary/10 text-primary shrink-0">
+                      <span className="text-[10px] font-semibold uppercase leading-none">
+                        {new Date(date + "T12:00:00").toLocaleDateString("en-IN", { month: "short" })}
+                      </span>
+                      <span className="text-lg font-bold leading-none mt-0.5">
+                        {Number(date.slice(8))}
+                      </span>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-medium text-foreground truncate">{ev.title}</div>
+                      <div className="text-xs text-muted-foreground truncate mt-0.5">
+                        {ev.event_type || "Event"} {ev.venue ? `· ${ev.venue}` : ""}
+                      </div>
+                    </div>
+                    {ev.status === "upcoming" && (
+                      <span className="w-2 h-2 rounded-full bg-[#27ae60] shrink-0" title="Upcoming" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         ) : selectedEvents.length > 0 ? (
           <div>

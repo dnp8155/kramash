@@ -7,7 +7,6 @@ import { useAuth } from "@/lib/AuthContext";
 import TeamMemberCard from "@/components/team/TeamMemberCard";
 import TeamMemberForm from "@/components/team/TeamMemberForm";
 import AvailabilityCalendar from "@/components/team/AvailabilityCalendar";
-import UpcomingBookingsList from "@/components/team/UpcomingBookingsList";
 import SearchInput from "@/components/common/SearchInput";
 import Select from "@/components/common/Select";
 import Button from "@/components/common/Button";
@@ -346,15 +345,6 @@ export default function Team() {
               onEventClick={(ev) => navigate(`/events/${ev.id}`)}
               onBlockDate={(date) => { setBlockPreselect({ memberId: null, date }); setShowBlock(true); }}
               onUnblockDate={unblockDate}
-            />
-            <UpcomingBookingsList
-              members={members}
-              assignments={assignments}
-              eventsById={eventsById}
-              serviceAssignments={serviceAssignments}
-              dayAssignments={dayAssignments}
-              services={services}
-              onEventClick={(ev) => navigate(`/events/${ev.id}`)}
             />
           </div>
         )
