@@ -48,11 +48,11 @@ export default function PaymentTable({
     if (t.transaction_type === "CLIENT_RECEIPT") {
       return clientsById[t.client_id]?.name || "";
     }
-    const ev = eventsById[t.event_id];
-    if (ev) return clientsById[ev.client_id]?.name || "";
     if (t.transaction_type === "BUSINESS_EXPENSE") {
       return "Misc Expense";
     }
+    const ev = eventsById[t.event_id];
+    if (ev) return clientsById[ev.client_id]?.name || "";
     return "";
   };
 
