@@ -119,7 +119,7 @@ export default function ServiceAssignmentCard({
 
       {/* Provider line */}
       <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-3">
-        {isSelf ? <PaymentDot paid={clientPaid} agreed={clientTotal} /> : <PaymentDot paid={paid} agreed={rate} />}
+        <PaymentDot paid={paid} agreed={rate} />
         {isSelf && <Crown className="w-3 h-3 text-primary shrink-0" />}
         <Briefcase className="w-3 h-3 shrink-0" />
         <span className="truncate">
