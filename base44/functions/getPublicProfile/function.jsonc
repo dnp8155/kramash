@@ -1,0 +1,5 @@
+{
+  "name": "getPublicProfile",
+  "description": "Public endpoint — returns workspace public profile data, active services, and team members by slug. No auth required.",
+  "public": true
+}

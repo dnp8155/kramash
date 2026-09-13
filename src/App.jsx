@@ -58,6 +58,7 @@ import ClientLogin from '@/pages/ClientLogin';
 import ClientRegister from '@/pages/ClientRegister';
 import ClientPortal from '@/pages/ClientPortal';
 import ClientRoute from '@/components/auth/ClientRoute';
+import PublicProfile from '@/pages/PublicProfile';
 // Add page imports here
 
 const AuthenticatedApp = () => {
@@ -115,6 +116,9 @@ const AuthenticatedApp = () => {
       <Route element={<ClientRoute />}>
         <Route path="/client-portal" element={<ClientPortal />} />
       </Route>
+
+      {/* Public business profile page */}
+      <Route path="/p/:slug" element={<PublicProfile />} />
 
       {/* Public legal pages */}
       <Route path="/terms" element={<TermsOfService />} />

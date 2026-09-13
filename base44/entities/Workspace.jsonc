@@ -163,6 +163,23 @@
     "display_preferences": {
       "type": "string",
       "title": "Display Preferences (JSON)"
+    },
+    "public_profile_enabled": {
+      "type": "boolean",
+      "title": "Public Profile Enabled",
+      "default": false
+    },
+    "public_profile_slug": {
+      "type": "string",
+      "title": "Public Profile Slug (URL identifier)"
+    },
+    "public_profile_about": {
+      "type": "string",
+      "title": "Public Profile About Text"
+    },
+    "public_profile_social_links": {
+      "type": "string",
+      "title": "Public Profile Social Links (JSON: {instagram, facebook, youtube, website})"
     }
   },
   "required": [

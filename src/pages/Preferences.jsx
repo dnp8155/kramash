@@ -15,7 +15,7 @@ import ServiceForm from "@/components/services/ServiceForm";
 import { useToast } from "@/components/ui/use-toast";
 import { loadRoles } from "@/lib/teamService";
 import { loadAllServices } from "@/lib/quotationService";
-import { Pencil, Trash2, Plus, Download, Loader2, Briefcase, Tags, Palette, Bell, CreditCard, LogOut, FileText, Users, UserCircle, Power } from "lucide-react";
+import { Pencil, Trash2, Plus, Download, Loader2, Briefcase, Tags, Palette, Bell, CreditCard, LogOut, FileText, Users, UserCircle, Power, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { exportFinancialCsv } from "@/lib/exportUtils";
 import { loadAllTransactions } from "@/lib/financeService";
@@ -26,6 +26,7 @@ import EventTypeManager from "@/components/preferences/EventTypeManager";
 import QuotationDefaultsSection from "@/components/settings/QuotationDefaultsSection";
 import MilestoneTemplateManager from "@/components/preferences/MilestoneTemplateManager";
 import PackageSection from "@/components/preferences/PackageSection";
+import PublicProfileSection from "@/components/preferences/PublicProfileSection";
 import DataDeletionSection from "@/components/settings/DataDeletionSection";
 import { usePlan } from "@/hooks/usePlan";
 
@@ -238,8 +239,9 @@ export default function Preferences() {
                   <div key={s.id} className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-muted/40">
                     <Briefcase className={cn("w-3.5 h-3.5 shrink-0", s.status === "active" ? "text-success" : "text-destructive")} />
                     <span className={cn("text-sm flex-1 min-w-0 truncate", s.status === "inactive" && "text-muted-foreground line-through")}>{s.name}</span>
-                    <span className="text-sm text-muted-foreground whitespace-nowrap">{formatINR(s.default_rate)}</span>
-                    <span className="text-[10px] text-muted-foreground whitespace-nowrap hidden sm:inline">{s.rate_type}</span>
+                    <span className="text-xs text-muted-foreground whitespace-nowrap shrink-0">
+                      {formatINR(s.default_rate)} <span className="text-[10px]">/ {s.rate_type}</span>
+                    </span>
                     {workspace?.gst_enabled && Number(s.gst_rate) > 0 && (
                       <span className="text-[10px] text-muted-foreground whitespace-nowrap hidden sm:inline">GST {s.gst_rate}%</span>
                     )}
@@ -306,6 +308,14 @@ export default function Preferences() {
             </div>
           </Card>
         </div>
+      </SectionBlock>
+
+      {/* Public Profile */}
+      <SectionBlock icon={Globe} title="Public Profile">
+        <Card title="Shareable Business Profile">
+          <p className="text-xs text-muted-foreground mb-3">Create a public page with your services, team, and contact info that you can share with clients.</p>
+          <PublicProfileSection />
+        </Card>
       </SectionBlock>
 
       {/* Quotation Defaults */}
