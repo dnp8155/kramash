@@ -5,11 +5,9 @@ import { formatEventDate } from "@/lib/dates";
 import { base44 } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";
 import MemberTypeTag from "@/components/common/MemberTypeTag";
-import { getMemberColor } from "@/lib/teamColors";
 import EditTransactionDialog from "@/components/financial/EditTransactionDialog";
 import { voidTransaction } from "@/lib/financeService";
-import { useMemberTypeColors } from "@/hooks/useDisplayPreferences";
-import PaymentDot from "@/components/common/PaymentDot";
+import PaymentDot, { paymentDotInfo } from "@/components/common/PaymentDot";
 import { useQueryClient } from "@tanstack/react-query";
 import { invalidateEntity } from "@/lib/queryInvalidation";
 import { cn } from "@/lib/utils";
@@ -33,11 +31,6 @@ export default function EventAssignmentCard({
   const [editingTx, setEditingTx] = useState(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const getMemberTypeColor = useMemberTypeColors();
-
-  // Accent bar uses the member type color (resolved from type definition by ID), else the member's personal color
-  const sideColor = getMemberTypeColor(assignment.member_type_id || assignment.member_type_snapshot);
-  const memberColor = sideColor || getMemberColor(member);
 
   const paymentHistory = transactions.filter(
     (t) => t.team_assignment_id === assignment.id && t.status === "ACTIVE"
@@ -46,6 +39,9 @@ export default function EventAssignmentCard({
   const paid = paymentHistory.reduce((sum, t) => sum + Number(t.amount || 0), 0);
   const rate = Number(assignment.agreed_rate) || 0;
   const remaining = Math.max(0, rate - paid);
+
+  // Accent bar matches the payment status dot color next to the member name
+  const dotInfo = paymentDotInfo(paid, rate);
   const isDue = remaining > 0;
 
   // Self/Owner dot: based on CLIENT's payment settlement, not the owner's own rate.
@@ -86,8 +82,8 @@ export default function EventAssignmentCard({
 
   return (
     <div className="bg-card border border-border rounded-lg p-4 relative overflow-hidden">
-      {/* Team color accent bar */}
-      <div className="absolute left-0 top-0 bottom-0 w-1" style={{ backgroundColor: memberColor }} />
+      {/* Accent bar — matches the payment status dot color */}
+      <div className={cn("absolute left-0 top-0 bottom-0 w-1", dotInfo.className)} />
       {/* Header */}
       <div className="flex items-center justify-between mb-3 pl-1">
         <h4 className="text-sm font-semibold text-foreground truncate flex items-center gap-1.5">
