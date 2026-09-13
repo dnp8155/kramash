@@ -125,7 +125,7 @@ export default function RecordExpenseDialog({
     <Dialog open={open} onOpenChange={(o) => !o && onClose?.()}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{miscMode ? "Misc Expense" : "Record Expense"}</DialogTitle>
+          <DialogTitle>{miscMode ? "Misc Expense Category" : "Record Expense"}</DialogTitle>
           <DialogDescription>{miscMode ? "Record an expense not tied to any event — added directly to the financial year." : "Record a business, event, or misc expense."}</DialogDescription>
         </DialogHeader>
 
@@ -144,7 +144,7 @@ export default function RecordExpenseDialog({
 
           {miscMode ? (
             <div className="space-y-1.5">
-              <Label>Expense Category <span className="text-destructive">*</span></Label>
+              <Label>Misc Expense <span className="text-destructive">*</span></Label>
               <Input
                 value={categoryId}
                 onChange={(e) => setCategoryId(e.target.value)}
