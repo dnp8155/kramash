@@ -27,8 +27,6 @@ import PageHeader from "@/components/common/PageHeader";
 import { usePlan } from "@/hooks/usePlan";
 import { invalidateEntities } from "@/lib/queryInvalidation";
 import { loadServiceProviders } from "@/lib/serviceProviderService";
-import { buildPersonStatements } from "@/lib/personStatementService";
-import PersonStatementCard from "@/components/team/PersonStatementCard";
 
 export default function Team() {
   const { workspaceId, workspace } = useWorkspace();
@@ -129,28 +127,6 @@ export default function Team() {
       return true;
     });
   }, [members, query, roleFilter, statusFilter]);
-
-  const personStatements = useMemo(
-    () => buildPersonStatements({
-      members,
-      teamAssignments: assignments,
-      serviceAssignments,
-      transactions: [...transactions, ...expenseTransactions],
-      eventsById
-    }),
-    [members, assignments, serviceAssignments, transactions, expenseTransactions, eventsById]
-  );
-
-  const statementByMemberId = useMemo(() => {
-    const m = {};
-    personStatements.forEach((ps) => { if (ps.member) m[ps.member.id] = ps; });
-    return m;
-  }, [personStatements]);
-
-  const standaloneStatements = useMemo(
-    () => personStatements.filter((ps) => !ps.member),
-    [personStatements]
-  );
 
   const unblockDate = async (blockId) => {
     try {
@@ -310,19 +286,6 @@ export default function Team() {
             );
           })()}
 
-          {/* Standalone service-provider statements (not in team roster) */}
-          {standaloneStatements.length > 0 && (
-            <div className="space-y-3 pt-2">
-              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                Service Provider Statements
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {standaloneStatements.map((ps) => (
-                  <PersonStatementCard key={ps.key} statement={ps} currency={currency} />
-                ))}
-              </div>
-            </div>
-          )}
         </>
       ) : (
         isLoading ? (
