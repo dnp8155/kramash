@@ -1,11 +1,12 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { parseISODate, toISODate, todayISO } from "@/lib/dates";
 import { splitAvailability } from "@/lib/teamService";
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, MousePointerClick, Ban, CalendarDays, Crown } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, MousePointerClick, Ban, CalendarDays, Crown, Unlock } from "lucide-react";
 import CalendarEventDetailPanel from "@/components/team/CalendarEventDetailPanel";
 import { cn } from "@/lib/utils";
 
 const WEEKDAYS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+const WEEKDAYS_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
 export default function AvailabilityCalendar({
@@ -30,6 +31,14 @@ export default function AvailabilityCalendar({
     return { y: target.getFullYear(), m: target.getMonth() };
   });
   const [selected, setSelected] = useState(null);
+  const [viewMode, setViewMode] = useState("month"); // month | week | day
+  const [weekRef, setWeekRef] = useState(() => toISODate(new Date())); // anchor date for week view
+  const [dayRef, setDayRef] = useState(() => toISODate(new Date())); // anchor date for day view
+
+  // In day view, auto-select the referenced day so the right panel stays in sync
+  useEffect(() => {
+    if (viewMode === "day") setSelected(dayRef);
+  }, [viewMode, dayRef]);
 
   // Build the calendar grid (Sunday-first) for the viewed month.
   const grid = useMemo(() => {
@@ -44,6 +53,20 @@ export default function AvailabilityCalendar({
     }
     return cells;
   }, [view]);
+
+  // Week grid — 7 days starting Sunday of the week containing weekRef
+  const weekGrid = useMemo(() => {
+    const ref = parseISODate(weekRef) || new Date();
+    const start = new Date(ref);
+    start.setDate(ref.getDate() - ref.getDay()); // Sunday
+    const cells = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      cells.push(toISODate(d));
+    }
+    return cells;
+  }, [weekRef]);
 
   // Map: dateISO → array of events on that date.
   // Uses event_dates (non-consecutive shoot days) when available, otherwise the
@@ -141,109 +164,361 @@ export default function AvailabilityCalendar({
   const prevYear = () => setView((v) => ({ y: v.y - 1, m: v.m }));
   const nextYear = () => setView((v) => ({ y: v.y + 1, m: v.m }));
 
+  const prevWeek = () => {
+    const d = parseISODate(weekRef) || new Date();
+    d.setDate(d.getDate() - 7);
+    setWeekRef(toISODate(d));
+  };
+  const nextWeek = () => {
+    const d = parseISODate(weekRef) || new Date();
+    d.setDate(d.getDate() + 7);
+    setWeekRef(toISODate(d));
+  };
+  const prevDay = () => {
+    const d = parseISODate(dayRef) || new Date();
+    d.setDate(d.getDate() - 1);
+    setDayRef(toISODate(d));
+  };
+  const nextDay = () => {
+    const d = parseISODate(dayRef) || new Date();
+    d.setDate(d.getDate() + 1);
+    setDayRef(toISODate(d));
+  };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-4">
       {/* Calendar */}
       <div className="bg-card border border-border rounded-xl p-5 shadow-card">
-        {/* Navigation */}
-        <div className="flex items-center justify-center gap-3 mb-4">
-          <button onClick={prevYear} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground transition-colors" aria-label="Previous year">
-            <ChevronsLeft className="w-4 h-4" />
-          </button>
-          <button onClick={prevMonth} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground transition-colors" aria-label="Previous month">
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <h3 className="text-base font-bold text-foreground px-4 min-w-[160px] text-center">{MONTHS[view.m]} {view.y}</h3>
-          <button onClick={nextMonth} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground transition-colors" aria-label="Next month">
-            <ChevronRight className="w-4 h-4" />
-          </button>
-          <button onClick={nextYear} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground transition-colors" aria-label="Next year">
-            <ChevronsRight className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Weekday headers */}
-        <div className="grid grid-cols-7 gap-1.5 text-center text-[10px] font-semibold text-muted-foreground uppercase mb-2">
-          {WEEKDAYS.map((w) => <div key={w}>{w}</div>)}
-        </div>
-
-        {/* Day cells */}
-        <div className="grid grid-cols-7 gap-1.5">
-          {grid.map((iso, i) => {
-            if (!iso) return <div key={i} />;
-            const day = Number(iso.slice(8));
-            const isToday = iso === todayISO();
-            const isSelected = iso === selected;
-            const dayEvents = eventsByDate[iso] || [];
-            const blocked = blockedByDate[iso] || [];
-            const hasMultiple = dayEvents.length > 1;
-            const hasBooked = dayEvents.length > 0;
-            const hasBlocked = blocked.length > 0;
-
-            return (
+        {/* View mode toggle + Navigation */}
+        <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
+          <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-lg">
+            {["month", "week", "day"].map((m) => (
               <button
-                key={i}
-                onClick={() => setSelected(iso)}
+                key={m}
+                onClick={() => setViewMode(m)}
                 className={cn(
-                  "relative h-24 rounded-lg text-xs border-2 transition-all flex flex-col items-stretch justify-start gap-0.5 p-1 overflow-hidden",
-                  isSelected
-                    ? "border-primary bg-primary/5 shadow-sm"
-                    : hasMultiple
-                    ? "border-[#f39c12] bg-[#f39c12]/5 hover:border-[#f39c12]"
-                    : hasBooked
-                    ? "border-[#e74c3c] bg-[#e74c3c]/5 hover:border-[#e74c3c]"
-                    : hasBlocked
-                    ? "border-[#6b7280] bg-[#6b7280]/5 hover:border-[#6b7280]"
-                    : "border-[#27ae60] bg-[#27ae60]/5 hover:border-[#27ae60]",
-                  isToday && !isSelected && "ring-2 ring-primary/30"
+                  "px-3 py-1 text-xs font-medium rounded-md transition-all capitalize",
+                  viewMode === m
+                    ? "bg-card text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                <span className={cn(
-                  "font-semibold text-[11px] leading-none self-center",
-                  hasMultiple ? "text-[#d97706]" : hasBooked ? "text-[#e74c3c]" : hasBlocked ? "text-[#6b7280]" : "text-[#27ae60]"
-                )}>
-                  {day}
-                </span>
-                {hasBooked && (
-                  <div className="flex flex-col gap-0.5 w-full overflow-hidden mt-0.5">
-                    {dayEvents.slice(0, 2).map((ev) => (
-                      <span
-                        key={ev.id}
-                        title={ev.title}
-                        className={cn(
-                          "text-[9px] font-medium px-1 py-0.5 rounded leading-tight truncate",
-                          hasMultiple ? "bg-[#f39c12]/15 text-[#d97706]" : "bg-[#e74c3c]/15 text-[#e74c3c]"
-                        )}
-                      >
-                        {ev.title}
-                      </span>
-                    ))}
-                    {dayEvents.length > 2 && (
-                      <span className="text-[9px] font-semibold text-[#d97706] leading-tight px-1">+{dayEvents.length - 2} more</span>
-                    )}
-                  </div>
-                )}
-                {!hasBooked && hasBlocked && (
-                  <div className="flex flex-col gap-0.5 w-full overflow-hidden mt-0.5">
-                    {blocked.slice(0, 1).map((b) => (
-                      <span
-                        key={b.member.id}
-                        title={`${b.member.name} — ${b.block?.reason || "Blocked"}`}
-                        className="text-[9px] font-medium px-1 py-0.5 rounded leading-tight truncate bg-[#6b7280]/15 text-[#6b7280] flex items-center gap-0.5"
-                      >
-                        <Ban className="w-2 h-2 shrink-0" />
-                        {b.member.name.split(" ")[0]}
-                      </span>
-                    ))}
-                    {blocked.length > 1 && (
-                      <span className="text-[9px] font-semibold text-[#6b7280] leading-tight px-1">+{blocked.length - 1}</span>
-                    )}
-                  </div>
-                )}
+                {m}
               </button>
-            );
-          })}
+            ))}
+          </div>
+          <div className="flex items-center gap-3">
+            {viewMode === "month" && (
+              <>
+                <button onClick={prevYear} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground transition-colors" aria-label="Previous year">
+                  <ChevronsLeft className="w-4 h-4" />
+                </button>
+                <button onClick={prevMonth} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground transition-colors" aria-label="Previous month">
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <h3 className="text-base font-bold text-foreground px-2 min-w-[140px] text-center">{MONTHS[view.m]} {view.y}</h3>
+                <button onClick={nextMonth} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground transition-colors" aria-label="Next month">
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+                <button onClick={nextYear} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground transition-colors" aria-label="Next year">
+                  <ChevronsRight className="w-4 h-4" />
+                </button>
+              </>
+            )}
+            {viewMode === "week" && (
+              <>
+                <button onClick={prevWeek} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground transition-colors" aria-label="Previous week">
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <h3 className="text-base font-bold text-foreground px-2 min-w-[180px] text-center">
+                  {(() => {
+                    const d0 = parseISODate(weekGrid[0]);
+                    const d1 = parseISODate(weekGrid[6]);
+                    return `${d0.getDate()} ${MONTHS[d0.getMonth()].slice(0, 3)} – ${d1.getDate()} ${MONTHS[d1.getMonth()].slice(0, 3)} ${d1.getFullYear()}`;
+                  })()}
+                </h3>
+                <button onClick={nextWeek} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground transition-colors" aria-label="Next week">
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </>
+            )}
+            {viewMode === "day" && (
+              <>
+                <button onClick={prevDay} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground transition-colors" aria-label="Previous day">
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <h3 className="text-base font-bold text-foreground px-2 min-w-[160px] text-center">
+                  {(() => {
+                    const d = parseISODate(dayRef);
+                    return `${WEEKDAYS_SHORT[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()].slice(0, 3)} ${d.getFullYear()}`;
+                  })()}
+                </h3>
+                <button onClick={nextDay} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground transition-colors" aria-label="Next day">
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </>
+            )}
+          </div>
         </div>
+
+        {/* Weekday headers (month + week) */}
+        {viewMode !== "day" && (
+          <div className="grid grid-cols-7 gap-1.5 text-center text-[10px] font-semibold text-muted-foreground uppercase mb-2">
+            {WEEKDAYS.map((w) => <div key={w}>{w}</div>)}
+          </div>
+        )}
+
+        {/* Month view */}
+        {viewMode === "month" && (
+          <div className="grid grid-cols-7 gap-1.5">
+            {grid.map((iso, i) => {
+              if (!iso) return <div key={i} />;
+              const day = Number(iso.slice(8));
+              const isToday = iso === todayISO();
+              const isSelected = iso === selected;
+              const dayEvents = eventsByDate[iso] || [];
+              const blocked = blockedByDate[iso] || [];
+              const hasMultiple = dayEvents.length > 1;
+              const hasBooked = dayEvents.length > 0;
+              const hasBlocked = blocked.length > 0;
+
+              return (
+                <button
+                  key={i}
+                  onClick={() => setSelected(iso)}
+                  className={cn(
+                    "relative h-24 rounded-lg text-xs border-2 transition-all flex flex-col items-stretch justify-start gap-0.5 p-1 overflow-hidden",
+                    isSelected
+                      ? "border-primary bg-primary/5 shadow-sm"
+                      : hasMultiple
+                      ? "border-[#f39c12] bg-[#f39c12]/5 hover:border-[#f39c12]"
+                      : hasBooked
+                      ? "border-[#e74c3c] bg-[#e74c3c]/5 hover:border-[#e74c3c]"
+                      : hasBlocked
+                      ? "border-[#6b7280] bg-[#6b7280]/5 hover:border-[#6b7280]"
+                      : "border-[#27ae60] bg-[#27ae60]/5 hover:border-[#27ae60]",
+                    isToday && !isSelected && "ring-2 ring-primary/30"
+                  )}
+                >
+                  <span className={cn(
+                    "font-semibold text-[11px] leading-none self-center",
+                    hasMultiple ? "text-[#d97706]" : hasBooked ? "text-[#e74c3c]" : hasBlocked ? "text-[#6b7280]" : "text-[#27ae60]"
+                  )}>
+                    {day}
+                  </span>
+                  {hasBooked && (
+                    <div className="flex flex-col gap-0.5 w-full overflow-hidden mt-0.5">
+                      {dayEvents.slice(0, 2).map((ev) => (
+                        <span
+                          key={ev.id}
+                          title={ev.title}
+                          className={cn(
+                            "text-[9px] font-medium px-1 py-0.5 rounded leading-tight truncate",
+                            hasMultiple ? "bg-[#f39c12]/15 text-[#d97706]" : "bg-[#e74c3c]/15 text-[#e74c3c]"
+                          )}
+                        >
+                          {ev.title}
+                        </span>
+                      ))}
+                      {dayEvents.length > 2 && (
+                        <span className="text-[9px] font-semibold text-[#d97706] leading-tight px-1">+{dayEvents.length - 2} more</span>
+                      )}
+                    </div>
+                  )}
+                  {!hasBooked && hasBlocked && (
+                    <div className="flex flex-col gap-0.5 w-full overflow-hidden mt-0.5">
+                      {blocked.slice(0, 1).map((b) => (
+                        <span
+                          key={b.member.id}
+                          title={`${b.member.name} — ${b.block?.reason || "Blocked"}`}
+                          className="text-[9px] font-medium px-1 py-0.5 rounded leading-tight truncate bg-[#6b7280]/15 text-[#6b7280] flex items-center gap-0.5"
+                        >
+                          <Ban className="w-2 h-2 shrink-0" />
+                          {b.member.name.split(" ")[0]}
+                        </span>
+                      ))}
+                      {blocked.length > 1 && (
+                        <span className="text-[9px] font-semibold text-[#6b7280] leading-tight px-1">+{blocked.length - 1}</span>
+                      )}
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Week view */}
+        {viewMode === "week" && (
+          <div className="grid grid-cols-7 gap-1.5">
+            {weekGrid.map((iso) => {
+              const day = Number(iso.slice(8));
+              const isToday = iso === todayISO();
+              const isSelected = iso === selected;
+              const dayEvents = eventsByDate[iso] || [];
+              const blocked = blockedByDate[iso] || [];
+              const hasMultiple = dayEvents.length > 1;
+              const hasBooked = dayEvents.length > 0;
+              const hasBlocked = blocked.length > 0;
+
+              return (
+                <button
+                  key={iso}
+                  onClick={() => setSelected(iso)}
+                  className={cn(
+                    "relative h-48 rounded-lg text-xs border-2 transition-all flex flex-col items-stretch justify-start gap-0.5 p-1.5 overflow-hidden",
+                    isSelected
+                      ? "border-primary bg-primary/5 shadow-sm"
+                      : hasMultiple
+                      ? "border-[#f39c12] bg-[#f39c12]/5 hover:border-[#f39c12]"
+                      : hasBooked
+                      ? "border-[#e74c3c] bg-[#e74c3c]/5 hover:border-[#e74c3c]"
+                      : hasBlocked
+                      ? "border-[#6b7280] bg-[#6b7280]/5 hover:border-[#6b7280]"
+                      : "border-[#27ae60] bg-[#27ae60]/5 hover:border-[#27ae60]",
+                    isToday && !isSelected && "ring-2 ring-primary/30"
+                  )}
+                >
+                  <span className={cn(
+                    "font-semibold text-xs leading-none self-center",
+                    hasMultiple ? "text-[#d97706]" : hasBooked ? "text-[#e74c3c]" : hasBlocked ? "text-[#6b7280]" : "text-[#27ae60]"
+                  )}>
+                    {day}
+                  </span>
+                  {hasBooked && (
+                    <div className="flex flex-col gap-0.5 w-full overflow-hidden mt-1">
+                      {dayEvents.slice(0, 4).map((ev) => (
+                        <span
+                          key={ev.id}
+                          title={ev.title}
+                          className={cn(
+                            "text-[9px] font-medium px-1 py-0.5 rounded leading-tight truncate",
+                            hasMultiple ? "bg-[#f39c12]/15 text-[#d97706]" : "bg-[#e74c3c]/15 text-[#e74c3c]"
+                          )}
+                        >
+                          {ev.title}
+                        </span>
+                      ))}
+                      {dayEvents.length > 4 && (
+                        <span className="text-[9px] font-semibold text-[#d97706] leading-tight px-1">+{dayEvents.length - 4} more</span>
+                      )}
+                    </div>
+                  )}
+                  {!hasBooked && hasBlocked && (
+                    <div className="flex flex-col gap-0.5 w-full overflow-hidden mt-1">
+                      {blocked.slice(0, 3).map((b) => (
+                        <span
+                          key={b.member.id}
+                          title={`${b.member.name} — ${b.block?.reason || "Blocked"}`}
+                          className="text-[9px] font-medium px-1 py-0.5 rounded leading-tight truncate bg-[#6b7280]/15 text-[#6b7280] flex items-center gap-0.5"
+                        >
+                          <Ban className="w-2 h-2 shrink-0" />
+                          {b.member.name.split(" ")[0]}
+                        </span>
+                      ))}
+                      {blocked.length > 3 && (
+                        <span className="text-[9px] font-semibold text-[#6b7280] leading-tight px-1">+{blocked.length - 3}</span>
+                      )}
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Day view */}
+        {viewMode === "day" && (() => {
+          const iso = dayRef;
+          const isToday = iso === todayISO();
+          const dayEvents = eventsByDate[iso] || [];
+          const blocked = blockedByDate[iso] || [];
+          const dayInfo = splitAvailability(members, iso, assignments, eventsById, blockDates);
+          return (
+            <div>
+              <button
+                onClick={() => setSelected(iso)}
+                className={cn(
+                  "w-full rounded-lg border-2 p-3 mb-3 text-left transition-all",
+                  isToday ? "border-primary/40 bg-primary/5" : "border-border bg-muted/30 hover:bg-muted/50"
+                )}
+              >
+                <div className="text-sm font-bold text-foreground">
+                  {WEEKDAYS_SHORT[parseISODate(iso).getDay()]}, {parseISODate(iso).getDate()} {MONTHS[parseISODate(iso).getMonth()]}
+                </div>
+                <div className="text-xs text-muted-foreground mt-0.5">
+                  {dayEvents.length} event(s) · {blocked.length} blocked · {dayInfo.available.length} available
+                </div>
+              </button>
+
+              <div className="space-y-3">
+                {dayEvents.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
+                      <span className="w-2 h-2 rounded-full bg-[#e74c3c]" /> Events ({dayEvents.length})
+                    </div>
+                    <div className="space-y-1.5">
+                      {dayEvents.map((ev) => (
+                        <button
+                          key={ev.id}
+                          onClick={() => onEventClick?.(ev)}
+                          className="w-full text-left text-sm px-3 py-2 rounded-lg border border-[#e74c3c]/20 bg-[#e74c3c]/5 hover:bg-[#e74c3c]/10 transition-colors truncate"
+                        >
+                          {ev.title}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {dayInfo.available.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
+                      <span className="w-2 h-2 rounded-full bg-[#27ae60]" /> Available ({dayInfo.available.length})
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {dayInfo.available.map((m) => (
+                        <span key={m.id} className="text-xs px-2 py-1 rounded-full bg-[#27ae60]/10 text-[#27ae60] border border-[#27ae60]/20">
+                          {m.name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {dayInfo.blocked.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
+                      <span className="w-2 h-2 rounded-full bg-[#6b7280]" /> Blocked ({dayInfo.blocked.length})
+                    </div>
+                    <div className="space-y-1.5">
+                      {dayInfo.blocked.map(({ member, block }) => (
+                        <div key={member.id} className="flex items-center justify-between gap-2 text-sm px-3 py-1.5 rounded-lg bg-[#6b7280]/5 border border-[#6b7280]/15">
+                          <span className="min-w-0">
+                            <span className="text-foreground font-medium">{member.name}</span>
+                            {block?.reason ? <span className="text-muted-foreground"> — {block.reason}</span> : null}
+                          </span>
+                          {onUnblockDate && block?.id && (
+                            <button
+                              onClick={() => onUnblockDate(block.id)}
+                              className="text-xs font-medium text-success hover:underline shrink-0 flex items-center gap-0.5"
+                            >
+                              <Unlock className="w-3 h-3" /> Unblock
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {dayEvents.length === 0 && dayInfo.available.length === 0 && dayInfo.blocked.length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-6">Nothing scheduled.</p>
+                )}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Legend */}
         <div className="mt-4 flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
@@ -340,6 +615,31 @@ export default function AvailabilityCalendar({
               services={services}
               onEventClick={onEventClick}
             />
+            {selectedBlocked.length > 0 && (
+              <div className="mt-3 pt-3 border-t border-border">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
+                  <span className="w-2 h-2 rounded-full bg-[#6b7280]" /> Blocked ({selectedBlocked.length})
+                </div>
+                <ul className="space-y-1.5">
+                  {selectedBlocked.map(({ member, block }) => (
+                    <li key={member.id} className="text-sm flex items-center justify-between gap-2">
+                      <span className="min-w-0">
+                        <span className="text-foreground font-medium">{member.name}</span>
+                        {block?.reason ? <span className="text-muted-foreground"> — {block.reason}</span> : null}
+                      </span>
+                      {onUnblockDate && block?.id && (
+                        <button
+                          onClick={() => onUnblockDate(block.id)}
+                          className="text-xs font-medium text-success hover:underline shrink-0 flex items-center gap-0.5"
+                        >
+                          <Unlock className="w-3 h-3" /> Unblock
+                        </button>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         ) : (
           <>
@@ -393,7 +693,7 @@ export default function AvailabilityCalendar({
                             className="text-xs font-medium text-success hover:underline shrink-0 flex items-center gap-0.5"
                             title="Unblock this member"
                           >
-                            Unblock
+                            <Unlock className="w-3 h-3" /> Unblock
                           </button>
                         )}
                       </li>
