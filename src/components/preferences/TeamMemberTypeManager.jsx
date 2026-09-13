@@ -4,14 +4,12 @@ import { useWorkspace } from "@/lib/WorkspaceContext";
 import { Pencil, Trash2, Plus, X, Check } from "lucide-react";
 import Button from "@/components/common/Button";
 import { useToast } from "@/components/ui/use-toast";
-
-const DEFAULT_TYPES = [
-  { id: "mt1", title: "Bride Side", color: "#ec4899" },
-  { id: "mt2", title: "Groom Side", color: "#3b82f6" },
-  { id: "mt3", title: "Common", color: "#6b7280" },
-];
-
-const COLOR_PRESETS = ["#ec4899", "#3b82f6", "#6b7280", "#10b981", "#f59e0b", "#8b5cf6", "#ef4444", "#06b6d4"];
+import {
+  DEFAULT_MEMBER_TYPES,
+  MAX_MEMBER_TYPES,
+  TYPE_COLOR_SWATCHES,
+  getMemberTypes,
+} from "@/lib/memberTypeService";
 
 export default function TeamMemberTypeManager({ workspace }) {
   const { toast } = useToast();
@@ -19,17 +17,12 @@ export default function TeamMemberTypeManager({ workspace }) {
   const [types, setTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null);
-  const [draft, setDraft] = useState({ title: "", color: COLOR_PRESETS[0] });
+  const [draft, setDraft] = useState({ title: "", color: TYPE_COLOR_SWATCHES[0].hex });
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!workspace) return;
-    try {
-      const parsed = workspace.team_member_types ? JSON.parse(workspace.team_member_types) : null;
-      setTypes(parsed && Array.isArray(parsed) ? parsed : DEFAULT_TYPES);
-    } catch {
-      setTypes(DEFAULT_TYPES);
-    }
+    setTypes(getMemberTypes(workspace));
     setLoading(false);
   }, [workspace]);
 
@@ -41,10 +34,10 @@ export default function TeamMemberTypeManager({ workspace }) {
         team_member_types: JSON.stringify(newTypes),
       });
       setTypes(newTypes);
-      // Update workspace context so other pages see the change immediately
+      // Update workspace context so other pages see the change immediately (live color updates)
       setWorkspace((w) => (w ? { ...w, team_member_types: JSON.stringify(newTypes) } : w));
       setEditing(null);
-      setDraft({ title: "", color: COLOR_PRESETS[0] });
+      setDraft({ title: "", color: TYPE_COLOR_SWATCHES[0].hex });
       toast({ title: "Team member type saved" });
     } catch (e) {
       toast({ title: "Failed to save", description: e?.message, variant: "destructive" });
@@ -54,8 +47,12 @@ export default function TeamMemberTypeManager({ workspace }) {
   };
 
   const startAdd = () => {
+    if (types.length >= MAX_MEMBER_TYPES) {
+      toast({ title: `Maximum ${MAX_MEMBER_TYPES} types allowed`, variant: "destructive" });
+      return;
+    }
     setEditing("new");
-    setDraft({ title: "", color: COLOR_PRESETS[0] });
+    setDraft({ title: "", color: TYPE_COLOR_SWATCHES[0].hex });
   };
   const startEdit = (t) => {
     setEditing(t.id);
@@ -63,11 +60,12 @@ export default function TeamMemberTypeManager({ workspace }) {
   };
   const cancel = () => {
     setEditing(null);
-    setDraft({ title: "", color: COLOR_PRESETS[0] });
+    setDraft({ title: "", color: TYPE_COLOR_SWATCHES[0].hex });
   };
   const submit = () => {
     if (!draft.title.trim()) return;
     if (editing === "new") {
+      if (types.length >= MAX_MEMBER_TYPES) return;
       persist([...types, { id: `mt${Date.now()}`, ...draft }]);
     } else {
       persist(types.map((t) => (t.id === editing ? { ...t, ...draft } : t)));
@@ -79,6 +77,8 @@ export default function TeamMemberTypeManager({ workspace }) {
   };
 
   if (loading) return <p className="text-sm text-muted-foreground py-2">Loading…</p>;
+
+  const atMax = types.length >= MAX_MEMBER_TYPES;
 
   return (
     <div>
@@ -99,7 +99,7 @@ export default function TeamMemberTypeManager({ workspace }) {
               className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-sm"
               style={{ backgroundColor: t.color + "20", color: t.color }}
             >
-              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: t.color }} />
+              <span className="type-dot w-2 h-2 rounded-full" style={{ backgroundColor: t.color }} />
               {t.title}
               <button onClick={() => startEdit(t)} className="hover:opacity-70" aria-label="Edit">
                 <Pencil className="w-3 h-3" />
@@ -115,9 +115,16 @@ export default function TeamMemberTypeManager({ workspace }) {
         )}
       </div>
       {editing !== "new" && (
-        <Button variant="outline" size="sm" className="mt-3" onClick={startAdd}>
-          <Plus className="w-3.5 h-3.5" /> Add Type
-        </Button>
+        <div className="mt-3 flex items-center gap-3">
+          <Button variant="outline" size="sm" onClick={startAdd} disabled={atMax}>
+            <Plus className="w-3.5 h-3.5" /> Add Type
+          </Button>
+          {atMax && (
+            <span className="text-xs text-muted-foreground">
+              Maximum {MAX_MEMBER_TYPES} types reached. Delete one to add another.
+            </span>
+          )}
+        </div>
       )}
     </div>
   );
@@ -125,38 +132,44 @@ export default function TeamMemberTypeManager({ workspace }) {
 
 function TypeEditor({ draft, setDraft, onSubmit, onCancel, saving }) {
   return (
-    <div className="inline-flex items-center gap-2 px-2 py-1.5 rounded-md border border-border bg-card">
-      <input
-        type="text"
-        value={draft.title}
-        onChange={(e) => setDraft({ ...draft, title: e.target.value })}
-        placeholder="Type name"
-        className="text-sm bg-transparent border-none outline-none w-24"
-        autoFocus
-        onKeyDown={(e) => {
-          if (e.key === "Enter") onSubmit();
-          if (e.key === "Escape") onCancel();
-        }}
-      />
-      <div className="flex gap-1">
-        {COLOR_PRESETS.map((c) => (
+    <div className="inline-flex flex-col gap-2 px-3 py-2 rounded-md border border-border bg-card">
+      <div className="flex items-center gap-2">
+        <input
+          type="text"
+          value={draft.title}
+          onChange={(e) => setDraft({ ...draft, title: e.target.value })}
+          placeholder="Type name"
+          className="text-sm bg-transparent border border-border rounded px-2 py-1 outline-none w-28 focus:ring-2 focus:ring-ring/40"
+          autoFocus
+          onKeyDown={(e) => {
+            if (e.key === "Enter") onSubmit();
+            if (e.key === "Escape") onCancel();
+          }}
+        />
+        <button onClick={onSubmit} disabled={saving || !draft.title.trim()} className="text-success hover:opacity-70" aria-label="Save">
+          <Check className="w-4 h-4" />
+        </button>
+        <button onClick={onCancel} className="text-muted-foreground hover:text-foreground" aria-label="Cancel">
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+      {/* Color swatches — predefined palette with labels and selection border */}
+      <div className="flex flex-wrap gap-1.5">
+        {TYPE_COLOR_SWATCHES.map((sw) => (
           <button
-            key={c}
-            onClick={() => setDraft({ ...draft, color: c })}
-            className={`w-4 h-4 rounded-full border-2 ${
-              draft.color === c ? "border-foreground" : "border-transparent"
+            key={sw.hex}
+            onClick={() => setDraft({ ...draft, color: sw.hex })}
+            className={`w-6 h-6 rounded-full border-2 transition-all ${
+              draft.color === sw.hex
+                ? "border-foreground ring-2 ring-ring/30 scale-110"
+                : "border-transparent hover:scale-105"
             }`}
-            style={{ backgroundColor: c }}
-            aria-label={`Color ${c}`}
+            style={{ backgroundColor: sw.hex }}
+            aria-label={sw.label}
+            title={sw.label}
           />
         ))}
       </div>
-      <button onClick={onSubmit} disabled={saving || !draft.title.trim()} className="text-success hover:opacity-70" aria-label="Save">
-        <Check className="w-4 h-4" />
-      </button>
-      <button onClick={onCancel} className="text-muted-foreground hover:text-foreground" aria-label="Cancel">
-        <X className="w-4 h-4" />
-      </button>
     </div>
   );
 }

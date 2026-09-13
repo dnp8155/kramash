@@ -19,12 +19,7 @@ import { AlertTriangle, Ban, Wallet, Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { invalidateEntities } from "@/lib/queryInvalidation";
-
-const DEFAULT_MEMBER_TYPES = [
-  { id: "mt1", title: "Bride Side", color: "#ec4899" },
-  { id: "mt2", title: "Groom Side", color: "#3b82f6" },
-  { id: "mt3", title: "Common", color: "#6b7280" },
-];
+import { DEFAULT_MEMBER_TYPES, getMemberTypes } from "@/lib/memberTypeService";
 
 export default function AssignTeamDialog({
   open, onClose, onSaved,
@@ -50,15 +45,8 @@ export default function AssignTeamDialog({
   const queryClient = useQueryClient();
   const currency = workspace?.currency || "INR";
 
-  // Parse member types from workspace config
-  const memberTypes = useMemo(() => {
-    try {
-      const parsed = workspace?.team_member_types ? JSON.parse(workspace.team_member_types) : null;
-      return parsed && Array.isArray(parsed) ? parsed : DEFAULT_MEMBER_TYPES;
-    } catch {
-      return DEFAULT_MEMBER_TYPES;
-    }
-  }, [workspace]);
+  // Parse member types from workspace config (centralized service — single source of truth)
+  const memberTypes = useMemo(() => getMemberTypes(workspace), [workspace]);
 
   // Event's available dates (event_dates array or fallback to start_date)
   const eventDates = useMemo(() => {

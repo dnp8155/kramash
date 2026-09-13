@@ -6,6 +6,7 @@ const styles = {
   upcoming: "bg-badge-upcoming-bg text-badge-upcoming-fg",
   progress: "bg-badge-progress-bg text-badge-progress-fg",
   completed: "bg-badge-completed-bg text-badge-completed-fg",
+  postponed: "bg-badge-postponed-bg text-badge-postponed-fg",
   cancelled: "bg-destructive/10 text-destructive"
 };
 

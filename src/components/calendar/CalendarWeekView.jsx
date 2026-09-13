@@ -35,10 +35,11 @@ export default function CalendarWeekView({ currentDate, eventsByDate, onDayClick
               <button
                 onClick={() => onDayClick?.(date)}
                 className={cn(
-                  "w-full text-center py-2 rounded-lg mb-2 border transition-colors",
+                  "w-full text-center py-2 rounded-lg mb-2 border transition-colors relative",
                   isToday ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-muted"
                 )}
               >
+                {isToday && <span className="cal-today-dot absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-accent" />}
                 <div className="text-[10px] font-semibold uppercase">{weekday}</div>
                 <div className="text-lg font-bold">{date.getDate()}</div>
               </button>

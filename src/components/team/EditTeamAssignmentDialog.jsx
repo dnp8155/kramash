@@ -15,12 +15,7 @@ import { isSelfMember } from "@/lib/teamService";
 import { cn } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { invalidateEntity } from "@/lib/queryInvalidation";
-
-const DEFAULT_MEMBER_TYPES = [
-  { id: "mt1", title: "Bride Side", color: "#ec4899" },
-  { id: "mt2", title: "Groom Side", color: "#3b82f6" },
-  { id: "mt3", title: "Common", color: "#6b7280" },
-];
+import { getMemberTypes } from "@/lib/memberTypeService";
 
 // EditTeamAssignmentDialog — edits an EXISTING EventTeamAssignment record.
 // Does NOT touch the TeamMember master record or any FinancialTransaction payments.
@@ -41,14 +36,7 @@ export default function EditTeamAssignmentDialog({
   const [rateManuallyEdited, setRateManuallyEdited] = useState(false);
   const queryClient = useQueryClient();
 
-  const memberTypes = useMemo(() => {
-    try {
-      const parsed = workspace?.team_member_types ? JSON.parse(workspace.team_member_types) : null;
-      return parsed && Array.isArray(parsed) ? parsed : DEFAULT_MEMBER_TYPES;
-    } catch {
-      return DEFAULT_MEMBER_TYPES;
-    }
-  }, [workspace]);
+  const memberTypes = useMemo(() => getMemberTypes(workspace), [workspace]);
 
   // Event's available dates (event_dates array or fallback to start_date)
   const eventDates = useMemo(() => {

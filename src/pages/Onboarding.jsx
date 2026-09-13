@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2, Check, Building2, MapPin, Receipt, PartyPopper, Camera, PartyPopper as PartyIcon, Briefcase, Compass } from "lucide-react";
 import { BUSINESS_CATEGORIES, BUSINESS_CATEGORY_OPTIONS, categoryLabel } from "@/lib/businessTerminology";
 import { getIndustryPresets } from "@/constants/industryPresets";
+import { getMemberTypePresets } from "@/lib/memberTypeService";
 import { DEFAULT_EXPENSE_CATEGORIES } from "@/constants/financeConfig";
 import { ensureDefaultFY } from "@/lib/financialYearService";
 
@@ -88,6 +89,13 @@ export default function Onboarding() {
             presets.roles.map((r) => ({ ...r, workspace_id: workspace.id, status: "active" }))
           );
         }
+      } catch (e) { /* non-fatal */ }
+      // Seed industry-specific team member types (Bride/Groom/Common, Client/Vendor, etc.)
+      try {
+        const memberTypes = getMemberTypePresets(category);
+        await base44.entities.Workspace.update(workspace.id, {
+          team_member_types: JSON.stringify(memberTypes),
+        });
       } catch (e) { /* non-fatal */ }
       // Seed default expense categories for the new workspace.
       try {

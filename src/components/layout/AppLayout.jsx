@@ -9,6 +9,7 @@ import ErrorBoundary from "@/components/common/ErrorBoundary";
 import OfflineBanner from "@/components/common/OfflineBanner";
 import UpdateBanner from "@/components/common/UpdateBanner";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
+import { useDotsHidden } from "@/hooks/useDisplayPreferences";
 
 export default function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -19,6 +20,10 @@ export default function AppLayout() {
   // invalidate every query cache that depends on it so dashboards, lists, and detail
   // pages refresh automatically — including changes made from other devices/sessions.
   useRealtimeSync();
+
+  // Apply global "dots-hidden" body class when "Show status dots" preference is OFF.
+  // CSS hides .status-dot, .type-dot, .team-chip-dot, .cal-today-dot throughout the app.
+  useDotsHidden();
 
   // Lock body scroll when mobile drawer is open
   useEffect(() => {

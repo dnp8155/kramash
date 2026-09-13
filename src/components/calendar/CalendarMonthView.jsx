@@ -40,10 +40,13 @@ export default function CalendarMonthView({ currentDate, eventsByDate, onDayClic
               key={i}
               onClick={() => onDayClick?.(new Date(iso + "T12:00:00"))}
               className={cn(
-                "min-h-[80px] sm:min-h-[100px] rounded-lg border p-1.5 text-left transition-all flex flex-col gap-0.5 overflow-hidden",
+                "min-h-[80px] sm:min-h-[100px] rounded-lg border p-1.5 text-left transition-all flex flex-col gap-0.5 overflow-hidden relative",
                 isToday ? "border-primary ring-1 ring-primary/20" : "border-border hover:border-primary/30 hover:bg-muted/30"
               )}
             >
+              {isToday && (
+                <span className="cal-today-dot absolute top-1 right-1 w-2 h-2 rounded-full bg-accent" />
+              )}
               <span className={cn(
                 "text-xs font-semibold self-start",
                 isToday ? "text-primary" : "text-foreground"

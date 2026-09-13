@@ -35,8 +35,8 @@ export default function EventAssignmentCard({
   const queryClient = useQueryClient();
   const getMemberTypeColor = useMemberTypeColors();
 
-  // Accent bar uses the Bride/Groom side color when assigned, else the member's personal color
-  const sideColor = assignment.member_type_snapshot ? getMemberTypeColor(assignment.member_type_snapshot) : null;
+  // Accent bar uses the member type color (resolved from type definition by ID), else the member's personal color
+  const sideColor = getMemberTypeColor(assignment.member_type_id || assignment.member_type_snapshot);
   const memberColor = sideColor || getMemberColor(member);
 
   const paymentHistory = transactions.filter(
@@ -47,6 +47,14 @@ export default function EventAssignmentCard({
   const rate = Number(assignment.agreed_rate) || 0;
   const remaining = Math.max(0, rate - paid);
   const isDue = remaining > 0;
+
+  // Self/Owner dot: based on CLIENT's payment settlement, not the owner's own rate.
+  // Owner's internal rate is NOT treated as money paid to an employee.
+  const clientPaid = (transactions || [])
+    .filter((t) => t.transaction_type === "CLIENT_RECEIPT" && t.status === "ACTIVE" && t.event_id === event?.id)
+    .reduce((sum, t) => sum + Number(t.amount || 0), 0);
+  const clientTotal = Number(event?.contract_value) || 0;
+  const clientFullyPaid = clientTotal > 0 && clientPaid >= clientTotal;
 
   // Per-member booking dates stored on the assignment, else fall back to event dates
   const memberStart = assignment.booking_start_date || event?.start_date;
@@ -83,7 +91,7 @@ export default function EventAssignmentCard({
       {/* Header */}
       <div className="flex items-center justify-between mb-3 pl-1">
         <h4 className="text-sm font-semibold text-foreground truncate flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: memberColor }} />
+          <span className="team-chip-dot w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: memberColor }} />
           <span className="truncate">{member?.name || "Unknown member"}</span>
           {isSelf && (
             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-primary text-primary-foreground shrink-0">
@@ -92,12 +100,19 @@ export default function EventAssignmentCard({
           )}
         </h4>
         <span className="flex items-center gap-1.5">
-          {!isSelf && <PaymentDot paid={paid} agreed={rate} />}
+          {isSelf ? (
+            <span
+              title={clientFullyPaid ? "Client fully paid" : "Client payment pending"}
+              className={cn("status-dot inline-block w-2 h-2 rounded-full shrink-0", clientFullyPaid ? "bg-[#10b981]" : "bg-muted-foreground/30")}
+            />
+          ) : (
+            <PaymentDot paid={paid} agreed={rate} />
+          )}
           <span className={cn(
             "text-xs font-medium px-2 py-0.5 rounded",
-            isSelf ? "bg-primary/10 text-primary" : isDue ? "bg-warning/10 text-warning" : "bg-success/10 text-success"
+            isSelf ? (clientFullyPaid ? "bg-success/10 text-success" : "bg-muted/20 text-muted-foreground") : isDue ? "bg-warning/10 text-warning" : "bg-success/10 text-success"
           )}>
-            {isSelf ? "Owner Share" : isDue ? "Due" : "Paid"}
+            {isSelf ? (clientFullyPaid ? "Settled" : "Unsettled") : isDue ? "Due" : "Paid"}
           </span>
         </span>
       </div>
@@ -106,8 +121,8 @@ export default function EventAssignmentCard({
         <span className="text-xs text-muted-foreground">
           {assignment.role_name_snapshot || member?.profession || "—"}
         </span>
-        {assignment.member_type_snapshot && (
-          <MemberTypeTag label={assignment.member_type_snapshot} />
+        {(assignment.member_type_snapshot || assignment.member_type_id) && (
+          <MemberTypeTag label={assignment.member_type_snapshot} typeId={assignment.member_type_id} />
         )}
       </div>
 

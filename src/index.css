@@ -73,6 +73,8 @@
     --badge-progress-fg: 28 90% 40%;
     --badge-completed-bg: 152 56% 94%;
     --badge-completed-fg: 154 60% 30%;
+    --badge-postponed-bg: 220 10% 94%;
+    --badge-postponed-fg: 220 10% 40%;
 
     --radius: 0.5rem;
 
@@ -269,6 +271,17 @@
   body.printing-jobsheet {
     background: white !important;
   }
+}
+
+/* ---- Global Dots Visibility ---- */
+/* When "Show status dots" preference is OFF, body gets .dots-hidden class.
+   All colored dot indicators are hidden; underlying text/data stays visible.
+   This does NOT change the actual colors or underlying data — only visibility. */
+body.dots-hidden .status-dot,
+body.dots-hidden .type-dot,
+body.dots-hidden .team-chip-dot,
+body.dots-hidden .cal-today-dot {
+  display: none !important;
 }
 
 /* ---- Rich Text Editor (Quill) ---- */

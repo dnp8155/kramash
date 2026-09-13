@@ -2,7 +2,9 @@
 // and provides parsed values with sensible defaults. All display toggles across the app
 // (status colors, member type colors, status dots, show team/services, card display)
 // flow through this hook so Preferences is the single source of truth.
+import { useEffect } from "react";
 import { useWorkspace } from "@/lib/WorkspaceContext";
+import { getMemberTypes, getMemberTypeColor } from "@/lib/memberTypeService";
 
 const DEFAULTS = {
   // Feature 1 — event status colors (dots + badges)
@@ -45,24 +47,30 @@ export function useDisplayPreferences() {
   return prefs;
 }
 
-// Resolves the configured color for a member type title from workspace.team_member_types.
-// Falls back to hardcoded defaults for Bride/Groom/Common when no config exists.
+// Returns the array of configured member types from the workspace (single source of truth).
+export function useMemberTypes() {
+  const { workspace } = useWorkspace();
+  return getMemberTypes(workspace);
+}
+
+// Resolves the configured color for a member type by ID (preferred) or label (fallback).
+// Color comes from the type definition — never stored on the member record.
 export function useMemberTypeColors() {
   const { workspace } = useWorkspace();
-  return (title) => {
-    if (!title) return null;
-    try {
-      const types = workspace?.team_member_types ? JSON.parse(workspace.team_member_types) : null;
-      if (types && Array.isArray(types)) {
-        const found = types.find((t) => t.title === title);
-        if (found) return found.color;
-      }
-    } catch {
-      // ignore
+  return (idOrLabel) => getMemberTypeColor(workspace, idOrLabel);
+}
+
+// Applies the global "dots-hidden" body class when showStatusDots is OFF.
+// CSS rules in index.css hide .status-dot, .type-dot, .team-chip-dot, .cal-today-dot.
+// Changing this setting does NOT change underlying data — it only controls dot visibility.
+export function useDotsHidden() {
+  const { showStatusDots } = useDisplayPreferences();
+  useEffect(() => {
+    if (showStatusDots) {
+      document.body.classList.remove("dots-hidden");
+    } else {
+      document.body.classList.add("dots-hidden");
     }
-    const l = title.toLowerCase();
-    if (l.includes("bride")) return "#ec4899";
-    if (l.includes("groom")) return "#3b82f6";
-    return "#6b7280";
-  };
+    return () => document.body.classList.remove("dots-hidden");
+  }, [showStatusDots]);
 }

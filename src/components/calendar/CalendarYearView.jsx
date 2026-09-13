@@ -43,10 +43,11 @@ export default function CalendarYearView({ currentDate, eventsByDate, onMonthCli
                 <div
                   key={i}
                   className={cn(
-                    "w-5 h-5 rounded flex items-center justify-center text-[8px]",
+                    "w-5 h-5 rounded flex items-center justify-center text-[8px] relative",
                     isToday ? "bg-primary text-primary-foreground font-bold" : hasEvents ? "bg-primary/15 text-primary font-semibold" : "text-muted-foreground"
                   )}
                 >
+                  {isToday && <span className="cal-today-dot absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-accent border border-card" />}
                   {Number(iso.slice(8))}
                 </div>
               );

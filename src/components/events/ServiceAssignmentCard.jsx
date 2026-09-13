@@ -51,9 +51,16 @@ export default function ServiceAssignmentCard({
   const isPartiallyPaid = paid > 0 && paid < rate;
   const isPaid = paid >= rate && rate > 0;
 
-  const statusLabel = isSelf ? "Owner Share" : isPaid ? "Paid" : isPartiallyPaid ? "Partially Paid" : "Pending";
+  // Self/Owner dot: based on CLIENT's payment settlement, not the owner's own rate.
+  const clientPaid = (transactions || [])
+    .filter((t) => t.transaction_type === "CLIENT_RECEIPT" && t.status === "ACTIVE" && t.event_id === event?.id)
+    .reduce((sum, t) => sum + Number(t.amount || 0), 0);
+  const clientTotal = Number(event?.contract_value) || 0;
+  const clientFullyPaid = clientTotal > 0 && clientPaid >= clientTotal;
+
+  const statusLabel = isSelf ? (clientFullyPaid ? "Settled" : "Unsettled") : isPaid ? "Paid" : isPartiallyPaid ? "Partially Paid" : "Pending";
   const statusClass = isSelf
-    ? "bg-primary/10 text-primary"
+    ? (clientFullyPaid ? "bg-success/10 text-success" : "bg-muted/20 text-muted-foreground")
     : isPaid
       ? "bg-success/10 text-success"
       : isPartiallyPaid
@@ -96,7 +103,14 @@ export default function ServiceAssignmentCard({
           )}
         </h4>
         <span className="flex items-center gap-1.5 shrink-0">
-          {!isSelf && <PaymentDot paid={paid} agreed={rate} />}
+          {isSelf ? (
+            <span
+              title={clientFullyPaid ? "Client fully paid" : "Client payment pending"}
+              className={cn("status-dot inline-block w-2 h-2 rounded-full shrink-0", clientFullyPaid ? "bg-[#10b981]" : "bg-muted-foreground/30")}
+            />
+          ) : (
+            <PaymentDot paid={paid} agreed={rate} />
+          )}
           <span className={cn("text-xs font-medium px-2 py-0.5 rounded", statusClass)}>
             {statusLabel}
           </span>

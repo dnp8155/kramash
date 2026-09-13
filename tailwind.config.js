@@ -93,6 +93,10 @@ module.exports = {
           completed: {
             bg: 'hsl(var(--badge-completed-bg))',
             fg: 'hsl(var(--badge-completed-fg))'
+          },
+          postponed: {
+            bg: 'hsl(var(--badge-postponed-bg))',
+            fg: 'hsl(var(--badge-postponed-fg))'
           }
         }
       },

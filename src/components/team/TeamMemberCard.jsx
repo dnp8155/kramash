@@ -67,7 +67,7 @@ export default function TeamMemberCard({ member, assignments = [], transactions 
       <div className="absolute left-0 top-0 bottom-0 w-1" style={{ backgroundColor: memberColor }} />
       {/* Header: color dot + name + SELF badge + role + actions */}
       <div className="flex items-center gap-2 pl-1">
-        <span className="w-3 h-3 rounded-full shrink-0 border border-border" style={{ backgroundColor: memberColor }} />
+        <span className="team-chip-dot w-3 h-3 rounded-full shrink-0 border border-border" style={{ backgroundColor: memberColor }} />
         <button
           onClick={() => onOpen?.(member)}
           className="text-sm font-semibold text-foreground flex items-center gap-1.5 text-left hover:underline min-w-0"
