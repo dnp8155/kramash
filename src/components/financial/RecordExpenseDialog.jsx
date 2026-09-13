@@ -160,7 +160,7 @@ export default function RecordExpenseDialog({
             </div>
           ) : (
             <div className="space-y-1.5">
-              <Label>Expense Category <span className="text-destructive">*</span></Label>
+              <Label>Misc Expense <span className="text-destructive">*</span></Label>
               <Select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className="w-full">
                 <option value="">Select a category</option>
                 {categories.filter((c) => c.status === "active").map((c) => (
