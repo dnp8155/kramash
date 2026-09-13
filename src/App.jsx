@@ -102,7 +102,7 @@ const AuthenticatedApp = () => {
       <Route path="/portal/:token" element={<ClientProjectPortal />} />
 
       {/* Public client-facing event tracking page */}
-      <Route path="/track/:id" element={<EventTracking />} />
+      <Route path="/track/:token" element={<EventTracking />} />
 
       {/* Public crew-facing job sheet */}
       <Route path="/job-sheet/:token" element={<PublicJobSheet />} />

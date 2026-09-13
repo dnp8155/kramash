@@ -253,7 +253,13 @@ export default function EventDetails() {
   };
 
   const shareEventLink = async () => {
-    const url = `${window.location.origin}/track/${event.id}`;
+    // Ensure event has a public_token; generate one if missing (legacy events)
+    let token = event.public_token;
+    if (!token) {
+      token = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "").slice(0, 8);
+      await base44.entities.Event.update(event.id, { public_token: token, public_tracking_enabled: true });
+    }
+    const url = `${window.location.origin}/track/${token}`;
     const shareText = `Track your ${term.workItemSingular.toLowerCase()} "${event.title}" here: ${url}`;
     if (navigator.share) {
       try {

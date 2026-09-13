@@ -43,7 +43,7 @@ export default function EventTracking() {
       setLoading(true);
       setError("");
       try {
-        const res = await base44.functions.invoke("getPublicEventData", { event_id: id });
+        const res = await base44.functions.invoke("getPublicEventData", { token: id });
         setData(res?.data || res);
       } catch (e) {
         setError(e?.message || "Failed to load event details");

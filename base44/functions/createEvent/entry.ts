@@ -45,7 +45,14 @@ export default async function (req) {
         { status: 403 }
       );
     }
-    const created = await base44.entities.Event.create({ ...payload, workspace_id });
+    // Generate a secure public tracking token for the client tracking page
+    const public_token = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "").slice(0, 8);
+    const created = await base44.entities.Event.create({
+      ...payload,
+      workspace_id,
+      public_token,
+      public_tracking_enabled: true
+    });
     return Response.json(created);
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });

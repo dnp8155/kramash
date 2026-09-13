@@ -93,6 +93,15 @@
     "notes": {
       "type": "string",
       "title": "Notes"
+    },
+    "public_token": {
+      "type": "string",
+      "title": "Public Tracking Token (secure random token for client tracking URL)"
+    },
+    "public_tracking_enabled": {
+      "type": "boolean",
+      "title": "Public Tracking Enabled (admin master control for client tracking page)",
+      "default": false
     }
   },
   "required": [

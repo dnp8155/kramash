@@ -7,14 +7,19 @@ export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
     const body = await req.json().catch(() => ({}));
-    const eventId = body.event_id || body.id;
-    if (!eventId) return Response.json({ error: "Event id required" }, { status: 400 });
+    const token = body.token;
+    if (!token) return Response.json({ error: "Token required" }, { status: 400 });
 
-    let event = null;
+    // Look up event by its secure public token — NOT by event ID
+    let events = [];
     try {
-      event = await base44.asServiceRole.entities.Event.get(eventId);
+      events = await base44.asServiceRole.entities.Event.filter({ public_token: token }, "-created_date", 5);
     } catch (e) { /* not found */ }
+    const event = (events && events.length > 0) ? events[0] : null;
     if (!event) return Response.json({ error: "Event not found" }, { status: 404 });
+    if (!event.public_tracking_enabled) {
+      return Response.json({ error: "Tracking is not enabled for this event." }, { status: 403 });
+    }
     if (event.status === "cancelled") {
       return Response.json({ error: "This event has been cancelled." }, { status: 404 });
     }
