@@ -200,7 +200,7 @@ export default function Team() {
   const activeCount = members.filter((m) => m.status === "active").length;
 
   return (
-    <div className="p-4 sm:p-6 space-y-5 max-w-[1400px] mx-auto">
+    <div className="p-4 sm:p-6 space-y-5">
       <PageHeader eyebrow="People" title="Team" subtitle="Manage your roster, roles, and availability.">
         <Button variant="outline" size="sm" onClick={() => exportTeamCsv(filtered, rolesById)} disabled={filtered.length === 0}>
           <Download className="w-3.5 h-3.5" />

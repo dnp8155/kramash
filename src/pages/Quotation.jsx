@@ -176,7 +176,7 @@ export default function Quotation() {
   };
 
   if (isLoading) return (
-    <div className="p-4 sm:p-6 space-y-5 max-w-[1200px] mx-auto">
+    <div className="p-4 sm:p-6 space-y-5">
       <PageHeader eyebrow="Sales" title="Quotations" subtitle="Create, track and finalize client quotations.">
         <Button onClick={() => navigate("/quotation/new")}>
           <Plus className="w-4 h-4" /> Create Quotation
@@ -192,7 +192,7 @@ export default function Quotation() {
   );
 
   return (
-    <div className="p-4 sm:p-6 space-y-5 max-w-[1200px] mx-auto">
+    <div className="p-4 sm:p-6 space-y-5">
       <PageHeader eyebrow="Sales" title="Quotations" subtitle="Create, track and finalize client quotations.">
         <Button onClick={() => navigate("/quotation/new")}>
           <Plus className="w-4 h-4" /> Create Quotation

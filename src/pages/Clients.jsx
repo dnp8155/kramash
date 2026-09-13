@@ -73,7 +73,7 @@ export default function Clients() {
   const totalEvents = Object.values(eventCounts).reduce((s, n) => s + n, 0);
 
   return (
-    <div className="p-4 sm:p-6 space-y-5 max-w-[1400px] mx-auto">
+    <div className="p-4 sm:p-6 space-y-5">
       <PageHeader title="Clients" subtitle={`Manage your client directory and their ${term.workItemSingular.toLowerCase()} history.`}>
         <Button variant="outline" size="sm" onClick={copyPortalLink}>
           <Share2 className="w-3.5 h-3.5" />

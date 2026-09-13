@@ -188,7 +188,7 @@ export default function Preferences() {
   };
 
   return (
-    <div className="p-4 sm:p-6 max-w-[1000px] mx-auto space-y-8">
+    <div className="p-4 sm:p-6 space-y-8">
       <div>
         <h1 className="text-xl font-bold text-foreground">Preferences</h1>
         <p className="text-sm text-muted-foreground mt-0.5">Manage your workspace, business, and app settings — each section saves independently.</p>

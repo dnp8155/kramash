@@ -175,7 +175,7 @@ export default function Help() {
   };
 
   return (
-    <div className="p-4 sm:p-6 space-y-6 max-w-[1400px] mx-auto">
+    <div className="p-4 sm:p-6 space-y-6">
       <PageHeader
         title={t("Help & Support")}
         subtitle={t("Browse guides, get answers, or reach out to our team")}

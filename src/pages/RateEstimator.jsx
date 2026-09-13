@@ -230,7 +230,7 @@ export default function RateEstimator() {
   };
 
   return (
-    <div className="p-4 sm:p-6 space-y-5 max-w-[1100px] mx-auto">
+    <div className="p-4 sm:p-6 space-y-5">
       {/* Header */}
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-bold text-foreground">Rate Estimator</h1>

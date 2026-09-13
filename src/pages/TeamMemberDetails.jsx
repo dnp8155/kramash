@@ -149,7 +149,7 @@ export default function TeamMemberDetails() {
   const currency = workspace?.currency || "INR";
 
   return (
-    <div className="p-4 sm:p-6 space-y-4 max-w-[1100px] mx-auto">
+    <div className="p-4 sm:p-6 space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <Button variant="ghost" onClick={() => navigate("/team")} className="-ml-2">
           <ArrowLeft className="w-4 h-4" /> Back to Team

@@ -141,7 +141,7 @@ export default function Invoices() {
   };
 
   if (isLoading) return (
-    <div className="p-4 sm:p-6 space-y-5 max-w-[1200px] mx-auto">
+    <div className="p-4 sm:p-6 space-y-5">
       <PageHeader eyebrow="Sales" title="Invoices" subtitle="Create and track client invoices.">
         <Button onClick={() => navigate("/invoices/new")}><Plus className="w-4 h-4" /> Create Invoice</Button>
       </PageHeader>
@@ -155,7 +155,7 @@ export default function Invoices() {
   );
 
   return (
-    <div className="p-4 sm:p-6 space-y-5 max-w-[1200px] mx-auto">
+    <div className="p-4 sm:p-6 space-y-5">
       <PageHeader eyebrow="Sales" title="Invoices" subtitle="Create and track client invoices from approved quotations.">
         <Button onClick={() => navigate("/invoices/new")}><Plus className="w-4 h-4" /> Create Invoice</Button>
       </PageHeader>

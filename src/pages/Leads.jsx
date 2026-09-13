@@ -139,7 +139,7 @@ export default function Leads() {
   };
 
   return (
-    <div className="p-4 sm:p-6 space-y-5 max-w-[1400px] mx-auto">
+    <div className="p-4 sm:p-6 space-y-5">
       <PageHeader title="Leads" subtitle="Track and manage potential clients through your sales pipeline.">
         <Button onClick={openNew}>
           <Plus className="w-4 h-4" />
