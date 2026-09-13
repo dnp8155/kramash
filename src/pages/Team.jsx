@@ -299,11 +299,9 @@ export default function Team() {
               <Button variant="outline" size="sm" onClick={() => { setBlockPreselect({ memberId: null, date: null }); setShowBlock(true); }}>
                 <Ban className="w-3.5 h-3.5" /> Block Dates
               </Button>
-              {activeBlockCount > 0 && (
-                <Button variant="outline" size="sm" onClick={() => setShowUnblock(true)}>
-                  <Unlock className="w-3.5 h-3.5" /> Unblock ({activeBlockCount})
-                </Button>
-              )}
+              <Button variant="outline" size="sm" onClick={() => setShowUnblock(true)}>
+                <Unlock className="w-3.5 h-3.5" /> Unblock{activeBlockCount > 0 ? ` (${activeBlockCount})` : ""}
+              </Button>
             </div>
             <AvailabilityCalendar
               members={members}
