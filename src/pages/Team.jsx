@@ -16,10 +16,11 @@ import EmptyState from "@/components/common/EmptyState";
 import { CardGridSkeleton } from "@/components/common/Skeletons";
 import { Skeleton } from "@/components/ui/skeleton";
 import Card from "@/components/common/Card";
-import { Crown, Plus, AlertTriangle, Download, Users, UserCheck, UserX, CalendarClock, Ban } from "lucide-react";
+import { Crown, Plus, AlertTriangle, Download, Users, UserCheck, UserX, CalendarClock, Ban, Unlock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { loadTeamMembers, loadRoles, loadAssignments, loadBlockDates, ensureDefaultRoles } from "@/lib/teamService";
 import BlockDateDialog from "@/components/team/BlockDateDialog";
+import UnblockDatesDialog from "@/components/team/UnblockDatesDialog";
 import { useToast } from "@/components/ui/use-toast";
 import { exportTeamCsv } from "@/lib/exportUtils";
 import StatCard from "@/components/common/StatCard";
@@ -44,6 +45,7 @@ export default function Team() {
   const [editing, setEditing] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [showBlock, setShowBlock] = useState(false);
+  const [showUnblock, setShowUnblock] = useState(false);
   const [blockPreselect, setBlockPreselect] = useState({ memberId: null, date: null });
   const queryClient = useQueryClient();
 
@@ -174,6 +176,7 @@ export default function Team() {
   };
 
   const activeCount = members.filter((m) => m.status === "active").length;
+  const activeBlockCount = blockDates.filter((b) => b.status !== "cancelled").length;
 
   return (
     <div className="p-4 sm:p-6 space-y-5">
@@ -292,10 +295,15 @@ export default function Team() {
           <Skeleton className="h-96 w-full rounded-lg" />
         ) : (
           <div className="space-y-4">
-            <div className="flex justify-end">
+            <div className="flex justify-end gap-2">
               <Button variant="outline" size="sm" onClick={() => { setBlockPreselect({ memberId: null, date: null }); setShowBlock(true); }}>
                 <Ban className="w-3.5 h-3.5" /> Block Dates
               </Button>
+              {activeBlockCount > 0 && (
+                <Button variant="outline" size="sm" onClick={() => setShowUnblock(true)}>
+                  <Unlock className="w-3.5 h-3.5" /> Unblock ({activeBlockCount})
+                </Button>
+              )}
             </div>
             <AvailabilityCalendar
               members={members}
@@ -339,6 +347,14 @@ export default function Team() {
         members={members}
         preselectedMemberId={blockPreselect.memberId}
         preselectedDate={blockPreselect.date}
+      />
+
+      <UnblockDatesDialog
+        open={showUnblock}
+        onClose={() => setShowUnblock(false)}
+        blockDates={blockDates}
+        members={members}
+        onUnblock={unblockDate}
       />
 
       {/* Delete confirmation */}
