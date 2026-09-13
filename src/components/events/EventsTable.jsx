@@ -4,7 +4,6 @@ import StatusBadge from "@/components/common/StatusBadge";
 import LoadingState from "@/components/common/LoadingState";
 import EmptyState from "@/components/common/EmptyState";
 import Button from "@/components/common/Button";
-import { EVENT_STATUS } from "@/constants/statusConfig";
 import { formatEventDates, isThisWeek, formatAssignedDates } from "@/lib/dates";
 import { useDisplayPreferences } from "@/hooks/useDisplayPreferences";
 import { formatMoney } from "@/utils/format";
@@ -106,11 +105,8 @@ function Row({ event, clientName, teamMap, serviceMap, assignmentsByEvent, recei
         <div className="min-w-0 sm:hidden">
           <div className="text-xs text-muted-foreground font-medium">{shortId}</div>
           <div className="flex items-center gap-2 mt-1">
-            {prefs?.showStatusDots && (
-              <span className={cn("w-2 h-2 rounded-full shrink-0", EVENT_STATUS[event.status]?.dot)} />
-            )}
+            <PaymentDot paid={totalReceived} agreed={contractValue} />
             <span className="text-sm font-semibold text-foreground truncate">{event.title}</span>
-            {contractValue > 0 && <PaymentDot paid={totalReceived} agreed={contractValue} />}
           </div>
           <div className="text-xs text-muted-foreground mt-0.5">{event.event_type} · {formatEventDates(event)}</div>
         </div>
@@ -118,9 +114,7 @@ function Row({ event, clientName, teamMap, serviceMap, assignmentsByEvent, recei
         {/* Desktop columns */}
         <span className="text-sm text-muted-foreground font-medium hidden sm:block">{shortId}</span>
         <div className="hidden sm:flex items-center gap-2.5 min-w-0">
-          {prefs?.showStatusDots && (
-            <span className={cn("w-2 h-2 rounded-full shrink-0", EVENT_STATUS[event.status]?.dot)} />
-          )}
+          <PaymentDot paid={totalReceived} agreed={contractValue} />
           <div className="min-w-0">
             <div className="text-sm font-medium text-foreground truncate">{event.title}</div>
             <div className="text-xs text-muted-foreground">{clientName}</div>
@@ -129,7 +123,6 @@ function Row({ event, clientName, teamMap, serviceMap, assignmentsByEvent, recei
         <span className="text-sm text-foreground hidden sm:block">{event.event_type}</span>
         <span className="text-sm text-muted-foreground hidden sm:block">{formatEventDates(event)}</span>
         <div className="hidden sm:flex items-center gap-2">
-          {contractValue > 0 && <PaymentDot paid={totalReceived} agreed={contractValue} />}
           <StatusBadge status={event.status} />
         </div>
         <button
