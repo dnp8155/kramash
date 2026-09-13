@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import Button from "@/components/common/Button";
-import { Globe, Copy, ExternalLink, Check, Loader2 } from "lucide-react";
+import { Copy, ExternalLink, Check, Loader2 } from "lucide-react";
 
 function slugify(text) {
   return (text || "")
