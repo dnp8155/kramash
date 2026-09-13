@@ -5,6 +5,7 @@ import Input from "@/components/common/Input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
+import Button from "@/components/common/Button";
 import { Globe, Copy, ExternalLink, Check, Loader2 } from "lucide-react";
 
 function slugify(text) {
@@ -184,6 +185,23 @@ export default function PublicProfileSection() {
             placeholder="Website URL"
           />
         </div>
+      </div>
+
+      {/* Save button */}
+      <div className="flex justify-end pt-1">
+        <Button
+          variant="primary"
+          size="sm"
+          onClick={() => saveField({
+            public_profile_enabled: enabled,
+            public_profile_slug: slug || slugify(workspace.name),
+            public_profile_about: about,
+            public_profile_social_links: JSON.stringify(social)
+          })}
+          disabled={saveState === "saving"}
+        >
+          {saveState === "saving" ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Saving</> : <><Check className="w-3.5 h-3.5" /> Save Changes</>}
+        </Button>
       </div>
     </div>
   );
