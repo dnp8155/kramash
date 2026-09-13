@@ -93,11 +93,19 @@ export function eventFinancialSummary(event, transactions, assignments, serviceA
   const addonTotal = (serviceAssignments || [])
     .filter((a) => a.assignment_status !== "removed" && a.is_addon)
     .reduce((s, a) => s + (Number(a.agreed_rate) || 0), 0);
-  const contractValue = baseContractValue + addonTotal;
+  // Misc expenses (billable extras stored on the event) — add to contract value
+  let miscTotal = 0;
+  try {
+    const miscArr = event?.misc_expenses_json ? JSON.parse(event.misc_expenses_json) : [];
+    if (Array.isArray(miscArr)) {
+      miscTotal = miscArr.reduce((s, x) => s + (Number(x.amount) || 0), 0);
+    }
+  } catch { /* ignore parse errors */ }
+  const contractValue = baseContractValue + addonTotal + miscTotal;
   const pending = Math.max(0, contractValue - received);
   const overpaid = received > contractValue ? received - contractValue : 0;
   const profit = received - teamPaid - expenses;
-  return { baseContractValue, addonTotal, contractValue, received, pending, overpaid, teamAgreed, teamPaid, expenses, profit };
+  return { baseContractValue, addonTotal, miscTotal, contractValue, received, pending, overpaid, teamAgreed, teamPaid, expenses, profit };
 }
 
 // ---- Per-assignment team paid ----

@@ -8,6 +8,8 @@ import { EVENT_STATUS } from "@/constants/statusConfig";
 import { formatEventDates, isThisWeek, formatAssignedDates } from "@/lib/dates";
 import { useDisplayPreferences } from "@/hooks/useDisplayPreferences";
 import { formatMoney } from "@/utils/format";
+import { parseMiscExpenses, miscExpensesTotal } from "@/components/events/EventMiscExpenseEditor";
+import PaymentDot from "@/components/common/PaymentDot";
 import { cn } from "@/lib/utils";
 
 export default function EventsTable({ events, clients, teamMap = {}, serviceMap = {}, assignmentsByEvent = {}, receiptsByEvent = {}, currency = "INR", loading, onEventClick, onEditEvent, onDeleteEvent, onAdd, canAdd, term }) {
@@ -90,7 +92,8 @@ function Row({ event, clientName, teamMap, serviceMap, assignmentsByEvent, recei
   const [open, setOpen] = useState(false);
   const shortId = `#${event.id.slice(-4)}`;
   const totalReceived = receiptsByEvent?.[event.id] || 0;
-  const contractValue = event.contract_value || 0;
+  const miscItems = parseMiscExpenses(event.misc_expenses_json);
+  const contractValue = (event.contract_value || 0) + miscExpensesTotal(miscItems);
   const remaining = Math.max(0, contractValue - totalReceived);
 
   return (
@@ -107,6 +110,7 @@ function Row({ event, clientName, teamMap, serviceMap, assignmentsByEvent, recei
               <span className={cn("w-2 h-2 rounded-full shrink-0", EVENT_STATUS[event.status]?.dot)} />
             )}
             <span className="text-sm font-semibold text-foreground truncate">{event.title}</span>
+            {contractValue > 0 && <PaymentDot paid={totalReceived} agreed={contractValue} />}
           </div>
           <div className="text-xs text-muted-foreground mt-0.5">{event.event_type} · {formatEventDates(event)}</div>
         </div>
@@ -124,7 +128,10 @@ function Row({ event, clientName, teamMap, serviceMap, assignmentsByEvent, recei
         </div>
         <span className="text-sm text-foreground hidden sm:block">{event.event_type}</span>
         <span className="text-sm text-muted-foreground hidden sm:block">{formatEventDates(event)}</span>
-        <div className="hidden sm:flex"><StatusBadge status={event.status} /></div>
+        <div className="hidden sm:flex items-center gap-2">
+          {contractValue > 0 && <PaymentDot paid={totalReceived} agreed={contractValue} />}
+          <StatusBadge status={event.status} />
+        </div>
         <button
           className="text-muted-foreground hover:text-foreground justify-self-end"
           onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}

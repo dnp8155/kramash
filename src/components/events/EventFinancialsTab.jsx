@@ -8,6 +8,7 @@ import { base44 } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";
 import { invalidateEntities } from "@/lib/queryInvalidation";
 import { eventFinancialSummary } from "@/lib/financeService";
+import { parseMiscExpenses, miscExpensesTotal } from "@/components/events/EventMiscExpenseEditor";
 import { formatMoney } from "@/utils/format";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -54,6 +55,8 @@ export default function EventFinancialsTab({
 
   const packageValue = fin.contractValue || 0;
   const pct = (v) => packageValue > 0 ? Math.round((v / packageValue) * 100) : 0;
+  const miscItems = useMemo(() => parseMiscExpenses(event?.misc_expenses_json), [event?.misc_expenses_json]);
+  const miscTotal = miscExpensesTotal(miscItems);
 
   const openInvoicePreview = async (inv) => {
     setPreviewInvoice(inv);
@@ -121,6 +124,36 @@ export default function EventFinancialsTab({
         <FinCard label="Other Expenses" value={formatMoney(fin.expenses, currency)} sub={`${pct(fin.expenses)}% of package`} icon={Receipt} />
         <FinCard label="Net Profit" value={formatMoney(fin.profit, currency)} sub={`${pct(fin.profit)}% margin`} icon={TrendingUp} tone="success" />
       </div>
+
+      {/* Misc Expenses — billable extras added to contract value */}
+      {miscItems.length > 0 && (
+        <Card className="p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Receipt className="w-4 h-4 text-muted-foreground" />
+              <h3 className="text-sm font-semibold text-foreground">Misc Expenses</h3>
+              <span className="text-xs text-muted-foreground">({miscItems.length})</span>
+            </div>
+            <div className="text-right">
+              <div className="text-sm font-bold tabular-nums text-foreground">+{formatMoney(miscTotal, currency)}</div>
+              <div className="text-[11px] text-muted-foreground">Added to contract</div>
+            </div>
+          </div>
+          <div className="space-y-2">
+            {miscItems.map((it, idx) => (
+              <div key={it.id || idx} className="flex items-center justify-between gap-3 p-3 rounded-lg border border-border bg-muted/30">
+                <div className="min-w-0">
+                  <div className="text-sm font-semibold text-foreground truncate">{it.name || "Unnamed expense"}</div>
+                  <div className="text-[11px] text-muted-foreground">Misc Expense{it.notes ? ` · ${it.notes}` : ""}</div>
+                </div>
+                <div className="text-sm font-semibold tabular-nums text-foreground shrink-0">
+                  {formatMoney(Number(it.amount) || 0, currency)}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
 
       {/* Quotations */}
       <Card className="p-5">

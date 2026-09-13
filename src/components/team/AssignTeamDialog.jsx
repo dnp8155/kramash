@@ -336,6 +336,18 @@ export default function AssignTeamDialog({
                   <option key={t.id} value={t.id}>{t.title}</option>
                 ))}
               </Select>
+              {/* Color legend for each member type */}
+              <div className="flex flex-wrap gap-1.5">
+                {memberTypes.map((t) => (
+                  <span
+                    key={t.id}
+                    className="inline-flex items-center gap-1 text-[10px] text-muted-foreground"
+                  >
+                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: t.color }} />
+                    {t.title}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
 

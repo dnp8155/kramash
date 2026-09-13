@@ -212,8 +212,9 @@ export default function Preferences() {
                   <div key={r.id} className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-muted/40">
                     <Users className={cn("w-3.5 h-3.5 shrink-0", r.status === "active" ? "text-success" : "text-destructive")} />
                     <span className={cn("text-sm flex-1 min-w-0 truncate", r.status === "inactive" && "text-muted-foreground line-through")}>{r.name}</span>
-                    <span className="text-sm text-muted-foreground whitespace-nowrap">{formatINR(r.default_rate)}</span>
-                    <span className="text-[10px] text-muted-foreground whitespace-nowrap hidden sm:inline">{r.rate_type}</span>
+                    <span className="text-xs text-muted-foreground whitespace-nowrap shrink-0">
+                      {formatINR(r.default_rate)} <span className="text-[10px]">/ {r.rate_type}</span>
+                    </span>
                     <button onClick={() => openEditRole(r)} className="text-muted-foreground hover:text-foreground shrink-0" aria-label="Edit role">
                       <Pencil className="w-3.5 h-3.5" />
                     </button>

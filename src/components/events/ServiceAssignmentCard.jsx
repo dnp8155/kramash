@@ -6,6 +6,7 @@ import { base44 } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";
 import { serviceAssignmentPaid, voidTransaction } from "@/lib/financeService";
 import { isSelfMember } from "@/lib/teamService";
+import PaymentDot from "@/components/common/PaymentDot";
 import { useQueryClient } from "@tanstack/react-query";
 import { invalidateEntity } from "@/lib/queryInvalidation";
 import { cn } from "@/lib/utils";
@@ -94,8 +95,11 @@ export default function ServiceAssignmentCard({
             </span>
           )}
         </h4>
-        <span className={cn("text-xs font-medium px-2 py-0.5 rounded shrink-0", statusClass)}>
-          {statusLabel}
+        <span className="flex items-center gap-1.5 shrink-0">
+          {!isSelf && <PaymentDot paid={paid} agreed={rate} />}
+          <span className={cn("text-xs font-medium px-2 py-0.5 rounded", statusClass)}>
+            {statusLabel}
+          </span>
         </span>
       </div>
 

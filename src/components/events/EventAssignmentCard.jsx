@@ -8,6 +8,8 @@ import MemberTypeTag from "@/components/common/MemberTypeTag";
 import { getMemberColor } from "@/lib/teamColors";
 import EditTransactionDialog from "@/components/financial/EditTransactionDialog";
 import { voidTransaction } from "@/lib/financeService";
+import { useMemberTypeColors } from "@/hooks/useDisplayPreferences";
+import PaymentDot from "@/components/common/PaymentDot";
 import { useQueryClient } from "@tanstack/react-query";
 import { invalidateEntity } from "@/lib/queryInvalidation";
 import { cn } from "@/lib/utils";
@@ -31,6 +33,11 @@ export default function EventAssignmentCard({
   const [editingTx, setEditingTx] = useState(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const getMemberTypeColor = useMemberTypeColors();
+
+  // Accent bar uses the Bride/Groom side color when assigned, else the member's personal color
+  const sideColor = assignment.member_type_snapshot ? getMemberTypeColor(assignment.member_type_snapshot) : null;
+  const memberColor = sideColor || getMemberColor(member);
 
   const paymentHistory = transactions.filter(
     (t) => t.team_assignment_id === assignment.id && t.status === "ACTIVE"
@@ -69,8 +76,6 @@ export default function EventAssignmentCard({
     }
   };
 
-  const memberColor = getMemberColor(member);
-
   return (
     <div className="bg-card border border-border rounded-lg p-4 relative overflow-hidden">
       {/* Team color accent bar */}
@@ -86,11 +91,14 @@ export default function EventAssignmentCard({
             </span>
           )}
         </h4>
-        <span className={cn(
-          "text-xs font-medium px-2 py-0.5 rounded",
-          isSelf ? "bg-primary/10 text-primary" : isDue ? "bg-warning/10 text-warning" : "bg-success/10 text-success"
-        )}>
-          {isSelf ? "Owner Share" : isDue ? "Due" : "Paid"}
+        <span className="flex items-center gap-1.5">
+          {!isSelf && <PaymentDot paid={paid} agreed={rate} />}
+          <span className={cn(
+            "text-xs font-medium px-2 py-0.5 rounded",
+            isSelf ? "bg-primary/10 text-primary" : isDue ? "bg-warning/10 text-warning" : "bg-success/10 text-success"
+          )}>
+            {isSelf ? "Owner Share" : isDue ? "Due" : "Paid"}
+          </span>
         </span>
       </div>
 

@@ -81,6 +81,11 @@
       "title": "Contract / Agreed Value",
       "default": 0
     },
+    "misc_expenses_json": {
+      "type": "string",
+      "title": "Misc Expenses (JSON array of {name, amount, notes})",
+      "default": "[]"
+    },
     "description": {
       "type": "string",
       "title": "Description"
