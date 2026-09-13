@@ -51,7 +51,7 @@ export default function PaymentTable({
     const ev = eventsById[t.event_id];
     if (ev) return clientsById[ev.client_id]?.name || "";
     if (t.transaction_type === "BUSINESS_EXPENSE") {
-      return t.expense_category_name_snapshot || "";
+      return "Misc Expense";
     }
     return "";
   };
