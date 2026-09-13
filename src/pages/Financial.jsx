@@ -66,10 +66,14 @@ export default function Financial() {
   const [deletingFY, setDeletingFY] = useState(null);
   const queryClient = useQueryClient();
 
+  // Ensure default expense categories once on mount — not on every refetch
+  useEffect(() => {
+    if (workspaceId) ensureDefaultExpenseCategories(workspaceId);
+  }, [workspaceId]);
+
   const { data, isLoading, error } = useQuery({
     queryKey: ["financial", workspaceId],
     queryFn: async () => {
-      await ensureDefaultExpenseCategories(workspaceId);
       const [tx, evs, cls, membs, asgns, cats] = await Promise.all([
         loadAllTransactions(workspaceId),
         base44.entities.Event.filter({ workspace_id: workspaceId }, "-start_date", 500),
@@ -80,7 +84,8 @@ export default function Financial() {
       ]);
       return { allTx: tx || [], events: evs || [], clients: cls || [], members: membs || [], assignments: asgns || [], categories: cats || [] };
     },
-    enabled: !!workspaceId
+    enabled: !!workspaceId,
+    staleTime: 60 * 1000
   });
   const allTx = data?.allTx || [];
   const events = data?.events || [];
@@ -89,8 +94,7 @@ export default function Financial() {
   const assignments = data?.assignments || [];
   const categories = data?.categories || [];
   const load = () => {
-    queryClient.invalidateQueries({ queryKey: ["financial", workspaceId] });
-    invalidateEntities(queryClient, ["FinancialTransaction", "FinancialYear"]);
+    queryClient.invalidateQueries({ queryKey: ["financial"] });
     refreshFY();
   };
 
@@ -219,7 +223,8 @@ export default function Financial() {
         toast({ title: t("Failed to void transaction"), description: data.message || data.error, variant: "destructive" });
         return;
       }
-      invalidateEntities(queryClient, ["FinancialTransaction", "Invoice", "PaymentMilestone"]);
+      queryClient.invalidateQueries({ queryKey: ["financial"] });
+      queryClient.invalidateQueries({ queryKey: ["event"] });
       toast({ title: t("Transaction voided"), description: t("Invoice and milestone balances recalculated.") });
       setVoiding(null);
       load();
