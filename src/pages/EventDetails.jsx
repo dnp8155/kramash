@@ -41,6 +41,7 @@ import { cn } from "@/lib/utils";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
 import { useDisplayPreferences } from "@/hooks/useDisplayPreferences";
 import { invalidateEntities } from "@/lib/queryInvalidation";
+import PaymentDot from "@/components/common/PaymentDot";
 
 export default function EventDetails() {
   const { id } = useParams();
@@ -394,6 +395,7 @@ export default function EventDetails() {
             <button onClick={() => navigate("/events")} className="text-muted-foreground hover:text-foreground transition-colors shrink-0">
               <ArrowLeft className="w-4 h-4" />
             </button>
+            <PaymentDot paid={fin.received} agreed={fin.contractValue} />
             <h1 className="text-2xl font-bold text-foreground tracking-tight truncate">{event.title}</h1>
           </div>
           <p className="text-sm text-muted-foreground ml-6">

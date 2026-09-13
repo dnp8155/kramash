@@ -91,7 +91,7 @@ export default function EventAssignmentCard({
       {/* Header */}
       <div className="flex items-center justify-between mb-3 pl-1">
         <h4 className="text-sm font-semibold text-foreground truncate flex items-center gap-1.5">
-          <span className="team-chip-dot w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: memberColor }} />
+          {isSelf ? <PaymentDot paid={clientPaid} agreed={clientTotal} /> : <PaymentDot paid={paid} agreed={rate} />}
           <span className="truncate">{member?.name || "Unknown member"}</span>
           {isSelf && (
             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-primary text-primary-foreground shrink-0">
