@@ -15,7 +15,7 @@ import ServiceForm from "@/components/services/ServiceForm";
 import { useToast } from "@/components/ui/use-toast";
 import { loadRoles } from "@/lib/teamService";
 import { loadAllServices } from "@/lib/quotationService";
-import { Pencil, Trash2, Plus, Download, Loader2, Briefcase, Tags, Palette, Bell, CreditCard, LogOut, FileText, Users, UserCircle, Power, Globe } from "lucide-react";
+import { Pencil, Trash2, Plus, Download, Loader2, Briefcase, Tags, Palette, Bell, CreditCard, LogOut, FileText, Users, UserCircle, Power } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { exportFinancialCsv } from "@/lib/exportUtils";
 import { loadAllTransactions } from "@/lib/financeService";
@@ -26,7 +26,6 @@ import EventTypeManager from "@/components/preferences/EventTypeManager";
 import QuotationDefaultsSection from "@/components/settings/QuotationDefaultsSection";
 import MilestoneTemplateManager from "@/components/preferences/MilestoneTemplateManager";
 import PackageSection from "@/components/preferences/PackageSection";
-import PublicProfileSection from "@/components/preferences/PublicProfileSection";
 import DataDeletionSection from "@/components/settings/DataDeletionSection";
 import { usePlan } from "@/hooks/usePlan";
 
@@ -308,14 +307,6 @@ export default function Preferences() {
             </div>
           </Card>
         </div>
-      </SectionBlock>
-
-      {/* Public Profile */}
-      <SectionBlock icon={Globe} title="Public Profile">
-        <Card title="Shareable Business Profile">
-          <p className="text-xs text-muted-foreground mb-3">Create a public page with your services, team, and contact info that you can share with clients.</p>
-          <PublicProfileSection />
-        </Card>
       </SectionBlock>
 
       {/* Quotation Defaults */}

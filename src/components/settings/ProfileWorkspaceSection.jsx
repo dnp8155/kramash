@@ -8,7 +8,7 @@ import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
 import Toggle from "@/components/common/Toggle";
 import ChangePasswordDialog from "@/components/settings/ChangePasswordDialog";
-import { Pencil, Check, Camera, Loader2, Upload, User, Building2, Lock, KeyRound, Globe } from "lucide-react";
+import { Pencil, Check, Camera, Loader2, Upload, User, Building2, Lock, KeyRound, Globe, Copy, ExternalLink } from "lucide-react";
 import { isValidIndianPhone, isValidEmail } from "@/lib/validation";
 
 const currencies = [{ v: "INR", l: "INR (₹)" }, { v: "USD", l: "USD ($)" }, { v: "EUR", l: "EUR (€)" }, { v: "AED", l: "AED (د.إ)" }];
@@ -25,10 +25,22 @@ const numberFormats = [
 ];
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
+function slugify(text) {
+  return (text || "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 40);
+}
+
 export default function ProfileWorkspaceSection() {
   const { user, checkUserAuth } = useAuth();
   const { workspace, setWorkspace } = useWorkspace();
   const { toast } = useToast();
+  const [copiedSlug, setCopiedSlug] = useState(false);
 
   // ---- Profile state ----
   const [editingName, setEditingName] = useState(false);
@@ -74,7 +86,9 @@ export default function ProfileWorkspaceSection() {
       gst_billing_address: workspace.gst_billing_address || "",
       gst_state: workspace.gst_state || "",
       default_gst_rate: workspace.default_gst_rate ?? 18,
-      logo: workspace.logo || ""
+      logo: workspace.logo || "",
+      public_profile_enabled: !!workspace.public_profile_enabled,
+      public_profile_slug: workspace.public_profile_slug || slugify(workspace.name) || ""
     });
   }
 
@@ -175,7 +189,9 @@ export default function ProfileWorkspaceSection() {
         gst_business_name: form.gst_business_name,
         gst_billing_address: form.gst_billing_address,
         gst_state: form.gst_state,
-        default_gst_rate: form.default_gst_rate
+        default_gst_rate: form.default_gst_rate,
+        public_profile_enabled: form.public_profile_enabled,
+        public_profile_slug: form.public_profile_slug || slugify(form.name)
       });
       setWorkspace(updated);
       toast({ title: "Settings saved" });
@@ -449,6 +465,53 @@ export default function ProfileWorkspaceSection() {
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Public Profile URL — uses Business & Workspace info only */}
+          <div className="pt-3 mt-3 border-t border-border">
+            <h4 className="text-sm font-semibold text-foreground mb-1">Public Profile URL</h4>
+            <p className="text-xs text-muted-foreground mb-3">Publish a shareable public page using your business name, tagline, logo, website, phone, email, and address.</p>
+            <div className="space-y-3">
+              <Toggle
+                checked={form.public_profile_enabled}
+                onChange={(v) => set("public_profile_enabled", v)}
+                label="Publish public profile"
+              />
+              <Field label="Profile URL Slug">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground whitespace-nowrap hidden sm:inline">{window.location.origin}/p/</span>
+                  <Input
+                    value={form.public_profile_slug}
+                    onChange={(e) => set("public_profile_slug", slugify(e.target.value))}
+                    placeholder="your-business"
+                    className="flex-1"
+                  />
+                </div>
+                {form.public_profile_slug && (
+                  <div className="flex items-center gap-2 mt-2">
+                    <div className="flex-1 min-w-0 px-3 py-1.5 rounded-md bg-muted text-xs text-muted-foreground truncate">
+                      {window.location.origin}/p/{form.public_profile_slug}
+                    </div>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(`${window.location.origin}/p/${form.public_profile_slug}`);
+                        setCopiedSlug(true);
+                        setTimeout(() => setCopiedSlug(false), 2000);
+                      }}
+                      className="shrink-0 p-2 rounded-md border border-border hover:bg-muted transition-colors"
+                      aria-label="Copy link"
+                    >
+                      {copiedSlug ? <Check className="w-3.5 h-3.5 text-success" /> : <Copy className="w-3.5 h-3.5" />}
+                    </button>
+                    {form.public_profile_enabled && (
+                      <a href={`${window.location.origin}/p/${form.public_profile_slug}`} target="_blank" rel="noopener noreferrer" className="shrink-0 p-2 rounded-md border border-border hover:bg-muted transition-colors" aria-label="Open profile">
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    )}
+                  </div>
+                )}
+              </Field>
+            </div>
           </div>
 
           <Button onClick={saveWorkspace} disabled={saving}>

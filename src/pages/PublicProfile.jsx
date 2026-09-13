@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Image } from "@/components/ui/image";
-import { MapPin, Phone, Mail, Globe, Instagram, Facebook, Youtube, Sparkles } from "lucide-react";
+import { MapPin, Phone, Mail, Globe, Sparkles } from "lucide-react";
 
 export default function PublicProfile() {
   const { slug } = useParams();
@@ -52,14 +52,7 @@ export default function PublicProfile() {
     );
   }
 
-  const { workspace: ws, socialLinks = {} } = data;
-
-  const socials = [
-    { key: "instagram", icon: Instagram, url: socialLinks.instagram },
-    { key: "facebook", icon: Facebook, url: socialLinks.facebook },
-    { key: "youtube", icon: Youtube, url: socialLinks.youtube },
-    { key: "website", icon: Globe, url: socialLinks.website || ws.website }
-  ].filter(s => s.url);
+  const ws = data.workspace;
 
   return (
     <div className="min-h-dvh bg-background">
@@ -78,23 +71,10 @@ export default function PublicProfile() {
           )}
           <h1 className="text-2xl sm:text-3xl font-heading font-bold mb-2">{ws.name}</h1>
           {ws.tagline && <p className="text-base sm:text-lg text-primary-foreground/80 max-w-xl mx-auto">{ws.tagline}</p>}
-          {ws.business_type && (
-            <span className="inline-block mt-4 px-3 py-1 rounded-full bg-white/10 text-xs font-medium border border-white/20">
-              {ws.business_type}
-            </span>
-          )}
         </div>
       </div>
 
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 space-y-8">
-        {/* About */}
-        {ws.about && (
-          <section>
-            <h2 className="text-lg font-heading font-semibold text-foreground mb-3">About</h2>
-            <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">{ws.about}</p>
-          </section>
-        )}
-
         {/* Contact */}
         <section>
           <h2 className="text-lg font-heading font-semibold text-foreground mb-3">Get in Touch</h2>
@@ -118,24 +98,6 @@ export default function PublicProfile() {
               <div className="flex items-start gap-3 text-sm text-muted-foreground">
                 <MapPin className="w-4 h-4 shrink-0 mt-0.5" />
                 <span className="break-anywhere">{[ws.address, ws.city, ws.state, ws.country].filter(Boolean).join(", ")}</span>
-              </div>
-            )}
-            {socials.length > 0 && (
-              <div className="flex items-center gap-2 pt-2 border-t border-border">
-                {socials.map((s) => {
-                  const Icon = s.icon;
-                  return (
-                    <a
-                      key={s.key}
-                      href={s.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
-                    >
-                      <Icon className="w-4 h-4" />
-                    </a>
-                  );
-                })}
               </div>
             )}
           </div>
