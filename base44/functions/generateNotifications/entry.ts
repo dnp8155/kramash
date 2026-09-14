@@ -75,8 +75,10 @@ export default async function (req) {
       members.map((m) => base44.asServiceRole.entities.User.get(m.user_id).catch(() => null))
     );
     const memberEmails = {};
+    const memberNames = {};
     memberUsers.forEach((u, i) => {
       if (u?.email) memberEmails[members[i].user_id] = u.email;
+      if (u?.full_name) memberNames[members[i].user_id] = u.full_name;
     });
 
     for (const ev of events || []) {
@@ -110,7 +112,7 @@ export default async function (req) {
               await base44.asServiceRole.integrations.Core.SendEmail({
                 to: email,
                 subject: `${is24 ? reminderTomorrow : reminderComing}: ${ev.title}`,
-                body: `Hi ${m.user_name || ""},\n\nThis is a reminder that "${ev.title}" ${reminderVerb} ${ev.start_date}${ev.venue ? ` at ${ev.venue}` : ""}.\n\n— ${workspace?.name || "Kramasha"}`
+                body: `Hi ${memberNames[m.user_id] || ""},\n\nThis is a reminder that "${ev.title}" ${reminderVerb} ${firstDate}${ev.venue ? ` at ${ev.venue}` : ""}.\n\n— ${workspace?.name || "Kramasha"}`
               });
             } catch (e) {
               // Email send is best-effort; don't fail the whole function.

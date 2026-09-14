@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 import { verifyWorkspaceMembership } from '../../shared/planEngine.ts';
 import { round2, deriveInvoiceStatus } from '../../shared/invoiceHelpers.ts';
+import { computeMilestoneStatus } from '../../shared/transactionReconcile.ts';
 
 // Authenticated endpoint: records a client payment against an invoice.
 // Creates a CLIENT_RECEIPT FinancialTransaction linked to the invoice, event, client, and FY.
@@ -116,11 +117,7 @@ export default async function(req) {
         const milestone = await base44.entities.PaymentMilestone.get(inv.milestone_id);
         if (milestone) {
           const mDue = Number(milestone.due_amount) || 0;
-          let mStatus = "upcoming";
-          if (milestonePaid >= mDue && mDue > 0) mStatus = "paid";
-          else if (milestonePaid > 0) mStatus = "partially_paid";
-          else if (milestone.due_date && milestone.due_date < transaction_date) mStatus = "overdue";
-          else if (milestone.due_date && milestone.due_date <= transaction_date) mStatus = "due";
+          const mStatus = computeMilestoneStatus(milestonePaid, mDue, milestone.due_date || "");
 
           await base44.entities.PaymentMilestone.update(inv.milestone_id, {
             paid_amount: milestonePaid,
