@@ -1,7 +1,7 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, Fragment } from "react";
 import { parseISODate, toISODate, todayISO } from "@/lib/dates";
 import { splitAvailability } from "@/lib/teamService";
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, MousePointerClick, Ban, CalendarDays, Crown, Unlock } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, MousePointerClick, Ban, CalendarDays, Crown, Unlock, Briefcase } from "lucide-react";
 import CalendarEventDetailPanel from "@/components/team/CalendarEventDetailPanel";
 import { cn } from "@/lib/utils";
 
@@ -121,6 +121,36 @@ export default function AvailabilityCalendar({
     return map;
   }, [members, blockDates]);
 
+  // Map: dateISO → array of { id, name } for services assigned on that date.
+  // Uses per-day schedule (dayAssignments) when present, otherwise falls back
+  // to event-level service assignments.
+  const servicesByDate = useMemo(() => {
+    const map = {};
+    const serviceMap = {};
+    services.forEach((s) => { serviceMap[s.id] = s; });
+    for (const ev of allEvents) {
+      const evSvcIds = (serviceAssignments || [])
+        .filter((a) => a.event_id === ev.id && a.assignment_status !== "removed")
+        .map((a) => a.service_id);
+      const dates = Array.isArray(ev.event_dates) && ev.event_dates.length > 0
+        ? ev.event_dates
+        : (ev.start_date ? [ev.start_date] : []);
+      for (const d of dates) {
+        const dayRec = (dayAssignments || []).find(
+          (a) => a.event_id === ev.id && a.date === d
+        );
+        const svcIds = dayRec?.service_ids?.length > 0 ? dayRec.service_ids : evSvcIds;
+        for (const sid of svcIds) {
+          const svc = serviceMap[sid];
+          if (!svc) continue;
+          if (!map[d]) map[d] = [];
+          if (!map[d].some((x) => x.id === svc.id)) map[d].push({ id: svc.id, name: svc.name });
+        }
+      }
+    }
+    return map;
+  }, [allEvents, serviceAssignments, dayAssignments, services]);
+
   const selectedInfo = useMemo(() => {
     if (!selected) return null;
     return splitAvailability(members, selected, assignments, eventsById, blockDates);
@@ -205,7 +235,7 @@ export default function AvailabilityCalendar({
         {/* View mode toggle + Navigation */}
         <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
           <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-lg">
-            {["month", "week", "day"].map((m) => (
+            {["year", "month", "week", "day"].map((m) => (
               <button
                 key={m}
                 onClick={() => setViewMode(m)}
@@ -233,6 +263,17 @@ export default function AvailabilityCalendar({
                 <button onClick={nextMonth} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground transition-colors" aria-label="Next month">
                   <ChevronRight className="w-4 h-4" />
                 </button>
+                <button onClick={nextYear} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground transition-colors" aria-label="Next year">
+                  <ChevronsRight className="w-4 h-4" />
+                </button>
+              </>
+            )}
+            {viewMode === "year" && (
+              <>
+                <button onClick={prevYear} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground transition-colors" aria-label="Previous year">
+                  <ChevronsLeft className="w-4 h-4" />
+                </button>
+                <h3 className="text-base font-bold text-foreground px-2 min-w-[80px] text-center">{view.y}</h3>
                 <button onClick={nextYear} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground transition-colors" aria-label="Next year">
                   <ChevronsRight className="w-4 h-4" />
                 </button>
@@ -275,7 +316,7 @@ export default function AvailabilityCalendar({
         </div>
 
         {/* Weekday headers (month + week) */}
-        {viewMode !== "day" && (
+        {viewMode !== "day" && viewMode !== "year" && (
           <div className="grid grid-cols-7 gap-1.5 text-center text-[10px] font-semibold text-muted-foreground uppercase mb-2">
             {WEEKDAYS.map((w) => <div key={w}>{w}</div>)}
           </div>
@@ -338,6 +379,22 @@ export default function AvailabilityCalendar({
                       )}
                     </div>
                   )}
+                  {(servicesByDate[iso] || []).length > 0 && (
+                    <div className="flex flex-col gap-0.5 w-full overflow-hidden mt-0.5">
+                      {(servicesByDate[iso] || []).slice(0, hasBooked ? 1 : 2).map((s) => (
+                        <span
+                          key={s.id}
+                          title={s.name}
+                          className="text-[9px] font-medium px-1 py-0.5 rounded leading-tight truncate bg-muted text-muted-foreground flex items-center gap-0.5"
+                        >
+                          <Briefcase className="w-2 h-2 shrink-0" /> {s.name}
+                        </span>
+                      ))}
+                      {(servicesByDate[iso] || []).length > (hasBooked ? 1 : 2) && (
+                        <span className="text-[9px] font-semibold text-muted-foreground leading-tight px-1">+{(servicesByDate[iso] || []).length - (hasBooked ? 1 : 2)} svc</span>
+                      )}
+                    </div>
+                  )}
                   {!hasBooked && hasBlocked && (
                     <div className="flex flex-col gap-0.5 w-full overflow-hidden mt-0.5">
                       {blocked.slice(0, 1).map((b) => (
@@ -358,6 +415,57 @@ export default function AvailabilityCalendar({
                 </button>
               );
             })}
+          </div>
+        )}
+
+        {/* Year view — 12 months × 31 days grid */}
+        {viewMode === "year" && (
+          <div className="overflow-x-auto -mx-1 px-1">
+            <div className="min-w-[640px]">
+              <div className="grid gap-0.5" style={{ gridTemplateColumns: "44px repeat(31, minmax(0,1fr))" }}>
+                {/* Day-number header row */}
+                <div />
+                {Array.from({ length: 31 }, (_, i) => (
+                  <div key={i} className="text-[8px] text-center text-muted-foreground font-semibold">{i + 1}</div>
+                ))}
+                {/* 12 month rows */}
+                {MONTHS.map((monthName, m) => {
+                  const daysInMonth = new Date(view.y, m + 1, 0).getDate();
+                  return (
+                    <Fragment key={m}>
+                      <div className="text-[10px] font-medium text-muted-foreground flex items-center pr-1 truncate">{monthName.slice(0, 3)}</div>
+                      {Array.from({ length: 31 }, (_, d) => {
+                        const day = d + 1;
+                        if (day > daysInMonth) return <div key={d} />;
+                        const iso = toISODate(new Date(view.y, m, day, 12));
+                        const dayEvents = eventsByDate[iso] || [];
+                        const blocked = blockedByDate[iso] || [];
+                        const hasMultiple = dayEvents.length > 1;
+                        const hasBooked = dayEvents.length > 0;
+                        const hasBlocked = blocked.length > 0;
+                        const isToday = iso === todayISO();
+                        const isSelected = iso === selected;
+                        const color = hasMultiple ? "#f39c12" : hasBooked ? "#e74c3c" : hasBlocked ? "#6b7280" : "#27ae60";
+                        return (
+                          <button
+                            key={d}
+                            onClick={() => setSelected(iso)}
+                            className={cn(
+                              "h-5 rounded-sm flex items-center justify-center transition-all hover:bg-muted/60",
+                              isSelected && "ring-1 ring-primary bg-primary/5",
+                              isToday && !isSelected && "ring-1 ring-primary/40"
+                            )}
+                            title={`${iso} — ${dayEvents.length} event(s)${blocked.length ? ` · ${blocked.length} blocked` : ""}`}
+                          >
+                            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
+                          </button>
+                        );
+                      })}
+                    </Fragment>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         )}
 
@@ -414,6 +522,22 @@ export default function AvailabilityCalendar({
                       ))}
                       {dayEvents.length > 4 && (
                         <span className="text-[9px] font-semibold text-[#d97706] leading-tight px-1">+{dayEvents.length - 4} more</span>
+                      )}
+                    </div>
+                  )}
+                  {(servicesByDate[iso] || []).length > 0 && (
+                    <div className="flex flex-col gap-0.5 w-full overflow-hidden mt-1">
+                      {(servicesByDate[iso] || []).slice(0, hasBooked ? 2 : 3).map((s) => (
+                        <span
+                          key={s.id}
+                          title={s.name}
+                          className="text-[9px] font-medium px-1 py-0.5 rounded leading-tight truncate bg-muted text-muted-foreground flex items-center gap-0.5"
+                        >
+                          <Briefcase className="w-2 h-2 shrink-0" /> {s.name}
+                        </span>
+                      ))}
+                      {(servicesByDate[iso] || []).length > (hasBooked ? 2 : 3) && (
+                        <span className="text-[9px] font-semibold text-muted-foreground leading-tight px-1">+{(servicesByDate[iso] || []).length - (hasBooked ? 2 : 3)} svc</span>
                       )}
                     </div>
                   )}
