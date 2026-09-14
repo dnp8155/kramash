@@ -1,20 +1,45 @@
-import { Menu } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
+import { useLocation, useNavigate } from "react-router-dom";
 import NotificationBell from "@/components/common/NotificationBell";
 import GlobalSearch from "@/components/layout/GlobalSearch";
 import AgentBot from "@/components/layout/AgentBot";
 import LanguageSwitcher from "@/components/layout/LanguageSwitcher";
+import Logo from "@/components/common/Logo";
 
-export default function TopHeader({ onMenuClick }) {
+const MAIN_PAGES = new Set([
+  "/dashboard",
+  "/events",
+  "/team",
+  "/financial",
+  "/clients",
+  "/leads",
+  "/calendar",
+  "/quotation",
+  "/invoices",
+  "/more",
+]);
+
+export default function TopHeader() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const isMainPage = MAIN_PAGES.has(location.pathname);
+
   return (
     <header className="flex items-center gap-2 sm:gap-3 px-3 sm:px-6 h-14 border-b border-border bg-card/80 backdrop-blur-md sticky top-0 z-20 shadow-sm safe-area-top">
-      {/* Mobile menu */}
-      <button
-        onClick={onMenuClick}
-        className="lg:hidden text-foreground p-1.5 -ml-1 rounded-lg hover:bg-muted transition-colors shrink-0"
-        aria-label="Open menu"
-      >
-        <Menu className="w-5 h-5" />
-      </button>
+      {/* Mobile: logo on main pages, back arrow on subpages */}
+      {isMainPage ? (
+        <div className="lg:hidden shrink-0 -ml-1">
+          <Logo size={28} />
+        </div>
+      ) : (
+        <button
+          onClick={() => navigate(-1)}
+          className="lg:hidden w-8 h-8 rounded-full border border-border bg-card flex items-center justify-center text-foreground hover:bg-muted transition-colors shrink-0 -ml-1"
+          aria-label="Go back"
+        >
+          <ArrowLeft className="w-4 h-4" />
+        </button>
+      )}
 
       {/* Desktop left spacer (keeps search centered on large screens) */}
       <div className="hidden lg:block flex-1" />
