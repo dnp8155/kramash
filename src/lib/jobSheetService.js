@@ -136,12 +136,9 @@ export async function updateJobSheetConfig(id, config) {
 }
 
 export function generatePublicToken() {
-  const chars = "0123456789abcdef";
-  let token = "";
-  for (let i = 0; i < 48; i++) {
-    token += chars[Math.floor(Math.random() * 16)];
-  }
-  return token;
+  const arr = new Uint8Array(24);
+  crypto.getRandomValues(arr);
+  return Array.from(arr).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
 export async function togglePublicLink(id, enabled, existingToken) {

@@ -66,21 +66,27 @@ export async function subscribeToPush() {
 
 export async function unsubscribeFromPush() {
   if (!isPushSupported()) return;
+  let endpoint = null;
   try {
     const reg = await navigator.serviceWorker.ready;
     const sub = await reg.pushManager.getSubscription();
-    if (sub) await sub.unsubscribe();
-  } catch {
-    // ignore
-  }
-  // Delete all web push subscriptions from backend
-  try {
-    const subs = await base44.entities.PushSubscription.filter({});
-    if (subs && subs.length > 0) {
-      await base44.entities.PushSubscription.deleteMany({ user_id: subs[0].user_id });
+    if (sub) {
+      endpoint = sub.endpoint;
+      await sub.unsubscribe();
     }
   } catch {
     // ignore
+  }
+  // Delete only THIS device's subscription from backend (by endpoint)
+  if (endpoint) {
+    try {
+      const subs = await base44.entities.PushSubscription.filter({ endpoint });
+      if (subs && subs.length > 0) {
+        await base44.entities.PushSubscription.delete(subs[0].id);
+      }
+    } catch {
+      // ignore
+    }
   }
 }
 
