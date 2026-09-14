@@ -42,12 +42,13 @@ export default function Events() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["events", workspaceId],
     queryFn: async () => {
-      const [evList, clList, tmList, svList, asgList, txList] = await Promise.all([
+      const [evList, clList, tmList, svList, asgList, svcAsgList, txList] = await Promise.all([
         base44.entities.Event.filter({ workspace_id: workspaceId }, "-start_date", 500),
         base44.entities.Client.filter({ workspace_id: workspaceId }, "name", 500),
         base44.entities.TeamMember.filter({ workspace_id: workspaceId }, "name", 500),
         base44.entities.Service.filter({ workspace_id: workspaceId }, "name", 500),
         base44.entities.EventTeamAssignment.filter({ workspace_id: workspaceId }, "-created_date", 1000),
+        base44.entities.EventServiceAssignment.filter({ workspace_id: workspaceId }, "-created_date", 1000),
         base44.entities.FinancialTransaction.filter({ workspace_id: workspaceId, transaction_type: "CLIENT_RECEIPT", status: "ACTIVE" }, "-transaction_date", 2000)
       ]);
       const map = {};
@@ -70,7 +71,14 @@ export default function Events() {
         if (!receiptsByEvent[t.event_id]) receiptsByEvent[t.event_id] = 0;
         receiptsByEvent[t.event_id] += Number(t.amount) || 0;
       });
-      return { events: evList || [], clients: map, teamMap, serviceMap, assignmentsByEvent, receiptsByEvent };
+      // Add-on service totals grouped by event — added to contract value display.
+      const addonsByEvent = {};
+      (svcAsgList || []).forEach((a) => {
+        if (a.assignment_status === "removed" || !a.is_addon) return;
+        if (!addonsByEvent[a.event_id]) addonsByEvent[a.event_id] = 0;
+        addonsByEvent[a.event_id] += Number(a.agreed_rate) || 0;
+      });
+      return { events: evList || [], clients: map, teamMap, serviceMap, assignmentsByEvent, receiptsByEvent, addonsByEvent };
     },
     enabled: !!workspaceId
   });
@@ -80,6 +88,7 @@ export default function Events() {
   const serviceMap = data?.serviceMap || {};
   const assignmentsByEvent = data?.assignmentsByEvent || {};
   const receiptsByEvent = data?.receiptsByEvent || {};
+  const addonsByEvent = data?.addonsByEvent || {};
   const currency = workspace?.currency || "INR";
   const invalidate = () => {
     // Don't invalidate ["events"] here — the optimistic update in deleteEvent
@@ -218,6 +227,7 @@ export default function Events() {
           serviceMap={serviceMap}
           assignmentsByEvent={assignmentsByEvent}
           receiptsByEvent={receiptsByEvent}
+          addonsByEvent={addonsByEvent}
           currency={currency}
           loading={isLoading}
           onEventClick={openEvent}

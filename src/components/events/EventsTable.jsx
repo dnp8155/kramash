@@ -9,9 +9,10 @@ import { useDisplayPreferences } from "@/hooks/useDisplayPreferences";
 import { formatMoney } from "@/utils/format";
 import { parseMiscExpenses, miscExpensesTotal } from "@/components/events/EventMiscExpenseEditor";
 import PaymentDot from "@/components/common/PaymentDot";
+import MemberTypeTag from "@/components/common/MemberTypeTag";
 import { cn } from "@/lib/utils";
 
-export default function EventsTable({ events, clients, teamMap = {}, serviceMap = {}, assignmentsByEvent = {}, receiptsByEvent = {}, currency = "INR", loading, onEventClick, onEditEvent, onDeleteEvent, onAdd, canAdd, term }) {
+export default function EventsTable({ events, clients, teamMap = {}, serviceMap = {}, assignmentsByEvent = {}, receiptsByEvent = {}, addonsByEvent = {}, currency = "INR", loading, onEventClick, onEditEvent, onDeleteEvent, onAdd, canAdd, term }) {
   const t = term || {};
   const prefs = useDisplayPreferences();
   if (loading) {
@@ -59,7 +60,7 @@ export default function EventsTable({ events, clients, teamMap = {}, serviceMap 
                 {weekEvents.length} {t.workItemSingular || "Event"}{weekEvents.length > 1 ? "s" : ""} This Week
               </div>
               {weekEvents.map((e) => (
-                <Row key={e.id} event={e} term={t} prefs={prefs} clientName={clientName(e.client_id)} teamMap={teamMap} serviceMap={serviceMap} assignmentsByEvent={assignmentsByEvent} receiptsByEvent={receiptsByEvent} currency={currency} onClick={() => onEventClick(e)} onEdit={() => onEditEvent(e)} onDelete={() => onDeleteEvent(e)} />
+                <Row key={e.id} event={e} term={t} prefs={prefs} clientName={clientName(e.client_id)} teamMap={teamMap} serviceMap={serviceMap} assignmentsByEvent={assignmentsByEvent} receiptsByEvent={receiptsByEvent} addonsByEvent={addonsByEvent} currency={currency} onClick={() => onEventClick(e)} onEdit={() => onEditEvent(e)} onDelete={() => onDeleteEvent(e)} />
               ))}
             </>
           )}
@@ -70,29 +71,30 @@ export default function EventsTable({ events, clients, teamMap = {}, serviceMap 
                 All {t.workItemPlural || "Events"}
               </div>
               {laterEvents.map((e) => (
-                <Row key={e.id} event={e} term={t} prefs={prefs} clientName={clientName(e.client_id)} teamMap={teamMap} serviceMap={serviceMap} assignmentsByEvent={assignmentsByEvent} receiptsByEvent={receiptsByEvent} currency={currency} onClick={() => onEventClick(e)} onEdit={() => onEditEvent(e)} onDelete={() => onDeleteEvent(e)} />
+                <Row key={e.id} event={e} term={t} prefs={prefs} clientName={clientName(e.client_id)} teamMap={teamMap} serviceMap={serviceMap} assignmentsByEvent={assignmentsByEvent} receiptsByEvent={receiptsByEvent} addonsByEvent={addonsByEvent} currency={currency} onClick={() => onEventClick(e)} onEdit={() => onEditEvent(e)} onDelete={() => onDeleteEvent(e)} />
               ))}
             </>
           )}
         </>
       ) : (
         events.map((e) => (
-          <Row key={e.id} event={e} term={t} prefs={prefs} clientName={clientName(e.client_id)} teamMap={teamMap} serviceMap={serviceMap} assignmentsByEvent={assignmentsByEvent} receiptsByEvent={receiptsByEvent} currency={currency} onClick={() => onEventClick(e)} onEdit={() => onEditEvent(e)} onDelete={() => onDeleteEvent(e)} />
+          <Row key={e.id} event={e} term={t} prefs={prefs} clientName={clientName(e.client_id)} teamMap={teamMap} serviceMap={serviceMap} assignmentsByEvent={assignmentsByEvent} receiptsByEvent={receiptsByEvent} addonsByEvent={addonsByEvent} currency={currency} onClick={() => onEventClick(e)} onEdit={() => onEditEvent(e)} onDelete={() => onDeleteEvent(e)} />
         ))
       )}
     </div>
   );
 }
 
-function Row({ event, clientName, teamMap, serviceMap, assignmentsByEvent, receiptsByEvent, currency, onClick, onEdit, onDelete, term, prefs }) {
+function Row({ event, clientName, teamMap, serviceMap, assignmentsByEvent, receiptsByEvent, addonsByEvent, currency, onClick, onEdit, onDelete, term, prefs }) {
   const teamNames = (event.team_member_ids || []).map((id) => teamMap[id]?.name).filter(Boolean);
   const serviceNames = (event.service_ids || []).map((id) => serviceMap[id]?.name).filter(Boolean);
   const eventAssignments = assignmentsByEvent?.[event.id] || [];
   const [open, setOpen] = useState(false);
   const shortId = `#${event.id.slice(-4)}`;
   const totalReceived = receiptsByEvent?.[event.id] || 0;
+  const addonTotal = addonsByEvent?.[event.id] || 0;
   const miscItems = parseMiscExpenses(event.misc_expenses_json);
-  const contractValue = (event.contract_value || 0) + miscExpensesTotal(miscItems);
+  const contractValue = (event.contract_value || 0) + miscExpensesTotal(miscItems) + addonTotal;
   const remaining = Math.max(0, contractValue - totalReceived);
 
   return (
@@ -194,9 +196,13 @@ function Row({ event, clientName, teamMap, serviceMap, assignmentsByEvent, recei
                     const role = a.role_name_snapshot || m?.profession || "—";
                     const dates = formatAssignedDates(a, event);
                     return (
-                      <li key={a.id} className="text-xs break-anywhere">
+                      <li key={a.id} className="text-xs break-anywhere flex items-center gap-1.5 flex-wrap">
+                        {(a.member_type_snapshot || a.member_type_id) && (
+                          <MemberTypeTag label={a.member_type_snapshot} typeId={a.member_type_id} />
+                        )}
                         <span className="font-medium text-foreground">{name}</span>
-                        <span className="text-muted-foreground"> — {role} — {dates}</span>
+                        <span className="text-muted-foreground">({role})</span>
+                        <span className="text-muted-foreground">— {dates}</span>
                       </li>
                     );
                   })}
