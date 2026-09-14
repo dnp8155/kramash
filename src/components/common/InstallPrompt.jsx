@@ -41,7 +41,7 @@ export default function InstallPrompt() {
       <div className="relative bg-card border border-border rounded-2xl shadow-lg p-4">
         <button
           onClick={dismiss}
-          className="absolute top-2.5 right-2.5 text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-muted"
+          className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full border border-border bg-card flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
           aria-label="Dismiss"
         >
           <X className="w-4 h-4" />

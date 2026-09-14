@@ -30,7 +30,7 @@ export default function UpdateBanner() {
         >
           View Update <ArrowRight className="w-3.5 h-3.5" />
         </button>
-        <button onClick={() => setDismissed(true)} className="p-1 hover:bg-primary-foreground/10 rounded">
+        <button onClick={() => setDismissed(true)} className="w-8 h-8 rounded-full border border-card/40 bg-primary-foreground/10 flex items-center justify-center text-primary-foreground hover:bg-primary-foreground/20 transition-colors">
           <X className="w-4 h-4" />
         </button>
       </div>

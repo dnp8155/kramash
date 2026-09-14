@@ -47,7 +47,9 @@ export default function AdminLayout() {
             to="/events"
             className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <span className="w-8 h-8 rounded-full border border-border bg-card flex items-center justify-center">
+              <ArrowLeft className="w-4 h-4" />
+            </span>
             Back to App
           </Link>
         </div>

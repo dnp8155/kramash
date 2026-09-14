@@ -672,7 +672,12 @@ export default function QuotationEditor() {
       <div className="p-6 max-w-[800px] mx-auto">
         <EmptyState title="Quotation not found" description="This quotation may not exist or belongs to another workspace." />
         <div className="mt-4">
-          <Button variant="outline" onClick={() => navigate("/quotation")}><ArrowLeft className="w-4 h-4" />Back to Quotations</Button>
+          <button onClick={() => navigate("/quotation")} className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+            <span className="w-8 h-8 rounded-full border border-border bg-card flex items-center justify-center">
+              <ArrowLeft className="w-4 h-4" />
+            </span>
+            Back to Quotations
+          </button>
         </div>
       </div>
     );
@@ -682,8 +687,11 @@ export default function QuotationEditor() {
     <div className="p-4 sm:p-6 space-y-4 max-w-[1100px] mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <button onClick={() => navigate("/quotation")} className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1">
-          <ArrowLeft className="w-4 h-4" /> Quotations
+        <button onClick={() => navigate("/quotation")} className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-2">
+          <span className="w-8 h-8 rounded-full border border-border bg-card flex items-center justify-center">
+            <ArrowLeft className="w-4 h-4" />
+          </span>
+          Quotations
         </button>
         <div className="flex items-center gap-2">
           <span className={cn("text-xs px-2 py-1 rounded font-medium uppercase tracking-wide", QUOTATION_STATUS_META[status]?.className)}>

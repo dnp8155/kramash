@@ -35,7 +35,7 @@ export default function PdfPreviewModal({ url, filename, open, onClose, loading 
             )}
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-md hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+              className="w-8 h-8 rounded-full border border-border bg-card flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
               aria-label="Close"
             >
               <X className="w-4 h-4" />

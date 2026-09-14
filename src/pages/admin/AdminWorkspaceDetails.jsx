@@ -96,8 +96,11 @@ export default function AdminWorkspaceDetails() {
 
   return (
     <div className="p-4 sm:p-6 max-w-4xl mx-auto space-y-5">
-      <button onClick={() => navigate("/admin/workspaces")} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
-        <ArrowLeft className="w-4 h-4" /> Back to workspaces
+      <button onClick={() => navigate("/admin/workspaces")} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+        <span className="w-8 h-8 rounded-full border border-border bg-card flex items-center justify-center">
+          <ArrowLeft className="w-4 h-4" />
+        </span>
+        Back to workspaces
       </button>
 
       {error && <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">{error}</div>}

@@ -119,7 +119,7 @@ export default function CreateInvoiceDialog({ open, onClose, quotation }) {
       <div className="bg-card border border-border rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between p-5 border-b border-border">
           <h2 className="text-lg font-bold text-foreground">Create Invoice from Quotation</h2>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground p-1">
+          <button onClick={onClose} className="w-8 h-8 rounded-full border border-border bg-card flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>

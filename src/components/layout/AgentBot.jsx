@@ -132,7 +132,7 @@ export default function AgentBot() {
               </div>
               <button
                 onClick={() => setOpen(false)}
-                className="w-8 h-8 rounded-md hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground"
+                className="w-8 h-8 rounded-full border border-border bg-card flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
                 aria-label="Close"
               >
                 <X className="w-4 h-4" />

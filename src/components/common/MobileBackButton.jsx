@@ -20,9 +20,11 @@ export default function MobileBackButton({ to, fallback = "/dashboard" }) {
   return (
     <button
       onClick={handleBack}
-      className="lg:hidden inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors mb-2"
+      className="lg:hidden inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors mb-2"
     >
-      <ArrowLeft className="w-4 h-4" />
+      <span className="w-8 h-8 rounded-full border border-border bg-card flex items-center justify-center transition-colors">
+        <ArrowLeft className="w-4 h-4" />
+      </span>
       Back
     </button>
   );

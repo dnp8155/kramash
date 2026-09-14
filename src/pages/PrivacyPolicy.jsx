@@ -23,8 +23,11 @@ export default function PrivacyPolicy() {
 
       {/* Content */}
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
-        <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6">
-          <ArrowLeft className="w-3.5 h-3.5" /> Back to home
+        <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6">
+          <span className="w-8 h-8 rounded-full border border-border bg-card flex items-center justify-center">
+            <ArrowLeft className="w-3.5 h-3.5" />
+          </span>
+          Back to home
         </Link>
 
         <div className="flex items-center gap-3 mb-2">

@@ -81,8 +81,11 @@ export default function PhoneLogin() {
       title="Phone Login"
       subtitle="Sign in with a one-time code"
       footer={
-        <Link to="/login" className="inline-flex items-center gap-1 text-primary font-medium hover:underline">
-          <ArrowLeft className="w-3.5 h-3.5" /> Back to login
+        <Link to="/login" className="inline-flex items-center gap-2 text-primary font-medium hover:underline">
+          <span className="w-8 h-8 rounded-full border border-border bg-card flex items-center justify-center">
+            <ArrowLeft className="w-3.5 h-3.5" />
+          </span>
+          Back to login
         </Link>
       }
     >

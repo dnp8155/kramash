@@ -26,7 +26,7 @@ export default function DayBookingsPopup({ date, bookings = [], blocks = [], cur
             <Calendar className="w-4 h-4 text-primary" />
             <h3 className="text-sm font-bold text-foreground">{dateLabel}</h3>
           </div>
-          <button onClick={onClose} className="p-1 rounded-md hover:bg-muted text-muted-foreground" aria-label="Close">
+          <button onClick={onClose} className="w-8 h-8 rounded-full border border-border bg-card flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-colors" aria-label="Close">
             <X className="w-4 h-4" />
           </button>
         </div>

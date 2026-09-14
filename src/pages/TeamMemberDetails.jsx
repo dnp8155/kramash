@@ -151,9 +151,12 @@ export default function TeamMemberDetails() {
   return (
     <div className="p-4 sm:p-6 space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <Button variant="ghost" onClick={() => navigate("/team")} className="-ml-2">
-          <ArrowLeft className="w-4 h-4" /> Back to Team
-        </Button>
+        <button onClick={() => navigate("/team")} className="-ml-2 inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+          <span className="w-8 h-8 rounded-full border border-border bg-card flex items-center justify-center">
+            <ArrowLeft className="w-4 h-4" />
+          </span>
+          Back to Team
+        </button>
         <Button onClick={() => setShowForm(true)}>
           <Pencil className="w-4 h-4" /> Edit Member
         </Button>

@@ -157,7 +157,7 @@ export default function JobSheet() {
         <div className="flex items-center gap-2.5 min-w-0">
           <button
             onClick={() => navigate(`/events/${id}`)}
-            className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
+            className="w-8 h-8 rounded-full border border-border bg-card flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-colors shrink-0"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>

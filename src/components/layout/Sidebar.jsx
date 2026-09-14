@@ -88,7 +88,7 @@ export default function Sidebar({ mobile = false, onClose, collapsed = false, on
       {mobile && (
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 w-8 h-8 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+          className="absolute top-3 right-3 w-8 h-8 rounded-full border border-border bg-card flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
           aria-label="Close"
         >
           <X className="w-4 h-4" />

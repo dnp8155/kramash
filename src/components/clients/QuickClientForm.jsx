@@ -57,7 +57,7 @@ export default function QuickClientForm({ workspaceId, onSaved, onCancel }) {
           {saving ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Adding…</> : <><Check className="w-3.5 h-3.5" /> Add</>}
         </button>
         <button type="button" onClick={onCancel} disabled={saving}
-          className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs text-muted-foreground hover:bg-muted">
+          className="w-7 h-7 rounded-full border border-border bg-card flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
           <X className="w-3.5 h-3.5" />
         </button>
       </div>

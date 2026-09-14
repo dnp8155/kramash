@@ -322,7 +322,12 @@ export default function InvoiceEditor() {
       <div className="p-6 max-w-[800px] mx-auto">
         <EmptyState title="Invoice not found" description="This invoice may not exist or belongs to another workspace." />
         <div className="mt-4">
-          <Button variant="outline" onClick={() => navigate("/invoices")}><ArrowLeft className="w-4 h-4" />Back to Invoices</Button>
+          <button onClick={() => navigate("/invoices")} className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+            <span className="w-8 h-8 rounded-full border border-border bg-card flex items-center justify-center">
+              <ArrowLeft className="w-4 h-4" />
+            </span>
+            Back to Invoices
+          </button>
         </div>
       </div>
     );
@@ -333,8 +338,11 @@ export default function InvoiceEditor() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <button onClick={() => navigate("/invoices")} className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 mb-1">
-            <ArrowLeft className="w-4 h-4" /> Invoices
+          <button onClick={() => navigate("/invoices")} className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-2 mb-1">
+            <span className="w-8 h-8 rounded-full border border-border bg-card flex items-center justify-center">
+              <ArrowLeft className="w-4 h-4" />
+            </span>
+            Invoices
           </button>
           <h1 className="text-xl font-bold text-foreground">
             {isNew ? "New Invoice" : `Invoice ${invoiceNumber}`}
