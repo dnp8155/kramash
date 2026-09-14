@@ -82,8 +82,6 @@ export default function EventAssignmentCard({
 
   return (
     <div className="bg-card border border-border rounded-lg p-4 relative overflow-hidden">
-      {/* Accent bar — matches the payment status dot color */}
-      <div className={cn("absolute left-0 top-0 bottom-0 w-1", dotInfo.className)} />
       {/* Header */}
       <div className="flex items-center justify-between mb-3 pl-1">
         <h4 className="text-sm font-semibold text-foreground truncate flex items-center gap-1.5">

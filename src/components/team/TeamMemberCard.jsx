@@ -63,8 +63,6 @@ export default function TeamMemberCard({ member, assignments = [], transactions 
 
   return (
     <div className="bg-card border border-border rounded-lg p-4 relative overflow-hidden">
-      {/* Team color accent bar */}
-      <div className="absolute left-0 top-0 bottom-0 w-1" style={{ backgroundColor: memberColor }} />
       {/* Header: color dot + name + SELF badge + role + actions */}
       <div className="flex items-center gap-2 pl-1">
         <span className="team-chip-dot w-3 h-3 rounded-full shrink-0 border border-border" style={{ backgroundColor: memberColor }} />
