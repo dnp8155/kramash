@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import { formatMoney } from "@/utils/format";
-import StatusBadge from "@/components/common/StatusBadge";
 import EmptyState from "@/components/common/EmptyState";
 import { CalendarDays, MapPin, ArrowRight, Plus } from "lucide-react";
 import { useT } from "@/hooks/useT";
@@ -69,7 +68,6 @@ export default function UpcomingEventsWidget({ events = [], clientsById = {}, cu
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-1 shrink-0">
-                    <StatusBadge status={ev.status} />
                     {Number(ev.contract_value) > 0 && (
                       <span className="text-xs font-medium text-muted-foreground">{formatMoney(ev.contract_value, currency)}</span>
                     )}
