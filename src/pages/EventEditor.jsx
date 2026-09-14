@@ -306,7 +306,7 @@ export default function EventEditor() {
       <div className="min-h-full bg-muted/30">
         {/* Header */}
         <div className="border-b border-border bg-card">
-          <div ref={topRef} className="max-w-5xl mx-auto px-4 sm:px-6 py-5 flex items-start justify-between gap-4">
+          <div ref={topRef} className="max-w-2xl mx-auto px-4 sm:px-6 py-5 flex items-start justify-between gap-4">
             <div className="flex items-start gap-3">
               <button
                 onClick={requestBack}
@@ -335,7 +335,7 @@ export default function EventEditor() {
 
         {/* Error */}
         {error && (
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-5">
+          <div className="max-w-2xl mx-auto px-4 sm:px-6 pt-5">
             <div className="flex items-start gap-2 p-3 rounded-lg bg-destructive/8 text-destructive text-sm border border-destructive/15">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
               <span>{error}</span>
@@ -344,11 +344,9 @@ export default function EventEditor() {
         )}
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="w-full px-4 sm:px-6 lg:px-8 py-6">
+        <form onSubmit={handleSubmit} className="w-full max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden">
-            <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-border">
-              {/* Left column */}
-              <div className="p-6 space-y-7 min-w-0">
+            <div className="p-6 space-y-7">
                 {/* Project Details */}
                 <div>
                   <SectionHeader icon={FolderOpen} title="Project Details" />
@@ -436,10 +434,9 @@ export default function EventEditor() {
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Right column */}
-              <div className="p-6 space-y-7 min-w-0">
+              {/* Divider */}
+              <div className="border-t border-border" />
                 {/* Schedule */}
                 <div>
                   <SectionHeader icon={CalendarDays} title="Schedule" />
@@ -503,7 +500,6 @@ export default function EventEditor() {
                   </div>
                 </div>
               </div>
-            </div>
 
             {/* Footer inside the card */}
             <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-border bg-muted/20">
