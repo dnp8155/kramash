@@ -1,15 +1,17 @@
-import { Plus, Briefcase } from "lucide-react";
+import { Plus, Briefcase, AlertTriangle } from "lucide-react";
 import Card from "@/components/common/Card";
 import Button from "@/components/common/Button";
 import EmptyState from "@/components/common/EmptyState";
 import ServiceAssignmentCard from "@/components/events/ServiceAssignmentCard";
 import FinancialSummaryCards from "@/components/events/FinancialSummaryCards";
 import { serviceAssignmentPaid } from "@/lib/financeService";
+import { formatMoney } from "@/utils/format";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
 
 export default function EventServicesTab({
   event, services, serviceAssignments, currency,
   transactions, membersById = {},
+  costOverrun,
   onAddService, onRemoveService, onEditService, onAddPayment, onShareService,
   onRefresh
 }) {
@@ -25,6 +27,12 @@ export default function EventServicesTab({
 
   return (
     <div className="space-y-4">
+      {costOverrun && (
+        <div className="flex items-start gap-2 bg-destructive/5 border border-destructive/30 rounded-lg p-3 text-sm text-destructive">
+          <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+          <span>Team + Service cost ({formatMoney(costOverrun.combined, currency)}) exceeds contract value ({formatMoney(costOverrun.contractValue, currency)}) by {formatMoney(costOverrun.overrun, currency)}</span>
+        </div>
+      )}
       <FinancialSummaryCards
         totalRate={serviceTotalRate}
         totalPayments={serviceTotalPaid}

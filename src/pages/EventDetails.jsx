@@ -36,7 +36,7 @@ import {
 } from "@/lib/financeService";
 import {
   ArrowLeft, Pencil, Wallet, FileText, MapPin, Calendar, Phone, Plus,
-  CalendarPlus, Share2, Receipt, StickyNote, Trash2, ClipboardList, X
+  CalendarPlus, Share2, Receipt, StickyNote, Trash2, ClipboardList, X, AlertTriangle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
@@ -184,6 +184,19 @@ export default function EventDetails() {
   const teamTotalRate = fin.teamAgreed;
   const teamTotalPaid = fin.teamPaid;
   const teamTotalRemaining = Math.max(0, fin.teamAgreed - fin.teamPaid);
+
+  // Cost overrun check: combined active team + non-add-on service rates vs contract value
+  const costOverrun = useMemo(() => {
+    const contractValue = Number(event?.contract_value) || 0;
+    if (contractValue <= 0) return null;
+    const teamCost = eventAssignments.reduce((s, a) => s + (Number(a.agreed_rate) || 0), 0);
+    const serviceCost = serviceAssignments
+      .filter((a) => a.assignment_status !== "removed" && !a.is_addon)
+      .reduce((s, a) => s + (Number(a.agreed_rate) || 0), 0);
+    const combined = teamCost + serviceCost;
+    if (combined <= contractValue) return null;
+    return { combined, contractValue, overrun: combined - contractValue };
+  }, [event, eventAssignments, serviceAssignments]);
 
   const removeAssignment = async (a) => {
     // Check for associated payments — don't silently delete financial history
@@ -547,6 +560,7 @@ export default function EventDetails() {
           currency={currency}
           transactions={transactions}
           membersById={membersById}
+          costOverrun={costOverrun}
           onAddService={() => setShowServiceAssign(true)}
           onRemoveService={(a) => removeServiceAssignment(a)}
           onEditService={(a) => setEditingServiceAssignment(a)}
@@ -575,6 +589,14 @@ export default function EventDetails() {
 
       {tab === "Team" && (
         <div className="space-y-4">
+          {/* Cost overrun alert */}
+          {costOverrun && (
+            <div className="flex items-start gap-2 bg-destructive/5 border border-destructive/30 rounded-lg p-3 text-sm text-destructive">
+              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>Team + Service cost ({formatMoney(costOverrun.combined, currency)}) exceeds contract value ({formatMoney(costOverrun.contractValue, currency)}) by {formatMoney(costOverrun.overrun, currency)}</span>
+            </div>
+          )}
+
           {/* Team-only financial summary (PART 1) */}
           <FinancialSummaryCards
             totalRate={teamTotalRate}
