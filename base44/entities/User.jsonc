@@ -34,6 +34,18 @@
       "type": "string",
       "title": "Linked Workspace ID",
       "description": "For client-role users: the workspace this client belongs to"
+    },
+    "app_lock_enabled": {
+      "type": "boolean",
+      "title": "App Lock Enabled",
+      "description": "Whether WebAuthn app lock is enabled for this user",
+      "default": false
+    },
+    "app_lock_relock_after": {
+      "type": "number",
+      "title": "Re-lock After (minutes)",
+      "description": "Re-lock the app after this many minutes of inactivity (0 = re-lock on tab close only)",
+      "default": 0
     }
   },
   "required": [

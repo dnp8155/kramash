@@ -1,0 +1,53 @@
+{
+  "name": "PushSubscription",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "title": "User ID"
+    },
+    "platform": {
+      "type": "string",
+      "title": "Platform",
+      "enum": [
+        "web",
+        "android",
+        "ios"
+      ]
+    },
+    "endpoint": {
+      "type": "string",
+      "title": "Push Service Endpoint URL (web push)"
+    },
+    "push_token": {
+      "type": "string",
+      "title": "FCM/APNs Device Token (native push)"
+    },
+    "p256dh_key": {
+      "type": "string",
+      "title": "ECDH P-256 Public Key (base64url, web push)"
+    },
+    "auth_key": {
+      "type": "string",
+      "title": "Auth Secret (base64url, web push)"
+    }
+  },
+  "required": [
+    "user_id",
+    "platform"
+  ],
+  "rls": {
+    "create": {
+      "data.user_id": "{{user.id}}"
+    },
+    "read": {
+      "data.user_id": "{{user.id}}"
+    },
+    "update": {
+      "data.user_id": "{{user.id}}"
+    },
+    "delete": {
+      "data.user_id": "{{user.id}}"
+    }
+  }
+}
