@@ -91,12 +91,9 @@ export function useServiceWorkerUpdate() {
         if (!nw) return;
         nw.addEventListener("statechange", () => {
           if (nw.state === "installed" && navigator.serviceWorker.controller) {
-            // New SW is waiting — auto-apply immediately so the user
-            // always gets the latest version without manual interaction.
+            // New SW is waiting — notify the user but don't auto-apply.
+            // They go to the App Updates page and click "Update Now" manually.
             setUpdateAvailable(true);
-            if (reg.waiting) {
-              reg.waiting.postMessage({ type: "SKIP_WAITING" });
-            }
           }
         });
       });
