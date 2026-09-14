@@ -6,6 +6,7 @@ import TopHeader from "@/components/layout/TopHeader";
 import MobileNavigation from "@/components/layout/MobileNavigation";
 import InstallPrompt from "@/components/common/InstallPrompt";
 import ErrorBoundary from "@/components/common/ErrorBoundary";
+import AppLockGate from "@/components/security/AppLockGate";
 import OfflineBanner from "@/components/common/OfflineBanner";
 import UpdateBanner from "@/components/common/UpdateBanner";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
@@ -76,7 +77,9 @@ export default function AppLayout() {
         <TopHeader onMenuClick={() => setMobileOpen(true)} />
         <main className="flex-1 overflow-y-auto scrollbar-thin pb-24 lg:pb-0">
           <ErrorBoundary key={location.pathname}>
-            <Outlet />
+            <AppLockGate>
+              <Outlet />
+            </AppLockGate>
           </ErrorBoundary>
         </main>
       </div>

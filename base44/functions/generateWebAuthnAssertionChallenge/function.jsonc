@@ -1,0 +1,4 @@
+{
+  "name": "generateWebAuthnAssertionChallenge",
+  "entry": "entry.ts"
+}

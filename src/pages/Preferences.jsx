@@ -15,7 +15,7 @@ import ServiceForm from "@/components/services/ServiceForm";
 import { useToast } from "@/components/ui/use-toast";
 import { loadRoles } from "@/lib/teamService";
 import { loadAllServices } from "@/lib/quotationService";
-import { Pencil, Trash2, Plus, Download, Loader2, Briefcase, Tags, Palette, Bell, CreditCard, LogOut, FileText, Users, UserCircle, Power } from "lucide-react";
+import { Pencil, Trash2, Plus, Download, Loader2, Briefcase, Tags, Palette, Bell, Shield, CreditCard, LogOut, FileText, Users, UserCircle, Power } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { exportFinancialCsv } from "@/lib/exportUtils";
 import { loadAllTransactions } from "@/lib/financeService";
@@ -27,6 +27,7 @@ import QuotationDefaultsSection from "@/components/settings/QuotationDefaultsSec
 import MilestoneTemplateManager from "@/components/preferences/MilestoneTemplateManager";
 import PackageSection from "@/components/preferences/PackageSection";
 import DataDeletionSection from "@/components/settings/DataDeletionSection";
+import SecuritySection from "@/components/settings/SecuritySection";
 import { usePlan } from "@/hooks/usePlan";
 
 export default function Preferences() {
@@ -325,6 +326,11 @@ export default function Preferences() {
       {/* Appearance */}
       <SectionBlock icon={Palette} title="Appearance">
         <AppearanceSection />
+      </SectionBlock>
+
+      {/* Security */}
+      <SectionBlock icon={Shield} title="Security">
+        <SecuritySection />
       </SectionBlock>
 
       {/* Notifications */}

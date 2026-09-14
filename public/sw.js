@@ -1,82 +1,89 @@
-// Kramasha Service Worker
-// Strategy: network-first for everything, cache fallback when offline.
-// This ensures users always get fresh content when online and never
-// get stuck with stale cached versions. Old caches are cleaned on activate.
+// Service Worker for PWA + Push Notifications
+const CACHE_NAME = "kramasha-v1";
+const CORE_ASSETS = ["/", "/index.html"];
 
-const CACHE_VERSION = "kramasha-v1";
-const APP_SHELL = ["/", "/index.html", "/manifest.json", "/offline.html"];
-
-// Install: precache minimal app shell, activate immediately.
+// Install — precache core assets
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_VERSION).then((cache) => cache.addAll(APP_SHELL).catch(() => {}))
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(CORE_ASSETS)).catch(() => {})
   );
   self.skipWaiting();
 });
 
-// Activate: delete all old caches, take control immediately.
+// Activate — clean old caches
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(
-        keys
-          .filter((key) => key !== CACHE_VERSION)
-          .map((key) => caches.delete(key))
-      )
-    ).then(() => self.clients.claim())
+      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
+    )
+  );
+  self.clients.claim();
+});
+
+// Fetch — network-first for navigation, cache-first for assets
+self.addEventListener("fetch", (event) => {
+  if (event.request.method !== "GET") return;
+  if (event.request.mode === "navigate") {
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match("/index.html"))
+    );
+    return;
+  }
+  event.respondWith(
+    caches.match(event.request).then((cached) => {
+      if (cached) return cached;
+      return fetch(event.request).then((response) => {
+        if (response && response.status === 200 && response.type === "basic") {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        }
+        return response;
+      }).catch(() => cached);
+    })
   );
 });
 
-// Skip waiting on message from app (used by useServiceWorkerUpdate).
+// Push — display notification
+self.addEventListener("push", (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    data = { title: "Notification", body: event.data ? event.data.text() : "" };
+  }
+  const title = data.title || "Kramasha";
+  const options = {
+    body: data.body || "",
+    icon: data.icon || "/icon-192.png",
+    badge: data.badge || "/icon-192.png",
+    tag: data.tag || "kramasha-notification",
+    data: data.data || { url: "/" },
+    requireInteraction: data.requireInteraction || false,
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+// Notification click — focus/open app
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const urlToOpen = (event.notification.data && event.notification.data.url) || "/";
+  event.waitUntil(
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if (client.url.includes(urlToOpen) && "focus" in client) {
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) {
+        return clients.openWindow(urlToOpen);
+      }
+    })
+  );
+});
+
+// Message — skip waiting for updates
 self.addEventListener("message", (event) => {
   if (event.data && event.data.type === "SKIP_WAITING") {
     self.skipWaiting();
   }
-});
-
-// Fetch: network-first, cache fallback only when network fails.
-self.addEventListener("fetch", (event) => {
-  const { request } = event;
-
-  // Only handle GET requests.
-  if (request.method !== "GET") return;
-
-  const url = new URL(request.url);
-
-  // Never cache API calls or backend functions — always go to network.
-  if (url.pathname.startsWith("/functions/") || url.hostname !== self.location.hostname) {
-    return;
-  }
-
-  // Navigation requests (HTML pages): network-first, fall back to cached index.
-  if (request.mode === "navigate") {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          const copy = response.clone();
-          caches.open(CACHE_VERSION).then((cache) => cache.put(request, copy)).catch(() => {});
-          return response;
-        })
-        .catch(() =>
-          caches.match(request).then((cached) => cached || caches.match("/index.html"))
-        )
-    );
-    return;
-  }
-
-  // Static assets: stale-while-revalidate (serve cache, update in background).
-  event.respondWith(
-    caches.match(request).then((cached) => {
-      const fetchPromise = fetch(request)
-        .then((response) => {
-          if (response && response.status === 200 && response.type === "basic") {
-            const copy = response.clone();
-            caches.open(CACHE_VERSION).then((cache) => cache.put(request, copy)).catch(() => {});
-          }
-          return response;
-        })
-        .catch(() => cached);
-      return cached || fetchPromise;
-    })
-  );
 });
