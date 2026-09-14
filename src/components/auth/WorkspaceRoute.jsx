@@ -34,7 +34,7 @@ export default function WorkspaceRoute({ unauthenticatedElement, noWorkspaceElem
 
   if (authError) {
     if (authError.type === "user_not_registered") return <UserNotRegisteredError />;
-    return unauthenticatedElement;
+    return <Navigate to="/login?reason=expired" replace />;
   }
 
   if (!isAuthenticated) return unauthenticatedElement;

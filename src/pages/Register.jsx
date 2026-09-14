@@ -9,38 +9,10 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 import GoogleIcon from "@/components/GoogleIcon";
 import Logo from "@/components/common/Logo";
 import RegisterProductVisual from "@/components/RegisterProductVisual";
+import PasswordStrength from "@/components/common/PasswordStrength";
 import { toast } from "@/components/ui/use-toast";
 import { safeReturnTo } from "@/lib/authReturnTo";
 import { useAuth } from "@/lib/AuthContext";
-
-function PasswordStrength({ password }) {
-  if (!password || password.length < 3) return null;
-  let score = 0;
-  if (password.length >= 6) score++;
-  if (password.length >= 10) score++;
-  if (/[A-Z]/.test(password) && /[a-z]/.test(password)) score++;
-  if (/[0-9]/.test(password)) score++;
-  if (/[^A-Za-z0-9]/.test(password)) score++;
-
-  const level = score <= 2 ? "Weak" : score === 3 ? "Good" : "Strong";
-  const color = score <= 2 ? "text-destructive" : score === 3 ? "text-warning" : "text-success";
-  const barColor = score <= 2 ? "bg-destructive" : score === 3 ? "bg-warning" : "bg-success";
-  const bars = score <= 2 ? 1 : score === 3 ? 2 : 3;
-
-  return (
-    <div className="flex items-center gap-2 mt-1.5">
-      <div className="flex gap-1">
-        {[1, 2, 3].map((i) => (
-          <div
-            key={i}
-            className={`h-1 w-8 rounded-full transition-colors ${i <= bars ? barColor : "bg-muted"}`}
-          />
-        ))}
-      </div>
-      <span className={`text-xs font-medium ${color}`}>{level}</span>
-    </div>
-  );
-}
 
 export default function Register() {
   const [fullName, setFullName] = useState("");
@@ -54,12 +26,13 @@ export default function Register() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [showOtp, setShowOtp] = useState(false);
   const [otpCode, setOtpCode] = useState("");
+  const [resendCooldown, setResendCooldown] = useState(0);
   const { isAuthenticated, authChecked, authError } = useAuth();
   const [searchParams] = useSearchParams();
   const phoneFromOtp = searchParams.get("phone");
 
   useEffect(() => {
-    document.title = "Create Account — Kramasha";
+    document.title = "Kramashah — Create Your Workspace";
     const meta = document.createElement("meta");
     meta.name = "robots";
     meta.content = "noindex, follow";
@@ -141,6 +114,7 @@ export default function Register() {
   };
 
   const handleResend = async () => {
+    if (resendCooldown > 0) return;
     setError("");
     try {
       await base44.auth.resendOtp(email);
@@ -148,8 +122,18 @@ export default function Register() {
         title: "Code sent",
         description: "A new code has been sent to your email.",
       });
+      setResendCooldown(30);
+      const interval = setInterval(() => {
+        setResendCooldown((prev) => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
     } catch {
-      setError("Unable to resend the code right now. Please try again.");
+      setError("Unable to resend the code right now. Please try again in a moment.");
     }
   };
 
@@ -229,8 +213,12 @@ export default function Register() {
 
               <p className="text-center text-sm text-muted-foreground mt-4">
                 Didn't receive the code?{" "}
-                <button onClick={handleResend} className="text-primary font-medium hover:underline">
-                  Resend
+                <button
+                  onClick={handleResend}
+                  disabled={resendCooldown > 0}
+                  className="text-primary font-medium hover:underline disabled:opacity-50"
+                >
+                  {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend"}
                 </button>
               </p>
 
@@ -247,8 +235,19 @@ export default function Register() {
             </>
           ) : (
             <>
+              <div className="flex items-center gap-2 mb-4 text-xs font-medium text-muted-foreground">
+                <span className="flex items-center gap-1.5 text-primary">
+                  <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold">1</span>
+                  Account
+                </span>
+                <span className="flex-1 h-px bg-border" />
+                <span className="flex items-center gap-1.5">
+                  <span className="w-5 h-5 rounded-full bg-muted text-muted-foreground flex items-center justify-center text-[10px] font-bold">2</span>
+                  Business
+                </span>
+              </div>
               <h1 className="font-heading text-2xl sm:text-[1.75rem] font-bold tracking-tight text-foreground leading-tight">
-                Create your Kramasha account.
+                Create your Kramashah workspace.
               </h1>
               <p className="text-muted-foreground mt-2 text-sm">
                 Start with your account. We'll set up your business workspace next.
@@ -384,10 +383,10 @@ export default function Register() {
                   {loading ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Creating account...
+                      Creating workspace...
                     </>
                   ) : (
-                    "Create account"
+                    "Create Workspace"
                   )}
                 </Button>
                 <p className="text-center text-xs text-muted-foreground/50">No credit card required</p>

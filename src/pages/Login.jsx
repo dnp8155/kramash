@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Mail, Lock, Loader2, Eye, EyeOff, ShieldCheck, ArrowRight } from "lucide-react";
+import { Mail, Lock, Loader2, Eye, EyeOff, ShieldCheck, ArrowRight, CheckCircle2, Clock } from "lucide-react";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import GoogleIcon from "@/components/GoogleIcon";
 import Logo from "@/components/common/Logo";
@@ -29,9 +29,12 @@ function sanitizeLoginError(err) {
   if (msg.includes("network") || msg.includes("fetch") || msg.includes("connection") || msg.includes("timeout")) {
     return "Unable to sign in right now. Please check your connection and try again.";
   }
-  // Show the actual server error message so the real issue is visible
-  const serverMsg = err.data?.message || err.message || "";
-  if (serverMsg) return serverMsg;
+  if (msg.includes("too many") || msg.includes("rate") || msg.includes("attempts")) {
+    return "Too many attempts. Please wait a moment and try again.";
+  }
+  if (msg.includes("disabled") || msg.includes("deactivated") || msg.includes("suspended")) {
+    return "Your account has been disabled. Please contact support.";
+  }
   return "Incorrect email or password.";
 }
 
@@ -44,12 +47,15 @@ export default function Login() {
   const [verifyMode, setVerifyMode] = useState(false);
   const [otpCode, setOtpCode] = useState("");
   const [sendingOtp, setSendingOtp] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
   const { isAuthenticated, authChecked, authError } = useAuth();
+  const [searchParams] = useSearchParams();
+  const sessionReason = searchParams.get("reason");
 
   const returnTo = safeReturnTo();
 
   useEffect(() => {
-    document.title = "Sign in — Kramasha";
+    document.title = "Kramashah — Sign In";
     const meta = document.createElement("meta");
     meta.name = "robots";
     meta.content = "noindex, follow";
@@ -91,6 +97,7 @@ export default function Login() {
       setError("Enter your email first");
       return;
     }
+    if (resendCooldown > 0) return;
     setSendingOtp(true);
     setError("");
     try {
@@ -99,8 +106,18 @@ export default function Login() {
         title: "Code sent",
         description: "Check your email for the verification code.",
       });
+      setResendCooldown(30);
+      const interval = setInterval(() => {
+        setResendCooldown((prev) => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
     } catch {
-      setError("Unable to send code right now. Please try again.");
+      setError("Unable to send code right now. Please try again in a moment.");
     } finally {
       setSendingOtp(false);
     }
@@ -199,10 +216,10 @@ export default function Login() {
                 Didn't receive the code?{" "}
                 <button
                   onClick={handleSendOtp}
-                  disabled={sendingOtp}
+                  disabled={sendingOtp || resendCooldown > 0}
                   className="text-primary font-medium hover:underline disabled:opacity-50"
                 >
-                  {sendingOtp ? "Sending..." : "Resend"}
+                  {sendingOtp ? "Sending..." : resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend"}
                 </button>
               </p>
 
@@ -222,7 +239,20 @@ export default function Login() {
               <h1 className="font-heading text-2xl sm:text-[1.75rem] font-bold tracking-tight text-foreground leading-tight">
                 Welcome back
               </h1>
-              <p className="text-muted-foreground mt-2 text-sm">Sign in to continue to your workspace.</p>
+              <p className="text-muted-foreground mt-2 text-sm">Sign in to continue managing your business.</p>
+
+              {sessionReason === "logout" && (
+                <div className="mt-5 p-3 rounded-lg bg-success/8 text-success text-sm border border-success/15 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 shrink-0" />
+                  You've been signed out successfully.
+                </div>
+              )}
+              {sessionReason === "expired" && (
+                <div className="mt-5 p-3 rounded-lg bg-warning/8 text-warning text-sm border border-warning/15 flex items-center gap-2">
+                  <Clock className="w-4 h-4 shrink-0" />
+                  Your session has expired. Please sign in again.
+                </div>
+              )}
 
               {error && (
                 <div className="mt-5 p-3 rounded-lg bg-destructive/8 text-destructive text-sm border border-destructive/15">
@@ -298,7 +328,7 @@ export default function Login() {
                     </>
                   ) : (
                     <>
-                      Continue
+                      Sign In
                       <ArrowRight className="w-4 h-4 ml-2" />
                     </>
                   )}

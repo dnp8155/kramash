@@ -134,13 +134,13 @@ export const AuthProvider = ({ children }) => {
     }
     
     if (shouldRedirect) {
-      window.location.href = '/login';
+      window.location.href = '/login?reason=logout';
     }
   };
 
   const navigateToLogin = () => {
     // Redirect to local login route instead of remote Base44 URL
-    window.location.href = '/login';
+    window.location.href = '/login?reason=expired';
   };
 
   return (
