@@ -6,8 +6,8 @@ import { useWorkspace } from "@/lib/WorkspaceContext";
 import SearchInput from "@/components/common/SearchInput";
 import Button from "@/components/common/Button";
 import Select from "@/components/common/Select";
-import LoadingState from "@/components/common/LoadingState";
 import EmptyState from "@/components/common/EmptyState";
+import LeadsPageSkeleton from "@/components/leads/LeadsPageSkeleton";
 import StatCard from "@/components/common/StatCard";
 import PageHeader from "@/components/common/PageHeader";
 import LeadForm from "@/components/leads/LeadForm";
@@ -170,7 +170,7 @@ export default function Leads() {
 
       {/* List */}
       {isLoading ? (
-        <LoadingState />
+        <LeadsPageSkeleton />
       ) : filtered.length === 0 ? (
         <EmptyState
           title={query || statusFilter !== "all" || priorityFilter !== "all" ? "No leads match your filters" : "No leads yet"}

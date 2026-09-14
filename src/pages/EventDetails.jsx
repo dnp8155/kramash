@@ -5,7 +5,7 @@ import { base44 } from "@/api/base44Client";
 import { useWorkspace } from "@/lib/WorkspaceContext";
 import Card from "@/components/common/Card";
 import Button from "@/components/common/Button";
-import DetailSkeleton from "@/components/common/DetailSkeleton";
+import EventDetailsSkeleton from "@/components/events/EventDetailsSkeleton";
 import EmptyState from "@/components/common/EmptyState";
 import DetailErrorState from "@/components/common/DetailErrorState";
 import EventForm from "@/components/events/EventForm";
@@ -305,7 +305,7 @@ export default function EventDetails() {
     }
   };
 
-  if (isLoading) return <DetailSkeleton />;
+  if (isLoading) return <EventDetailsSkeleton />;
 
   if (hasError) {
     return (

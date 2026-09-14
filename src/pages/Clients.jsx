@@ -7,7 +7,7 @@ import SearchInput from "@/components/common/SearchInput";
 import Button from "@/components/common/Button";
 import LoadingState from "@/components/common/LoadingState";
 import EmptyState from "@/components/common/EmptyState";
-import { TableSkeleton } from "@/components/common/Skeletons";
+import ClientsPageSkeleton from "@/components/clients/ClientsPageSkeleton";
 import ClientForm from "@/components/clients/ClientForm";
 import { Plus, Pencil, Eye, Download, Users, CalendarCheck, UserCheck, Share2 } from "lucide-react";
 import { exportClientsCsv } from "@/lib/exportUtils";
@@ -110,7 +110,7 @@ export default function Clients() {
       )}
 
       {isLoading ? (
-        <TableSkeleton rows={6} />
+        <ClientsPageSkeleton />
       ) : filtered.length === 0 ? (
         <div className="bg-card border border-border rounded-lg">
           <EmptyState

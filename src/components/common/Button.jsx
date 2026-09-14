@@ -3,7 +3,7 @@ import { Button as ShadButton } from "@/components/ui/button";
 
 const variants = {
   primary: "bg-primary text-primary-foreground hover:bg-primary-hover shadow-sm hover:shadow-md",
-  outline: "border border-border bg-card text-foreground hover:bg-muted shadow-xs",
+  outline: "border border-border bg-card text-foreground hover:border-primary/40 hover:text-primary hover:bg-primary/5 shadow-xs",
   ghost: "bg-transparent text-foreground hover:bg-muted",
   dark: "bg-sidebar-primary text-sidebar-primary-foreground hover:opacity-90 shadow-sm",
   success: "bg-success text-success-foreground hover:opacity-90 shadow-sm",

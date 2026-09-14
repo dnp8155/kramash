@@ -8,8 +8,7 @@ import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
 import LoadingState from "@/components/common/LoadingState";
 import EmptyState from "@/components/common/EmptyState";
-import { StatGridSkeleton, TableSkeleton } from "@/components/common/Skeletons";
-import { Skeleton } from "@/components/ui/skeleton";
+import InvoicesPageSkeleton from "@/components/invoice/InvoicesPageSkeleton";
 import { formatMoney } from "@/utils/format";
 import { loadInvoices, deleteInvoice, duplicateInvoice } from "@/lib/invoiceService";
 import { base44 } from "@/api/base44Client";
@@ -140,19 +139,7 @@ export default function Invoices() {
     }
   };
 
-  if (isLoading) return (
-    <div className="p-4 sm:p-6 space-y-5">
-      <PageHeader eyebrow="Sales" title="Invoices" subtitle="Create and track client invoices.">
-        <Button onClick={() => navigate("/invoices/new")}><Plus className="w-4 h-4" /> Create Invoice</Button>
-      </PageHeader>
-      <StatGridSkeleton count={4} />
-      <div className="flex flex-col sm:flex-row gap-3">
-        <Skeleton className="h-9 flex-1 rounded-md" />
-        <Skeleton className="h-9 sm:w-44 rounded-md" />
-      </div>
-      <TableSkeleton />
-    </div>
-  );
+  if (isLoading) return <InvoicesPageSkeleton />;
 
   return (
     <div className="p-4 sm:p-6 space-y-5">

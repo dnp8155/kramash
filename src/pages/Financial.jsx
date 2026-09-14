@@ -17,8 +17,7 @@ import FiscalYearSelector from "@/components/dashboard/FiscalYearSelector";
 import Button from "@/components/common/Button";
 import Select from "@/components/common/Select";
 import LoadingState from "@/components/common/LoadingState";
-import { StatGridSkeleton, TableSkeleton } from "@/components/common/Skeletons";
-import { Skeleton } from "@/components/ui/skeleton";
+import FinancialPageSkeleton from "@/components/financial/FinancialPageSkeleton";
 import { useToast } from "@/components/ui/use-toast";
 import { PAYMENT_METHODS, PAYMENT_TYPES } from "@/constants/statusConfig";
 import { TRANSACTION_TYPES } from "@/constants/financeConfig";
@@ -234,18 +233,7 @@ export default function Financial() {
     }
   };
 
-  if (isLoading) return (
-    <div className="p-4 sm:p-6 space-y-4">
-      <PageHeader title={t("Financial")} subtitle={t("Track payments, expenses, and profit across financial years.")} />
-      <div className="h-10" />
-      <StatGridSkeleton count={3} />
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <Skeleton className="h-40 w-full rounded-lg" />
-        <Skeleton className="h-40 w-full rounded-lg" />
-      </div>
-      <TableSkeleton />
-    </div>
-  );
+  if (isLoading) return <FinancialPageSkeleton />;
 
   return (
     <div className="p-4 sm:p-6 space-y-4">

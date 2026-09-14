@@ -8,8 +8,7 @@ import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
 import LoadingState from "@/components/common/LoadingState";
 import EmptyState from "@/components/common/EmptyState";
-import { StatGridSkeleton, TableSkeleton } from "@/components/common/Skeletons";
-import { Skeleton } from "@/components/ui/skeleton";
+import QuotationPageSkeleton from "@/components/quotation/QuotationPageSkeleton";
 import { formatMoney } from "@/utils/format";
 import { loadQuotations, deleteQuotation, loadQuotationItems, duplicateQuotation } from "@/lib/quotationService";
 import { createFromQuotation } from "@/lib/invoiceService";
@@ -175,21 +174,7 @@ export default function Quotation() {
     }
   };
 
-  if (isLoading) return (
-    <div className="p-4 sm:p-6 space-y-5">
-      <PageHeader eyebrow="Sales" title="Quotations" subtitle="Create, track and finalize client quotations.">
-        <Button onClick={() => navigate("/quotation/new")}>
-          <Plus className="w-4 h-4" /> Create Quotation
-        </Button>
-      </PageHeader>
-      <StatGridSkeleton count={4} />
-      <div className="flex flex-col sm:flex-row gap-3">
-        <Skeleton className="h-9 flex-1 rounded-md" />
-        <Skeleton className="h-9 sm:w-44 rounded-md" />
-      </div>
-      <TableSkeleton />
-    </div>
-  );
+  if (isLoading) return <QuotationPageSkeleton />;
 
   return (
     <div className="p-4 sm:p-6 space-y-5">

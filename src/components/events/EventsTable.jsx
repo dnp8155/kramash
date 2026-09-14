@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { ChevronDown, ChevronUp, Pencil, MapPin, FileText, StickyNote, ArrowRight, Users, Briefcase, Trash2, IndianRupee } from "lucide-react";
 import StatusBadge from "@/components/common/StatusBadge";
-import LoadingState from "@/components/common/LoadingState";
 import EmptyState from "@/components/common/EmptyState";
 import Button from "@/components/common/Button";
+import EventsTableSkeleton from "@/components/events/EventsTableSkeleton";
 import { formatEventDates, isThisWeek, formatAssignedDates } from "@/lib/dates";
 import { useDisplayPreferences } from "@/hooks/useDisplayPreferences";
 import { formatMoney } from "@/utils/format";
@@ -16,11 +16,7 @@ export default function EventsTable({ events, clients, teamMap = {}, serviceMap 
   const t = term || {};
   const prefs = useDisplayPreferences();
   if (loading) {
-    return (
-      <div className="bg-card border border-border rounded-xl shadow-card">
-        <LoadingState label={`Loading ${t.workItemPlural?.toLowerCase() || "events"}…`} />
-      </div>
-    );
+    return <EventsTableSkeleton />;
   }
 
   if (events.length === 0) {
