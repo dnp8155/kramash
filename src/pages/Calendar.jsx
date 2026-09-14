@@ -8,6 +8,7 @@ import CalendarWeekView from "@/components/calendar/CalendarWeekView";
 import CalendarDayView from "@/components/calendar/CalendarDayView";
 import CalendarYearView from "@/components/calendar/CalendarYearView";
 import CalendarSidePanel from "@/components/calendar/CalendarSidePanel";
+import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
 import { ChevronLeft, ChevronRight, CalendarRange, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -17,6 +18,7 @@ const MONTHS = ["January", "February", "March", "April", "May", "June", "July", 
 export default function Calendar() {
   const { workspaceId } = useWorkspace();
   const navigate = useNavigate();
+  const term = useBusinessTerminology();
   const [view, setView] = useState("month");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [search, setSearch] = useState("");
@@ -122,7 +124,7 @@ export default function Calendar() {
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search events by title, type, or venue..."
+          placeholder={`Search ${term.workItemPlural.toLowerCase()} by title, type, or venue...`}
           className="w-full h-9 pl-9 pr-9 text-sm rounded-lg border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/40"
         />
         {search && (

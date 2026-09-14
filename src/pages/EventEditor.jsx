@@ -269,7 +269,7 @@ export default function EventEditor() {
       }, 2000);
       markLeaving();
       setIsDirty(false);
-      toast({ title: isEdit ? "Project updated" : "Project created" });
+      toast({ title: isEdit ? `${tTerm.workItemSingular} updated` : `${tTerm.workItemSingular} created` });
       navigate(eventId ? `/events/${eventId}` : "/events");
     } catch (err) {
       const data = err?.data || err;
@@ -320,10 +320,10 @@ export default function EventEditor() {
               </div>
               <div>
                 <h1 className="font-heading text-xl font-bold tracking-tight text-foreground">
-                  {isEdit ? "Edit Project" : "Add New Project"}
+                  {isEdit ? tTerm.editWorkItemLabel : `Add New ${tTerm.workItemSingular}`}
                 </h1>
                 <p className="text-sm text-muted-foreground mt-0.5">
-                  {isEdit ? "Update project details and assignments." : "Create a new project for a client."}
+                  {isEdit ? `Update ${tTerm.workItemSingular.toLowerCase()} details and assignments.` : `Create a new ${tTerm.workItemSingular.toLowerCase()} for a client.`}
                 </p>
               </div>
             </div>
@@ -349,7 +349,7 @@ export default function EventEditor() {
             <div className="p-6 space-y-7">
                 {/* Project Details */}
                 <div>
-                  <SectionHeader icon={FolderOpen} title="Project Details" />
+                  <SectionHeader icon={FolderOpen} title={tTerm.workItemDetailsLabel} />
                   <div className="space-y-4">
                     <div className="space-y-1.5">
                       <Label className="text-xs">{tTerm.workItemTitleLabel || "Project Title"} <span className="text-destructive">*</span></Label>
@@ -394,12 +394,12 @@ export default function EventEditor() {
                     </div>
 
                     <div className="space-y-1.5">
-                      <Label className="text-xs">Project Type</Label>
+                      <Label className="text-xs">{tTerm.workItemTypeLabel}</Label>
                       <EventTypeAutocomplete
                         value={form.event_type}
                         onChange={(v) => set("event_type", v)}
                         suggestions={workTypes}
-                        placeholder="Type or select a project type"
+                        placeholder={`Type or select a ${tTerm.workItemSingular.toLowerCase()} type`}
                       />
                     </div>
                   </div>
@@ -488,7 +488,7 @@ export default function EventEditor() {
                         <Label className="text-xs">Description</Label>
                         <span className="text-[11px] text-muted-foreground">{(form.description || "").length}/500</span>
                       </div>
-                      <Textarea value={form.description} onChange={(e) => set("description", e.target.value)} placeholder="Project description" rows={2} maxLength={500} />
+                      <Textarea value={form.description} onChange={(e) => set("description", e.target.value)} placeholder={`${tTerm.workItemSingular} description`} rows={2} maxLength={500} />
                     </div>
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between">
@@ -507,7 +507,7 @@ export default function EventEditor() {
                 Cancel
               </Button>
               <Button type="submit" disabled={saving}>
-                {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</> : <><Save className="w-4 h-4" /> {isEdit ? "Save Changes" : "Create Project"}</>}
+                {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</> : <><Save className="w-4 h-4" /> {isEdit ? "Save Changes" : tTerm.createWorkItemLabel}</>}
               </Button>
             </div>
           </div>

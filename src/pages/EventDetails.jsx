@@ -453,8 +453,8 @@ export default function EventDetails() {
 
           {/* Primary info */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4">
-            <DetailField label="Client / Event" value={event.title} />
-            <DetailField label="Event Type" value={event.event_type || "—"} />
+            <DetailField label={`Client / ${term.workItemSingular}`} value={event.title} />
+            <DetailField label={term.workItemTypeLabel} value={event.event_type || "—"} />
             <DetailField label="Contract Value" value={formatMoney(fin.contractValue || 0, currency)} />
             {fin.addonTotal + fin.miscTotal > 0 && (
               <div className="text-[11px] text-muted-foreground">
@@ -469,7 +469,7 @@ export default function EventDetails() {
           {/* Date chips — directly under Start/End Date */}
           {allDates.length > 0 && (
             <div className="mt-4">
-              <div className="text-xs font-medium text-muted-foreground mb-2.5">Event Date(s)</div>
+              <div className="text-xs font-medium text-muted-foreground mb-2.5">{term.workItemSingular} Date(s)</div>
               <div className="flex flex-wrap gap-2">
                 {allDates.map((d) => <DateChip key={d} date={d} onDelete={() => handleDeleteDate(d)} />)}
               </div>
@@ -482,10 +482,10 @@ export default function EventDetails() {
           {/* Contact + venue */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
             <DetailField label="Contact" value={client?.phone || "—"} icon={Phone} />
-            <DetailField label="Venue" value={event.venue || "—"} icon={MapPin} />
+            <DetailField label={term.locationLabel} value={event.venue || "—"} icon={MapPin} />
           </div>
           <div className="mt-4">
-            <DetailField label="Address" value={[client?.address, client?.city].filter(Boolean).join(", ") || "—"} />
+            <DetailField label={term.locationAddressLabel} value={[client?.address, client?.city].filter(Boolean).join(", ") || "—"} />
           </div>
         </Card>
 

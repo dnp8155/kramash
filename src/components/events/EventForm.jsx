@@ -210,7 +210,7 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
               {/* Left column — core details */}
               <div className="space-y-4">
                 <div className="space-y-2.5">
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">Project Details</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">{t.workItemDetailsLabel || "Project Details"}</p>
                   <div className="space-y-1.5">
                     <Label className="text-xs">{t.workItemTitleLabel || "Event Title"} <span className="text-destructive">*</span></Label>
                     <Input value={form.title} onChange={(e) => set("title", e.target.value)} placeholder={t.category === "ARCHITECTURE" || t.category === "OTHER" ? "e.g. Riverside Villa Project" : "e.g. Meera & Dev"} autoFocus />
@@ -225,7 +225,7 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
                     </div>
                     {clients.length === 0 && !loadingClients ? (
                       <div className="rounded-md border border-dashed border-border p-3 text-center">
-                        <p className="text-xs text-muted-foreground mb-2">No clients yet. Add a client to create an event.</p>
+                        <p className="text-xs text-muted-foreground mb-2">No clients yet. Add a client to create a {t.workItemSingular?.toLowerCase() || "event"}.</p>
                         <Button type="button" variant="outline" size="sm" onClick={() => setShowClientForm(true)}>
                           <Plus className="w-3.5 h-3.5" /> Add Client
                         </Button>
@@ -246,7 +246,7 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
                       value={form.event_type}
                       onChange={(v) => set("event_type", v)}
                       suggestions={workTypes}
-                      placeholder="Type or select an event type"
+                      placeholder={`Type or select a ${(t.workItemSingular || "event").toLowerCase()} type`}
                     />
                   </div>
 

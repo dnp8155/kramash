@@ -63,12 +63,19 @@ export default function Onboarding() {
       const businessType = category === BUSINESS_CATEGORIES.OTHER
         ? (form.custom_business_type || "Other")
         : categoryLabel(category);
+      // Explicit Project/Projects work-labels for Architecture & Other categories,
+      // so the app shows "Project(s)" from first load without relying on the
+      // category-map fallback. Photography/Event Management stay default (Event/Events).
+      const workLabels = (category === BUSINESS_CATEGORIES.ARCHITECTURE || category === BUSINESS_CATEGORIES.OTHER)
+        ? { custom_work_label_singular: "Project", custom_work_label_plural: "Projects" }
+        : {};
       // Save the user's personal name on their profile.
       if (form.your_name.trim() && form.your_name.trim() !== user?.full_name) {
         try { await base44.auth.updateMe({ full_name: form.your_name.trim() }); } catch (e) { /* non-fatal */ }
       }
       const workspace = await base44.entities.Workspace.create({
         ...form,
+        ...workLabels,
         business_category: category,
         business_type: businessType,
         owner_user_id: user.id,
