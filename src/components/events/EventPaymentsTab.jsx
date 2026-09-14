@@ -1,10 +1,10 @@
 import { useState, useRef, useMemo } from "react";
-import { Pencil, Upload, Trash2, Wallet, Receipt, Loader2, Plus, Tag } from "lucide-react";
+import { Pencil, Upload, Trash2, Ban, Wallet, Receipt, Loader2, Plus, Tag } from "lucide-react";
 import html2canvas from "html2canvas";
 import { useToast } from "@/components/ui/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { invalidateEntity } from "@/lib/queryInvalidation";
-import { voidTransaction } from "@/lib/financeService";
+import { voidTransaction, deleteTransaction } from "@/lib/financeService";
 import { useWorkspace } from "@/lib/WorkspaceContext";
 import { formatMoney } from "@/utils/format";
 import { formatEventDate } from "@/lib/dates";
@@ -35,6 +35,7 @@ export default function EventPaymentsTab({
   const { workspaceId } = useWorkspace();
   const [editing, setEditing] = useState(null);
   const [voiding, setVoiding] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [sharingId, setSharingId] = useState(null);
   const [showAddOn, setShowAddOn] = useState(false);
   const [editingAddOn, setEditingAddOn] = useState(null);
@@ -92,6 +93,29 @@ export default function EventPaymentsTab({
       toast({ title: msg, variant: "destructive" });
     } finally {
       setVoiding(false);
+    }
+  };
+
+  const handleHardDelete = async (t) => {
+    if (!confirm("Permanently delete this transaction? This removes the record and recalculates invoice and milestone balances.")) return;
+    setDeleting(true);
+    try {
+      const res = await deleteTransaction(workspaceId, t.id);
+      const data = res?.data || res;
+      if (data?.error) {
+        toast({ title: data.message || data.error, variant: "destructive" });
+        return;
+      }
+      invalidateEntity(queryClient, "FinancialTransaction");
+      invalidateEntity(queryClient, "Invoice");
+      invalidateEntity(queryClient, "PaymentMilestone");
+      toast({ title: "Transaction deleted", description: "Invoice and milestone balances recalculated." });
+      onRefresh?.();
+    } catch (e) {
+      const msg = e?.data?.message || e?.data?.error || e?.message || "Failed to delete transaction.";
+      toast({ title: msg, variant: "destructive" });
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -247,9 +271,19 @@ export default function EventPaymentsTab({
                   <button
                     onClick={() => handleDelete(t)}
                     disabled={voiding}
-                    className="ml-auto w-8 h-8 rounded-full flex items-center justify-center text-white hover:opacity-90 transition-opacity disabled:opacity-50"
+                    className="ml-auto w-8 h-8 rounded-full flex items-center justify-center border border-foreground/30 text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+                    aria-label="Void transaction"
+                    title="Void"
+                  >
+                    <Ban className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleHardDelete(t)}
+                    disabled={deleting}
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-white hover:opacity-90 transition-opacity disabled:opacity-50"
                     style={{ backgroundColor: RED }}
-                    aria-label="Delete"
+                    aria-label="Delete transaction"
+                    title="Delete"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>

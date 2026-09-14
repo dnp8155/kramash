@@ -215,6 +215,15 @@ export async function voidTransaction(workspaceId, transactionId) {
   return res?.data || res;
 }
 
+// Hard-delete a transaction permanently. Backend reconciles invoice + milestone.
+export async function deleteTransaction(workspaceId, transactionId) {
+  const res = await base44.functions.invoke("deleteTransaction", {
+    workspace_id: workspaceId,
+    transaction_id: transactionId
+  });
+  return res?.data || res;
+}
+
 // Edit a transaction (amount, date, method, reference, notes, FY).
 // Backend reconciles invoice + milestone after the edit.
 export async function editTransaction(workspaceId, transactionId, changes) {

@@ -29,7 +29,8 @@ import {
   totalPaid,
   actualProfit,
   methodBreakdown,
-  voidTransaction
+  voidTransaction,
+  deleteTransaction
 } from "@/lib/financeService";
 import { formatMoney } from "@/utils/format";
 import { Download, Plus, Wallet, Receipt, AlertTriangle, Trash2, Lock } from "lucide-react";
@@ -60,6 +61,7 @@ export default function Financial() {
   const [showMiscExpense, setShowMiscExpense] = useState(false);
   const [editing, setEditing] = useState(null);
   const [voiding, setVoiding] = useState(null);
+  const [deleting, setDeleting] = useState(null);
   const [showFYForm, setShowFYForm] = useState(false);
   const [editingFY, setEditingFY] = useState(null);
   const [deletingFY, setDeletingFY] = useState(null);
@@ -242,6 +244,26 @@ export default function Financial() {
     }
   };
 
+  const handleDelete = async () => {
+    if (!deleting) return;
+    try {
+      const res = await deleteTransaction(workspaceId, deleting.id);
+      const data = res?.data || res;
+      if (data?.error) {
+        toast({ title: t("Failed to delete transaction"), description: data.message || data.error, variant: "destructive" });
+        return;
+      }
+      queryClient.invalidateQueries({ queryKey: ["financial"] });
+      queryClient.invalidateQueries({ queryKey: ["event"] });
+      toast({ title: t("Transaction deleted"), description: t("Invoice and milestone balances recalculated.") });
+      setDeleting(null);
+      load();
+    } catch (e) {
+      const msg = e?.data?.message || e?.data?.error || e?.message;
+      toast({ title: t("Failed to delete transaction"), description: msg, variant: "destructive" });
+    }
+  };
+
   if (isLoading) return <FinancialPageSkeleton />;
 
   return (
@@ -401,6 +423,7 @@ export default function Financial() {
             currency={currency}
             onEdit={(t) => setEditing(t)}
             onVoid={(t) => setVoiding(t)}
+            onDelete={(t) => setDeleting(t)}
           />
 
           {/* Outstanding receivables — scoped to the selected financial year */}
@@ -572,6 +595,28 @@ export default function Financial() {
             <div className="flex justify-end gap-2 mt-4">
               <Button variant="outline" size="sm" onClick={() => setVoiding(null)}>{t("Cancel")}</Button>
               <Button variant="destructive" size="sm" onClick={handleVoid}>{t("Void")}</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete confirmation */}
+      {deleting && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setDeleting(null)}>
+          <div className="bg-card border border-border rounded-lg max-w-sm w-full p-5" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start gap-2">
+              <Trash2 className="w-5 h-5 text-destructive mt-0.5 shrink-0" />
+              <div>
+                <h3 className="text-sm font-semibold">{t("Delete this transaction?")}</h3>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {TRANSACTION_TYPES[deleting.transaction_type]?.label} of {formatMoney(deleting.amount, currency)} on {deleting.transaction_date}.
+                  {t("This permanently removes the record. Linked invoice and milestone balances will be recalculated.")}
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-4">
+              <Button variant="outline" size="sm" onClick={() => setDeleting(null)}>{t("Cancel")}</Button>
+              <Button variant="destructive" size="sm" onClick={handleDelete}>{t("Delete")}</Button>
             </div>
           </div>
         </div>

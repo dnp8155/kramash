@@ -1,0 +1,4 @@
+{
+  "name": "deleteTransaction",
+  "entry": "entry.ts"
+}

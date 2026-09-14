@@ -1,7 +1,7 @@
 import { formatMoney } from "@/utils/format";
 import { formatEventDate } from "@/lib/dates";
 import { TRANSACTION_TYPES } from "@/constants/financeConfig";
-import { Pencil, Ban } from "lucide-react";
+import { Pencil, Ban, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Transaction activity list — two-sided layout (matches reference):
@@ -13,6 +13,7 @@ export default function PaymentTable({
   currency = "INR",
   onEdit,
   onVoid,
+  onDelete,
 }) {
   const { eventsById = {}, clientsById = {}, membersById = {} } = display;
 
@@ -122,6 +123,15 @@ export default function PaymentTable({
                       aria-label="Void transaction"
                     >
                       <Ban className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                  {onDelete && (
+                    <button
+                      onClick={() => onDelete(t)}
+                      className="text-muted-foreground hover:text-destructive p-1"
+                      aria-label="Delete transaction"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   )}
                 </div>
