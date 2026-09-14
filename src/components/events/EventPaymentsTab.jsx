@@ -1,5 +1,5 @@
-import { useState, useRef } from "react";
-import { Pencil, Upload, Trash2, Wallet, Receipt, Loader2 } from "lucide-react";
+import { useState, useRef, useMemo } from "react";
+import { Pencil, Upload, Trash2, Wallet, Receipt, Loader2, Plus, Tag } from "lucide-react";
 import html2canvas from "html2canvas";
 import { useToast } from "@/components/ui/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
@@ -11,6 +11,9 @@ import { formatEventDate } from "@/lib/dates";
 import EditTransactionDialog from "@/components/financial/EditTransactionDialog";
 import EmptyState from "@/components/common/EmptyState";
 import Button from "@/components/common/Button";
+import AddOnDialog from "@/components/events/AddOnDialog";
+import { parseMiscExpenses, miscExpensesTotal } from "@/components/events/EventMiscExpenseEditor";
+import { base44 } from "@/api/base44Client";
 
 const OUT_COLOR = "#B24F3A";
 const NAVY = "#2D4F75";
@@ -33,7 +36,24 @@ export default function EventPaymentsTab({
   const [editing, setEditing] = useState(null);
   const [voiding, setVoiding] = useState(false);
   const [sharingId, setSharingId] = useState(null);
+  const [showAddOn, setShowAddOn] = useState(false);
+  const [editingAddOn, setEditingAddOn] = useState(null);
   const cardRefs = useRef({});
+
+  const miscItems = useMemo(() => parseMiscExpenses(event?.misc_expenses_json), [event?.misc_expenses_json]);
+  const miscTotal = miscExpensesTotal(miscItems);
+
+  const removeAddOn = async (item) => {
+    if (!confirm(`Remove add-on "${item.name}"?`)) return;
+    try {
+      const items = parseMiscExpenses(event?.misc_expenses_json).filter((it) => it.id !== item.id);
+      await base44.entities.Event.update(event.id, { misc_expenses_json: JSON.stringify(items) });
+      toast({ title: "Add-on removed" });
+      onRefresh?.();
+    } catch (e) {
+      toast({ title: e?.message || "Failed to remove", variant: "destructive" });
+    }
+  };
 
   const activeTx = transactions.filter((t) => t.status === "ACTIVE");
 
@@ -127,11 +147,47 @@ export default function EventPaymentsTab({
           <Button size="sm" onClick={onAddClientPayment}>
             <Wallet className="w-3.5 h-3.5" /> Client Payment
           </Button>
+          <Button size="sm" variant="outline" onClick={() => { setEditingAddOn(null); setShowAddOn(true); }}>
+            <Plus className="w-3.5 h-3.5" /> Add-on
+          </Button>
           <Button size="sm" variant="outline" onClick={onAddExpense}>
             <Receipt className="w-3.5 h-3.5" /> Expense
           </Button>
         </div>
       </div>
+
+      {/* Add-ons — billable extras that add to contract value */}
+      {miscItems.length > 0 && (
+        <div className="bg-white border border-border rounded-[15px] p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Tag className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm font-semibold text-foreground">Add-ons</span>
+              <span className="text-xs text-muted-foreground">({miscItems.length})</span>
+            </div>
+            <div className="text-right">
+              <div className="text-sm font-bold tabular-nums text-foreground">+{formatMoney(miscTotal, currency)}</div>
+              <div className="text-[11px] text-muted-foreground">Added to contract</div>
+            </div>
+          </div>
+          <div className="space-y-2">
+            {miscItems.map((it) => (
+              <div key={it.id || it.name} className="flex items-center justify-between gap-3 p-2.5 rounded-lg border border-border bg-muted/30">
+                <div className="text-sm font-medium text-foreground truncate">{it.name || "Unnamed"}</div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <div className="text-sm font-semibold tabular-nums text-foreground">{formatMoney(Number(it.amount) || 0, currency)}</div>
+                  <button onClick={() => { setEditingAddOn(it); setShowAddOn(true); }} className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" aria-label="Edit add-on">
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                  <button onClick={() => removeAddOn(it)} className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-colors" aria-label="Remove add-on">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {activeTx.length === 0 ? (
         <div className="bg-[#F5F5F5] border border-border rounded-[15px] p-5">
@@ -210,6 +266,15 @@ export default function EventPaymentsTab({
         onSaved={() => { setEditing(null); onRefresh?.(); }}
         transaction={editing}
         currency={currency}
+      />
+
+      <AddOnDialog
+        open={showAddOn}
+        onClose={() => { setShowAddOn(false); setEditingAddOn(null); }}
+        onSaved={() => { setShowAddOn(false); setEditingAddOn(null); onRefresh?.(); }}
+        event={event}
+        currency={currency}
+        editingItem={editingAddOn}
       />
     </div>
   );

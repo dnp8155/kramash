@@ -117,7 +117,7 @@ export default function EventFinancialsTab({
     <div className="space-y-5">
       {/* 6 Financial summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        <FinCard label="Package" value={formatMoney(packageValue, currency)} sub={`${pct(packageValue)}% base`} icon={Wallet} />
+        <FinCard label="Package" value={formatMoney(packageValue, currency)} sub={(fin.addonTotal + fin.miscTotal) > 0 ? `Base ${formatMoney(fin.baseContractValue, currency)} + Add-ons ${formatMoney(fin.addonTotal + fin.miscTotal, currency)}` : `${pct(packageValue)}% base`} icon={Wallet} />
         <FinCard label="Received" value={formatMoney(fin.received, currency)} sub={`${pct(fin.received)}% collected`} icon={CheckCircle2} tone="default" />
         <FinCard label="Balance Due" value={formatMoney(fin.pending, currency)} sub={`${pct(fin.pending)}% pending`} icon={Clock} tone={fin.pending > 0 ? "danger" : "success"} />
         <FinCard label="Team Cost" value={formatMoney(fin.teamPaid, currency)} sub={`${pct(fin.teamPaid)}% of package`} icon={Users} tone="warning" />
@@ -131,7 +131,7 @@ export default function EventFinancialsTab({
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Receipt className="w-4 h-4 text-muted-foreground" />
-              <h3 className="text-sm font-semibold text-foreground">Misc Expenses</h3>
+              <h3 className="text-sm font-semibold text-foreground">Add-ons</h3>
               <span className="text-xs text-muted-foreground">({miscItems.length})</span>
             </div>
             <div className="text-right">
@@ -144,7 +144,7 @@ export default function EventFinancialsTab({
               <div key={it.id || idx} className="flex items-center justify-between gap-3 p-3 rounded-lg border border-border bg-muted/30">
                 <div className="min-w-0">
                   <div className="text-sm font-semibold text-foreground truncate">{it.name || "Unnamed expense"}</div>
-                  <div className="text-[11px] text-muted-foreground">Misc Expense{it.notes ? ` · ${it.notes}` : ""}</div>
+                  <div className="text-[11px] text-muted-foreground">Add-on{it.notes ? ` · ${it.notes}` : ""}</div>
                 </div>
                 <div className="text-sm font-semibold tabular-nums text-foreground shrink-0">
                   {formatMoney(Number(it.amount) || 0, currency)}

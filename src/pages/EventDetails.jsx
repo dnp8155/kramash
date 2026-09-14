@@ -443,9 +443,9 @@ export default function EventDetails() {
             <DetailField label="Client / Event" value={event.title} />
             <DetailField label="Event Type" value={event.event_type || "—"} />
             <DetailField label="Contract Value" value={formatMoney(fin.contractValue || 0, currency)} />
-            {fin.addonTotal > 0 && (
+            {fin.addonTotal + fin.miscTotal > 0 && (
               <div className="text-[11px] text-muted-foreground">
-                Base: {formatMoney(fin.baseContractValue, currency)} + Add-ons: {formatMoney(fin.addonTotal, currency)}
+                Base: {formatMoney(fin.baseContractValue, currency)} + Add-ons: {formatMoney(fin.addonTotal + fin.miscTotal, currency)}
               </div>
             )}
             <DetailField label="Start Date" value={event.start_date ? formatEventDate(event.start_date) : "—"} />

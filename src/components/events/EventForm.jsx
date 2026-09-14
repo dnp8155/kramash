@@ -18,7 +18,6 @@ import { useFinancialYear } from "@/hooks/useFinancialYear";
 import { fyDisplayLabel, fyRecordValue } from "@/lib/financialYearService";
 import { getEventTypes, buildAllEventTypes, normalizeEventType, mergeEventTypes } from "@/lib/eventTypeService";
 import EventTypeAutocomplete from "@/components/events/EventTypeAutocomplete";
-import EventMiscExpenseEditor, { parseMiscExpenses } from "@/components/events/EventMiscExpenseEditor";
 import { useQueryClient } from "@tanstack/react-query";
 import { invalidateEntity } from "@/lib/queryInvalidation";
 
@@ -44,7 +43,6 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [showClientForm, setShowClientForm] = useState(false);
-  const [miscExpenses, setMiscExpenses] = useState([]);
 
   useEffect(() => {
     if (open) {
@@ -55,7 +53,6 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
         base.event_dates = [base.start_date];
       }
       setForm(base);
-      setMiscExpenses(parseMiscExpenses(base.misc_expenses_json));
       loadClients();
       loadUsedEventTypes();
     }
@@ -128,7 +125,6 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
         venue: form.venue.trim(),
         venue_address: form.venue_address.trim(),
         contract_value: Number(form.contract_value) || 0,
-        misc_expenses_json: JSON.stringify(miscExpenses.filter((x) => x.name.trim() || Number(x.amount) > 0)),
         description: form.description.trim(),
         notes: form.notes.trim()
       };
@@ -314,15 +310,6 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
                   <div className="space-y-1.5">
                     <Label className="text-xs">Notes</Label>
                     <Textarea value={form.notes} onChange={(e) => set("notes", e.target.value)} placeholder="Internal notes" rows={2} />
-                  </div>
-
-                  {/* Misc Expenses — billable extras that add to contract value */}
-                  <div className="pt-2 border-t border-border">
-                    <EventMiscExpenseEditor
-                      items={miscExpenses}
-                      onChange={setMiscExpenses}
-                      currency={currency}
-                    />
                   </div>
                 </div>
               </div>
