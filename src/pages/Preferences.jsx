@@ -235,17 +235,13 @@ export default function Preferences() {
   };
 
   return (
-    <div className="flex flex-col lg:flex-row min-h-screen -m-4 sm:-m-6">
+    <div className="p-4 sm:p-6 flex flex-col lg:flex-row gap-6">
       {/* Desktop sidebar */}
-      <aside className="hidden lg:flex flex-col w-72 shrink-0 bg-sidebar text-sidebar-foreground border-r border-sidebar-border sticky top-0 h-screen">
-        <div className="px-5 pt-6 pb-4">
-          <h1 className="text-lg font-bold tracking-tight">Preferences</h1>
-          <p className="text-xs text-sidebar-muted mt-0.5">Manage your workspace settings</p>
-        </div>
-        <nav className="flex-1 overflow-y-auto px-3 pb-6 space-y-5 scrollbar-thin">
+      <aside className="hidden lg:block w-60 shrink-0">
+        <div className="sticky top-6 space-y-1">
           {NAV_GROUPS.map((group) => (
             <div key={group.key} className="space-y-1">
-              <div className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-sidebar-muted">{group.label}</div>
+              <div className="px-3 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{group.label}</div>
               {group.items.map((item) => {
                 const Icon = item.icon;
                 const isActive = activeGroup === group.key;
@@ -254,10 +250,10 @@ export default function Preferences() {
                     key={item.key}
                     onClick={() => setActiveGroup(group.key)}
                     className={cn(
-                      "w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-left transition-all",
+                      "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-left transition-all",
                       isActive
-                        ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
-                        : "text-sidebar-foreground/80 hover:bg-sidebar-hover hover:text-sidebar-foreground"
+                        ? "bg-primary text-primary-foreground"
+                        : "text-foreground hover:bg-muted"
                     )}
                   >
                     <Icon className="w-4 h-4 shrink-0" />
@@ -267,47 +263,38 @@ export default function Preferences() {
               })}
             </div>
           ))}
-        </nav>
+        </div>
       </aside>
 
       {/* Mobile horizontal tab bar */}
-      <div className="lg:hidden sticky top-0 z-20 bg-background border-b border-border safe-area-top">
-        <div className="flex gap-1.5 overflow-x-auto px-4 py-3 scrollbar-thin">
-          {NAV_GROUPS.map((group) => (
-            <button
-              key={group.key}
-              onClick={() => setActiveGroup(group.key)}
-              className={cn(
-                "shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all",
-                activeGroup === group.key
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground hover:bg-secondary"
-              )}
-            >
-              {group.label}
-            </button>
-          ))}
-        </div>
+      <div className="lg:hidden flex gap-1.5 overflow-x-auto pb-2 scrollbar-thin">
+        {NAV_GROUPS.map((group) => (
+          <button
+            key={group.key}
+            onClick={() => setActiveGroup(group.key)}
+            className={cn(
+              "shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all",
+              activeGroup === group.key
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-muted-foreground hover:bg-secondary"
+            )}
+          >
+            {group.label}
+          </button>
+        ))}
       </div>
 
       {/* Main content */}
-      <main className="flex-1 min-w-0">
-        <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-4xl">
-          <div className="flex items-center justify-between pb-3 border-b border-border">
-            <div>
-              <h2 className="text-lg font-bold text-foreground">{GROUP_LABELS[activeGroup]}</h2>
-              <p className="text-xs text-muted-foreground mt-0.5">Settings save automatically per section</p>
-            </div>
-          </div>
-
-          <div className="space-y-8 animate-fade-in">
-            {activeGroupConfig.items.map((item) => (
-              <div key={item.key}>
-                <PreferencesSections sectionKey={item.key} {...sectionProps} />
-              </div>
-            ))}
-          </div>
+      <main className="flex-1 min-w-0 space-y-8">
+        <div>
+          <h1 className="text-xl font-bold text-foreground">Preferences</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Manage your workspace, business, and app settings — each section saves independently.</p>
         </div>
+        {activeGroupConfig.items.map((item) => (
+          <div key={item.key}>
+            <PreferencesSections sectionKey={item.key} {...sectionProps} />
+          </div>
+        ))}
       </main>
 
       <TeamRoleForm
