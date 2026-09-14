@@ -11,6 +11,7 @@ import EmptyState from "@/components/common/EmptyState";
 import DetailErrorState from "@/components/common/DetailErrorState";
 import ClientForm from "@/components/clients/ClientForm";
 import ClientFinancialSummary from "@/components/clients/ClientFinancialSummary";
+import PortalAccessSection from "@/components/clients/PortalAccessSection";
 import { formatEventDate } from "@/lib/dates";
 import { formatMoney } from "@/utils/format";
 import { ArrowLeft, Pencil, Phone, Mail, MapPin, Calendar, ArrowRight, StickyNote, UserPlus, Loader2, CheckCircle2 } from "lucide-react";
@@ -200,6 +201,9 @@ export default function ClientDetails() {
           </div>
         )}
       </Card>
+
+      {/* Quick Portal Access (password-only gate) */}
+      <PortalAccessSection client={client} workspaceId={workspaceId} />
 
       {/* Client 360° financial summary */}
       <ClientFinancialSummary events={events} transactions={transactions} currency={workspace?.currency || "INR"} />

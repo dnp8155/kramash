@@ -1,0 +1,5 @@
+{
+  "name": "getClientPortalDataByAccess",
+  "description": "Public endpoint — returns the full client portal payload for a password-only portal session (validated by session token + client id). No Base44 auth required.",
+  "public": true
+}

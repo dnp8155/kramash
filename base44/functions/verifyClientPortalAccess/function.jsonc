@@ -1,0 +1,5 @@
+{
+  "name": "verifyClientPortalAccess",
+  "description": "Public endpoint — validates a client's portal access token + password and returns a session token for the password-only client portal. No Base44 auth required.",
+  "public": true
+}

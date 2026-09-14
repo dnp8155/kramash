@@ -1,0 +1,4 @@
+{
+  "name": "updateClientPortalPassword",
+  "description": "Workspace admin sets a new password (or regenerates a random one) for a client's password-only portal access."
+}

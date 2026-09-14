@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
+import { getPortalSession, clearPortalSession } from "@/lib/portalSession";
 import { Image } from "@/components/ui/image";
 import {
   Calendar, FileText, Receipt, Wallet, Loader2, LogOut, ExternalLink,
@@ -73,7 +74,13 @@ export default function ClientPortal() {
       setLoading(true);
       setError("");
       try {
-        const res = await base44.functions.invoke("getClientPortalData", {});
+        const portalSession = getPortalSession();
+        const res = portalSession
+          ? await base44.functions.invoke("getClientPortalDataByAccess", {
+              session_token: portalSession.token,
+              client_id: portalSession.client_id
+            })
+          : await base44.functions.invoke("getClientPortalData", {});
         const d = res?.data || res;
         setData(d);
         // If the user was auto-linked (role upgraded to client), refresh the auth
@@ -92,7 +99,8 @@ export default function ClientPortal() {
   }, []);
 
   const handleLogout = () => {
-    logout(false);
+    clearPortalSession();
+    if (logout) logout(false);
     window.location.href = "/client-login";
   };
 

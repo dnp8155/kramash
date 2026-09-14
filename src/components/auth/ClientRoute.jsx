@@ -1,5 +1,6 @@
 import { Outlet, Navigate } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
+import { getPortalSession } from "@/lib/portalSession";
 
 // Guards routes meant for client portal users.
 // If not authenticated → redirect to /client-login.
@@ -19,6 +20,10 @@ export default function ClientRoute() {
   }
 
   if (authError || !isAuthenticated) {
+    // No Base44 auth — but a password-only portal session is also valid here.
+    if (getPortalSession()) {
+      return <Outlet />;
+    }
     return <Navigate to="/client-login" replace />;
   }
 
