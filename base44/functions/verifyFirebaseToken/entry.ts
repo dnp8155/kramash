@@ -13,19 +13,23 @@
 // integration point. This function verifies the phone and identifies the user.
 
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.40";
+import { secrets } from "base44:runtime";
 
 export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
 
     const body = await req.json();
-    const { token, phone, uid, apiKey } = body;
+    const { token, phone, uid } = body;
 
     if (!token || !phone) {
       return Response.json({ error: "Missing Firebase token or phone." }, { status: 400 });
     }
+
+    // Use the server-side Firebase API key (secret) — never trust a client-provided key.
+    const apiKey = secrets.get("FIREBASE_API_KEY");
     if (!apiKey) {
-      return Response.json({ error: "Missing Firebase API key." }, { status: 400 });
+      return Response.json({ error: "Firebase phone authentication is not configured." }, { status: 503 });
     }
 
     // Verify the Firebase ID token via Google Identity Toolkit REST API.

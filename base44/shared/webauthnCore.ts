@@ -141,7 +141,8 @@ export async function createChallengeToken(challenge, userId) {
   const payloadBytes = new TextEncoder().encode(JSON.stringify(payload));
   const payloadB64 = base64urlEncode(payloadBytes);
 
-  const appKey = secrets.get("BASE44_APP_ID") || "fallback-key";
+  const appKey = secrets.get("BASE44_APP_ID");
+  if (!appKey) throw new Error("BASE44_APP_ID secret not configured — cannot sign challenge token");
   const key = await crypto.subtle.importKey(
     "raw",
     new TextEncoder().encode(appKey),
@@ -160,7 +161,8 @@ export async function verifyChallengeToken(token) {
   if (parts.length !== 2) throw new Error("Invalid challenge token format");
   const [payloadB64, sigB64] = parts;
 
-  const appKey = secrets.get("BASE44_APP_ID") || "fallback-key";
+  const appKey = secrets.get("BASE44_APP_ID");
+  if (!appKey) throw new Error("BASE44_APP_ID secret not configured — cannot verify challenge token");
   const key = await crypto.subtle.importKey(
     "raw",
     new TextEncoder().encode(appKey),
