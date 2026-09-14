@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { SERVICE_RATE_TYPES, GST_RATE_OPTIONS } from "@/constants/quotationConfig";
 import { useQueryClient } from "@tanstack/react-query";
 import { invalidateEntity } from "@/lib/queryInvalidation";
+import { useSubmitGuard } from "@/hooks/useSubmitGuard";
 
 const empty = {
   name: "",
@@ -31,7 +32,7 @@ export default function ServiceForm({
 }) {
   const queryClient = useQueryClient();
   const [form, setForm] = useState(empty);
-  const [saving, setSaving] = useState(false);
+  const { saving, start, stop } = useSubmitGuard();
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -53,7 +54,7 @@ export default function ServiceForm({
     e.preventDefault();
     const v = validate();
     if (v) { setError(v); return; }
-    setSaving(true);
+    if (!start()) return;
     setError("");
     try {
       const payload = {
@@ -86,7 +87,7 @@ export default function ServiceForm({
         setError(err?.message || "Failed to save service. Please try again.");
       }
     } finally {
-      setSaving(false);
+      stop();
     }
   };
 

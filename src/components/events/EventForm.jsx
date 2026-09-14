@@ -21,6 +21,7 @@ import EventTypeAutocomplete from "@/components/events/EventTypeAutocomplete";
 import { useQueryClient } from "@tanstack/react-query";
 import { invalidateEntity } from "@/lib/queryInvalidation";
 import { getDefaultMilestoneTemplate, generateMilestonesFromTemplate } from "@/lib/milestoneService";
+import { useSubmitGuard } from "@/hooks/useSubmitGuard";
 
 const empty = {
   client_id: "", title: "", event_type: "",
@@ -41,7 +42,7 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
   const [form, setForm] = useState(empty);
   const [clients, setClients] = useState([]);
   const [loadingClients, setLoadingClients] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const { saving, start, stop } = useSubmitGuard();
   const [error, setError] = useState("");
   const [showClientForm, setShowClientForm] = useState(false);
 
@@ -105,7 +106,7 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
     e.preventDefault();
     const v = validate();
     if (v) { setError(v); return; }
-    setSaving(true);
+    if (!start()) return;
     setError("");
     try {
       const dates = (form.event_dates || []).slice().sort();
@@ -188,7 +189,7 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
         setError(err?.message || `Failed to save ${t.workItemSingular?.toLowerCase() || "event"}. Please try again.`);
       }
     } finally {
-      setSaving(false);
+      stop();
     }
   };
 

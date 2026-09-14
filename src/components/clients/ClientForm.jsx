@@ -11,6 +11,7 @@ import { lookupCity } from "@/lib/cityMapping";
 import { isValidIndianPhone, isValidEmail } from "@/lib/validation";
 import { useQueryClient } from "@tanstack/react-query";
 import { invalidateEntity } from "@/lib/queryInvalidation";
+import { useSubmitGuard } from "@/hooks/useSubmitGuard";
 
 const empty = {
   name: "", phone: "", alternate_phone: "", email: "",
@@ -30,7 +31,7 @@ function coerceStrings(client) {
 export default function ClientForm({ open, onClose, onSaved, client = null, workspaceId }) {
   const queryClient = useQueryClient();
   const [form, setForm] = useState(empty);
-  const [saving, setSaving] = useState(false);
+  const { saving, start, stop } = useSubmitGuard();
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -64,7 +65,7 @@ export default function ClientForm({ open, onClose, onSaved, client = null, work
     e.preventDefault();
     const v = validate();
     if (v) { setError(v); return; }
-    setSaving(true);
+    if (!start()) return;
     setError("");
     try {
       const payload = {
@@ -91,7 +92,7 @@ export default function ClientForm({ open, onClose, onSaved, client = null, work
     } catch (err) {
       setError(err?.message || "Failed to save client. Please try again.");
     } finally {
-      setSaving(false);
+      stop();
     }
   };
 

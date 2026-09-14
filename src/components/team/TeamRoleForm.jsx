@@ -8,12 +8,13 @@ import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
 import { Label } from "@/components/ui/label";
 import { RATE_TYPES } from "@/constants/teamConfig";
+import { useSubmitGuard } from "@/hooks/useSubmitGuard";
 
 const empty = { name: "", default_rate: "", rate_type: "Per Event", status: "active" };
 
 export default function TeamRoleForm({ open, onClose, onSaved, role = null, workspaceId }) {
   const [form, setForm] = useState(empty);
-  const [saving, setSaving] = useState(false);
+  const { saving, start, stop } = useSubmitGuard();
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -34,7 +35,7 @@ export default function TeamRoleForm({ open, onClose, onSaved, role = null, work
     e.preventDefault();
     const v = validate();
     if (v) { setError(v); return; }
-    setSaving(true);
+    if (!start()) return;
     setError("");
     try {
       const payload = {
@@ -55,7 +56,7 @@ export default function TeamRoleForm({ open, onClose, onSaved, role = null, work
     } catch (err) {
       setError(err?.message || "Failed to save role. Please try again.");
     } finally {
-      setSaving(false);
+      stop();
     }
   };
 

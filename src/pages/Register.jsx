@@ -14,6 +14,24 @@ import { toast } from "@/components/ui/use-toast";
 import { safeReturnTo } from "@/lib/authReturnTo";
 import { useAuth } from "@/lib/AuthContext";
 
+function sanitizeRegisterError(err) {
+  if (!err) return "Unable to create your account right now. Please try again.";
+  const msg = (err.message || err.data?.message || "").toLowerCase();
+  if (msg.includes("network") || msg.includes("fetch") || msg.includes("connection") || msg.includes("timeout")) {
+    return "Unable to connect right now. Please check your connection and try again.";
+  }
+  if (msg.includes("too many") || msg.includes("rate") || msg.includes("attempts")) {
+    return "Too many attempts. Please wait a moment and try again.";
+  }
+  if (msg.includes("already") || msg.includes("exists")) {
+    return "An account with this email already exists. Try signing in.";
+  }
+  if (msg.includes("disabled") || msg.includes("deactivated") || msg.includes("suspended")) {
+    return "This account has been disabled. Please contact support.";
+  }
+  return "Unable to create your account right now. Please try again.";
+}
+
 export default function Register() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -76,12 +94,7 @@ export default function Register() {
       await base44.auth.register({ email, password });
       setShowOtp(true);
     } catch (err) {
-      const msg = (err.message || "").toLowerCase();
-      if (msg.includes("already") || msg.includes("exists")) {
-        setError("An account with this email already exists. Try signing in.");
-      } else {
-        setError("Unable to create your account right now. Please try again.");
-      }
+      setError(sanitizeRegisterError(err));
     } finally {
       setLoading(false);
     }

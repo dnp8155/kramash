@@ -19,6 +19,7 @@ import {
 import { Crown } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { invalidateEntity } from "@/lib/queryInvalidation";
+import { useSubmitGuard } from "@/hooks/useSubmitGuard";
 
 // Edit an existing Event Service Assignment.
 // Edits: provider, service, rate, rate type, add-on, notes.
@@ -35,7 +36,7 @@ export default function EditServiceAssignmentDialog({
   const [rateType, setRateType] = useState("Fixed");
   const [isAddon, setIsAddon] = useState(false);
   const [notes, setNotes] = useState("");
-  const [saving, setSaving] = useState(false);
+  const { saving, start, stop } = useSubmitGuard();
   const [error, setError] = useState("");
   const queryClient = useQueryClient();
 
@@ -96,7 +97,7 @@ export default function EditServiceAssignmentDialog({
     e.preventDefault();
     const v = validate();
     if (v) { setError(v); return; }
-    setSaving(true);
+    if (!start()) return;
     setError("");
     try {
       const svc = services.find((s) => s.id === serviceId);
@@ -125,7 +126,7 @@ export default function EditServiceAssignmentDialog({
     } catch (err) {
       setError(err?.message || "Failed to update service. Please try again.");
     } finally {
-      setSaving(false);
+      stop();
     }
   };
 

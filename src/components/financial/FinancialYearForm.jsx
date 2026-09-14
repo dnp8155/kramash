@@ -12,6 +12,7 @@ import Input from "@/components/common/Input";
 import { useToast } from "@/components/ui/use-toast";
 import { useT } from "@/hooks/useT";
 import { validateFYRange } from "@/lib/financialYearService";
+import { useSubmitGuard } from "@/hooks/useSubmitGuard";
 
 export default function FinancialYearForm({
   open,
@@ -24,7 +25,7 @@ export default function FinancialYearForm({
   const t = useT();
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [saving, setSaving] = useState(false);
+  const { saving, start, stop } = useSubmitGuard();
 
   useEffect(() => {
     if (open) {
@@ -51,13 +52,13 @@ export default function FinancialYearForm({
 
   const handleSave = async () => {
     if (!canSave) return;
-    setSaving(true);
+    if (!start()) return;
     try {
       // Validate: start < end, no overlap with existing FYs
       const validation = await validateFYRange(workspaceId, startDate, endDate, editing?.id);
       if (!validation.valid) {
         toast({ title: t("Cannot save"), description: t(validation.error), variant: "destructive" });
-        setSaving(false);
+        stop();
         return;
       }
       if (editing) {
@@ -89,7 +90,7 @@ export default function FinancialYearForm({
         variant: "destructive",
       });
     } finally {
-      setSaving(false);
+      stop();
     }
   };
 

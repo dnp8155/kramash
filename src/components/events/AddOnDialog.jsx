@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { base44 } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";
 import { parseMiscExpenses } from "@/components/events/EventMiscExpenseEditor";
+import { useSubmitGuard } from "@/hooks/useSubmitGuard";
 
 // Add / edit a payment-tab add-on (name + amount only).
 // Stored on the event's misc_expenses_json so existing data stays compatible.
@@ -15,7 +16,7 @@ export default function AddOnDialog({ open, onClose, onSaved, event, currency = 
   const { toast } = useToast();
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
-  const [saving, setSaving] = useState(false);
+  const { saving, start, stop } = useSubmitGuard();
 
   useEffect(() => {
     if (open) {
@@ -30,7 +31,7 @@ export default function AddOnDialog({ open, onClose, onSaved, event, currency = 
       toast({ title: "Name and amount are required", variant: "destructive" });
       return;
     }
-    setSaving(true);
+    if (!start()) return;
     try {
       const items = parseMiscExpenses(event?.misc_expenses_json);
       const parsedAmount = Number(amount) || 0;
@@ -49,7 +50,7 @@ export default function AddOnDialog({ open, onClose, onSaved, event, currency = 
     } catch (err) {
       toast({ title: err?.message || "Failed to save add-on", variant: "destructive" });
     } finally {
-      setSaving(false);
+      stop();
     }
   };
 

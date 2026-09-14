@@ -8,6 +8,7 @@ import { X, Ban } from "lucide-react";
 import { todayISO } from "@/lib/dates";
 import { useQueryClient } from "@tanstack/react-query";
 import { invalidateEntity } from "@/lib/queryInvalidation";
+import { useSubmitGuard } from "@/hooks/useSubmitGuard";
 
 const REASONS = ["Leave", "Sick", "Personal", "Holiday", "Other"];
 
@@ -16,7 +17,7 @@ export default function BlockDateDialog({ open, onClose, onSaved, workspaceId, m
   const [startDate, setStartDate] = useState(preselectedDate || todayISO());
   const [endDate, setEndDate] = useState(preselectedDate || todayISO());
   const [reason, setReason] = useState("Leave");
-  const [saving, setSaving] = useState(false);
+  const { saving, start, stop } = useSubmitGuard();
   const [error, setError] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -40,7 +41,7 @@ export default function BlockDateDialog({ open, onClose, onSaved, workspaceId, m
     if (!memberId) { setError("Please select a team member."); return; }
     if (!startDate) { setError("Start date is required."); return; }
     if (endDate && endDate < startDate) { setError("End date cannot be before start date."); return; }
-    setSaving(true);
+    if (!start()) return;
     try {
       await base44.entities.TeamBlockDate.create({
         workspace_id: workspaceId,
@@ -57,7 +58,7 @@ export default function BlockDateDialog({ open, onClose, onSaved, workspaceId, m
     } catch (e) {
       setError(e?.message || "Failed to block dates.");
     } finally {
-      setSaving(false);
+      stop();
     }
   };
 

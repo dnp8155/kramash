@@ -5,13 +5,14 @@ import Input from "@/components/common/Input";
 import { isValidIndianPhone, isValidEmail } from "@/lib/validation";
 import { useQueryClient } from "@tanstack/react-query";
 import { invalidateEntity } from "@/lib/queryInvalidation";
+import { useSubmitGuard } from "@/hooks/useSubmitGuard";
 
 export default function QuickClientForm({ workspaceId, onSaved, onCancel }) {
   const queryClient = useQueryClient();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
-  const [saving, setSaving] = useState(false);
+  const { saving, start, stop } = useSubmitGuard();
   const [error, setError] = useState("");
 
   const submit = async () => {
@@ -27,7 +28,7 @@ export default function QuickClientForm({ workspaceId, onSaved, onCancel }) {
       setError("Please enter a valid email.");
       return;
     }
-    setSaving(true);
+    if (!start()) return;
     setError("");
     try {
       const created = await base44.entities.Client.create({
@@ -41,7 +42,7 @@ export default function QuickClientForm({ workspaceId, onSaved, onCancel }) {
     } catch (e) {
       setError(e?.message || "Failed to add client.");
     } finally {
-      setSaving(false);
+      stop();
     }
   };
 

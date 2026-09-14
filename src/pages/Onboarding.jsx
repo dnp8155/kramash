@@ -12,6 +12,7 @@ import { getIndustryPresets } from "@/constants/industryPresets";
 import { getMemberTypePresets } from "@/lib/memberTypeService";
 import { DEFAULT_EXPENSE_CATEGORIES } from "@/constants/financeConfig";
 import { ensureDefaultFY } from "@/lib/financialYearService";
+import { useSubmitGuard } from "@/hooks/useSubmitGuard";
 
 const currencies = ["INR (₹)", "USD ($)", "EUR (€)", "AED (د.إ)"];
 const timezones = ["Asia/Kolkata", "UTC", "Asia/Dubai", "America/New_York"];
@@ -29,7 +30,7 @@ export default function Onboarding() {
   const navigate = useNavigate();
 
   const [step, setStep] = useState(1);
-  const [saving, setSaving] = useState(false);
+  const { saving, start, stop } = useSubmitGuard();
   const [error, setError] = useState("");
 
   const [form, setForm] = useState({
@@ -56,7 +57,7 @@ export default function Onboarding() {
   const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
 
   const createWorkspace = async () => {
-    setSaving(true);
+    if (!start()) return;
     setError("");
     try {
       const category = form.business_category || BUSINESS_CATEGORIES.OTHER;
@@ -126,7 +127,7 @@ export default function Onboarding() {
     } catch (err) {
       setError(err.message || "Failed to create workspace. Please try again.");
     } finally {
-      setSaving(false);
+      stop();
     }
   };
 

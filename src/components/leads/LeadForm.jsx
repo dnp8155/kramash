@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Loader2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { invalidateEntity } from "@/lib/queryInvalidation";
+import { useSubmitGuard } from "@/hooks/useSubmitGuard";
 
 const SOURCES = [
   { value: "referral", label: "Referral" },
@@ -53,7 +54,7 @@ export default function LeadForm({ open, onClose, editingLead, onSaved }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [form, setForm] = useState(empty);
-  const [saving, setSaving] = useState(false);
+  const { saving, start, stop } = useSubmitGuard();
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
@@ -89,7 +90,7 @@ export default function LeadForm({ open, onClose, editingLead, onSaved }) {
 
   const handleSave = async () => {
     if (!validate()) return;
-    setSaving(true);
+    if (!start()) return;
     try {
       const payload = {
         workspace_id: workspaceId,
@@ -119,7 +120,7 @@ export default function LeadForm({ open, onClose, editingLead, onSaved }) {
     } catch (err) {
       toast({ title: "Failed to save lead", variant: "destructive" });
     } finally {
-      setSaving(false);
+      stop();
     }
   };
 

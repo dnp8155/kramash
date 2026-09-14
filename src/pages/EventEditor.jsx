@@ -23,6 +23,7 @@ import { CURRENCY_SYMBOLS } from "@/constants/financeConfig";
 import { getEventTypes, buildAllEventTypes, mergeEventTypes, normalizeEventType } from "@/lib/eventTypeService";
 import { fyForDate, todayISO } from "@/lib/dates";
 import { cn } from "@/lib/utils";
+import { useSubmitGuard } from "@/hooks/useSubmitGuard";
 import {
   ArrowLeft, Plus, Users, Briefcase, Save, Loader2, AlertCircle,
   FolderPlus, FolderOpen, HelpCircle, MapPin, CalendarDays, FileText,
@@ -66,7 +67,7 @@ export default function EventEditor() {
   const [services, setServices] = useState([]);
   const [loadingClients, setLoadingClients] = useState(false);
   const [loadingEvent, setLoadingEvent] = useState(isEdit);
-  const [saving, setSaving] = useState(false);
+  const { saving, start, stop } = useSubmitGuard();
   const [error, setError] = useState("");
   const [showClientForm, setShowClientForm] = useState(false);
   const [showQuickClient, setShowQuickClient] = useState(false);
@@ -193,7 +194,7 @@ export default function EventEditor() {
     e.preventDefault();
     const v = validate();
     if (v) { setError(v); toast({ title: v, variant: "destructive" }); return; }
-    setSaving(true);
+    if (!start()) return;
     setError("");
     try {
       const dates = (form.event_dates || []).slice().sort();
@@ -285,7 +286,7 @@ export default function EventEditor() {
       setError(msg);
       toast({ title: msg, variant: "destructive" });
     } finally {
-      setSaving(false);
+      stop();
     }
   };
 

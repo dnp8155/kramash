@@ -8,6 +8,7 @@ import { loadPackages, createPackage, deletePackage, serializePackageStructure }
 import { useToast } from "@/components/ui/use-toast";
 import { Plus, Package, Trash2, Check, AlertCircle } from "lucide-react";
 import { lineTotal } from "@/lib/quotationCalc";
+import { useSubmitGuard } from "@/hooks/useSubmitGuard";
 
 export default function QuotationPackageDialog({
   open, onClose, workspaceId, items, onApplyPackage, readOnly, currency = "₹"
@@ -17,7 +18,7 @@ export default function QuotationPackageDialog({
   const [loading, setLoading] = useState(false);
   const [pkgName, setPkgName] = useState("");
   const [pkgDesc, setPkgDesc] = useState("");
-  const [saving, setSaving] = useState(false);
+  const { saving, start, stop } = useSubmitGuard();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -38,7 +39,7 @@ export default function QuotationPackageDialog({
       toast({ title: "No items to save", description: "Add items with prices to the quotation first.", variant: "destructive" });
       return;
     }
-    setSaving(true);
+    if (!start()) return;
     try {
       const structureJson = serializePackageStructure(items);
       await createPackage(workspaceId, {
@@ -55,7 +56,7 @@ export default function QuotationPackageDialog({
     } catch (e) {
       toast({ title: "Failed to save package", description: e?.message, variant: "destructive" });
     } finally {
-      setSaving(false);
+      stop();
     }
   };
 

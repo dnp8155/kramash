@@ -17,6 +17,7 @@ import { isValidIndianPhone, isValidEmail } from "@/lib/validation";
 import { cn } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { invalidateEntity } from "@/lib/queryInvalidation";
+import { useSubmitGuard } from "@/hooks/useSubmitGuard";
 
 // Master Team Member form — identity + role + contact + status + notes only.
 // Rate and Member Type are NOT collected here:
@@ -38,7 +39,7 @@ export default function TeamMemberForm({ open, onClose, onSaved, member = null, 
   const [form, setForm] = useState(empty);
   const [roles, setRoles] = useState([]);
   const [loadingRoles, setLoadingRoles] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const { saving, start, stop } = useSubmitGuard();
   const [error, setError] = useState("");
   const [existingSelf, setExistingSelf] = useState(null); // the workspace's current self member (if any)
 
@@ -116,7 +117,7 @@ export default function TeamMemberForm({ open, onClose, onSaved, member = null, 
     e.preventDefault();
     const v = validate();
     if (v) { setError(v); return; }
-    setSaving(true);
+    if (!start()) return;
     setError("");
     try {
       const payload = {
@@ -155,7 +156,7 @@ export default function TeamMemberForm({ open, onClose, onSaved, member = null, 
         setError(err?.message || "Failed to save team member. Please try again.");
       }
     } finally {
-      setSaving(false);
+      stop();
     }
   };
 
