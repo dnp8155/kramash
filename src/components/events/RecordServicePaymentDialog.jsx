@@ -16,6 +16,8 @@ import { serviceAssignmentPaid } from "@/lib/financeService";
 import { isSelfMember } from "@/lib/teamService";
 import { useQueryClient } from "@tanstack/react-query";
 import { invalidateEntity } from "@/lib/queryInvalidation";
+import { useSubmitGuard } from "@/hooks/useSubmitGuard";
+import { assertOnline } from "@/lib/offlineGuard";
 
 // Record a payment for a specific Service Assignment.
 // Routed through the backend recordPayment function (kind="service") which
@@ -30,7 +32,7 @@ export default function RecordServicePaymentDialog({
   const [method, setMethod] = useState("Cash");
   const [reference, setReference] = useState("");
   const [notes, setNotes] = useState("");
-  const [saving, setSaving] = useState(false);
+  const { saving, start, stop } = useSubmitGuard();
   const [error, setError] = useState("");
   const { fiscalYears } = useFinancialYear();
   const queryClient = useQueryClient();
@@ -70,13 +72,13 @@ export default function RecordServicePaymentDialog({
     e.preventDefault();
     const v = validate();
     if (v) { setError(v); return; }
-    setSaving(true);
+    if (!assertOnline()) return;
+    if (!start()) return;
     setError("");
     try {
       const fy = resolveFYForDate(date, fiscalYears);
       if (!fy) {
         setError("No Financial Year is available for this transaction date. Please create the applicable Financial Year first.");
-        setSaving(false);
         return;
       }
       const providerName = assignment.provider_name_snapshot || "";
@@ -104,7 +106,7 @@ export default function RecordServicePaymentDialog({
         setError(data?.error || data?.message || "Failed to record payment. Please try again.");
       }
     } finally {
-      setSaving(false);
+      stop();
     }
   };
 

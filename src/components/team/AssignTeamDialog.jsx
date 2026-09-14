@@ -20,6 +20,8 @@ import { cn } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { invalidateEntities } from "@/lib/queryInvalidation";
 import { DEFAULT_MEMBER_TYPES, getMemberTypes } from "@/lib/memberTypeService";
+import { useSubmitGuard } from "@/hooks/useSubmitGuard";
+import { assertOnline } from "@/lib/offlineGuard";
 
 export default function AssignTeamDialog({
   open, onClose, onSaved,
@@ -33,7 +35,7 @@ export default function AssignTeamDialog({
   const [rateType, setRateType] = useState("Per Event");
   const [workingDates, setWorkingDates] = useState([]);
   const [notes, setNotes] = useState("");
-  const [saving, setSaving] = useState(false);
+  const { saving, start, stop } = useSubmitGuard();
   const [error, setError] = useState("");
   const [overrideConflict, setOverrideConflict] = useState(false);
   // Record Payment
@@ -200,7 +202,8 @@ export default function AssignTeamDialog({
     e.preventDefault();
     const v = validate();
     if (v) { setError(v); return; }
-    setSaving(true);
+    if (!assertOnline()) return;
+    if (!start()) return;
     setError("");
     try {
       const role = roles.find((r) => r.id === roleId);
@@ -231,7 +234,6 @@ export default function AssignTeamDialog({
         const fy = resolveFYForDate(paymentDate, fiscalYears);
         if (!fy) {
           setError("No Financial Year is available for this payment date. Please create the applicable Financial Year first.");
-          setSaving(false);
           return;
         }
         await base44.functions.invoke("recordPayment", {
@@ -260,7 +262,7 @@ export default function AssignTeamDialog({
         setError(err?.message || "Failed to assign team member. Please try again.");
       }
     } finally {
-      setSaving(false);
+      stop();
     }
   };
 

@@ -23,6 +23,8 @@ import { Wallet, Plus, Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { invalidateEntities } from "@/lib/queryInvalidation";
+import { useSubmitGuard } from "@/hooks/useSubmitGuard";
+import { assertOnline } from "@/lib/offlineGuard";
 
 export default function AssignServiceDialog({
   open, onClose, onSaved,
@@ -37,7 +39,7 @@ export default function AssignServiceDialog({
   const [rateType, setRateType] = useState("Fixed");
   const [isAddon, setIsAddon] = useState(false);
   const [notes, setNotes] = useState("");
-  const [saving, setSaving] = useState(false);
+  const { saving, start, stop } = useSubmitGuard();
   const [error, setError] = useState("");
   // Record Payment
   const [recordPayment, setRecordPayment] = useState(false);
@@ -119,7 +121,8 @@ export default function AssignServiceDialog({
     e.preventDefault();
     const v = validate();
     if (v) { setError(v); return; }
-    setSaving(true);
+    if (!assertOnline()) return;
+    if (!start()) return;
     setError("");
     try {
       const svc = services.find((s) => s.id === serviceId);
@@ -157,7 +160,6 @@ export default function AssignServiceDialog({
         const fy = resolveFYForDate(paymentDate, fiscalYears);
         if (!fy) {
           setError("No Financial Year is available for this payment date. Please create the applicable Financial Year first.");
-          setSaving(false);
           return;
         }
         await base44.functions.invoke("recordPayment", {
@@ -178,7 +180,7 @@ export default function AssignServiceDialog({
     } catch (err) {
       setError(err?.message || "Failed to assign service. Please try again.");
     } finally {
-      setSaving(false);
+      stop();
     }
   };
 

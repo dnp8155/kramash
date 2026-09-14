@@ -14,6 +14,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { invalidateEntity } from "@/lib/queryInvalidation";
 import { editTransaction } from "@/lib/financeService";
 import { useWorkspace } from "@/lib/WorkspaceContext";
+import { useSubmitGuard } from "@/hooks/useSubmitGuard";
+import { assertOnline } from "@/lib/offlineGuard";
 
 // Edit an existing transaction: amount, date, method, reference, notes.
 // Type and parties are not editable (preserves audit integrity).
@@ -26,7 +28,7 @@ export default function EditTransactionDialog({
   const [method, setMethod] = useState("Cash");
   const [reference, setReference] = useState("");
   const [notes, setNotes] = useState("");
-  const [saving, setSaving] = useState(false);
+  const { saving, start, stop } = useSubmitGuard();
   const [error, setError] = useState("");
   const { fiscalYears } = useFinancialYear();
   const queryClient = useQueryClient();
@@ -61,13 +63,13 @@ export default function EditTransactionDialog({
     e.preventDefault();
     const v = validate();
     if (v) { setError(v); return; }
-    setSaving(true);
+    if (!assertOnline()) return;
+    if (!start()) return;
     setError("");
     try {
       const fy = resolveFYForDate(date, fiscalYears);
       if (!fy) {
         setError("No Financial Year is available for this transaction date. Please create the applicable Financial Year first.");
-        setSaving(false);
         return;
       }
       const res = await editTransaction(workspaceId, transaction.id, {
@@ -81,7 +83,6 @@ export default function EditTransactionDialog({
       const data = res?.data || res;
       if (data?.error) {
         setError(data.message || data.error);
-        setSaving(false);
         return;
       }
       invalidateEntity(queryClient, "FinancialTransaction");
@@ -92,7 +93,7 @@ export default function EditTransactionDialog({
     } catch (err) {
       setError(err?.message || "Failed to update transaction. Please try again.");
     } finally {
-      setSaving(false);
+      stop();
     }
   };
 

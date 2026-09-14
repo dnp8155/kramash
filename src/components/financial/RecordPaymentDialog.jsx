@@ -16,6 +16,8 @@ import { useFinancialYear } from "@/hooks/useFinancialYear";
 import { formatMoney } from "@/utils/format";
 import { todayISO } from "@/lib/dates";
 import { isSelfMember } from "@/lib/teamService";
+import { useSubmitGuard } from "@/hooks/useSubmitGuard";
+import { assertOnline } from "@/lib/offlineGuard";
 import { AlertTriangle, Crown } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { invalidateEntity } from "@/lib/queryInvalidation";
@@ -42,7 +44,7 @@ export default function RecordPaymentDialog({
   const [method, setMethod] = useState("Cash");
   const [reference, setReference] = useState("");
   const [notes, setNotes] = useState("");
-  const [saving, setSaving] = useState(false);
+  const { saving, start, stop } = useSubmitGuard();
   const [error, setError] = useState("");
   const { fiscalYears } = useFinancialYear();
   const queryClient = useQueryClient();
@@ -107,7 +109,8 @@ export default function RecordPaymentDialog({
     e.preventDefault();
     const v = validate();
     if (v) { setError(v); return; }
-    setSaving(true);
+    if (!assertOnline()) return;
+    if (!start()) return;
     setError("");
     try {
       const amt = Number(amount);
@@ -120,14 +123,12 @@ export default function RecordPaymentDialog({
       }
       if (!ok) {
         setError("This payment could not be linked to the selected event. Please verify your selection.");
-        setSaving(false);
         return;
       }
       // Resolve and attach FY based on transaction date
       const fy = resolveFYForDate(date, fiscalYears);
       if (!fy) {
         setError("No Financial Year is available for this transaction date. Please create the applicable Financial Year first.");
-        setSaving(false);
         return;
       }
       let saved;
@@ -169,7 +170,7 @@ export default function RecordPaymentDialog({
     } catch (err) {
       setError(err?.message || "Failed to record payment. Please try again.");
     } finally {
-      setSaving(false);
+      stop();
     }
   };
 

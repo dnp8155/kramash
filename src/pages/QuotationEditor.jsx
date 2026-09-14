@@ -5,6 +5,8 @@ import { base44 } from "@/api/base44Client";
 import { useWorkspace } from "@/lib/WorkspaceContext";
 import { useToast } from "@/components/ui/use-toast";
 import { invalidateEntities } from "@/lib/queryInvalidation";
+import { useSubmitGuard } from "@/hooks/useSubmitGuard";
+import { assertOnline } from "@/lib/offlineGuard";
 import Button from "@/components/common/Button";
 import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
@@ -73,7 +75,7 @@ export default function QuotationEditor() {
 
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const { saving, start, stop } = useSubmitGuard();
   const [finalizing, setFinalizing] = useState(false);
   const [accepting, setAccepting] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -397,10 +399,11 @@ export default function QuotationEditor() {
     if (!v.ok) { setFieldErrors(v.errors); if (v.errors.noItems) toast({ title: "Add at least one item.", variant: "destructive" }); return; }
     setFieldErrors({});
     setError("");
-    setSaving(true);
+    if (!assertOnline()) return;
+    if (!start()) return;
     try {
       const refCheck = await verifyQuotationRefs(workspaceId, clientId, eventId);
-      if (!refCheck.ok) { setError(refCheck.error); setSaving(false); return; }
+      if (!refCheck.ok) { setError(refCheck.error); return; }
       const data = { ...buildData(), status: "draft" };
       if (isNew) {
         const q = await createQuotation(workspaceId, data, items, {
@@ -422,7 +425,7 @@ export default function QuotationEditor() {
     } catch (e) {
       setError(e?.message || "Failed to save quotation.");
     } finally {
-      setSaving(false);
+      stop();
     }
   };
 

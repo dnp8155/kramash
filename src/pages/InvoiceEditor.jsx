@@ -29,6 +29,8 @@ import {
 } from "@/lib/invoiceService";
 import InvoiceBankDetailsSection from "@/components/invoice/InvoiceBankDetailsSection";
 import ClientForm from "@/components/clients/ClientForm";
+import { useSubmitGuard } from "@/hooks/useSubmitGuard";
+import { assertOnline } from "@/lib/offlineGuard";
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -54,7 +56,7 @@ export default function InvoiceEditor() {
 
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const { saving, start, stop } = useSubmitGuard();
   const [error, setError] = useState("");
 
   const [invoiceNumber, setInvoiceNumber] = useState("");
@@ -258,10 +260,11 @@ export default function InvoiceEditor() {
     const v = validate();
     if (v) { setError(v); return; }
     setError("");
-    setSaving(true);
+    if (!assertOnline()) return;
+    if (!start()) return;
     try {
       const refCheck = await verifyInvoiceRefs(workspaceId, clientId, eventId);
-      if (!refCheck.ok) { setError(refCheck.error); setSaving(false); return; }
+      if (!refCheck.ok) { setError(refCheck.error); return; }
       const data = { ...buildData(), status: "draft" };
       if (isNew) {
         const inv = await createInvoice(workspaceId, data, items, {
@@ -286,7 +289,7 @@ export default function InvoiceEditor() {
     } catch (e) {
       setError(e?.message || "Failed to save invoice.");
     } finally {
-      setSaving(false);
+      stop();
     }
   };
 

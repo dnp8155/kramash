@@ -10,6 +10,8 @@ import { invalidateEntities } from "@/lib/queryInvalidation";
 import { useQueryClient } from "@tanstack/react-query";
 import { ensureDefaultFY, resolveFYForDate } from "@/lib/financialYearService";
 import { X, AlertCircle } from "lucide-react";
+import { useSubmitGuard } from "@/hooks/useSubmitGuard";
+import { assertOnline } from "@/lib/offlineGuard";
 
 const PAYMENT_METHODS = ["UPI", "Bank Transfer", "Cash", "Cheque", "Card", "Other"];
 
@@ -27,7 +29,7 @@ export default function RecordInvoicePaymentDialog({ open, onClose, invoice, onR
   const [referenceNumber, setReferenceNumber] = useState("");
   const [notes, setNotes] = useState("");
   const [financialYearId, setFinancialYearId] = useState("");
-  const [saving, setSaving] = useState(false);
+  const { saving, start, stop } = useSubmitGuard();
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -63,7 +65,8 @@ export default function RecordInvoicePaymentDialog({ open, onClose, invoice, onR
     }
     if (!transactionDate) { setError("Payment date is required."); return; }
     if (!financialYearId) { setError("No active financial year found. Set one in Financial settings."); return; }
-    setSaving(true);
+    if (!assertOnline()) return;
+    if (!start()) return;
     try {
       const res = await recordInvoicePayment(workspaceId, invoice.id, {
         amount: amt,
@@ -76,7 +79,6 @@ export default function RecordInvoicePaymentDialog({ open, onClose, invoice, onR
       const data = res?.data || res;
       if (data?.error) {
         setError(data.message || data.error);
-        setSaving(false);
         return;
       }
       invalidateEntities(queryClient, ["Invoice", "InvoiceItem", "FinancialTransaction", "PaymentMilestone"]);
@@ -87,7 +89,7 @@ export default function RecordInvoicePaymentDialog({ open, onClose, invoice, onR
       const msg = e?.data?.message || e?.data?.error || e?.message || "Failed to record payment.";
       setError(msg);
     } finally {
-      setSaving(false);
+      stop();
     }
   };
 

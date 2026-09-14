@@ -16,6 +16,8 @@ import { cn } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { invalidateEntity } from "@/lib/queryInvalidation";
 import { getMemberTypes } from "@/lib/memberTypeService";
+import { useSubmitGuard } from "@/hooks/useSubmitGuard";
+import { assertOnline } from "@/lib/offlineGuard";
 
 // EditTeamAssignmentDialog — edits an EXISTING EventTeamAssignment record.
 // Does NOT touch the TeamMember master record or any FinancialTransaction payments.
@@ -31,7 +33,7 @@ export default function EditTeamAssignmentDialog({
   const [rateType, setRateType] = useState("Per Event");
   const [workingDates, setWorkingDates] = useState([]);
   const [notes, setNotes] = useState("");
-  const [saving, setSaving] = useState(false);
+  const { saving, start, stop } = useSubmitGuard();
   const [error, setError] = useState("");
   const [rateManuallyEdited, setRateManuallyEdited] = useState(false);
   const queryClient = useQueryClient();
@@ -121,7 +123,8 @@ export default function EditTeamAssignmentDialog({
     e.preventDefault();
     const v = validate();
     if (v) { setError(v); return; }
-    setSaving(true);
+    if (!assertOnline()) return;
+    if (!start()) return;
     setError("");
     try {
       const role = roles.find((r) => r.id === roleId);
@@ -147,7 +150,7 @@ export default function EditTeamAssignmentDialog({
     } catch (err) {
       setError(err?.message || "Failed to update assignment. Please try again.");
     } finally {
-      setSaving(false);
+      stop();
     }
   };
 

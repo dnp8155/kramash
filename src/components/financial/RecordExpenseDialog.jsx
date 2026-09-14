@@ -14,6 +14,8 @@ import { todayISO } from "@/lib/dates";
 import { useQueryClient } from "@tanstack/react-query";
 import { invalidateEntity } from "@/lib/queryInvalidation";
 import ExpenseCategoryAutocomplete from "@/components/financial/ExpenseCategoryAutocomplete";
+import { useSubmitGuard } from "@/hooks/useSubmitGuard";
+import { assertOnline } from "@/lib/offlineGuard";
 
 // Record a business / event expense. Event is required (Beta is event-level).
 export default function RecordExpenseDialog({
@@ -32,7 +34,7 @@ export default function RecordExpenseDialog({
   const [method, setMethod] = useState("Cash");
   const [reference, setReference] = useState("");
   const [notes, setNotes] = useState("");
-  const [saving, setSaving] = useState(false);
+  const { saving, start, stop } = useSubmitGuard();
   const [error, setError] = useState("");
   const { fiscalYears } = useFinancialYear();
   const queryClient = useQueryClient();
@@ -69,7 +71,8 @@ export default function RecordExpenseDialog({
     e.preventDefault();
     const v = validate();
     if (v) { setError(v); return; }
-    setSaving(true);
+    if (!assertOnline()) return;
+    if (!start()) return;
     setError("");
     try {
       // Verify the event belongs to the workspace (if selected).
@@ -77,14 +80,12 @@ export default function RecordExpenseDialog({
         const ev = events.find((x) => x.id === eventId);
         if (!ev || ev.workspace_id !== workspaceId) {
           setError("Selected event is not available in this workspace.");
-          setSaving(false);
           return;
         }
       }
       const fy = resolveFYForDate(date, fiscalYears);
       if (!fy) {
         setError("No Financial Year is available for this transaction date. Please create the applicable Financial Year first.");
-        setSaving(false);
         return;
       }
       let expenseCategoryId = categoryId;
@@ -119,7 +120,7 @@ export default function RecordExpenseDialog({
     } catch (err) {
       setError(err?.message || "Failed to record expense. Please try again.");
     } finally {
-      setSaving(false);
+      stop();
     }
   };
 
