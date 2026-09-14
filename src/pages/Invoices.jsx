@@ -12,7 +12,8 @@ import InvoicesPageSkeleton from "@/components/invoice/InvoicesPageSkeleton";
 import { formatMoney } from "@/utils/format";
 import { loadInvoices, deleteInvoice, duplicateInvoice } from "@/lib/invoiceService";
 import { base44 } from "@/api/base44Client";
-import { Plus, Search, Trash2, FileText, IndianRupee, CheckCircle2, Clock, Printer, Copy } from "lucide-react";
+import { Plus, Search, Trash2, FileText, FileSpreadsheet, IndianRupee, CheckCircle2, Clock, Printer, Copy } from "lucide-react";
+import { exportInvoicesXlsx } from "@/lib/exportUtils";
 import PageHeader from "@/components/common/PageHeader";
 import StatCard from "@/components/common/StatCard";
 import { cn } from "@/lib/utils";
@@ -144,7 +145,12 @@ export default function Invoices() {
   return (
     <div className="p-4 sm:p-6 space-y-5">
       <PageHeader eyebrow="Sales" title="Invoices" subtitle="Create and track client invoices from approved quotations.">
-        <Button onClick={() => navigate("/invoices/new")}><Plus className="w-4 h-4" /> Create Invoice</Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => exportInvoicesXlsx(filtered, clientsById, eventsById)} disabled={filtered.length === 0}>
+            <FileSpreadsheet className="w-4 h-4" /> Export
+          </Button>
+          <Button onClick={() => navigate("/invoices/new")}><Plus className="w-4 h-4" /> Create Invoice</Button>
+        </div>
       </PageHeader>
 
       {/* Stats */}

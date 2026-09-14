@@ -10,7 +10,7 @@ import EmptyState from "@/components/common/EmptyState";
 import ClientsPageSkeleton from "@/components/clients/ClientsPageSkeleton";
 import ClientForm from "@/components/clients/ClientForm";
 import { Plus, Pencil, Eye, Download, Users, CalendarCheck, UserCheck, Share2 } from "lucide-react";
-import { exportClientsCsv } from "@/lib/exportUtils";
+import { exportClientsXlsx } from "@/lib/exportUtils";
 import StatCard from "@/components/common/StatCard";
 import PageHeader from "@/components/common/PageHeader";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
@@ -79,7 +79,7 @@ export default function Clients() {
           <Share2 className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">Portal Link</span>
         </Button>
-        <Button variant="outline" size="sm" onClick={() => exportClientsCsv(filtered, eventCounts)} disabled={filtered.length === 0}>
+        <Button variant="outline" size="sm" onClick={() => exportClientsXlsx(filtered, eventCounts)} disabled={filtered.length === 0}>
           <Download className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">{t("Export")}</span>
         </Button>

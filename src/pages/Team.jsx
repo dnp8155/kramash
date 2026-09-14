@@ -21,7 +21,7 @@ import { loadTeamMembers, loadRoles, loadAssignments, loadBlockDates, ensureDefa
 import BlockDateDialog from "@/components/team/BlockDateDialog";
 import UnblockDatesDialog from "@/components/team/UnblockDatesDialog";
 import { useToast } from "@/components/ui/use-toast";
-import { exportTeamCsv } from "@/lib/exportUtils";
+import { exportTeamXlsx } from "@/lib/exportUtils";
 import StatCard from "@/components/common/StatCard";
 import PageHeader from "@/components/common/PageHeader";
 import { usePlan } from "@/hooks/usePlan";
@@ -180,7 +180,7 @@ export default function Team() {
   return (
     <div className="p-4 sm:p-6 space-y-5">
       <PageHeader eyebrow="People" title="Team" subtitle="Manage your roster, roles, and availability.">
-        <Button variant="outline" size="sm" onClick={() => exportTeamCsv(filtered, rolesById)} disabled={filtered.length === 0}>
+        <Button variant="outline" size="sm" onClick={() => exportTeamXlsx(filtered, rolesById)} disabled={filtered.length === 0}>
           <Download className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">Export</span>
         </Button>

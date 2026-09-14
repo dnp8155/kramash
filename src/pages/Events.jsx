@@ -16,7 +16,7 @@ import PageHeader from "@/components/common/PageHeader";
 import { Users, Plus, Download, CalendarCheck, Clock, CheckCircle2, CalendarDays, IndianRupee } from "lucide-react";
 import StatCard from "@/components/common/StatCard";
 import { isToday, isThisWeek, isUpcomingDate, isPastDate, isWithinFY } from "@/lib/dates";
-import { exportEventsCsv } from "@/lib/exportUtils";
+import { exportEventsXlsx } from "@/lib/exportUtils";
 import { formatMoney } from "@/utils/format";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
 import { useT } from "@/hooks/useT";
@@ -204,7 +204,7 @@ export default function Events() {
             size="icon"
             aria-label="Export"
             className="shrink-0"
-            onClick={() => exportEventsCsv(filtered, clients, fyFilter !== "all" ? fyFilter : null, term)}
+            onClick={() => exportEventsXlsx(filtered, clients, fyFilter !== "all" ? fyFilter : null, term)}
             disabled={filtered.length === 0}
           >
             <Download className="w-4 h-4" />

@@ -1,87 +1,93 @@
-// Service Worker for PWA + Push Notifications
-const CACHE_NAME = "kramasha-v1";
-const CORE_ASSETS = ["/", "/index.html"];
+// Kramashah Service Worker — production offline shell.
+// Strategy:
+//   - Navigations: network-first, fallback to cached index.html, then offline page
+//   - Same-origin static assets (JS/CSS/fonts/images): stale-while-revalidate
+//   - API calls (base44.app / /functions/): network-only, never cached
+const CACHE_VERSION = "kramasha-v1";
+const OFFLINE_URL = "/offline.html";
+const APP_SHELL = ["/", OFFLINE_URL];
 
-// Install — precache core assets
+// --- Install: pre-cache the app shell ---
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(CORE_ASSETS)).catch(() => {})
+    caches.open(CACHE_VERSION).then((cache) => cache.addAll(APP_SHELL))
   );
-  self.skipWaiting();
+  // Do NOT skipWaiting — wait for the user to trigger update via SKIP_WAITING.
 });
 
-// Activate — clean old caches
+// --- Activate: clean up old caches ---
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
+      Promise.all(
+        keys.filter((k) => k !== CACHE_VERSION).map((k) => caches.delete(k))
+      )
     )
   );
   self.clients.claim();
 });
 
-// Fetch — network-first for navigation, cache-first for assets
+// --- Helpers ---
+function isApiRequest(url) {
+  return (
+    url.hostname.includes("base44.app") ||
+    url.pathname.startsWith("/functions/")
+  );
+}
+
+// --- Fetch handler ---
 self.addEventListener("fetch", (event) => {
-  if (event.request.method !== "GET") return;
-  if (event.request.mode === "navigate") {
+  const { request } = event;
+
+  // Only handle GET.
+  if (request.method !== "GET") return;
+
+  const url = new URL(request.url);
+
+  // Never intercept API calls — always go to network.
+  if (isApiRequest(url)) return;
+
+  // Navigation requests: network-first, fallback to cache, then offline page.
+  if (request.mode === "navigate") {
     event.respondWith(
-      fetch(event.request).catch(() => caches.match("/index.html"))
+      fetch(request)
+        .then((response) => {
+          // Cache the latest HTML.
+          const copy = response.clone();
+          caches.open(CACHE_VERSION).then((cache) => cache.put("/", copy));
+          return response;
+        })
+        .catch(() =>
+          caches.match("/").then(
+            (cached) =>
+              cached ||
+              caches.match(OFFLINE_URL).then((offline) => offline || Response.error())
+          )
+        )
     );
     return;
   }
-  event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) return cached;
-      return fetch(event.request).then((response) => {
-        if (response && response.status === 200 && response.type === "basic") {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-        }
-        return response;
-      }).catch(() => cached);
-    })
-  );
-});
 
-// Push — display notification
-self.addEventListener("push", (event) => {
-  let data = {};
-  try {
-    data = event.data ? event.data.json() : {};
-  } catch {
-    data = { title: "Notification", body: event.data ? event.data.text() : "" };
+  // Same-origin static assets: stale-while-revalidate.
+  if (url.origin === self.location.origin) {
+    event.respondWith(
+      caches.match(request).then((cached) => {
+        const fetchPromise = fetch(request)
+          .then((response) => {
+            if (response.ok) {
+              const copy = response.clone();
+              caches.open(CACHE_VERSION).then((cache) => cache.put(request, copy));
+            }
+            return response;
+          })
+          .catch(() => cached);
+        return cached || fetchPromise;
+      })
+    );
   }
-  const title = data.title || "Kramasha";
-  const options = {
-    body: data.body || "",
-    icon: data.icon || "/icon-192.png",
-    badge: data.badge || "/icon-192.png",
-    tag: data.tag || "kramasha-notification",
-    data: data.data || { url: "/" },
-    requireInteraction: data.requireInteraction || false,
-  };
-  event.waitUntil(self.registration.showNotification(title, options));
 });
 
-// Notification click — focus/open app
-self.addEventListener("notificationclick", (event) => {
-  event.notification.close();
-  const urlToOpen = (event.notification.data && event.notification.data.url) || "/";
-  event.waitUntil(
-    clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
-      for (const client of clientList) {
-        if (client.url.includes(urlToOpen) && "focus" in client) {
-          return client.focus();
-        }
-      }
-      if (clients.openWindow) {
-        return clients.openWindow(urlToOpen);
-      }
-    })
-  );
-});
-
-// Message — skip waiting for updates
+// --- Message handler: apply update when user clicks "Update Now" ---
 self.addEventListener("message", (event) => {
   if (event.data && event.data.type === "SKIP_WAITING") {
     self.skipWaiting();

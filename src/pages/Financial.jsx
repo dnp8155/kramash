@@ -35,7 +35,7 @@ import {
 import { formatMoney } from "@/utils/format";
 import { Download, Plus, Wallet, Receipt, AlertTriangle, Trash2, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { exportFinancialCsv } from "@/lib/exportUtils";
+import { exportFinancialXlsx } from "@/lib/exportUtils";
 import PageHeader from "@/components/common/PageHeader";
 import { useT } from "@/hooks/useT";
 import { invalidateEntities } from "@/lib/queryInvalidation";
@@ -315,7 +315,7 @@ export default function Financial() {
               variant="outline"
               size="sm"
               className="sm:ml-auto"
-              onClick={() => exportFinancialCsv(fyTx, { eventsById, clientsById, membersById }, currency, dateRange?.label)}
+              onClick={() => exportFinancialXlsx(fyTx, { eventsById, clientsById, membersById }, currency, dateRange?.label)}
               disabled={fyTx.length === 0}
             >
               <Download className="w-3.5 h-3.5" />

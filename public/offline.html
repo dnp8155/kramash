@@ -1,66 +1,57 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Kramasha — Offline</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif;
-      background: #f7f5f0;
-      color: #1a1a1a;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 100dvh;
-      padding: 2rem;
-      text-align: center;
-    }
-    .card {
-      max-width: 400px;
-      padding: 2.5rem 2rem;
-      background: #fff;
-      border-radius: 16px;
-      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
-    }
-    .icon {
-      width: 56px;
-      height: 56px;
-      margin: 0 auto 1.25rem;
-      border-radius: 50%;
-      background: #f0f0f0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .icon svg { width: 28px; height: 28px; color: #666; }
-    h1 { font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem; }
-    p { font-size: 0.875rem; color: #666; line-height: 1.5; margin-bottom: 1.5rem; }
-    button {
-      padding: 0.625rem 1.5rem;
-      background: #1a1a1a;
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      font-size: 0.875rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: opacity 0.2s;
-    }
-    button:hover { opacity: 0.85; }
-  </style>
-</head>
-<body>
-  <div class="card">
-    <div class="icon">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M3 7l9-4 9 4M3 7v10l9 4 9-4V7M3 7l9 4 9-4M12 11v10" />
-      </svg>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#0A0A0A" />
+    <title>Kramashah — Offline</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Plus Jakarta Sans', sans-serif;
+        background: #f5f3ee;
+        color: #1e293b;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+      }
+      .card { text-align: center; padding: 2rem; max-width: 400px; }
+      .icon { width: 56px; height: 56px; margin: 0 auto 1.25rem; border-radius: 16px; background: #1c4040; display: flex; align-items: center; justify-content: center; }
+      .icon svg { width: 28px; height: 28px; color: #f5f3ee; }
+      h1 { font-size: 1.375rem; font-weight: 700; margin-bottom: 0.5rem; letter-spacing: -0.02em; }
+      p { color: #64748b; font-size: 0.875rem; line-height: 1.6; margin-bottom: 1.5rem; }
+      button {
+        padding: 0.75rem 1.5rem;
+        background: #1c4040;
+        color: #f5f3ee;
+        border: none;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: opacity 0.2s;
+      }
+      button:hover { opacity: 0.9; }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="1" y1="1" x2="23" y2="23"></line>
+          <path d="M16.72 11.06A10.94 10.94 0 0 1 23 12.55"></path>
+          <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path>
+          <path d="M10.71 5.05A16 16 0 0 1 22.58 9"></path>
+          <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path>
+          <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+          <line x1="12" y1="20" x2="12.01" y2="20"></line>
+        </svg>
+      </div>
+      <h1>You're Offline</h1>
+      <p>Kramashah needs an internet connection to load your workspace. Please check your connection and try again.</p>
+      <button onclick="window.location.reload()">Try Again</button>
     </div>
-    <h1>You're Offline</h1>
-    <p>Kramasha needs an internet connection to load your workspace. Please check your connection and try again.</p>
-    <button onclick="window.location.reload()">Try Again</button>
-  </div>
-</body>
+  </body>
 </html>

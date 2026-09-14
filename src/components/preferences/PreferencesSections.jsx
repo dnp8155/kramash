@@ -19,7 +19,7 @@ import PackageSection from "@/components/preferences/PackageSection";
 import { useToast } from "@/components/ui/use-toast";
 import { loadAllTransactions } from "@/lib/financeService";
 import { txInFY, fyDisplayLabel } from "@/lib/financialYearService";
-import { exportFinancialCsv } from "@/lib/exportUtils";
+import { exportFinancialXlsx } from "@/lib/exportUtils";
 import { Pencil, Trash2, Plus, Download, Loader2, Briefcase, Tags, Palette, Bell, Shield, CreditCard, LogOut, FileText, Users, UserCircle, Power } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -220,7 +220,7 @@ export default function PreferencesSections({
                 if (fyTx.length === 0) {
                   toast({ title: "No transactions found for this period." });
                 } else {
-                  exportFinancialCsv(fyTx, { eventsById, clientsById, membersById }, workspace?.currency || "INR", fyDisplayLabel(selectedFY));
+                  exportFinancialXlsx(fyTx, { eventsById, clientsById, membersById }, workspace?.currency || "INR", fyDisplayLabel(selectedFY));
                   toast({ title: "Export ready", description: `${fyTx.length} transactions exported.` });
                 }
               } catch (e) {

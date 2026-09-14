@@ -15,7 +15,8 @@ import { createFromQuotation } from "@/lib/invoiceService";
 import { QUOTATION_STATUSES, QUOTATION_STATUS_META } from "@/constants/quotationConfig";
 import { generateQuotationPdf } from "@/lib/quotationPdf";
 import { base44 } from "@/api/base44Client";
-import { Plus, Search, Trash2, FileDown, Eye, FileText, IndianRupee, CheckCircle2, Pencil, Receipt, Copy } from "lucide-react";
+import { Plus, Search, Trash2, FileDown, Eye, FileText, FileSpreadsheet, IndianRupee, CheckCircle2, Pencil, Receipt, Copy } from "lucide-react";
+import { exportQuotationsXlsx } from "@/lib/exportUtils";
 import PdfPreviewModal from "@/components/common/PdfPreviewModal";
 import PageHeader from "@/components/common/PageHeader";
 import StatCard from "@/components/common/StatCard";
@@ -179,9 +180,14 @@ export default function Quotation() {
   return (
     <div className="p-4 sm:p-6 space-y-5">
       <PageHeader eyebrow="Sales" title="Quotations" subtitle="Create, track and finalize client quotations.">
-        <Button onClick={() => navigate("/quotation/new")}>
-          <Plus className="w-4 h-4" /> Create Quotation
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => exportQuotationsXlsx(filtered, clientsById)} disabled={filtered.length === 0}>
+            <FileSpreadsheet className="w-4 h-4" /> Export
+          </Button>
+          <Button onClick={() => navigate("/quotation/new")}>
+            <Plus className="w-4 h-4" /> Create Quotation
+          </Button>
+        </div>
       </PageHeader>
 
       {/* Stats */}
