@@ -13,6 +13,7 @@ import {
   Smartphone,
   Headphones,
   Info,
+  ShieldCheck,
   LogOut
 } from "lucide-react";
 
@@ -41,7 +42,11 @@ export const settingsNav = [
   { label: "Help & Support", path: "/help", icon: Headphones }
 ];
 
-export const aboutLegalNav = { label: "About & Legal", path: "/app-updates", icon: Info };
+export const aboutLegalNav = [
+  { label: "About", path: "/about", icon: Info },
+  { label: "Terms & Conditions", path: "/terms", icon: FileText },
+  { label: "Privacy Policy", path: "/privacy", icon: ShieldCheck }
+];
 export const logoutNav = { label: "Log out", icon: LogOut };
 
 export const navGroups = [

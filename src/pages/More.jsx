@@ -85,7 +85,7 @@ export default function More() {
       {/* About & Legal + Logout — end */}
       <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mt-6 mb-2 px-1">{t("About & Legal")}</h2>
       <div className="flex flex-col gap-2.5">
-        <Card item={aboutLegalNav} />
+        {aboutLegalNav.map((item) => <Card key={item.path} item={item} />)}
         <button
           onClick={() => logout()}
           className="w-full flex items-center gap-3 bg-card rounded-2xl p-4 text-left border border-border/60 shadow-sm active:scale-[0.99] transition-transform"

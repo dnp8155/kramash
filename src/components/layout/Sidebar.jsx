@@ -57,9 +57,14 @@ export default function Sidebar({ mobile = false, onClose, collapsed = false, on
               <Settings className="w-3.5 h-3.5" />
             </NavLink>
           )}
-          <NavLink to={aboutLegalNav.path} className="w-10 h-10 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" title={t(aboutLegalNav.label)}>
-            <aboutLegalNav.icon className="w-3.5 h-3.5" />
-          </NavLink>
+          {aboutLegalNav.map((item) => {
+            const Icon = item.icon;
+            return (
+              <NavLink key={item.path} to={item.path} className="w-10 h-10 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" title={t(item.label)}>
+                <Icon className="w-3.5 h-3.5" />
+              </NavLink>
+            );
+          })}
         </div>
         <div className="h-px bg-border" />
         <div className="flex flex-col items-center gap-2 px-2 py-3">
@@ -120,13 +125,19 @@ export default function Sidebar({ mobile = false, onClose, collapsed = false, on
             {t("SaaS Admin")}
           </NavLink>
         )}
-        <NavLink
-          to={aboutLegalNav.path}
-          className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-        >
-          <aboutLegalNav.icon className="w-3.5 h-3.5" />
-          {t(aboutLegalNav.label)}
-        </NavLink>
+        {aboutLegalNav.map((item) => {
+          const Icon = item.icon;
+          return (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            >
+              <Icon className="w-3.5 h-3.5" />
+              {t(item.label)}
+            </NavLink>
+          );
+        })}
       </div>
 
       <div className="h-px bg-border" />
