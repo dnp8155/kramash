@@ -20,6 +20,7 @@ import { getEventTypes, buildAllEventTypes, normalizeEventType, mergeEventTypes 
 import EventTypeAutocomplete from "@/components/events/EventTypeAutocomplete";
 import { useQueryClient } from "@tanstack/react-query";
 import { invalidateEntity } from "@/lib/queryInvalidation";
+import { getDefaultMilestoneTemplate, generateMilestonesFromTemplate } from "@/lib/milestoneService";
 
 const empty = {
   client_id: "", title: "", event_type: "",
@@ -134,6 +135,16 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
       } else {
         const res = await base44.functions.invoke("createEvent", payload);
         saved = res.data || res;
+      }
+      // Auto-generate milestones from the workspace's default milestone template
+      if (!event?.id) {
+        try {
+          const tpl = getDefaultMilestoneTemplate(workspace);
+          if (tpl) {
+            await generateMilestonesFromTemplate(workspaceId, saved.id, form.client_id, Number(form.contract_value) || 0, tpl);
+            invalidateEntity(queryClient, "PaymentMilestone");
+          }
+        } catch { /* non-critical — event is already saved */ }
       }
       // Auto-add new event type to workspace config for future suggestions
       const eventType = normalizeEventType(form.event_type);

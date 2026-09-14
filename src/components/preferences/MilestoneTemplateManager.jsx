@@ -5,7 +5,8 @@ import { useToast } from "@/components/ui/use-toast";
 import Button from "@/components/common/Button";
 import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
-import { Plus, Trash2, Save, Loader2, CalendarCheck } from "lucide-react";
+import { Plus, Trash2, Save, Loader2, CalendarCheck, Star } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default function MilestoneTemplateManager() {
   const { workspace, setWorkspace } = useWorkspace();
@@ -39,6 +40,10 @@ export default function MilestoneTemplateManager() {
 
   const removeTemplate = (idx) => {
     setTemplates(templates.filter((_, i) => i !== idx));
+  };
+
+  const setDefault = (idx) => {
+    setTemplates(templates.map((t, i) => ({ ...t, is_default: i === idx })));
   };
 
   const addMilestone = (tIdx) => {
@@ -98,6 +103,13 @@ export default function MilestoneTemplateManager() {
                 className="flex-1 h-8 text-sm font-medium"
                 placeholder="Template name"
               />
+              <button
+                onClick={() => setDefault(tIdx)}
+                className={cn("p-1.5 rounded-md transition-colors", tpl.is_default ? "text-amber-500" : "text-muted-foreground hover:text-foreground")}
+                title={tpl.is_default ? "Default template (auto-applies to new events)" : "Set as default"}
+              >
+                <Star className="w-3.5 h-3.5" fill={tpl.is_default ? "currentColor" : "none"} />
+              </button>
               <button onClick={() => removeTemplate(tIdx)} className="text-muted-foreground hover:text-destructive p-1.5">
                 <Trash2 className="w-3.5 h-3.5" />
               </button>

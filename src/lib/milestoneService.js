@@ -142,3 +142,43 @@ export function milestoneTotals(milestones) {
   const totalRemaining = round2(Math.max(0, totalDue - totalPaid));
   return { totalDue, totalPaid, totalRemaining };
 }
+
+// ---- Default template & auto-generation ----
+
+// Read the default milestone template from workspace display_preferences.
+export function getDefaultMilestoneTemplate(workspace) {
+  try {
+    const prefs = workspace?.display_preferences ? JSON.parse(workspace.display_preferences) : {};
+    const templates = prefs.milestoneTemplates || [];
+    return templates.find((t) => t.is_default) || null;
+  } catch {
+    return null;
+  }
+}
+
+// Auto-generate PaymentMilestone records for a new event from a template.
+export async function generateMilestonesFromTemplate(workspaceId, eventId, clientId, contractValue, template) {
+  if (!workspaceId || !eventId || !template?.milestones?.length) return [];
+  const payloads = template.milestones.map((m, idx) => {
+    const value = Number(m.value) || 0;
+    const dueAmount = m.type === "percent"
+      ? round2((contractValue * value) / 100)
+      : round2(value);
+    return {
+      workspace_id: workspaceId,
+      event_id: eventId,
+      client_id: clientId || "",
+      quotation_id: "",
+      name: m.name || `Milestone ${idx + 1}`,
+      milestone_type: m.type === "fixed" ? "fixed" : "percent",
+      milestone_value: value,
+      due_amount: dueAmount,
+      paid_amount: 0,
+      due_condition: m.due_condition || "",
+      due_date: "",
+      sort_order: idx,
+      status: "upcoming"
+    };
+  });
+  return base44.entities.PaymentMilestone.bulkCreate(payloads);
+}
