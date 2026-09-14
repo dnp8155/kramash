@@ -507,23 +507,21 @@ export default function EventDetails() {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-border">
-        <div className="flex items-center gap-4 sm:gap-6 overflow-x-auto scrollbar-thin">
-          {tabs.map((t) => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={cn(
-                "pb-2.5 pt-1 text-sm font-medium whitespace-nowrap transition-all border-b-2 -mb-px",
-                tab === t
-                  ? "border-primary text-foreground"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              )}
-            >
-              {t}
-            </button>
-          ))}
-        </div>
+      <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-lg w-full sm:w-auto overflow-x-auto scrollbar-thin">
+        {tabs.map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={cn(
+              "px-4 py-1.5 text-sm font-medium rounded-md transition-all whitespace-nowrap",
+              tab === t
+                ? "bg-card text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            {t}
+          </button>
+        ))}
       </div>
 
       {/* Tab content */}
