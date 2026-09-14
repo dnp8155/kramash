@@ -13,6 +13,7 @@ import { useFinancialYear } from "@/hooks/useFinancialYear";
 import { todayISO } from "@/lib/dates";
 import { useQueryClient } from "@tanstack/react-query";
 import { invalidateEntity } from "@/lib/queryInvalidation";
+import ExpenseCategoryAutocomplete from "@/components/financial/ExpenseCategoryAutocomplete";
 
 // Record a business / event expense. Event is required (Beta is event-level).
 export default function RecordExpenseDialog({
@@ -21,7 +22,8 @@ export default function RecordExpenseDialog({
   events = [],
   categories = [],
   preselectedEventId = "",
-  miscMode = false
+  miscMode = false,
+  miscCategorySuggestions = []
 }) {
   const [eventId, setEventId] = useState("");
   const [categoryId, setCategoryId] = useState("");
@@ -145,17 +147,12 @@ export default function RecordExpenseDialog({
           {miscMode ? (
             <div className="space-y-1.5">
               <Label>Misc Expense <span className="text-destructive">*</span></Label>
-              <Input
+              <ExpenseCategoryAutocomplete
                 value={categoryId}
-                onChange={(e) => setCategoryId(e.target.value)}
+                onChange={setCategoryId}
+                suggestions={miscCategorySuggestions}
                 placeholder="Type a category name (e.g. Travel, Equipment)"
-                list="misc-category-suggestions"
               />
-              <datalist id="misc-category-suggestions">
-                {categories.filter((c) => c.status === "active").map((c) => (
-                  <option key={c.id} value={c.name} />
-                ))}
-              </datalist>
               <p className="text-xs text-muted-foreground">This text will appear as the category in the FY payments list.</p>
             </div>
           ) : (

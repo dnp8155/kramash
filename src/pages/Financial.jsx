@@ -167,6 +167,15 @@ export default function Financial() {
     profit: actualProfit(fyActiveTx)
   }), [fyActiveTx]);
 
+  // Previously-used misc expense category names — sourced from existing
+  // BUSINESS_EXPENSE transactions' name snapshots, NOT pre-made defaults.
+  const miscCategorySuggestions = useMemo(() => {
+    const names = (allTx || [])
+      .filter((t) => t.transaction_type === "BUSINESS_EXPENSE" && t.expense_category_name_snapshot)
+      .map((t) => t.expense_category_name_snapshot);
+    return [...new Set(names)];
+  }, [allTx]);
+
   const breakdown = useMemo(() => methodBreakdown(fyActiveTx), [fyActiveTx]);
 
   // FY-scoped transactions with method/type filters — for the activity table only.
@@ -485,6 +494,7 @@ export default function Financial() {
         currency={currency}
         events={[]}
         categories={categories}
+        miscCategorySuggestions={miscCategorySuggestions}
         miscMode
       />
       <EditTransactionDialog
