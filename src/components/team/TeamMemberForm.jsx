@@ -9,7 +9,7 @@ import Select from "@/components/common/Select";
 import Toggle from "@/components/common/Toggle";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { TEAM_MEMBER_STATUS } from "@/constants/teamConfig";
+import { TEAM_MEMBER_STATUS, RATE_TYPES } from "@/constants/teamConfig";
 import { loadActiveRoles, loadTeamMembers } from "@/lib/teamService";
 import { useAuth } from "@/lib/AuthContext";
 import { Crown, Lock } from "lucide-react";
@@ -26,6 +26,7 @@ import { invalidateEntity } from "@/lib/queryInvalidation";
 const empty = {
   name: "", phone: "", email: "",
   role_id: "", profession: "",
+  default_rate: "", rate_type: "Per Event",
   is_self: false,
   color: "",
   status: "active", notes: ""
@@ -84,11 +85,20 @@ export default function TeamMemberForm({ open, onClose, onSaved, member = null, 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
   // Selecting a Role caches the role_id and profession (name snapshot).
-  // The Role's configured rate stays in Preferences — it is NOT copied here.
+  // Also fetches the Role's configured Default Rate and Rate Type and populates
+  // them onto the member — but only when the role has a non-zero default_rate,
+  // so an existing manually-set rate is never wiped by a rate-less role.
   const onRoleChange = (roleId) => {
     const role = roles.find((r) => r.id === roleId);
     if (role) {
-      setForm((f) => ({ ...f, role_id: role.id, profession: role.name }));
+      const roleRate = Number(role.default_rate) || 0;
+      setForm((f) => ({
+        ...f,
+        role_id: role.id,
+        profession: role.name,
+        rate_type: role.rate_type || f.rate_type || "Per Event",
+        default_rate: roleRate > 0 ? String(roleRate) : (f.default_rate || "")
+      }));
     } else {
       setForm((f) => ({ ...f, role_id: "", profession: "" }));
     }
@@ -116,6 +126,8 @@ export default function TeamMemberForm({ open, onClose, onSaved, member = null, 
         email: form.email.trim(),
         role_id: form.role_id || "",
         profession: form.profession.trim(),
+        default_rate: Number(form.default_rate) || 0,
+        rate_type: form.rate_type || "Per Event",
         is_self: !!form.is_self,
         color: form.color || "",
         status: form.status,
@@ -184,6 +196,31 @@ export default function TeamMemberForm({ open, onClose, onSaved, member = null, 
             {roles.length === 0 && !loadingRoles && (
               <p className="text-xs text-muted-foreground">No roles configured. Add roles in Preferences.</p>
             )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label>Default Rate (₹)</Label>
+              <Input
+                type="number"
+                min="0"
+                value={form.default_rate}
+                onChange={(e) => set("default_rate", e.target.value)}
+                placeholder="0"
+              />
+              {(() => {
+                const role = roles.find((r) => r.id === form.role_id);
+                return role && Number(role.default_rate) > 0
+                  ? <p className="text-[11px] text-muted-foreground">From "{role.name}" role</p>
+                  : null;
+              })()}
+            </div>
+            <div className="space-y-1.5">
+              <Label>Rate Type</Label>
+              <Select value={form.rate_type} onChange={(e) => set("rate_type", e.target.value)} className="w-full">
+                {RATE_TYPES.map((r) => <option key={r} value={r}>{r}</option>)}
+              </Select>
+            </div>
           </div>
 
           <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
