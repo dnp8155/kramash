@@ -12,6 +12,7 @@ import EditTransactionDialog from "@/components/financial/EditTransactionDialog"
 import EmptyState from "@/components/common/EmptyState";
 import Button from "@/components/common/Button";
 import AddOnDialog from "@/components/events/AddOnDialog";
+import TransactionShareCard from "@/components/events/TransactionShareCard";
 import { parseMiscExpenses, miscExpensesTotal } from "@/components/events/EventMiscExpenseEditor";
 import { base44 } from "@/api/base44Client";
 
@@ -32,14 +33,15 @@ export default function EventPaymentsTab({
 }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { workspaceId } = useWorkspace();
+  const { workspaceId, workspace } = useWorkspace();
   const [editing, setEditing] = useState(null);
   const [voiding, setVoiding] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [sharingId, setSharingId] = useState(null);
   const [showAddOn, setShowAddOn] = useState(false);
   const [editingAddOn, setEditingAddOn] = useState(null);
-  const cardRefs = useRef({});
+  const [shareTx, setShareTx] = useState(null);
+  const shareCardRef = useRef(null);
 
   const miscItems = useMemo(() => parseMiscExpenses(event?.misc_expenses_json), [event?.misc_expenses_json]);
   const miscTotal = miscExpensesTotal(miscItems);
@@ -120,23 +122,24 @@ export default function EventPaymentsTab({
   };
 
   const handleShare = async (t) => {
-    const el = cardRefs.current[t.id];
-    if (!el) return;
+    // Render the off-screen share card first, then capture it on next frame.
+    setShareTx(t);
     setSharingId(t.id);
     try {
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const el = shareCardRef.current;
+      if (!el) throw new Error("Share card not rendered");
       const canvas = await html2canvas(el, {
         backgroundColor: "#ffffff",
         scale: 2,
         useCORS: true,
+        logging: false,
       });
       const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
       const file = new File([blob], `transaction-${t.id}.png`, { type: "image/png" });
 
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: "Transaction Receipt",
-        });
+        await navigator.share({ files: [file], title: "Transaction Receipt" });
       } else {
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
@@ -157,6 +160,7 @@ export default function EventPaymentsTab({
       toast({ title: "Copied to clipboard", description: "Image capture failed, text copied instead." });
     } finally {
       setSharingId(null);
+      setShareTx(null);
     }
   };
 
@@ -224,7 +228,6 @@ export default function EventPaymentsTab({
             return (
               <div
                 key={t.id}
-                ref={(el) => (cardRefs.current[t.id] = el)}
                 className="bg-white border border-border rounded-[15px] p-4"
               >
                 <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
@@ -310,6 +313,24 @@ export default function EventPaymentsTab({
         currency={currency}
         editingItem={editingAddOn}
       />
+
+      {/* Off-screen share card for html2canvas capture (literal colors only) */}
+      {shareTx && (
+        <div
+          style={{ position: "fixed", left: "-9999px", top: "0", zIndex: -1 }}
+          ref={shareCardRef}
+        >
+          <TransactionShareCard
+            transaction={shareTx}
+            event={event}
+            client={client}
+            workspace={workspace}
+            currency={currency}
+            particularFor={particularFor}
+            typeLabel={typeLabel}
+          />
+        </div>
+      )}
     </div>
   );
 }
