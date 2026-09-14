@@ -37,6 +37,17 @@ export default async function (req) {
         { status: 403 }
       );
     }
+    // Enforce single Self per workspace: reject if another member already has is_self.
+    if (payload.is_self) {
+      const existingMembers = await base44.entities.TeamMember.filter({ workspace_id }, "name", 500);
+      const hasSelf = (existingMembers || []).some((m) => m.is_self === true);
+      if (hasSelf) {
+        return Response.json(
+          { error: "Self is already assigned to another member in this workspace." },
+          { status: 409 }
+        );
+      }
+    }
     // Auto-assign a team color if not provided
     if (!payload.color) {
       const palette = ["#0d9488","#6366f1","#ec4899","#f59e0b","#8b5cf6","#ef4444","#14b8a6","#f97316","#3b82f6","#84cc16","#a855f7","#06b6d4"];

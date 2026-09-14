@@ -10,10 +10,11 @@ import Toggle from "@/components/common/Toggle";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { TEAM_MEMBER_STATUS } from "@/constants/teamConfig";
-import { loadActiveRoles, clearOtherSelfMembers } from "@/lib/teamService";
+import { loadActiveRoles, loadTeamMembers } from "@/lib/teamService";
 import { useAuth } from "@/lib/AuthContext";
-import { Crown } from "lucide-react";
+import { Crown, Lock } from "lucide-react";
 import { isValidIndianPhone, isValidEmail } from "@/lib/validation";
+import { cn } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { invalidateEntity } from "@/lib/queryInvalidation";
 
@@ -38,21 +39,34 @@ export default function TeamMemberForm({ open, onClose, onSaved, member = null, 
   const [loadingRoles, setLoadingRoles] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [existingSelf, setExistingSelf] = useState(null); // the workspace's current self member (if any)
 
   useEffect(() => {
     if (open) {
       setError("");
       const base = member ? { ...empty, ...member } : empty;
-      // Auto-suggest SELF when the entered email matches the logged-in owner.
-      // This is only a hint — the user explicitly confirms via the toggle.
-      if (!member && user?.email && base.email && base.email.toLowerCase() === user.email.toLowerCase()) {
-        base.is_self = true;
-      }
       setForm(base);
       loadRoles();
+      loadExistingSelf();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, member]);
+
+  const loadExistingSelf = async () => {
+    if (!workspaceId) { setExistingSelf(null); return; }
+    try {
+      const list = await loadTeamMembers(workspaceId);
+      const self = list.find((m) => m.is_self === true && m.id !== member?.id);
+      setExistingSelf(self || null);
+    } catch (e) {
+      setExistingSelf(null);
+    }
+  };
+
+  // Self is locked when:
+  //  - this member already has is_self (can't unset), OR
+  //  - another member in the workspace already has is_self (can't set a second)
+  const selfLocked = !!member?.is_self || !!existingSelf;
 
   const loadRoles = async () => {
     if (!workspaceId) return;
@@ -95,14 +109,6 @@ export default function TeamMemberForm({ open, onClose, onSaved, member = null, 
     setSaving(true);
     setError("");
     try {
-      // Enforce a single SELF per workspace: clear any other Self members first.
-      if (form.is_self) {
-        try {
-          await clearOtherSelfMembers(workspaceId, member?.id || null);
-        } catch (e) {
-          /* non-fatal — backend/RLS will still scope correctly */
-        }
-      }
       const payload = {
         workspace_id: workspaceId,
         name: form.name.trim(),
@@ -129,6 +135,8 @@ export default function TeamMemberForm({ open, onClose, onSaved, member = null, 
       const data = err?.data || err;
       if (data?.error === "PLAN_LIMIT_REACHED") {
         setError(`Your Free Plan team limit has been reached (${data.current}/${data.limit}). Upgrade to Pro to add more team members.`);
+      } else if (data?.error === "Self is already assigned to another member in this workspace.") {
+        setError(data.error);
       } else if (data?.error === "This workspace is suspended. Please contact support.") {
         setError(data.error);
       } else {
@@ -183,13 +191,26 @@ export default function TeamMemberForm({ open, onClose, onSaved, member = null, 
               <div className="flex items-center gap-2">
                 <Crown className="w-4 h-4 text-primary shrink-0" />
                 <div>
-                  <Label className="cursor-pointer">This is me (workspace owner)</Label>
+                  <Label className={cn("cursor-pointer", selfLocked && "cursor-not-allowed opacity-70")}>
+                    This is me (workspace owner)
+                  </Label>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Marks this member as you. Self members cannot be paid as external team — their rate is treated as owner share.
+                    {member?.is_self
+                      ? "Self cannot be removed once set."
+                      : existingSelf
+                        ? `Self is already assigned to ${existingSelf.name}.`
+                        : "Marks this member as you. Self members cannot be paid as external team — their rate is treated as owner share."}
                   </p>
                 </div>
               </div>
-              <Toggle checked={!!form.is_self} onChange={(v) => set("is_self", v)} label="Self" />
+              {selfLocked ? (
+                <div className="flex items-center gap-1.5 text-muted-foreground" title={member?.is_self ? "Locked — cannot remove Self" : "Locked — already assigned"}>
+                  <Lock className="w-3.5 h-3.5" />
+                  <span className="text-xs font-medium">{form.is_self ? "On" : "Off"}</span>
+                </div>
+              ) : (
+                <Toggle checked={!!form.is_self} onChange={(v) => set("is_self", v)} label="Self" />
+              )}
             </div>
           </div>
 
