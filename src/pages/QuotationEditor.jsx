@@ -48,6 +48,17 @@ import ClientForm from "@/components/clients/ClientForm";
 
 const today = () => new Date().toISOString().slice(0, 10);
 
+// Infer a quotation category from a free-text event type. Returns "" when no
+// clear match, so the caller can fall back to the workspace business_category.
+function inferCategoryFromEventType(eventType) {
+  if (!eventType) return "";
+  const et = eventType.toLowerCase();
+  if (/(photo|videography|cinema|maternity|newborn|portrait|couple shoot|engagement shoot|album)/.test(et)) return "PHOTOGRAPHY";
+  if (/(event management|event coord|birthday|corporate event|conference|party planner|decor|lighting|sound)/.test(et)) return "EVENT_MANAGEMENT";
+  if (/(architect|interior design|site visit|construction|real estate|floor plan|3d walkthrough)/.test(et)) return "ARCHITECTURE";
+  return "";
+}
+
 export default function QuotationEditor() {
   const { id } = useParams();
   const isNew = !id || id === "new";
@@ -167,6 +178,60 @@ export default function QuotationEditor() {
             if (qpEvent.client_id) setClientId(qpEvent.client_id);
             if (qpEvent.start_date) setStartDate(qpEvent.start_date);
             if (qpEvent.end_date) setEndDate(qpEvent.end_date);
+            if (qpEvent.title) setProjectTitle(qpEvent.title);
+            if (qpEvent.description) setProjectSummary(qpEvent.description);
+            const inferredCat = inferCategoryFromEventType(qpEvent.event_type);
+            setCategory(inferredCat || workspace?.business_category || "PHOTOGRAPHY");
+            // Auto-import the event's active team + service assignments as quotation
+            // line items (only when no estimateItems were passed via router state).
+            if (!Array.isArray(estimateItems) || !estimateItems.length) {
+              try {
+                const [teamAsgns, serviceAsgns, allMembers, allServices] = await Promise.all([
+                  base44.entities.EventTeamAssignment.filter({ workspace_id: workspaceId, event_id: qpEvent.id, assignment_status: "assigned" }, "created_date", 500),
+                  base44.entities.EventServiceAssignment.filter({ workspace_id: workspaceId, event_id: qpEvent.id, assignment_status: "assigned" }, "created_date", 500),
+                  base44.entities.TeamMember.filter({ workspace_id: workspaceId }, "name", 500),
+                  base44.entities.Service.filter({ workspace_id: workspaceId }, "name", 500)
+                ]);
+                const membersMap = {};
+                (allMembers || []).forEach((m) => { membersMap[m.id] = m; });
+                const servicesMap = {};
+                (allServices || []).forEach((s) => { servicesMap[s.id] = s; });
+                const imported = [];
+                (teamAsgns || []).forEach((a) => {
+                  const m = membersMap[a.team_member_id];
+                  const days = (a.working_dates?.length || 0) || 1;
+                  const rate = Number(a.agreed_rate) || 0;
+                  imported.push({
+                    item_type: "team",
+                    team_member_id: a.team_member_id,
+                    team_member_name_snapshot: m?.name || "",
+                    member_type: a.member_type_snapshot || "",
+                    name: a.role_name_snapshot || m?.profession || m?.name || "Team Member",
+                    unit_rate: rate,
+                    rate_type: a.rate_type || "Per Event",
+                    days,
+                    quantity: 1,
+                    line_total: rate * days
+                  });
+                });
+                (serviceAsgns || []).forEach((a) => {
+                  if (a.is_addon) return; // add-ons are last-minute, skip auto-import
+                  const rate = Number(a.agreed_rate) || 0;
+                  imported.push({
+                    item_type: "service",
+                    reference_id: a.service_id,
+                    name: a.service_name_snapshot || servicesMap[a.service_id]?.name || "Service",
+                    description: a.provider_name_snapshot ? `Provider: ${a.provider_name_snapshot}` : "",
+                    unit_rate: rate,
+                    rate_type: a.rate_type || "Fixed",
+                    days: 1,
+                    quantity: 1,
+                    line_total: rate
+                  });
+                });
+                if (imported.length) setItems(imported);
+              } catch (e) { /* non-fatal — user can add items manually */ }
+            }
           }
         }
       } else {

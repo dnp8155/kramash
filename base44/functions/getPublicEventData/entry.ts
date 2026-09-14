@@ -68,14 +68,34 @@ export default async function(req) {
     const pending = Math.max(0, contractValue - received);
     const paymentProgress = contractValue > 0 ? Math.min(100, Math.round((received / contractValue) * 100)) : 0;
 
-    // Quotation (only the latest finalized/accepted one)
-    const quotation = quotations && quotations.length > 0 ? {
-      id: quotations[0].id,
-      public_token: quotations[0].public_token || "",
-      quotation_number: quotations[0].quotation_number,
-      status: quotations[0].status,
-      grand_total: Number(quotations[0].grand_total) || 0
-    } : null;
+    // Quotation — prefer the latest accepted, else latest finalized.
+    // Ensure a public_token exists so the /q/:token CTA link never 404s.
+    const sortedQuotations = (quotations || []).slice().sort((a, b) => {
+      const aAccepted = a.status === "accepted" ? 1 : 0;
+      const bAccepted = b.status === "accepted" ? 1 : 0;
+      return bAccepted - aAccepted; // accepted first; ties keep query's -created_date order
+    });
+    const resolvedQuotation = sortedQuotations[0] || null;
+
+    let quotation = null;
+    if (resolvedQuotation) {
+      let publicToken = resolvedQuotation.public_token || "";
+      if (!publicToken) {
+        const tokenBytes = new Uint8Array(24);
+        crypto.getRandomValues(tokenBytes);
+        publicToken = Array.from(tokenBytes).map((b) => b.toString(16).padStart(2, "0")).join("");
+        try {
+          await base44.asServiceRole.entities.Quotation.update(resolvedQuotation.id, { public_token: publicToken });
+        } catch (e) { /* non-fatal — link may 404, but tracking page still renders */ }
+      }
+      quotation = {
+        id: resolvedQuotation.id,
+        public_token: publicToken,
+        quotation_number: resolvedQuotation.quotation_number,
+        status: resolvedQuotation.status,
+        grand_total: Number(resolvedQuotation.grand_total) || 0
+      };
+    }
 
     // Determine timeline milestones based on event status and dates
     const today = new Date().toISOString().slice(0, 10);

@@ -164,10 +164,21 @@ export async function assembleJobSheetData(workspaceId, eventId) {
     base44.entities.TeamMember.filter({ workspace_id: workspaceId }, "name", 500)
   ]);
 
-  const quotation = quotations?.find(q => q.status === "accepted") || quotations?.[0] || null;
+  const quotation = quotations?.find(q => q.status === "accepted")
+    || quotations?.find(q => q.status === "finalized")
+    || quotations?.[0]
+    || null;
   let quotationItems = [];
   if (quotation) {
     quotationItems = await base44.entities.QuotationItem.filter({ workspace_id: workspaceId, quotation_id: quotation.id }, "sort_order", 1000);
+    // Keep the JobSheet config's stored quotation_id in sync with the resolved quotation
+    try {
+      const jobSheets = await base44.entities.JobSheet.filter({ workspace_id: workspaceId, event_id: eventId }, "-created_date", 5);
+      const js = jobSheets?.[0];
+      if (js && js.quotation_id !== quotation.id) {
+        await base44.entities.JobSheet.update(js.id, { quotation_id: quotation.id });
+      }
+    } catch (e) { /* non-fatal */ }
   }
 
   const membersById = {};
