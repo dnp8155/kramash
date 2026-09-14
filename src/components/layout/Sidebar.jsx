@@ -1,10 +1,9 @@
-import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { mainNav, moreNav, moreGroup } from "@/constants/navigation";
+import { navGroups, aboutLegalNav } from "@/constants/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
 import { useT } from "@/hooks/useT";
-import { ChevronDown, ChevronUp, Settings, Info, X, LogOut } from "lucide-react";
+import { Settings, X, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Image } from "@/components/ui/image";
 import WorkspaceSwitcher from "@/components/layout/WorkspaceSwitcher";
@@ -14,8 +13,6 @@ export default function Sidebar({ mobile = false, onClose, collapsed = false, on
   const { user, logout } = useAuth();
   const term = useBusinessTerminology();
   const t = useT();
-  const moreActive = moreNav.some((item) => location.pathname === item.path);
-  const [moreOpen, setMoreOpen] = useState(moreActive);
 
   // Resolve a dynamic label for a nav item (Events -> Projects for Architecture/Other).
   const navLabel = (item) => t(item.path === "/events" ? term.workItemPlural : item.label);
@@ -52,19 +49,7 @@ export default function Sidebar({ mobile = false, onClose, collapsed = false, on
         <WorkspaceSwitcher mobile={mobile} collapsed onToggleCollapse={onToggleCollapse} />
         <div className="h-px bg-border" />
         <nav className="flex-1 overflow-y-auto scrollbar-thin px-2 py-3 space-y-1 flex flex-col items-center">
-          {mainNav.map((item) => renderItem(item))}
-          <button
-            onClick={() => setMoreOpen((v) => !v)}
-            className="w-10 h-10 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-            title={t(moreGroup.label)}
-          >
-            <moreGroup.icon className="w-4 h-4 shrink-0" />
-          </button>
-          {moreOpen && (
-            <div className="space-y-1 w-full flex flex-col items-center">
-              {moreNav.map((item) => renderItem(item))}
-            </div>
-          )}
+          {navGroups.flatMap((group) => group.items.map((item) => renderItem(item)))}
         </nav>
         <div className="px-2 py-2 space-y-1 flex flex-col items-center">
           {user?.role === "admin" && (
@@ -72,8 +57,8 @@ export default function Sidebar({ mobile = false, onClose, collapsed = false, on
               <Settings className="w-3.5 h-3.5" />
             </NavLink>
           )}
-          <NavLink to="/app-updates" className="w-10 h-10 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" title={t("About & Legal")}>
-            <Info className="w-3.5 h-3.5" />
+          <NavLink to={aboutLegalNav.path} className="w-10 h-10 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" title={t(aboutLegalNav.label)}>
+            <aboutLegalNav.icon className="w-3.5 h-3.5" />
           </NavLink>
         </div>
         <div className="h-px bg-border" />
@@ -112,24 +97,16 @@ export default function Sidebar({ mobile = false, onClose, collapsed = false, on
 
       <div className="h-px bg-border" />
 
-      {/* Nav */}
-      <nav className="flex-1 overflow-y-auto scrollbar-thin px-3 py-3 space-y-1">
-        {mainNav.map((item) => renderItem(item))}
-
-        <button
-          onClick={() => setMoreOpen((v) => !v)}
-          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-        >
-          <moreGroup.icon className="w-4 h-4 shrink-0" />
-          <span className="flex-1 text-left">{t(moreGroup.label)}</span>
-          {moreOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-        </button>
-
-        {moreOpen && (
-          <div className="space-y-1 pl-3 border-l border-border ml-3">
-            {moreNav.map((item) => renderItem(item))}
+      {/* Nav — grouped sections */}
+      <nav className="flex-1 overflow-y-auto scrollbar-thin px-3 py-3 space-y-3">
+        {navGroups.map((group) => (
+          <div key={group.label} className="space-y-1">
+            <div className="px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              {t(group.label)}
+            </div>
+            {group.items.map((item) => renderItem(item))}
           </div>
-        )}
+        ))}
       </nav>
 
       {/* Footer */}
@@ -144,11 +121,11 @@ export default function Sidebar({ mobile = false, onClose, collapsed = false, on
           </NavLink>
         )}
         <NavLink
-          to="/app-updates"
+          to={aboutLegalNav.path}
           className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
         >
-          <Info className="w-3.5 h-3.5" />
-          {t("About & Legal")}
+          <aboutLegalNav.icon className="w-3.5 h-3.5" />
+          {t(aboutLegalNav.label)}
         </NavLink>
       </div>
 
