@@ -81,9 +81,7 @@ export default function AppLockGate({ children }) {
     setLocked(false);
   };
 
-  if (locked && user && appLockEnabled) {
-    return <AppLockScreen onUnlock={handleUnlock} />;
-  }
-
+  // App Lock temporarily disabled — missing BASE44_APP_ID secret breaks WebAuthn.
+  // Re-enable by restoring: if (locked && user && appLockEnabled) return <AppLockScreen onUnlock={handleUnlock} />;
   return children;
 }
