@@ -9,7 +9,7 @@ import Select from "@/components/common/Select";
 import { Label } from "@/components/ui/label";
 import { PAYMENT_METHOD_LIST } from "@/constants/financeConfig";
 import {
-  verifyClientPaymentRefs, verifyTeamPaymentRefs
+  verifyClientPaymentRefs, verifyTeamPaymentRefs, assignmentPaid
 } from "@/lib/financeService";
 import { resolveFYForDate } from "@/lib/financialYearService";
 import { useFinancialYear } from "@/hooks/useFinancialYear";
@@ -34,7 +34,8 @@ export default function RecordPaymentDialog({
   membersById = {},
   preselectedEventId = "",
   preselectedClientId = "",
-  preselectedAssignmentId = ""
+  preselectedAssignmentId = "",
+  transactions = []
 }) {
   const [eventId, setEventId] = useState("");
   const [clientId, setClientId] = useState("");
@@ -90,6 +91,11 @@ export default function RecordPaymentDialog({
     () => eventAssignments.find((a) => a.id === assignmentId),
     [eventAssignments, assignmentId]
   );
+
+  // Team mode: balance summary for the selected assignment
+  const teamTotal = selectedAssignment ? (Number(selectedAssignment.agreed_rate) || 0) : 0;
+  const teamPaid = selectedAssignment ? assignmentPaid(transactions, selectedAssignment.id) : 0;
+  const teamRemaining = Math.max(0, teamTotal - teamPaid);
 
   const validate = () => {
     if (!eventId) return "Please select an event.";
@@ -235,9 +241,20 @@ export default function RecordPaymentDialog({
                 <p className="text-xs text-muted-foreground">No active team assignments for this event.</p>
               )}
               {selectedAssignment && (
-                <p className="text-xs text-muted-foreground">
-                  Agreed rate: {formatMoney(selectedAssignment.agreed_rate, currency)} · {selectedAssignment.rate_type}
-                </p>
+                <div className="grid grid-cols-3 gap-3 rounded-lg border border-border bg-muted/20 p-3">
+                  <div>
+                    <div className="text-xs font-medium text-muted-foreground">Total Agreed</div>
+                    <div className="text-sm font-semibold text-foreground tabular-nums">{formatMoney(teamTotal, currency)}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs font-medium text-muted-foreground">Already Paid</div>
+                    <div className="text-sm font-semibold text-success tabular-nums">{formatMoney(teamPaid, currency)}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs font-medium text-muted-foreground">Remaining</div>
+                    <div className="text-sm font-semibold text-warning tabular-nums">{formatMoney(teamRemaining, currency)}</div>
+                  </div>
+                </div>
               )}
             </div>
           )}

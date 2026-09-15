@@ -111,6 +111,13 @@ function Row({ event, clientName, teamMap, serviceMap, assignmentsByEvent, recei
             <EventTypeBadge eventType={event.event_type} />
             <span className="truncate">· {formatEventDates(event)}</span>
           </div>
+          {prefs?.showServicesOnCards && serviceNames.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-1">
+              {serviceNames.map((n) => (
+                <span key={n} className="rounded-full bg-muted text-foreground border border-border px-2 py-0.5 text-[10px] font-medium">{n}</span>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Desktop columns */}
@@ -120,6 +127,13 @@ function Row({ event, clientName, teamMap, serviceMap, assignmentsByEvent, recei
           <div className="min-w-0">
             <div className="text-sm font-medium text-foreground truncate">{event.title}</div>
             <div className="text-xs text-muted-foreground">{clientName}</div>
+            {prefs?.showServicesOnCards && serviceNames.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-1">
+                {serviceNames.map((n) => (
+                  <span key={n} className="rounded-full bg-muted text-foreground border border-border px-2 py-0.5 text-[10px] font-medium">{n}</span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
         <span className="hidden sm:block text-sm text-foreground">

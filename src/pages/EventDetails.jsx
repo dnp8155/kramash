@@ -783,6 +783,7 @@ export default function EventDetails() {
         events={[event]}
         assignments={eventAssignments}
         membersById={membersById}
+        transactions={transactions}
         preselectedEventId={event.id}
         preselectedAssignmentId={teamPayAssignment?.id || ""}
       />

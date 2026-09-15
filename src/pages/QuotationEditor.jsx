@@ -46,6 +46,8 @@ import QuotationTemplateSettings from "@/components/quotation/QuotationTemplateS
 import PublicLinkPanel from "@/components/quotation/PublicLinkPanel";
 import { Textarea } from "@/components/ui/textarea";
 import RichTextEditor from "@/components/common/RichTextEditor";
+import WordCounterTextarea from "@/components/common/WordCounterTextarea";
+import { isWithinLimit } from "@/lib/wordLimit";
 import ClientForm from "@/components/clients/ClientForm";
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -389,6 +391,9 @@ export default function QuotationEditor() {
       if (!it.name?.trim()) errors.items[idx] = { name: true };
     });
     const hasErrors = errors.quotationDate || errors.noItems || Object.keys(errors.items).length > 0;
+    if (!isWithinLimit(projectSummary, 140)) return { ok: false, errors: { ...errors, projectSummary: true } };
+    if (!isWithinLimit(specialNotes, 140)) return { ok: false, errors: { ...errors, specialNotes: true } };
+    if (!isWithinLimit(notes, 140)) return { ok: false, errors: { ...errors, notes: true } };
     return { ok: !hasErrors, errors };
   };
 
@@ -763,7 +768,7 @@ export default function QuotationEditor() {
           </Field>
           <div className="sm:col-span-2">
             <Field label="Project Summary">
-              <Textarea value={projectSummary} onChange={(e) => setProjectSummary(e.target.value)} disabled={readOnly} rows={2} placeholder="Brief project scope description" />
+              <WordCounterTextarea value={projectSummary} onChange={(e) => setProjectSummary(e.target.value)} disabled={readOnly} rows={2} placeholder="Brief project scope description" />
             </Field>
           </div>
         </div>
@@ -876,12 +881,12 @@ export default function QuotationEditor() {
           />
         </Field>
         <Field label="Notes (internal)">
-          <textarea
+          <WordCounterTextarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             disabled={readOnly}
             rows={2}
-            className="w-full bg-card border border-border rounded-md p-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
+            className="bg-card border border-border"
           />
         </Field>
         <Field label="Client Access Password (optional)">

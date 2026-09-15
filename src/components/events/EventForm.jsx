@@ -8,6 +8,8 @@ import Button from "@/components/common/Button";
 import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
 import { Textarea } from "@/components/ui/textarea";
+import WordCounterTextarea from "@/components/common/WordCounterTextarea";
+import { isWithinLimit } from "@/lib/wordLimit";
 import { Label } from "@/components/ui/label";
 import { CURRENCY_SYMBOLS } from "@/constants/financeConfig";
 import ClientForm from "@/components/clients/ClientForm";
@@ -101,6 +103,8 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
     if (!form.start_date) return "Pick a start date.";
     if (!form.end_date) return "Pick an end date.";
     if ((form.event_dates || []).length === 0) return "Select at least one shoot day from the range.";
+    if (!isWithinLimit(form.description, 140)) return "Description exceeds the 140-word limit.";
+    if (!isWithinLimit(form.notes, 140)) return "Notes exceed the 140-word limit.";
     return "";
   };
 
@@ -324,11 +328,11 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
                   <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">Additional Info</p>
                   <div className="space-y-1.5">
                     <Label className="text-xs">Description</Label>
-                    <Textarea value={form.description} onChange={(e) => set("description", e.target.value)} placeholder={`${t.workItemSingular || "Event"} description`} rows={2} />
+                    <WordCounterTextarea value={form.description} onChange={(e) => set("description", e.target.value)} placeholder={`${t.workItemSingular || "Event"} description`} rows={2} />
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs">Notes</Label>
-                    <Textarea value={form.notes} onChange={(e) => set("notes", e.target.value)} placeholder="Internal notes" rows={2} />
+                    <WordCounterTextarea value={form.notes} onChange={(e) => set("notes", e.target.value)} placeholder="Internal notes" rows={2} />
                   </div>
                 </div>
               </div>

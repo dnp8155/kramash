@@ -280,6 +280,7 @@ export default function TeamMemberDetails() {
         events={events}
         assignments={active}
         membersById={{ [member.id]: member }}
+        transactions={transactions}
         preselectedEventId={payAssignment?.event_id || ""}
         preselectedAssignmentId={payAssignment?.id || ""}
       />

@@ -3,7 +3,6 @@ import { TEAM_MEMBER_STATUS, AVAILABILITY_STATUS } from "@/constants/teamConfig"
 import { formatMoney } from "@/utils/format";
 import { memberBookingCount, isSelfMember } from "@/lib/teamService";
 import { formatEventDate, isUpcomingDate, todayISO } from "@/lib/dates";
-import { getMemberColor } from "@/lib/teamColors";
 import { cn } from "@/lib/utils";
 
 // Derive a display status: inactive members show inactive; active members
@@ -59,13 +58,13 @@ export default function TeamMemberCard({ member, assignments = [], transactions 
   const lastWorked = pastBookings[0] || null;
 
   const isSelf = isSelfMember(member);
-  const memberColor = getMemberColor(member);
+  const statusColor = member.status === "inactive" ? "#ef4444" : "#10b981";
 
   return (
     <div className="bg-card border border-border rounded-lg p-4 relative overflow-hidden">
-      {/* Header: color dot + name + SELF badge + role + actions */}
+      {/* Header: status dot + name + SELF badge + role + actions */}
       <div className="flex items-center gap-2 pl-1">
-        <span className="team-chip-dot w-3 h-3 rounded-full shrink-0 border border-border" style={{ backgroundColor: memberColor }} />
+        <span className="team-chip-dot w-3 h-3 rounded-full shrink-0 border border-border" style={{ backgroundColor: statusColor }} />
         <button
           onClick={() => onOpen?.(member)}
           className="text-sm font-semibold text-foreground flex items-center gap-1.5 text-left hover:underline min-w-0"

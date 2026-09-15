@@ -19,6 +19,8 @@ import InvoiceFinancials from "@/components/invoice/InvoiceFinancials";
 import InvoicePrintView from "@/components/invoice/InvoicePrintView";
 import RecordInvoicePaymentDialog from "@/components/invoice/RecordInvoicePaymentDialog";
 import RichTextEditor from "@/components/common/RichTextEditor";
+import WordCounterTextarea from "@/components/common/WordCounterTextarea";
+import { isWithinLimit, countWords, WORD_LIMIT, WORD_LIMIT_WARN_THRESHOLD } from "@/lib/wordLimit";
 import InvoicePublicLinkPanel from "@/components/invoice/InvoicePublicLinkPanel";
 import Toggle from "@/components/common/Toggle";
 import {

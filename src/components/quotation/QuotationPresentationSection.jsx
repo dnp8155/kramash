@@ -2,6 +2,7 @@ import Input from "@/components/common/Input";
 import Toggle from "@/components/common/Toggle";
 import { Section, Field } from "@/components/quotation/QuotationParts";
 import { Textarea } from "@/components/ui/textarea";
+import WordCounterTextarea from "@/components/common/WordCounterTextarea";
 import { Eye, Building2, Share2, MessageSquare, StickyNote, Instagram, Youtube, Globe, Link as LinkIcon } from "lucide-react";
 import { getSocialIcon } from "@/lib/socialIcons";
 
@@ -124,7 +125,7 @@ export default function QuotationPresentationSection({
 
       {/* Special Notes */}
       <Section icon={StickyNote} title="Special Notes (Scope-Specific)">
-        <Textarea
+        <WordCounterTextarea
           value={specialNotes || ""}
           onChange={(e) => setSpecialNotes(e.target.value)}
           disabled={readOnly}
