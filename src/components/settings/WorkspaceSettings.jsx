@@ -6,6 +6,7 @@ import Button from "@/components/common/Button";
 import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
 import Toggle from "@/components/common/Toggle";
+import BusinessTypeSelector from "@/components/settings/BusinessTypeSelector";
 import { Upload, Loader2, Pencil, Check } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { isValidIndianPhone, isValidEmail } from "@/lib/validation";
@@ -107,6 +108,8 @@ export default function WorkspaceSettings() {
   };
 
   return (
+    <div className="space-y-4">
+    <BusinessTypeSelector />
     <div className="bg-card border border-border rounded-lg p-4">
       <h3 className="text-sm font-semibold mb-3">Owner & Workspace</h3>
 
@@ -222,6 +225,7 @@ export default function WorkspaceSettings() {
           {saving ? <><Loader2 className="w-4 h-4 animate-spin" />Saving…</> : "Save Settings"}
         </Button>
       </div>
+    </div>
     </div>
   );
 }

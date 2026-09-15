@@ -35,6 +35,25 @@ export const QUOTATION_CATEGORIES = [
   { value: "OTHER", label: "Other Services" }
 ];
 
+// Map a workspace business_category (10-value enum) to a quotation category (4-value enum).
+// The Quotation entity only supports 4 categories; new business types are mapped to the
+// closest quotation category so context options and templates still work.
+export function mapToQuotationCategory(businessCategory) {
+  const map = {
+    PHOTOGRAPHY: "PHOTOGRAPHY",
+    EVENT_MANAGEMENT: "EVENT_MANAGEMENT",
+    CATERING: "EVENT_MANAGEMENT",
+    ARCHITECTURE: "ARCHITECTURE",
+    INTERIOR: "ARCHITECTURE",
+    CONTRACTING: "ARCHITECTURE",
+    SALON_BEAUTY: "OTHER",
+    CONSULTING: "OTHER",
+    AGENCY: "OTHER",
+    OTHER: "OTHER",
+  };
+  return map[businessCategory] || "OTHER";
+}
+
 // ---- Dynamic Context Types per Category ----
 
 export const EVENT_CONTEXT_TYPES = [

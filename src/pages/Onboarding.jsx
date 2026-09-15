@@ -6,8 +6,9 @@ import Logo from "@/components/common/Logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Check, Building2, MapPin, Receipt, PartyPopper, Camera, PartyPopper as PartyIcon, Briefcase, Compass } from "lucide-react";
+import { Loader2, Check, Building2, MapPin, Receipt, PartyPopper, Camera, Briefcase, Compass, Sofa, Scissors, Megaphone, UtensilsCrossed, HardHat } from "lucide-react";
 import { BUSINESS_CATEGORIES, BUSINESS_CATEGORY_OPTIONS, categoryLabel } from "@/lib/businessTerminology";
+import { BUSINESS_TYPE_ICONS } from "@/lib/businessTypeProfiles";
 import { getIndustryPresets } from "@/constants/industryPresets";
 import { getMemberTypePresets } from "@/lib/memberTypeService";
 import { DEFAULT_EXPENSE_CATEGORIES } from "@/constants/financeConfig";
@@ -18,12 +19,12 @@ const currencies = ["INR (₹)", "USD ($)", "EUR (€)", "AED (د.إ)"];
 const timezones = ["Asia/Kolkata", "UTC", "Asia/Dubai", "America/New_York"];
 const gstRates = [0, 5, 12, 18, 28];
 
-const CATEGORY_ICONS = {
-  PHOTOGRAPHY: Camera,
-  EVENT_MANAGEMENT: PartyIcon,
-  ARCHITECTURE: Building2,
-  OTHER: Briefcase
+const ICON_COMPONENTS = {
+  Camera, PartyPopper, Building2, Sofa, Scissors, Briefcase, Megaphone, UtensilsCrossed, HardHat, Compass,
 };
+const CATEGORY_ICONS = Object.fromEntries(
+  Object.entries(BUSINESS_TYPE_ICONS).map(([key, name]) => [key, ICON_COMPONENTS[name]])
+);
 
 export default function Onboarding() {
   const { user } = useAuth();
@@ -64,19 +65,14 @@ export default function Onboarding() {
       const businessType = category === BUSINESS_CATEGORIES.OTHER
         ? (form.custom_business_type || "Other")
         : categoryLabel(category);
-      // Explicit Project/Projects work-labels for Architecture & Other categories,
-      // so the app shows "Project(s)" from first load without relying on the
-      // category-map fallback. Photography/Event Management stay default (Event/Events).
-      const workLabels = (category === BUSINESS_CATEGORIES.ARCHITECTURE || category === BUSINESS_CATEGORIES.OTHER)
-        ? { custom_work_label_singular: "Project", custom_work_label_plural: "Projects" }
-        : {};
+      // Work-labels are now derived from the business type profile automatically
+      // (businessTypeProfiles.js) — no explicit custom_work_label needed at creation.
       // Save the user's personal name on their profile.
       if (form.your_name.trim() && form.your_name.trim() !== user?.full_name) {
         try { await base44.auth.updateMe({ full_name: form.your_name.trim() }); } catch (e) { /* non-fatal */ }
       }
       const workspace = await base44.entities.Workspace.create({
         ...form,
-        ...workLabels,
         business_category: category,
         business_type: businessType,
         owner_user_id: user.id,

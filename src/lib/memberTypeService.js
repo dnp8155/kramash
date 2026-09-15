@@ -1,6 +1,9 @@
 // Centralized Team Member Type service — single source of truth for type definitions and colors.
 // Member records store only the type ID; the type definition (key + label + color) is resolved here.
 // Changing a type's color in Preferences automatically updates every UI that renders the type dot.
+// Member type presets are sourced from businessTypeProfiles.js.
+
+import { BUSINESS_TYPE_PROFILES, BUSINESS_CATEGORY_KEYS, getProfile } from "@/lib/businessTypeProfiles";
 
 export const MAX_MEMBER_TYPES = 3;
 
@@ -25,30 +28,10 @@ export const TYPE_COLOR_SWATCHES = [
   { hex: "#6b7280", label: "Grey" },
 ];
 
-// Profession-based default member type presets.
-// Applied ONLY on new workspace creation. After seeding, the user's configured types are the source of truth.
-export const MEMBER_TYPE_PRESETS = {
-  PHOTOGRAPHY: [
-    { id: "mt1", title: "Bride Side", color: "#c0392b" },
-    { id: "mt2", title: "Groom Side", color: "#2980b9" },
-    { id: "mt3", title: "Common", color: "#27ae60" },
-  ],
-  EVENT_MANAGEMENT: [
-    { id: "mt1", title: "Client Side", color: "#c0392b" },
-    { id: "mt2", title: "Vendor", color: "#2980b9" },
-    { id: "mt3", title: "In-house", color: "#27ae60" },
-  ],
-  ARCHITECTURE: [
-    { id: "mt1", title: "Client", color: "#c0392b" },
-    { id: "mt2", title: "Consultant", color: "#2980b9" },
-    { id: "mt3", title: "Contractor", color: "#27ae60" },
-  ],
-  OTHER: [
-    { id: "mt1", title: "Type 1", color: "#c0392b" },
-    { id: "mt2", title: "Type 2", color: "#2980b9" },
-    { id: "mt3", title: "Type 3", color: "#27ae60" },
-  ],
-};
+// Build MEMBER_TYPE_PRESETS from the central profiles.
+export const MEMBER_TYPE_PRESETS = Object.fromEntries(
+  BUSINESS_CATEGORY_KEYS.map((key) => [key, BUSINESS_TYPE_PROFILES[key].memberTypes])
+);
 
 // Parse member types from workspace JSON string
 export function getMemberTypes(workspace) {
@@ -90,5 +73,5 @@ export function getMemberTypeColor(workspace, typeIdOrLabel) {
 
 // Get the preset member types for a business category
 export function getMemberTypePresets(category) {
-  return MEMBER_TYPE_PRESETS[category] || MEMBER_TYPE_PRESETS.OTHER;
+  return getProfile(category).memberTypes;
 }

@@ -1,15 +1,9 @@
 // Resolves workspace-configured event/work types with sensible defaults.
 // Event types are stored as a JSON string array on the Workspace entity
-// (workspace.event_types). When not configured, category-based defaults are used.
+// (workspace.event_types). When not configured, category-based defaults
+// from the business type profile are used.
 
-const DEFAULT_PHOTO_EVENT_TYPES = [
-  "Wedding", "Pre-Wedding", "Reception", "Engagement", "Haldi",
-  "Mehndi", "Birthday", "Corporate", "Portfolio", "Other"
-];
-
-const DEFAULT_GENERIC_WORK_TYPES = [
-  "Project", "Assignment", "Consultation", "Site Visit", "Contract", "Other"
-];
+import { getProfile } from "@/lib/businessTypeProfiles";
 
 // Normalize: trim + collapse internal whitespace (for case-insensitive dedup)
 export function normalizeEventType(str) {
@@ -51,9 +45,7 @@ export function getEventTypes(workspace, category) {
   return getDefaultEventTypes(category);
 }
 
-// Category-based default event types (used when workspace has no custom types configured).
+// Category-based default event types from the business type profile.
 export function getDefaultEventTypes(category) {
-  return (category === "ARCHITECTURE" || category === "OTHER")
-    ? DEFAULT_GENERIC_WORK_TYPES
-    : DEFAULT_PHOTO_EVENT_TYPES;
+  return getProfile(category).eventTypes;
 }

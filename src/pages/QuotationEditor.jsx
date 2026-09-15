@@ -26,7 +26,7 @@ import { createFromQuotation } from "@/lib/invoiceService";
 import CreateInvoiceDialog from "@/components/quotation/CreateInvoiceDialog";
 import { syncAcceptedQuotation } from "@/lib/milestoneService";
 import { generateQuotationPdf, generateJobSheetPdf } from "@/lib/quotationPdf";
-import { DEFAULT_QUOTATION_TERMS, DEFAULT_FOOTER_MESSAGE, QUOTATION_STATUS_META } from "@/constants/quotationConfig";
+import { DEFAULT_QUOTATION_TERMS, DEFAULT_FOOTER_MESSAGE, QUOTATION_STATUS_META, mapToQuotationCategory } from "@/constants/quotationConfig";
 import { ArrowLeft, AlertTriangle, FileText, Plus, Receipt, Package } from "lucide-react";
 import PdfPreviewModal from "@/components/common/PdfPreviewModal";
 import { cn } from "@/lib/utils";

@@ -18,6 +18,12 @@
         "PHOTOGRAPHY",
         "EVENT_MANAGEMENT",
         "ARCHITECTURE",
+        "INTERIOR",
+        "SALON_BEAUTY",
+        "CONSULTING",
+        "AGENCY",
+        "CATERING",
+        "CONTRACTING",
         "OTHER"
       ]
     },
