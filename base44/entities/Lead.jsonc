@@ -81,6 +81,10 @@
     "converted_client_id": {
       "type": "string",
       "title": "Converted Client ID (if lead was converted to a client)"
+    },
+    "converted_event_id": {
+      "type": "string",
+      "title": "Converted Event ID (if lead was converted to an event/project)"
     }
   },
   "required": [
