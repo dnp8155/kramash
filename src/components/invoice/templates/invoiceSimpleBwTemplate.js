@@ -99,6 +99,16 @@ export function renderInvoiceSimpleBw(data) {
     try { return JSON.parse(invoice.client_snapshot); } catch { return null; }
   })() || {};
 
+  // Event snapshot
+  const ev = (() => {
+    if (!invoice?.event_snapshot) return null;
+    try { return JSON.parse(invoice.event_snapshot); } catch { return null; }
+  })() || {};
+  const eventTitle = ev.title || "";
+  const eventStart = ev.start_date ? fmtDateLong(ev.start_date) : "";
+  const eventEnd = ev.end_date && ev.end_date !== ev.start_date ? fmtDateLong(ev.end_date) : "";
+  const eventDateRange = eventStart ? (eventEnd ? `${eventStart} — ${eventEnd}` : eventStart) : "";
+
   const bizName = biz.name || "Business Name";
   const bizPhone = biz.phone || "";
   const bizEmail = biz.email || "";
@@ -226,7 +236,9 @@ export function renderInvoiceSimpleBw(data) {
 
       <div class="meta-row">
         <div><strong>Invoice No:</strong> ${escapeHtml(invoiceNumber)}</div>
-        <div><strong>Date:</strong> ${escapeHtml(invoiceDate)}</div>
+        <div><strong>Invoice Date:</strong> ${escapeHtml(invoiceDate)}</div>
+        ${dueDate ? `<div><strong>Due Date:</strong> ${escapeHtml(dueDate)}</div>` : ""}
+        ${eventDateRange ? `<div><strong>Project Date:</strong> ${escapeHtml(eventDateRange)}</div>` : ""}
       </div>
 
       <div class="invoice-heading">INVOICE</div>
@@ -237,7 +249,8 @@ export function renderInvoiceSimpleBw(data) {
       ${clientCity ? `<div class="detail-line"><span class="detail-label">City:</span> ${escapeHtml(clientCity)}</div>` : ""}
       ${clientPhone ? `<div class="detail-line"><span class="detail-label">Contact Number:</span> ${escapeHtml(clientPhone)}</div>` : ""}
       ${clientEmail ? `<div class="detail-line"><span class="detail-label">Email:</span> ${escapeHtml(clientEmail)}</div>` : ""}
-      ${dueDate ? `<div class="detail-line"><span class="detail-label">Due Date:</span> ${escapeHtml(dueDate)}</div>` : ""}
+      ${eventTitle ? `<div class="detail-line"><span class="detail-label">Project:</span> ${escapeHtml(eventTitle)}</div>` : ""}
+      ${eventDateRange ? `<div class="detail-line"><span class="detail-label">Project Date:</span> ${escapeHtml(eventDateRange)}</div>` : ""}
 
       <div class="section-title">ITEMS</div>
       <table class="items-table">
@@ -277,7 +290,7 @@ export function renderInvoiceSimpleBw(data) {
         <div class="detail-line">${escapeHtml(bizName)} on ${escapeHtml(invoiceDate)}</div>
       </div>
 
-      <div class="footer">${escapeHtml(bizName)}</div>
+      <div class="footer">${escapeHtml(bizName)} &bull; Kramasha</div>
 
     </div>
   </div>

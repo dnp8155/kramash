@@ -653,7 +653,9 @@ export default function InvoiceEditor() {
             discount_type: discountType,
             discount_value: Number(discountValue) || 0,
             gst_applicable: gstApplicable,
-            notes
+            notes,
+            client_snapshot: buildClientSnapshot(client),
+            event_snapshot: buildEventSnapshot(event)
           }}
           items={items}
           workspace={workspace}

@@ -401,7 +401,7 @@ export default function PublicInvoice() {
         {/* Footer */}
         <div className="text-center text-xs text-muted-foreground py-4">
           {invoice.authorized_signatory && <div className="mb-2">Authorized by: {invoice.authorized_signatory}</div>}
-          {business?.name && <div>© {new Date().getFullYear()} {business.name}. All rights reserved.</div>}
+          {business?.name && <div>© {new Date().getFullYear()} {business.name} &bull; Kramasha. All rights reserved.</div>}
         </div>
       </div>
     </div>
