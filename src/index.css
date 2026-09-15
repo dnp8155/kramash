@@ -15,24 +15,24 @@
     --popover-foreground: 220 26% 14%;
 
     /* Brand / actions — deep teal */
-    --primary: 180 39% 18%;
+    --primary: 223 47% 41%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 180 39% 14%;
+    --primary-hover: 223 47% 34%;
     --secondary: 43 35% 94%;
     --secondary-foreground: 220 26% 14%;
     --muted: 43 30% 95%;
     --muted-foreground: 218 17% 35%;
-    --accent: 180 39% 18%;
+    --accent: 223 47% 41%;
     --accent-foreground: 0 0% 100%;
 
     /* Sidebar — dark teal */
-    --sidebar-background: 180 39% 13%;
+    --sidebar-background: 223 35% 15%;
     --sidebar-foreground: 43 35% 94%;
-    --sidebar-muted: 180 15% 55%;
+    --sidebar-muted: 223 15% 65%;
     --sidebar-primary: 43 35% 94%;
-    --sidebar-primary-foreground: 180 39% 13%;
-    --sidebar-border: 180 20% 20%;
-    --sidebar-hover: 180 30% 18%;
+    --sidebar-primary-foreground: 223 47% 41%;
+    --sidebar-border: 223 25% 22%;
+    --sidebar-hover: 223 30% 20%;
 
     /* Status — refined, not loud */
     --success: 152 56% 38%;
@@ -44,7 +44,7 @@
 
     --border: 40 25% 90%;
     --input: 40 25% 90%;
-    --ring: 180 39% 18%;
+    --ring: 223 47% 41%;
 
     /* Toggle */
     --toggle-on: 152 56% 38%;
@@ -60,15 +60,15 @@
     --shadow-glow: 0 0 0 1px rgb(34 84 222 / 0.06), 0 8px 24px -4px rgb(34 84 222 / 0.12);
 
     /* Accent gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(180 39% 18%), hsl(176 42% 14%));
+    --gradient-primary: linear-gradient(135deg, hsl(223 47% 41%), hsl(225 50% 34%));
     --gradient-success: linear-gradient(135deg, hsl(152 56% 38%), hsl(154 60% 32%));
     --gradient-warning: linear-gradient(135deg, hsl(32 95% 44%), hsl(28 90% 40%));
     --gradient-danger: linear-gradient(135deg, hsl(0 72% 51%), hsl(355 70% 45%));
     --gradient-info: linear-gradient(135deg, hsl(217 91% 60%), hsl(222 47% 35%));
 
     /* Chart / badges */
-    --badge-upcoming-bg: 180 30% 94%;
-    --badge-upcoming-fg: 180 39% 20%;
+    --badge-upcoming-bg: 223 30% 94%;
+    --badge-upcoming-fg: 223 40% 30%;
     --badge-progress-bg: 32 95% 94%;
     --badge-progress-fg: 28 90% 40%;
     --badge-completed-bg: 152 56% 94%;
@@ -91,14 +91,14 @@
     --card-foreground: 210 16% 93%;
     --popover: 222 24% 14%;
     --popover-foreground: 210 16% 93%;
-    --primary: 217 91% 60%;
+    --primary: 223 55% 60%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 217 91% 68%;
+    --primary-hover: 223 55% 68%;
     --secondary: 222 18% 20%;
     --secondary-foreground: 210 16% 93%;
     --muted: 222 18% 20%;
     --muted-foreground: 220 10% 62%;
-    --accent: 217 91% 60%;
+    --accent: 223 55% 60%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 72% 60%;
     --destructive-foreground: 0 0% 98%;
@@ -106,10 +106,10 @@
     --warning: 32 95% 55%;
     --border: 222 18% 22%;
     --input: 222 18% 22%;
-    --ring: 217 91% 60%;
-    --sidebar-background: 222 32% 7%;
-    --sidebar-hover: 222 22% 14%;
-    --sidebar-border: 222 18% 16%;
+    --ring: 223 55% 60%;
+    --sidebar-background: 223 30% 10%;
+    --sidebar-hover: 223 22% 16%;
+    --sidebar-border: 223 18% 18%;
   }
 }
 
