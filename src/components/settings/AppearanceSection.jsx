@@ -5,6 +5,7 @@ import { themes } from "@/constants/preferencesConfig";
 import Toggle from "@/components/common/Toggle";
 import { useToast } from "@/components/ui/use-toast";
 import { useDisplayPreferences } from "@/hooks/useDisplayPreferences";
+import PastelPalettePicker from "@/components/settings/PastelPalettePicker";
 import { cn } from "@/lib/utils";
 
 export default function AppearanceSection() {
@@ -54,6 +55,7 @@ export default function AppearanceSection() {
             </button>
           ))}
         </div>
+        {theme === "Pastel" && <PastelPalettePicker />}
       </div>
       <div className="pt-4 border-t border-border">
         <h3 className="text-sm font-semibold mb-3">Display</h3>

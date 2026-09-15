@@ -43,6 +43,7 @@ import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
 import { useDisplayPreferences } from "@/hooks/useDisplayPreferences";
 import { invalidateEntities } from "@/lib/queryInvalidation";
 import PaymentDot from "@/components/common/PaymentDot";
+import EventTypeBadge from "@/components/common/EventTypeBadge";
 
 export default function EventDetails() {
   const { id } = useParams();
@@ -412,9 +413,9 @@ export default function EventDetails() {
             <PaymentDot paid={fin.received} agreed={fin.contractValue} />
             <h1 className="text-2xl font-bold text-foreground tracking-tight truncate">{event.title}</h1>
           </div>
-          <p className="text-sm text-muted-foreground ml-6">
-            {event.event_type && <>{event.event_type}</>}
-            {allDates.length > 0 && <> · {allDates.map(formatDateShort).join(", ")}</>}
+          <p className="text-sm text-muted-foreground ml-6 flex items-center gap-1.5 flex-wrap">
+            {event.event_type && <EventTypeBadge eventType={event.event_type} />}
+            {allDates.length > 0 && <span>· {allDates.map(formatDateShort).join(", ")}</span>}
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">

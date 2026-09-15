@@ -23,6 +23,8 @@ const DEFAULTS = {
   groupUpcoming: true,
   // Show text labels under icons in the mobile/PWA bottom navigation
   showMenubarLabels: true,
+  // Pastel theme — custom palette (array of 3–5 hex strings). null = use category default.
+  pastelPalette: null,
   // Shared invoice
   showLogo: false,
   // Quotation defaults (set in Preferences → Quotation tab)

@@ -10,6 +10,7 @@ import { formatMoney } from "@/utils/format";
 import { parseMiscExpenses, miscExpensesTotal } from "@/components/events/EventMiscExpenseEditor";
 import PaymentDot from "@/components/common/PaymentDot";
 import MemberTypeTag from "@/components/common/MemberTypeTag";
+import EventTypeBadge from "@/components/common/EventTypeBadge";
 import { cn } from "@/lib/utils";
 
 export default function EventsTable({ events, clients, teamMap = {}, serviceMap = {}, assignmentsByEvent = {}, receiptsByEvent = {}, addonsByEvent = {}, currency = "INR", loading, onEventClick, onEditEvent, onDeleteEvent, onAdd, canAdd, term }) {
@@ -106,7 +107,10 @@ function Row({ event, clientName, teamMap, serviceMap, assignmentsByEvent, recei
             <PaymentDot paid={totalReceived} agreed={contractValue} />
             <span className="text-sm font-semibold text-foreground truncate">{event.title}</span>
           </div>
-          <div className="text-xs text-muted-foreground mt-0.5">{event.event_type} · {formatEventDates(event)}</div>
+          <div className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1.5 min-w-0">
+            <EventTypeBadge eventType={event.event_type} />
+            <span className="truncate">· {formatEventDates(event)}</span>
+          </div>
         </div>
 
         {/* Desktop columns */}
@@ -118,7 +122,9 @@ function Row({ event, clientName, teamMap, serviceMap, assignmentsByEvent, recei
             <div className="text-xs text-muted-foreground">{clientName}</div>
           </div>
         </div>
-        <span className="text-sm text-foreground hidden sm:block">{event.event_type}</span>
+        <span className="hidden sm:block text-sm text-foreground">
+          <EventTypeBadge eventType={event.event_type} />
+        </span>
         <span className="text-sm text-muted-foreground hidden sm:block">{formatEventDates(event)}</span>
         <div className="hidden sm:flex items-center gap-2">
           <StatusBadge status={event.status} />
