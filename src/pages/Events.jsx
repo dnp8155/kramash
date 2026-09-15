@@ -249,7 +249,7 @@ export default function Events() {
             size="icon"
             aria-label="Export"
             className="shrink-0"
-            onClick={() => exportEventsXlsx(filtered, clients, fyFilter !== "all" ? fyFilter : null, term)}
+            onClick={() => exportEventsXlsx(filtered, clients, fyFilter !== "all" ? fyFilter : null, term, receiptsByEvent, addonsByEvent)}
             disabled={filtered.length === 0}
           >
             <Download className="w-4 h-4" />

@@ -77,26 +77,43 @@ function downloadXlsx(wb, filename) {
 
 // ---- Export: Events ----
 
-export function exportEventsXlsx(events, clientsMap, fyLabel, term) {
+export function exportEventsXlsx(events, clientsMap, fyLabel, term, receiptsByEvent, addonsByEvent) {
   const t = term || {};
   const workSingular = t.workItemSingular || "Event";
   const workPlural = t.workItemPlural || "Events";
   const locationLabel = t.locationLabel || "Venue";
+  const rb = receiptsByEvent || {};
+  const ab = addonsByEvent || {};
   const columns = [
     { key: "title", label: `${workSingular} Name` },
+    { key: "event_type", label: "Event Type" },
     { key: "client_name", label: "Client" },
     { key: "start_date", label: "Start Date" },
     { key: "end_date", label: "End Date" },
     { key: "venue", label: locationLabel },
-    { key: "status", label: "Status" },
     { key: "contract_value", label: "Contract Value" },
+    { key: "addon_total", label: "Add-ons" },
+    { key: "received", label: "Payment Received" },
+    { key: "balance", label: "Remaining Balance" },
+    { key: "status", label: "Status" },
   ];
-  const rows = events.map((e) => ({
-    ...e,
-    client_name: clientsMap[e.client_id]?.name || "",
-    end_date: e.end_date || "",
-    venue: e.venue || "",
-  }));
+  const rows = events.map((e) => {
+    const contract = Number(e.contract_value) || 0;
+    const addons = Number(ab[e.id]) || 0;
+    const received = Number(rb[e.id]) || 0;
+    const balance = Math.max(contract + addons - received, 0);
+    return {
+      ...e,
+      event_type: e.event_type || "",
+      client_name: clientsMap[e.client_id]?.name || "",
+      end_date: e.end_date || "",
+      venue: e.venue || "",
+      contract_value: contract,
+      addon_total: addons,
+      received,
+      balance,
+    };
+  });
   const wb = rowsToWorkbook(rows, columns, workPlural);
   const fy = fyLabel ? sanitizeFilename(fyLabel) : "All";
   const prefix = sanitizeFilename(t.exportPrefix || workPlural);
@@ -132,14 +149,16 @@ export function exportEventsCsv(events, clientsMap, fyLabel, term) {
 
 // ---- Export: Clients ----
 
-export function exportClientsXlsx(clients, eventCounts) {
+export function exportClientsXlsx(clients, eventCounts, term) {
+  const t = term || {};
+  const workPlural = t.workItemPlural || "Work Items";
   const columns = [
     { key: "name", label: "Client Name" },
     { key: "phone", label: "Phone" },
     { key: "email", label: "Email" },
     { key: "city", label: "City" },
     { key: "state", label: "State" },
-    { key: "event_count", label: "Work Items" },
+    { key: "event_count", label: workPlural },
   ];
   const rows = clients.map((c) => ({
     name: c.name || "",
@@ -186,15 +205,24 @@ export function exportTeamXlsx(members, rolesMap) {
     { key: "rate_type", label: "Rate Type" },
     { key: "status", label: "Status" },
   ];
-  const rows = members.map((m) => ({
-    name: m.name || "",
-    role: rolesMap[m.role_id]?.name || m.profession || "",
-    phone: m.phone || "",
-    email: m.email || "",
-    default_rate: m.default_rate || 0,
-    rate_type: m.rate_type || "",
-    status: m.status || "",
-  }));
+  const rows = members.map((m) => {
+    const role = rolesMap[m.role_id] || {};
+    const memberRate = Number(m.default_rate) || 0;
+    const memberRateType = m.rate_type || "";
+    // Role-rate fallback: when member's legacy default_rate is 0/empty,
+    // use the rate from the member's assigned role.
+    const rate = memberRate || Number(role.default_rate) || 0;
+    const rateType = memberRateType || role.rate_type || "";
+    return {
+      name: m.name || "",
+      role: role.name || m.profession || "",
+      phone: m.phone || "",
+      email: m.email || "",
+      default_rate: rate,
+      rate_type: rateType,
+      status: m.status || "",
+    };
+  });
   const wb = rowsToWorkbook(rows, columns, "Team");
   downloadXlsx(wb, `Kramasha_Team.xlsx`);
 }
@@ -345,12 +373,14 @@ export function exportInvoicesXlsx(invoices, clientsMap, eventsMap) {
 
 // ---- Export: Quotations ----
 
-export function exportQuotationsXlsx(quotations, clientsMap) {
+export function exportQuotationsXlsx(quotations, clientsMap, eventsMap) {
+  const ev = eventsMap || {};
   const columns = [
     { key: "quotation_number", label: "Quotation Number" },
     { key: "quotation_date", label: "Quotation Date" },
     { key: "valid_until", label: "Valid Until" },
     { key: "client_name", label: "Client" },
+    { key: "event_title", label: "Work Item" },
     { key: "project_title", label: "Project Title" },
     { key: "status", label: "Status" },
     { key: "grand_total", label: "Grand Total" },
@@ -360,10 +390,65 @@ export function exportQuotationsXlsx(quotations, clientsMap) {
     quotation_date: q.quotation_date || "",
     valid_until: q.valid_until || "",
     client_name: clientsMap[q.client_id]?.name || "",
+    event_title: ev[q.event_id]?.title || "",
     project_title: q.project_title || "",
     status: q.status || "",
     grand_total: Number(q.grand_total) || 0,
   }));
   const wb = rowsToWorkbook(rows, columns, "Quotations");
   downloadXlsx(wb, `Kramasha_Quotations.xlsx`);
+}
+
+// ---- Export: Leads ----
+
+export function exportLeadsXlsx(leads) {
+  const statusLabels = {
+    new: "New",
+    contacted: "Contacted",
+    qualified: "Qualified",
+    negotiation: "Negotiation",
+    won: "Won",
+    lost: "Lost",
+  };
+  const priorityLabels = {
+    hot: "Hot",
+    warm: "Warm",
+    cold: "Cold",
+  };
+  const sourceLabels = {
+    referral: "Referral",
+    social_media: "Social Media",
+    website: "Website",
+    walk_in: "Walk-in",
+    advertisement: "Advertisement",
+    other: "Other",
+  };
+  const columns = [
+    { key: "name", label: "Lead Name" },
+    { key: "phone", label: "Phone" },
+    { key: "email", label: "Email" },
+    { key: "source_label", label: "Source" },
+    { key: "event_type", label: "Interested In" },
+    { key: "event_date", label: "Tentative Event Date" },
+    { key: "budget", label: "Budget" },
+    { key: "status_label", label: "Status" },
+    { key: "priority_label", label: "Priority" },
+    { key: "next_followup_date", label: "Next Follow-up" },
+    { key: "notes", label: "Notes" },
+  ];
+  const rows = leads.map((l) => ({
+    name: l.name || "",
+    phone: l.phone || "",
+    email: l.email || "",
+    source_label: sourceLabels[l.source] || l.source || "",
+    event_type: l.event_type || "",
+    event_date: l.event_date || "",
+    budget: Number(l.budget) || 0,
+    status_label: statusLabels[l.status] || l.status || "",
+    priority_label: priorityLabels[l.priority] || l.priority || "",
+    next_followup_date: l.next_followup_date || "",
+    notes: l.notes || "",
+  }));
+  const wb = rowsToWorkbook(rows, columns, "Leads");
+  downloadXlsx(wb, `Kramasha_Leads.xlsx`);
 }

@@ -16,7 +16,8 @@ import ConvertLeadDialog from "@/components/leads/ConvertLeadDialog";
 import { useToast } from "@/components/ui/use-toast";
 import { invalidateEntities } from "@/lib/queryInvalidation";
 import { formatEventDate } from "@/lib/dates";
-import { Plus, Pencil, Trash2, Phone, Mail, Calendar, TrendingUp, Flame, Users, Target, CalendarPlus, ArrowRight, CheckCircle2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Phone, Mail, Calendar, TrendingUp, Flame, Users, Target, CalendarPlus, ArrowRight, CheckCircle2, FileSpreadsheet } from "lucide-react";
+import { exportLeadsXlsx } from "@/lib/exportUtils";
 
 const STATUS_STYLES = {
   new: { bg: "bg-blue-50", text: "text-blue-700", label: "New" },
@@ -117,10 +118,15 @@ export default function Leads() {
   return (
     <div className="p-4 sm:p-6 space-y-5">
       <PageHeader title="Leads" subtitle="Track and manage potential clients through your sales pipeline.">
-        <Button onClick={openNew}>
-          <Plus className="w-4 h-4" />
-          <span className="hidden sm:inline">Add Lead</span>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => exportLeadsXlsx(filtered)} disabled={filtered.length === 0}>
+            <FileSpreadsheet className="w-4 h-4" /> Export
+          </Button>
+          <Button onClick={openNew}>
+            <Plus className="w-4 h-4" />
+            <span className="hidden sm:inline">Add Lead</span>
+          </Button>
+        </div>
       </PageHeader>
 
       {/* Stats */}
