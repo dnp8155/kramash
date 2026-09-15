@@ -28,6 +28,38 @@ function formatSingle(date) {
   return `${date.getDate()} ${MONTHS[date.getMonth()]} ${date.getFullYear()}`;
 }
 
+// General-purpose date list formatter — takes an array of "YYYY-MM-DD" strings
+// and returns smart-grouped output with automatic month/year grouping:
+//   ["2026-09-01"]                                    → "1 Sep 2026"
+//   ["2026-09-01", "2026-09-02"]                       → "1, 2 Sep 2026"
+//   ["2026-09-01", "2026-09-02", "2026-10-31"]         → "1, 2 Sep, 31 Oct 2026"
+//   ["2026-09-01", "2027-10-31"]                       → "1 Sep 2026, 31 Oct 2027"
+// Used by both event/project date displays and notification date formatting.
+export function formatDatesList(datesArray) {
+  if (!Array.isArray(datesArray) || datesArray.length === 0) return "—";
+  const parsed = datesArray.map(parseISODate).filter(Boolean).sort((a, b) => a - b);
+  if (parsed.length === 0) return "—";
+  const first = parsed[0];
+  const sameYear = parsed.every((d) => d.getFullYear() === first.getFullYear());
+  // Group consecutive dates by (year, month)
+  const groups = [];
+  for (const d of parsed) {
+    const key = `${d.getFullYear()}-${d.getMonth()}`;
+    const last = groups[groups.length - 1];
+    if (last && last.key === key) {
+      last.days.push(d.getDate());
+    } else {
+      groups.push({ key, year: d.getFullYear(), month: d.getMonth(), days: [d.getDate()] });
+    }
+  }
+  const parts = groups.map((g) => {
+    const daysStr = g.days.join(", ");
+    const monthYear = sameYear ? MONTHS[g.month] : `${MONTHS[g.month]} ${g.year}`;
+    return `${daysStr} ${monthYear}`;
+  });
+  return parts.join(", ") + (sameYear ? ` ${first.getFullYear()}` : "");
+}
+
 // Format an event date range, matching the Kramasha style:
 // "26 Aug 2026" | "23, 25 Apr 2026" | "31 Jan, 1 Feb 2026" | "31 Dec 2026, 1 Jan 2027"
 export function formatEventDate(startStr, endStr) {
@@ -50,23 +82,7 @@ export function formatEventDate(startStr, endStr) {
 export function formatEventDates(event) {
   const dates = event?.event_dates;
   if (Array.isArray(dates) && dates.length > 0) {
-    if (dates.length === 1) {
-      return formatSingle(parseISODate(dates[0]));
-    }
-    const parsed = dates.map(parseISODate).filter(Boolean).sort((a, b) => a - b);
-    if (parsed.length === 0) return "—";
-    const first = parsed[0];
-    const last = parsed[parsed.length - 1];
-    // Same month → "23, 25, 28 Apr 2026"
-    if (first.getMonth() === last.getMonth() && first.getFullYear() === last.getFullYear()) {
-      const days = parsed.map((d) => d.getDate()).join(", ");
-      return `${days} ${MONTHS[last.getMonth()]} ${last.getFullYear()}`;
-    }
-    // Spread across months → "28 Aug, 02 Sep, 10 Oct 2026"
-    const sameYear = parsed.every((d) => d.getFullYear() === first.getFullYear());
-    return parsed
-      .map((d) => `${d.getDate()} ${MONTHS[d.getMonth()]}${sameYear ? "" : ` ${d.getFullYear()}`}`)
-      .join(", ") + (sameYear ? ` ${first.getFullYear()}` : "");
+    return formatDatesList(dates);
   }
   return formatEventDate(event?.start_date, event?.end_date);
 }
@@ -80,18 +96,7 @@ export function formatAssignedDates(assignment, event) {
     ? assignment.working_dates.filter(Boolean)
     : [];
   if (wd.length > 0) {
-    const parsed = wd.map(parseISODate).filter(Boolean).sort((a, b) => a - b);
-    if (parsed.length === 0) return "—";
-    const first = parsed[0];
-    const last = parsed[parsed.length - 1];
-    if (first.getMonth() === last.getMonth() && first.getFullYear() === last.getFullYear()) {
-      const days = parsed.map((d) => d.getDate()).join(", ");
-      return `${days} ${MONTHS[last.getMonth()]} ${last.getFullYear()}`;
-    }
-    const sameYear = parsed.every((d) => d.getFullYear() === first.getFullYear());
-    return parsed
-      .map((d) => `${d.getDate()} ${MONTHS[d.getMonth()]}${sameYear ? "" : ` ${d.getFullYear()}`}`)
-      .join(", ") + (sameYear ? ` ${first.getFullYear()}` : "");
+    return formatDatesList(wd);
   }
   const start = assignment?.booking_start_date || event?.start_date;
   const end = assignment?.booking_end_date || event?.end_date || start;

@@ -9,6 +9,7 @@
 // all workspace members.
 
 import { resolvePlanContext } from "../../shared/planEngine.ts";
+import { formatDatesList } from "../../shared/dateFormat.ts";
 
 export default async function (req) {
   try {
@@ -97,7 +98,7 @@ export default async function (req) {
             user_id: m.user_id,
             type: "event_reminder",
             title: is24 ? reminderTomorrow : reminderComing,
-            message: `"${ev.title}" ${reminderVerb} ${firstDate}${ev.venue ? ` at ${ev.venue}` : ""}.`,
+            message: `"${ev.title}" ${reminderVerb} ${formatDatesList(evDates)}${ev.venue ? ` at ${ev.venue}` : ""}.`,
             related_entity_type: "event",
             related_entity_id: ev.id,
             read: false
@@ -112,7 +113,7 @@ export default async function (req) {
               await base44.asServiceRole.integrations.Core.SendEmail({
                 to: email,
                 subject: `${is24 ? reminderTomorrow : reminderComing}: ${ev.title}`,
-                body: `Hi ${memberNames[m.user_id] || ""},\n\nThis is a reminder that "${ev.title}" ${reminderVerb} ${firstDate}${ev.venue ? ` at ${ev.venue}` : ""}.\n\n— ${workspace?.name || "Kramasha"}`
+                body: `Hi ${memberNames[m.user_id] || ""},\n\nThis is a reminder that "${ev.title}" ${reminderVerb} ${formatDatesList(evDates)}${ev.venue ? ` at ${ev.venue}` : ""}.\n\n— ${workspace?.name || "Kramasha"}`
               });
             } catch (e) {
               // Email send is best-effort; don't fail the whole function.
@@ -138,7 +139,7 @@ export default async function (req) {
               user_id: m.user_id,
               type: "subscription_expired",
               title: "Pro plan expired",
-              message: `Your Kramasha Pro plan expired on ${expiry}. Free plan limits now apply. Renew to restore Pro features.`,
+              message: `Your Kramasha Pro plan expired on ${formatDatesList([expiry])}. Free plan limits now apply. Renew to restore Pro features.`,
               related_entity_type: "subscription",
               related_entity_id: planCtx.subscription.id,
               read: false
@@ -158,7 +159,7 @@ export default async function (req) {
               user_id: m.user_id,
               type: "subscription_expiring",
               title: "Pro plan expiring soon",
-              message: `Your Kramasha Pro plan expires in ${daysLeft} day(s) (${expiry}). Renew before expiry to keep Pro features.`,
+              message: `Your Kramasha Pro plan expires in ${daysLeft} day(s) (${formatDatesList([expiry])}). Renew before expiry to keep Pro features.`,
               related_entity_type: "subscription",
               related_entity_id: planCtx.subscription.id,
               read: false
