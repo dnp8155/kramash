@@ -1,4 +1,5 @@
-import { Link, NavLink, Outlet } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
+import AnimatedOutlet from "@/components/common/AnimatedOutlet";
 import { LayoutDashboard, Building2, SlidersHorizontal, ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Logo from "@/components/common/Logo";
@@ -57,7 +58,7 @@ export default function AdminLayout() {
 
       {/* Content */}
       <main className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin">
-        <Outlet />
+        <AnimatedOutlet />
       </main>
     </div>
   );

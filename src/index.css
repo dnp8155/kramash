@@ -217,6 +217,18 @@
   }
 }
 
+/* ---- Reduced Motion (CSS fallback for non-framer animations) ---- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* ---- Mobile Input Zoom Prevention ---- */
 /* iOS Safari auto-zooms when form controls have font-size < 16px.
    Force 16px on mobile for all text-entry controls; desktop unaffected. */

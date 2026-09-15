@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect, useMemo } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, Check, Calendar } from "lucide-react";
 import { useFinancialYear } from "@/hooks/useFinancialYear";
 import { buildDateRangePresets } from "@/lib/dateRangePresets";
+import { scaleInVariants, EASE, DURATION_FAST } from "@/lib/motionVariants";
 
 export default function FiscalYearSelector({ size = "md" }) {
   const { fiscalYears, activeFY, dateRange, selectDateRange, loading } = useFinancialYear();
@@ -67,68 +69,77 @@ export default function FiscalYearSelector({ size = "md" }) {
         <span>{dateRange?.label || "Select range"}</span>
         <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
       </button>
-      {open && (
-        <div className="absolute left-0 lg:left-auto lg:right-0 mt-1.5 w-64 max-w-[calc(100vw-2rem)] rounded-xl border border-border bg-popover shadow-lg z-[200] overflow-hidden animate-fade-in">
-          <div className="max-h-72 overflow-y-auto scrollbar-thin">
-            {presets.map((preset, idx) => {
-              const selected = isPresetSelected(preset);
-              return (
-                <button
-                  key={`${preset.type}-${idx}`}
-                  type="button"
-                  onClick={() => {
-                    selectDateRange(preset);
-                    setOpen(false);
-                  }}
-                  className={`w-full flex items-center justify-between px-3.5 py-2.5 text-sm transition-colors ${
-                    selected
-                      ? "bg-secondary text-foreground font-semibold"
-                      : "text-foreground hover:bg-muted"
-                  }`}
-                >
-                  <span>{preset.label}</span>
-                  {selected && <Check className="w-4 h-4 text-primary flex-shrink-0" />}
-                </button>
-              );
-            })}
-          </div>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            variants={scaleInVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{ duration: DURATION_FAST, ease: EASE }}
+            className="absolute left-0 lg:left-auto lg:right-0 mt-1.5 w-64 max-w-[calc(100vw-2rem)] rounded-xl border border-border bg-popover shadow-lg z-[200] overflow-hidden origin-top lg:origin-top-right"
+          >
+            <div className="max-h-72 overflow-y-auto scrollbar-thin">
+              {presets.map((preset, idx) => {
+                const selected = isPresetSelected(preset);
+                return (
+                  <button
+                    key={`${preset.type}-${idx}`}
+                    type="button"
+                    onClick={() => {
+                      selectDateRange(preset);
+                      setOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between px-3.5 py-2.5 text-sm transition-colors ${
+                      selected
+                        ? "bg-secondary text-foreground font-semibold"
+                        : "text-foreground hover:bg-muted"
+                    }`}
+                  >
+                    <span>{preset.label}</span>
+                    {selected && <Check className="w-4 h-4 text-primary flex-shrink-0" />}
+                  </button>
+                );
+              })}
+            </div>
 
-          {/* Custom Range */}
-          <div className="border-t border-border p-3 bg-muted/30">
-            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-              Custom Range
-            </div>
-            <div className="grid grid-cols-2 gap-2 mb-2">
-              <div>
-                <label className="text-xs text-muted-foreground mb-1 block">From</label>
-                <input
-                  type="date"
-                  value={customFrom}
-                  onChange={(e) => setCustomFrom(e.target.value)}
-                  className="w-full h-8 text-xs px-2 rounded-lg border border-border bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-ring/40"
-                />
+            {/* Custom Range */}
+            <div className="border-t border-border p-3 bg-muted/30">
+              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                Custom Range
               </div>
-              <div>
-                <label className="text-xs text-muted-foreground mb-1 block">To</label>
-                <input
-                  type="date"
-                  value={customTo}
-                  onChange={(e) => setCustomTo(e.target.value)}
-                  className="w-full h-8 text-xs px-2 rounded-lg border border-border bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-ring/40"
-                />
+              <div className="grid grid-cols-2 gap-2 mb-2">
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">From</label>
+                  <input
+                    type="date"
+                    value={customFrom}
+                    onChange={(e) => setCustomFrom(e.target.value)}
+                    className="w-full h-8 text-xs px-2 rounded-lg border border-border bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-ring/40"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">To</label>
+                  <input
+                    type="date"
+                    value={customTo}
+                    onChange={(e) => setCustomTo(e.target.value)}
+                    className="w-full h-8 text-xs px-2 rounded-lg border border-border bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-ring/40"
+                  />
+                </div>
               </div>
+              <button
+                type="button"
+                onClick={handleApplyCustom}
+                disabled={!customFrom || !customTo}
+                className="w-full h-8 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Apply
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={handleApplyCustom}
-              disabled={!customFrom || !customTo}
-              className="w-full h-8 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Apply
-            </button>
-          </div>
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

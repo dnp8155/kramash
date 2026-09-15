@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
+import { AnimatePresence } from "framer-motion";
 import Sidebar from "@/components/layout/Sidebar";
+import PageTransition from "@/components/common/PageTransition";
 import TopHeader from "@/components/layout/TopHeader";
 import MobileNavigation from "@/components/layout/MobileNavigation";
 import InstallPrompt from "@/components/common/InstallPrompt";
@@ -41,11 +43,15 @@ export default function AppLayout() {
         <OfflineBanner />
         <TopHeader />
         <main className="flex-1 overflow-y-auto scrollbar-thin pb-24 lg:pb-0">
-          <ErrorBoundary key={location.pathname}>
-            <AppLockGate>
-              <Outlet />
-            </AppLockGate>
-          </ErrorBoundary>
+          <AnimatePresence mode="wait">
+            <PageTransition key={location.pathname}>
+              <ErrorBoundary key={location.pathname}>
+                <AppLockGate>
+                  <Outlet />
+                </AppLockGate>
+              </ErrorBoundary>
+            </PageTransition>
+          </AnimatePresence>
         </main>
       </div>
 

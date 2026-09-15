@@ -15,6 +15,7 @@ import Button from "@/components/common/Button";
 import PageHeader from "@/components/common/PageHeader";
 import { Users, Plus, Download, CalendarCheck, Clock, CheckCircle2, CalendarDays, IndianRupee } from "lucide-react";
 import StatCard from "@/components/common/StatCard";
+import { StaggerList, StaggerItem } from "@/components/common/StaggerList";
 import { isToday, isThisWeek, isUpcomingDate, isPastDate, isWithinFY } from "@/lib/dates";
 import { exportEventsXlsx } from "@/lib/exportUtils";
 import { formatMoney } from "@/utils/format";
@@ -198,12 +199,12 @@ export default function Events() {
       </PageHeader>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <StatCard label={term.totalWorkLabel} value={events.length} icon={CalendarDays} tone="primary" />
-        <StatCard label={term.activeWorkLabel} value={upcomingCount} icon={Clock} tone="info" />
-        <StatCard label={t("In Progress")} value={inProgressCount} icon={Clock} tone="warning" />
-        <StatCard label={term.completedWorkLabel} value={completedCount} icon={CheckCircle2} tone="success" />
-      </div>
+      <StaggerList className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <StaggerItem><StatCard label={term.totalWorkLabel} value={events.length} icon={CalendarDays} tone="primary" /></StaggerItem>
+        <StaggerItem><StatCard label={term.activeWorkLabel} value={upcomingCount} icon={Clock} tone="info" /></StaggerItem>
+        <StaggerItem><StatCard label={t("In Progress")} value={inProgressCount} icon={Clock} tone="warning" /></StaggerItem>
+        <StaggerItem><StatCard label={term.completedWorkLabel} value={completedCount} icon={CheckCircle2} tone="success" /></StaggerItem>
+      </StaggerList>
 
       <ReminderBanner events={events} onEventClick={openEvent} />
       <UpgradeBanner used={events.length} />
