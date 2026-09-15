@@ -183,7 +183,7 @@ export default function QuotationEditor() {
             if (qpEvent.title) setProjectTitle(qpEvent.title);
             if (qpEvent.description) setProjectSummary(qpEvent.description);
             const inferredCat = inferCategoryFromEventType(qpEvent.event_type);
-            setCategory(inferredCat || workspace?.business_category || "PHOTOGRAPHY");
+            setCategory(inferredCat || mapToQuotationCategory(workspace?.business_category) || "PHOTOGRAPHY");
             // Auto-import the event's active team + service assignments as quotation
             // line items (only when no estimateItems were passed via router state).
             if (!Array.isArray(estimateItems) || !estimateItems.length) {
