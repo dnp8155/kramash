@@ -151,7 +151,7 @@ export default function TeamMemberDetails() {
   return (
     <div className="p-4 sm:p-6 space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <button onClick={() => navigate("/team")} className="-ml-2 inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+        <button onClick={() => navigate("/team")} className="hidden lg:inline-flex -ml-2 items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
           <span className="w-8 h-8 rounded-full border border-border bg-card flex items-center justify-center">
             <ArrowLeft className="w-4 h-4" />
           </span>

@@ -49,8 +49,8 @@ export default function AppLayout() {
         </main>
       </div>
 
-      {/* Hide bottom nav on event detail pages (mobile) for a focused view */}
-      {!/^\/events\/(?!new$)[^/]+$/.test(location.pathname) && <MobileNavigation />}
+      {/* Hide bottom nav on detail/editor pages (mobile) for a focused view */}
+      {!/^\/(events|quotation|invoices|clients|team)\/(?!new$)[^/]+(\/(edit|job-sheet))?$/.test(location.pathname) && <MobileNavigation />}
       <InstallPrompt />
     </div>
   );

@@ -345,7 +345,7 @@ export default function InvoiceEditor() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <button onClick={() => navigate("/invoices")} className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-2 mb-1">
+          <button onClick={() => navigate("/invoices")} className="hidden lg:flex text-sm text-muted-foreground hover:text-foreground items-center gap-2 mb-1">
             <span className="w-8 h-8 rounded-full border border-border bg-card flex items-center justify-center">
               <ArrowLeft className="w-4 h-4" />
             </span>

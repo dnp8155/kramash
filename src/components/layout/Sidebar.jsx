@@ -115,7 +115,7 @@ export default function Sidebar({ mobile = false, onClose, collapsed = false, on
       </nav>
 
       {/* Footer */}
-      <div className="px-3 py-2 space-y-1">
+      <div className="px-3 pt-2 pb-2.5 space-y-1">
         {user?.role === "admin" && (
           <NavLink
             to="/admin"
@@ -142,7 +142,7 @@ export default function Sidebar({ mobile = false, onClose, collapsed = false, on
 
       <div className="h-px bg-border" />
 
-      <div className="flex items-center gap-3 px-3 py-3">
+      <div className="flex items-center gap-3 px-3 pt-3.5 pb-5">
         <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center text-foreground font-semibold text-sm shrink-0 overflow-hidden border border-border">
           {user?.data?.profile_image || user?.profile_image
             ? <Image src={user.data?.profile_image || user.profile_image} alt="Profile" fittingType="fill" className="w-full h-full" />

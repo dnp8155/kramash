@@ -403,7 +403,7 @@ export default function EventDetails() {
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div className="min-w-0">
           <div className="flex items-center gap-2.5 mb-1">
-            <button onClick={() => navigate("/events")} className="w-8 h-8 rounded-full border border-border bg-card flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-colors shrink-0">
+            <button onClick={() => navigate("/events")} className="hidden lg:flex w-8 h-8 rounded-full border border-border bg-card items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-colors shrink-0">
               <ArrowLeft className="w-4 h-4" />
             </button>
             <PaymentDot paid={fin.received} agreed={fin.contractValue} />
