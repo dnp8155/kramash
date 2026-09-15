@@ -255,6 +255,8 @@ export default function InvoiceEditor() {
     for (const it of items) {
       if (!it.name?.trim()) return "Every item needs a name.";
     }
+    if (!isWithinLimit(paymentTerms, 140)) return "Payment Terms exceed the 140-word limit.";
+    if (!isWithinLimit(notes, 140)) return "Notes exceed the 140-word limit.";
     return "";
   };
 
@@ -535,18 +537,25 @@ export default function InvoiceEditor() {
           readOnly={readOnly}
           placeholder="Payment terms shown to client on PDF and public link"
         />
+        <div className={`text-xs text-right tabular-nums mt-1 ${
+          countWords(paymentTerms) > WORD_LIMIT ? "text-destructive font-medium"
+            : countWords(paymentTerms) >= WORD_LIMIT_WARN_THRESHOLD ? "text-warning"
+            : "text-muted-foreground"
+        }`}>
+          {countWords(paymentTerms)} / {WORD_LIMIT} words
+        </div>
       </div>
 
       {/* Internal Notes (never shown to client) */}
       <div className="bg-card border border-border rounded-lg p-4">
         <label className="block text-xs font-medium text-muted-foreground mb-1.5">Internal Notes (never shown to client)</label>
-        <textarea
+        <WordCounterTextarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           disabled={readOnly}
           rows={2}
           placeholder="Internal notes (optional)"
-          className="w-full bg-card border border-border rounded-md p-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
+          className="bg-card border border-border"
         />
       </div>
 

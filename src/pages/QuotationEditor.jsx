@@ -44,7 +44,6 @@ import { QUOTATION_TEMPLATES, renderTemplate } from "@/constants/quotationTempla
 import QuotationTemplatePreview from "@/components/quotation/QuotationTemplatePreview";
 import QuotationTemplateSettings from "@/components/quotation/QuotationTemplateSettings";
 import PublicLinkPanel from "@/components/quotation/PublicLinkPanel";
-import { Textarea } from "@/components/ui/textarea";
 import RichTextEditor from "@/components/common/RichTextEditor";
 import WordCounterTextarea from "@/components/common/WordCounterTextarea";
 import { isWithinLimit } from "@/lib/wordLimit";
