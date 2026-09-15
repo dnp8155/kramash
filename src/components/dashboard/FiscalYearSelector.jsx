@@ -68,7 +68,7 @@ export default function FiscalYearSelector({ size = "md" }) {
         <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
       </button>
       {open && (
-        <div className="absolute left-0 mt-1.5 w-64 rounded-xl border border-border bg-popover shadow-lg z-[100] overflow-hidden animate-fade-in">
+        <div className="absolute left-0 lg:left-auto lg:right-0 mt-1.5 w-64 max-w-[calc(100vw-2rem)] rounded-xl border border-border bg-popover shadow-lg z-[200] overflow-hidden animate-fade-in">
           <div className="max-h-72 overflow-y-auto scrollbar-thin">
             {presets.map((preset, idx) => {
               const selected = isPresetSelected(preset);
