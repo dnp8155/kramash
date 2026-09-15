@@ -5,6 +5,9 @@ import { base44 } from "@/api/base44Client";
 import { useWorkspace } from "@/lib/WorkspaceContext";
 import { cn } from "@/lib/utils";
 import { useT } from "@/hooks/useT";
+import { fuzzyRank } from "@/lib/fuzzySearch";
+
+const CACHE_TTL = 60000; // 60s — reuse fetched lists across keystrokes in a session.
 
 export default function GlobalSearch() {
   const t = useT();
@@ -16,6 +19,7 @@ export default function GlobalSearch() {
   const { workspaceId } = useWorkspace();
   const containerRef = useRef(null);
   const debounceRef = useRef(null);
+  const cacheRef = useRef({ wsId: null, events: null, clients: null, team: null, fetchedAt: 0 });
 
   useEffect(() => {
     const handler = (e) => {
@@ -25,6 +29,24 @@ export default function GlobalSearch() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  // Fetch entity lists once per workspace, cached for CACHE_TTL ms.
+  const loadLists = useCallback(async () => {
+    const now = Date.now();
+    const cache = cacheRef.current;
+    if (cache.wsId === workspaceId && cache.fetchedAt && now - cache.fetchedAt < CACHE_TTL &&
+        cache.events && cache.clients && cache.team) {
+      return cache;
+    }
+    const [events, clients, team] = await Promise.all([
+      base44.entities.Event.list("-updated_date", 50),
+      base44.entities.Client.list("-updated_date", 50),
+      base44.entities.TeamMember.list("-updated_date", 50),
+    ]);
+    const fresh = { wsId: workspaceId, events: events || [], clients: clients || [], team: team || [], fetchedAt: now };
+    cacheRef.current = fresh;
+    return fresh;
+  }, [workspaceId]);
+
   const runSearch = useCallback(
     async (q) => {
       if (!q.trim() || !workspaceId) {
@@ -33,16 +55,11 @@ export default function GlobalSearch() {
         return;
       }
       try {
-        const lower = q.toLowerCase();
-        const [events, clients, team] = await Promise.all([
-          base44.entities.Event.list("-updated_date", 50),
-          base44.entities.Client.list("-updated_date", 50),
-          base44.entities.TeamMember.list("-updated_date", 50),
-        ]);
+        const { events, clients, team } = await loadLists();
         setResults({
-          events: (events || []).filter((e) => e.title?.toLowerCase().includes(lower)).slice(0, 5),
-          clients: (clients || []).filter((c) => c.name?.toLowerCase().includes(lower)).slice(0, 5),
-          team: (team || []).filter((t) => t.name?.toLowerCase().includes(lower)).slice(0, 5),
+          events: fuzzyRank(events, q, (e) => e.title),
+          clients: fuzzyRank(clients, q, (c) => c.name),
+          team: fuzzyRank(team, q, (t) => t.name),
         });
       } catch {
         setResults({ events: [], clients: [], team: [] });
@@ -50,7 +67,7 @@ export default function GlobalSearch() {
         setLoading(false);
       }
     },
-    [workspaceId]
+    [workspaceId, loadLists]
   );
 
   const onChange = (val) => {
