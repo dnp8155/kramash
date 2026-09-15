@@ -66,6 +66,123 @@ export const CATEGORY_DEFAULTS = {
       "Progress Documentation"
     ]
   },
+  INTERIOR: {
+    equipment: [
+      "Camera",
+      "Lenses (Wide, Standard)",
+      "Tripod",
+      "Laser Measure",
+      "Measuring Tape",
+      "Material Samples",
+      "Tablet",
+      "Memory Cards",
+      "Batteries"
+    ],
+    deliverables: [
+      "Site Measurement",
+      "Mood Board",
+      "3D Visualization",
+      "Material Selection",
+      "Before/After Documentation",
+      "Installation Supervision"
+    ]
+  },
+  SALON_BEAUTY: {
+    equipment: [
+      "Makeup Kit",
+      "Brushes & Sponges",
+      "Hair Styling Tools",
+      "Mirror & Lighting",
+      "Towels & Capes",
+      "Sanitizer & PPE",
+      "Beauty Trolley",
+      "Camera (for portfolio)"
+    ],
+    deliverables: [
+      "Bridal Makeup",
+      "Hair Styling",
+      "Trial Session",
+      "Touch-up Service",
+      "Portfolio Photos"
+    ]
+  },
+  CONSULTING: {
+    equipment: [
+      "Laptop",
+      "Projector / Display Adapter",
+      "Notepad & Pens",
+      "Tablet",
+      "Presentation Clicker",
+      "Business Cards",
+      "Portable Mic (for large rooms)"
+    ],
+    deliverables: [
+      "Strategy Document",
+      "Presentation Slides",
+      "Workshop Facilitation",
+      "Audit Report",
+      "Action Plan"
+    ]
+  },
+  AGENCY: {
+    equipment: [
+      "Laptop",
+      "Camera / Gimbal",
+      "Microphone",
+      "Lighting Kit",
+      "Tripod",
+      "Portable Backdrop",
+      "Laptop + Card Reader",
+      "Memory Cards (spare)"
+    ],
+    deliverables: [
+      "Campaign Content",
+      "Social Media Posts",
+      "Brand Shoot",
+      "Video Reels",
+      "Copy & Creatives",
+      "Analytics Report"
+    ]
+  },
+  CATERING: {
+    equipment: [
+      "Cooking Utensils",
+      "Serving Equipment",
+      "Chafing Dishes",
+      "Cutlery & Crockery",
+      "Food Thermometer",
+      "Gloves & Hairnets",
+      "Cooler / Hot Box",
+      "Cleaning Supplies"
+    ],
+    deliverables: [
+      "Menu Preparation",
+      "On-site Cooking",
+      "Buffet Setup",
+      "Beverage Service",
+      "Cleanup & Waste Disposal"
+    ]
+  },
+  CONTRACTING: {
+    equipment: [
+      "Power Tools",
+      "Hand Tools",
+      "Safety Gear (Helmet, Gloves, Boots)",
+      "Measuring Tape",
+      "Level & Square",
+      "Drill & Bits",
+      "First Aid Kit",
+      "Tool Belt"
+    ],
+    deliverables: [
+      "Site Preparation",
+      "Material Procurement",
+      "Construction Work",
+      "Quality Inspection",
+      "Site Cleanup",
+      "Handover Documentation"
+    ]
+  },
   OTHER: {
     equipment: ["Camera", "Tripod", "Memory Cards", "Batteries"],
     deliverables: ["Project Coverage"]
@@ -209,5 +326,11 @@ export const CATEGORY_LABELS = {
   PHOTOGRAPHY: "Photography",
   EVENT_MANAGEMENT: "Event Management",
   ARCHITECTURE: "Architecture",
+  INTERIOR: "Interior Design",
+  SALON_BEAUTY: "Salon & Beauty",
+  CONSULTING: "Consulting",
+  AGENCY: "Creative Agency",
+  CATERING: "Catering",
+  CONTRACTING: "Contracting",
   OTHER: "Other"
 };

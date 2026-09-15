@@ -168,6 +168,7 @@ export default function QuotationEditor() {
         const num = await generateQuotationNumber(workspaceId);
         setQuotationNumber(num);
         setGstApplicable(gstWorkspaceEnabled);
+        setCategory(mapToQuotationCategory(workspace?.business_category) || "PHOTOGRAPHY");
         const estimateItems = location.state?.estimateItems;
         if (Array.isArray(estimateItems) && estimateItems.length) {
           setItems(estimateItems.map((it) => ({ ...it, id: undefined })));
