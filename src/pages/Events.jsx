@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -29,15 +29,42 @@ export default function Events() {
   const navigate = useNavigate();
   const term = useBusinessTerminology();
   const t = useT();
-  const { fiscalYears } = useFinancialYear();
+  const { fiscalYears, activeFY } = useFinancialYear();
 
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
   const [fyFilter, setFyFilter] = useState("all");
+  const [fyInitialized, setFyInitialized] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Default the FY dropdown to the workspace's active Financial Year once
+  // the FY records are loaded. "All Years" stays available as a manual option.
+  useEffect(() => {
+    if (fyInitialized || fyFilter !== "all") return;
+    if (activeFY) {
+      setFyFilter(fyRecordValue(activeFY));
+      setFyInitialized(true);
+    } else if (fiscalYears.length === 0) {
+      // no FY records yet — keep waiting
+    } else {
+      // records loaded but none active — lock so we don't keep retrying
+      setFyInitialized(true);
+    }
+  }, [activeFY, fiscalYears, fyFilter, fyInitialized]);
+
+  // Workspace event types for the Type filter (parsed from JSON string).
+  const eventTypeOptions = useMemo(() => {
+    try {
+      const arr = JSON.parse(workspace?.event_types || "[]");
+      return Array.isArray(arr) ? arr.filter(Boolean) : [];
+    } catch {
+      return [];
+    }
+  }, [workspace?.event_types]);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["events", workspaceId],
@@ -114,13 +141,22 @@ export default function Events() {
         case "cancelled": if (e.status !== "cancelled") return false; break;
         default: break;
       }
+      switch (typeFilter) {
+        case "all": break;
+        case "upcoming": if (!(isUpcomingDate(e.start_date) && e.status !== "completed" && e.status !== "cancelled")) return false; break;
+        case "previous": if (!(isPastDate(e.start_date) || e.status === "completed")) return false; break;
+        default:
+          // event-type match (case-insensitive)
+          if (e.event_type?.toLowerCase() !== typeFilter.toLowerCase()) return false;
+          break;
+      }
       if (q) {
         const hay = `${e.title} ${e.event_type} ${e.venue || ""} ${clientName(e.client_id)}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
       return true;
     });
-  }, [events, query, statusFilter, fyFilter, clients]);
+  }, [events, query, statusFilter, typeFilter, fyFilter, clients]);
 
   const openEvent = (e) => navigate(`/events/${e.id}`);
   const openNew = () => navigate("/events/new");
@@ -190,6 +226,14 @@ export default function Events() {
             <option value="completed">{t("Completed")}</option>
             <option value="in-progress">{t("In Progress")}</option>
             <option value="cancelled">{t("Cancelled")}</option>
+          </Select>
+          <Select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="flex-1 min-w-[110px] sm:flex-none">
+            <option value="all">All Types</option>
+            <option value="upcoming">{t("Upcoming")}</option>
+            <option value="previous">{t("Previous/Past")}</option>
+            {eventTypeOptions.map((et) => (
+              <option key={et} value={et}>{et}</option>
+            ))}
           </Select>
           <Select value={fyFilter} onChange={(e) => setFyFilter(e.target.value)} className="flex-1 min-w-[110px] sm:flex-none">
             <option value="all">{t("All Years")}</option>

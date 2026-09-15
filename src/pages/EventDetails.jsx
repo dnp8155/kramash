@@ -27,7 +27,7 @@ import EventMilestonesTab from "@/components/events/EventMilestonesTab";
 import EventNotesTab from "@/components/events/EventNotesTab";
 import { loadServiceProviders } from "@/lib/serviceProviderService";
 import { useToast } from "@/components/ui/use-toast";
-import { currentFY, fyRange, fyForDate, formatEventDate } from "@/lib/dates";
+import { currentFY, fyRange, fyForDate, formatEventDate, formatEventDates } from "@/lib/dates";
 import { formatMoney } from "@/utils/format";
 import {
   eventFinancialSummary,
@@ -395,11 +395,7 @@ export default function EventDetails() {
 
   const statusDot = event.status === "completed" ? "bg-success" : event.status === "cancelled" ? "bg-destructive" : "bg-warning";
   const allDates = (event.event_dates?.length ? event.event_dates : [event.start_date]).filter(Boolean);
-  const formatDateShort = (date) => {
-    if (!date) return "";
-    const d = new Date(date + "T00:00:00");
-    return `${d.getDate()} ${d.toLocaleString("en-IN", { month: "short" })}`;
-  };
+  const datesLabel = formatEventDates(event);
 
   return (
     <div className="p-4 sm:p-6 space-y-5">
@@ -415,7 +411,7 @@ export default function EventDetails() {
           </div>
           <p className="text-sm text-muted-foreground ml-6 flex items-center gap-1.5 flex-wrap">
             {event.event_type && <EventTypeBadge eventType={event.event_type} />}
-            {allDates.length > 0 && <span>· {allDates.map(formatDateShort).join(", ")}</span>}
+            {datesLabel && datesLabel !== "—" && <span>· {datesLabel}</span>}
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
