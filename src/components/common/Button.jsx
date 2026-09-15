@@ -8,6 +8,7 @@ const variants = {
   dark: "bg-sidebar-primary text-sidebar-primary-foreground hover:opacity-90 shadow-sm",
   success: "bg-success text-success-foreground hover:opacity-90 shadow-sm",
   destructive: "bg-card border border-destructive/60 text-destructive hover:bg-destructive/5",
+  reset: "bg-card border border-destructive/60 text-destructive hover:bg-destructive hover:text-destructive-foreground hover:border-destructive",
   subtle: "bg-muted text-foreground hover:bg-secondary"
 };
 

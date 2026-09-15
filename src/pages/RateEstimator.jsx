@@ -307,7 +307,7 @@ export default function RateEstimator() {
           <span className="text-right text-base font-bold text-foreground pt-2 border-t border-border">{formatMoney(total, currency)}</span>
         </div>
         <div className="flex justify-end mt-4 pt-3 border-t border-border">
-          <Button variant="outline" onClick={reset}>
+          <Button variant="reset" onClick={reset}>
             <RotateCcw className="w-4 h-4" />
             Reset
           </Button>
