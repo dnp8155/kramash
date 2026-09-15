@@ -33,7 +33,7 @@ export default function LandingNav() {
         <Link to="/" className="flex items-center gap-2.5">
           <Logo size={32} />
           <div className="hidden sm:block">
-            <div className="font-heading text-base font-bold tracking-tight text-[#1A1A1A] leading-none">Kramashah</div>
+            <div className="font-heading text-base font-bold tracking-tight text-[#1A1A1A] leading-none">Kramasha</div>
             <div className="text-[10px] text-[#8A8580] leading-none mt-0.5">Built for Creative Businesses</div>
           </div>
         </Link>

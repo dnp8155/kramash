@@ -4,16 +4,16 @@ import Reveal from "@/components/landing/Reveal";
 
 const FAQS = [
   {
-    q: "What is Kramashah?",
+    q: "What is Kramasha?",
     a: "A connected business management platform for creative and service-based businesses. Manage clients, events, teams, quotations, invoices, payments and finances — all in one place.",
   },
   {
-    q: "Who is Kramashah for?",
+    q: "Who is Kramasha for?",
     a: "Photographers, event managers, architects, interior designers, freelancers, studios, creative agencies and any service-based business that needs to manage clients, projects, teams and finances.",
   },
   {
     q: "Can photographers use it?",
-    a: "Yes. Photography is one of the primary use cases. Kramashah supports wedding packages, add-ons, team scheduling, client-facing quotations (without exposing internal costs), e-sign, invoices and job sheets.",
+    a: "Yes. Photography is one of the primary use cases. Kramasha supports wedding packages, add-ons, team scheduling, client-facing quotations (without exposing internal costs), e-sign, invoices and job sheets.",
   },
   {
     q: "Can event managers use it?",
@@ -41,7 +41,7 @@ const FAQS = [
   },
   {
     q: "Does it support mobile?",
-    a: "Yes. Kramashah is a responsive web app with PWA support. Install it on your phone or use it in any browser. Works on mobile and desktop.",
+    a: "Yes. Kramasha is a responsive web app with PWA support. Install it on your phone or use it in any browser. Works on mobile and desktop.",
   },
   {
     q: "What happens when I upgrade?",

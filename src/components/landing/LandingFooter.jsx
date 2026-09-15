@@ -46,7 +46,7 @@ export default function LandingFooter() {
             <Link to="/" className="flex items-center gap-2.5 mb-4">
               <Logo size={32} />
               <div>
-                <div className="font-heading text-base font-bold tracking-tight text-white leading-none">Kramashah</div>
+                <div className="font-heading text-base font-bold tracking-tight text-white leading-none">Kramasha</div>
                 <div className="text-[10px] text-[#888] leading-none mt-0.5">Built for Creative Businesses</div>
               </div>
             </Link>
@@ -86,7 +86,7 @@ export default function LandingFooter() {
         </div>
 
         <div className="mt-12 pt-6 border-t border-[#1C1C1C] flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-xs text-[#888]">© {new Date().getFullYear()} Kramashah. All rights reserved.</p>
+          <p className="text-xs text-[#888]">© {new Date().getFullYear()} Kramasha. All rights reserved.</p>
           <div className="flex gap-5">
             <Link to="/terms" className="text-xs text-[#888] hover:text-white transition-colors">Terms</Link>
             <Link to="/privacy" className="text-xs text-[#888] hover:text-white transition-colors">Privacy</Link>
