@@ -27,13 +27,14 @@ import PageHeader from "@/components/common/PageHeader";
 import { usePlan } from "@/hooks/usePlan";
 import { invalidateEntities } from "@/lib/queryInvalidation";
 import { loadServiceProviders } from "@/lib/serviceProviderService";
+import PlanLimitDialog from "@/components/common/PlanLimitDialog";
 
 export default function Team() {
   const { workspaceId, workspace } = useWorkspace();
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { plan } = usePlan();
+  const { plan, usage, canCreate } = usePlan();
   const currency = workspace?.currency || "INR";
 
   const [tab, setTab] = useState("Roster");
@@ -46,6 +47,7 @@ export default function Team() {
   const [showBlock, setShowBlock] = useState(false);
   const [showUnblock, setShowUnblock] = useState(false);
   const [blockPreselect, setBlockPreselect] = useState({ memberId: null, date: null });
+  const [showPlanLimit, setShowPlanLimit] = useState(false);
   const queryClient = useQueryClient();
 
   const { data, isLoading, error } = useQuery({
@@ -64,19 +66,18 @@ export default function Team() {
         base44.entities.EventDayAssignment.filter({ workspace_id: workspaceId }, "date", 1000),
         base44.entities.Service.filter({ workspace_id: workspaceId }, "name", 500)
       ]);
+      // Single bulk fetch instead of N+1 individual Event.get() calls.
       const evIds = [...new Set([
         ...((asgns || []).map((a) => a.event_id)),
         ...((svcAsgns || []).map((a) => a.event_id))
       ])];
       const evMap = {};
-      await Promise.all(
-        evIds.map(async (id) => {
-          try {
-            const ev = await base44.entities.Event.get(id);
-            if (ev && ev.workspace_id === workspaceId) evMap[id] = ev;
-          } catch (e) { /* event may be gone */ }
-        })
-      );
+      if (evIds.length > 0) {
+        const allEvents = await base44.entities.Event.filter({ workspace_id: workspaceId }, "-created_date", 1000);
+        (allEvents || []).forEach((ev) => {
+          if (evIds.includes(ev.id)) evMap[ev.id] = ev;
+        });
+      }
       return {
         members: membs || [],
         roles: rles || [],
@@ -139,7 +140,15 @@ export default function Team() {
     }
   };
 
-  const openNew = () => { setEditing(null); setShowForm(true); };
+  const openNew = () => {
+    const check = canCreate("max_team_members");
+    if (!check.allowed) {
+      setShowPlanLimit(true);
+      return;
+    }
+    setEditing(null);
+    setShowForm(true);
+  };
   const openEdit = (m) => { setEditing(m); setShowForm(true); };
   const openMember = (m) => navigate(`/team/${m.id}`);
 
@@ -352,6 +361,14 @@ export default function Team() {
         blockDates={blockDates}
         members={members}
         onUnblock={unblockDate}
+      />
+
+      <PlanLimitDialog
+        open={showPlanLimit}
+        onClose={() => setShowPlanLimit(false)}
+        resource="team members"
+        currentUsage={usage?.team_members || 0}
+        limit={plan?.limits?.max_team_members || 0}
       />
 
       {/* Delete confirmation */}

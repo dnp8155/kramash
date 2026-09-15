@@ -11,7 +11,7 @@ const Spinner = () => (
 );
 
 function WorkspaceGate({ noWorkspaceElement }) {
-  const { workspace, loading } = useWorkspace();
+  const { workspace, loading, error, refresh } = useWorkspace();
   useRealtimeSync();
   if (loading) {
     return (
@@ -20,6 +20,24 @@ function WorkspaceGate({ noWorkspaceElement }) {
           <div className="w-5 h-5 border-2 border-muted border-t-primary rounded-full animate-spin" />
           <span className="text-sm">Loading your workspace…</span>
         </div>
+      </div>
+    );
+  }
+  // Transient API error (429/503/network) — show retry screen, NOT onboarding redirect.
+  // Only redirect to onboarding when the API confirms zero memberships (no error).
+  if (error) {
+    return (
+      <div className="fixed inset-0 flex flex-col items-center justify-center gap-4 px-4">
+        <div className="text-center">
+          <p className="text-sm font-medium text-foreground">Couldn't load your workspace</p>
+          <p className="text-xs text-muted-foreground mt-1">Check your connection and try again.</p>
+        </div>
+        <button
+          onClick={refresh}
+          className="h-9 px-5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary-hover transition-colors"
+        >
+          Retry
+        </button>
       </div>
     );
   }

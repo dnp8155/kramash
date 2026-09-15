@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { useFinancialYear } from "@/hooks/useFinancialYear";
 import { usePlan } from "@/hooks/usePlan";
 import PreferencesSections from "@/components/preferences/PreferencesSections";
+import PlanLimitDialog from "@/components/common/PlanLimitDialog";
 
 const NAV_GROUPS = [
   {
@@ -68,8 +69,9 @@ export default function Preferences() {
   const { workspaceId, workspace } = useWorkspace();
   const { toast } = useToast();
   const { fiscalYears, selectedFY, selectFY } = useFinancialYear();
-  const { plan } = usePlan();
+  const { plan, usage, canCreate } = usePlan();
   const isPro = plan?.planCode === "PRO";
+  const [showPlanLimit, setShowPlanLimit] = useState(false);
   const [activeGroup, setActiveGroup] = useState("general");
   const [toggles, setToggles] = useState(() => {
     try {
@@ -160,7 +162,15 @@ export default function Preferences() {
     loadServicesList();
   };
 
-  const openAddService = () => { setEditingService(null); setShowServiceForm(true); };
+  const openAddService = () => {
+    const check = canCreate("max_services");
+    if (!check.allowed) {
+      setShowPlanLimit(true);
+      return;
+    }
+    setEditingService(null);
+    setShowServiceForm(true);
+  };
   const openEditService = (s) => { setEditingService(s); setShowServiceForm(true); };
   const toggleServiceStatus = async (s) => {
     const newStatus = s.status === "active" ? "inactive" : "active";
@@ -312,6 +322,14 @@ export default function Preferences() {
         service={editingService}
         workspaceId={workspaceId}
         gstEnabled={!!workspace?.gst_enabled}
+      />
+
+      <PlanLimitDialog
+        open={showPlanLimit}
+        onClose={() => setShowPlanLimit(false)}
+        resource="services"
+        currentUsage={usage?.services || 0}
+        limit={plan?.limits?.max_services || 0}
       />
     </div>
   );

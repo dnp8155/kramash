@@ -100,17 +100,17 @@ export default function EventDetails() {
         base44.entities.Quotation.filter({ workspace_id: workspaceId, event_id: ev.id }, "-quotation_date", 200).catch(() => []),
         base44.entities.Invoice.filter({ workspace_id: workspaceId, event_id: ev.id }, "-invoice_date", 200).catch(() => [])
       ]);
+      // Single bulk fetch instead of N+1 individual Event.get() calls.
       const evIds = [...new Set((asgns || []).map((a) => a.event_id))];
       const evMap = {};
       evMap[ev.id] = ev;
-      await Promise.all(
-        evIds.filter((eid) => eid !== ev.id).map(async (eid) => {
-          try {
-            const e = await base44.entities.Event.get(eid);
-            if (e && e.workspace_id === workspaceId) evMap[eid] = e;
-          } catch (e) { /* skip */ }
-        })
-      );
+      const otherEvIds = evIds.filter((eid) => eid !== ev.id);
+      if (otherEvIds.length > 0) {
+        const allEvents = await base44.entities.Event.filter({ workspace_id: workspaceId }, "-created_date", 1000);
+        (allEvents || []).forEach((e) => {
+          if (otherEvIds.includes(e.id)) evMap[e.id] = e;
+        });
+      }
       return {
         notFound: false,
         event: ev,

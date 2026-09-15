@@ -22,6 +22,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { invalidateEntity } from "@/lib/queryInvalidation";
 import { getDefaultMilestoneTemplate, generateMilestonesFromTemplate } from "@/lib/milestoneService";
 import { useSubmitGuard } from "@/hooks/useSubmitGuard";
+import { useWorkspace } from "@/lib/WorkspaceContext";
 
 const empty = {
   client_id: "", title: "", event_type: "",
@@ -35,6 +36,7 @@ const empty = {
 export default function EventForm({ open, onClose, onSaved, event = null, workspaceId, workspace, term, currency = "INR" }) {
   const t = term || {};
   const queryClient = useQueryClient();
+  const { setWorkspace: setWorkspaceContext } = useWorkspace();
   const { fiscalYears } = useFinancialYear();
   const { toast } = useToast();
   const [usedEventTypes, setUsedEventTypes] = useState([]);
@@ -153,10 +155,15 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
         try {
           const currentTypes = getEventTypes(workspace, t.category);
           const updatedTypes = mergeEventTypes(currentTypes, eventType);
-          if (updatedTypes.length !== currentTypes.length) {
-            await base44.entities.Workspace.update(workspaceId, {
+          // Use set comparison instead of length-only check so duplicate types
+          // don't skip the save, and new types are always persisted.
+          const sameSet = JSON.stringify([...currentTypes].sort()) === JSON.stringify([...updatedTypes].sort());
+          if (!sameSet) {
+            const updatedWs = await base44.entities.Workspace.update(workspaceId, {
               event_types: JSON.stringify(updatedTypes)
             });
+            // Immediately update workspace context so future suggestions include the new type
+            setWorkspaceContext(updatedWs || { ...workspace, event_types: JSON.stringify(updatedTypes) });
           }
         } catch { /* non-critical — event is already saved */ }
       }

@@ -8,6 +8,16 @@ import {
 } from "@/lib/planService";
 import { useWorkspace } from "@/lib/WorkspaceContext";
 
+// Maps plan limit keys (stored in PlanLimit.limit_key) to usage keys
+// returned by getUsage(). Without this, canCreate("max_team_members")
+// would look up usage["max_team_members"] (undefined) instead of
+// usage["team_members"], making the limit check always pass.
+const USAGE_KEY_MAP = {
+  max_team_members: "team_members",
+  max_events: "events",
+  max_services: "services",
+};
+
 export function usePlan() {
   const { workspaceId } = useWorkspace();
   const [plan, setPlan] = useState(null);
@@ -40,7 +50,8 @@ export function usePlan() {
 
   const canCreate = (key) => {
     if (!plan || !usage) return { allowed: true, limit: Infinity };
-    return canCreateResource(plan.limits, key, usage[key] || 0);
+    const usageKey = USAGE_KEY_MAP[key] || key;
+    return canCreateResource(plan.limits, key, usage[usageKey] || 0);
   };
 
   const canUse = (key) => (plan ? canUseFeature(plan.limits, key) : false);

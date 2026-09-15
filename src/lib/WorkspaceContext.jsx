@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useEffect, useCallback, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
+import { withRetry } from "@/lib/apiRetry";
 
 const WorkspaceContext = createContext(null);
 
@@ -24,7 +25,7 @@ export const WorkspaceProvider = ({ children }) => {
     setLoading(true);
     setError(null);
     try {
-      const memberships = await base44.entities.WorkspaceMember.filter({ user_id: user.id });
+      const memberships = await withRetry(() => base44.entities.WorkspaceMember.filter({ user_id: user.id }));
       if (!memberships || memberships.length === 0) {
         setWorkspace(null);
         setMembership(null);
@@ -34,7 +35,7 @@ export const WorkspaceProvider = ({ children }) => {
       const activeMembership = memberships[0];
       setMembership(activeMembership);
       try {
-        const ws = await base44.entities.Workspace.get(activeMembership.workspace_id);
+        const ws = await withRetry(() => base44.entities.Workspace.get(activeMembership.workspace_id));
         setWorkspace(ws);
         // Persist active workspace on the user so RLS scopes Client/Event queries.
         if (ws && syncedWorkspaceId.current !== ws.id) {
@@ -46,6 +47,7 @@ export const WorkspaceProvider = ({ children }) => {
           }
         }
       } catch (e) {
+        setError(e?.message || "Failed to load workspace");
         setWorkspace(null);
       }
     } catch (e) {

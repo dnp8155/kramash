@@ -8,6 +8,7 @@ import { Plus, Trash2, Pencil, Check, X } from "lucide-react";
 import { loadMilestones, deriveMilestoneStatus, MILESTONE_STATUS_META, milestoneTotals } from "@/lib/milestoneService";
 import { formatMoney } from "@/utils/format";
 import { cn } from "@/lib/utils";
+import { parseMiscExpenses, miscExpensesTotal } from "@/components/events/EventMiscExpenseEditor";
 
 export default function EventMilestonesTab({ event, workspaceId, currency, transactions, onRefresh }) {
   const { toast } = useToast();
@@ -137,6 +138,21 @@ export default function EventMilestonesTab({ event, workspaceId, currency, trans
           <div className="text-lg font-bold tabular-nums text-warning">{formatMoney(totals.totalRemaining, currency)}</div>
         </div>
       </div>
+
+      {/* Contract value breakdown — milestones use base only, add-ons excluded */}
+      {(() => {
+        const miscItems = parseMiscExpenses(event?.misc_expenses_json);
+        const miscTotal = miscExpensesTotal(miscItems);
+        const baseValue = Number(event?.contract_value) || 0;
+        if (miscTotal <= 0) return null;
+        const totalValue = baseValue + miscTotal;
+        return (
+          <div className="text-[11px] text-muted-foreground bg-muted/30 border border-border rounded-lg px-3 py-2">
+            <span className="font-medium">Contract breakdown:</span> Base {formatMoney(baseValue, currency)} · Add-ons {formatMoney(miscTotal, currency)} · Total {formatMoney(totalValue, currency)}
+            <span className="block mt-0.5">Milestone due amounts are calculated from the base contract value only.</span>
+          </div>
+        );
+      })()}
 
       {/* Milestones list */}
       {milestones.length === 0 && !showAdd ? (
