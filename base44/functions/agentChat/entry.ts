@@ -21,7 +21,6 @@ export default async function(req) {
     const message = (body?.message || "").toString().trim();
     const language = ["en", "hi", "gu"].includes(body?.language) ? body.language : "en";
     const history = Array.isArray(body?.history) ? body.history.slice(-8) : [];
-    const fileUrls = Array.isArray(body?.file_urls) ? body.file_urls.filter(Boolean) : [];
 
     if (!message) return Response.json({ error: 'Message is required' }, { status: 400 });
     if (message.length > 2000) return Response.json({ error: 'Message too long' }, { status: 400 });
@@ -150,14 +149,7 @@ User: ${message}
 
 Assistant:`;
 
-    const llmInput = {
-      prompt,
-    };
-    if (fileUrls.length > 0) {
-      llmInput.file_urls = fileUrls;
-    }
-
-    const result = await base44.asServiceRole.integrations.Core.InvokeLLM(llmInput);
+    const result = await base44.asServiceRole.integrations.Core.InvokeLLM({ prompt });
 
     const reply = typeof result === "string" ? result : result?.response || result?.output || JSON.stringify(result);
 

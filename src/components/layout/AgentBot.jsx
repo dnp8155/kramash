@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Bot, X, Send, Sparkles, Paperclip, Wallet, CalendarClock, Users, FileText, Loader2 } from "lucide-react";
+import { Bot, X, Send, Sparkles, Wallet, CalendarClock, Users, FileText } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import { useWorkspace } from "@/lib/WorkspaceContext";
@@ -27,10 +27,7 @@ export default function AgentBot() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [files, setFiles] = useState([]);
   const scrollRef = useRef(null);
-  const fileInputRef = useRef(null);
   const language = getAppLanguage(user);
 
   useEffect(() => {
@@ -42,18 +39,15 @@ export default function AgentBot() {
   const send = async (overrideText) => {
     const text = (overrideText ?? input).trim();
     if (!text || loading) return;
-    const userMsg = { role: "user", content: text, files: files.map((f) => f.name) };
+    const userMsg = { role: "user", content: text };
     setMessages((m) => [...m, userMsg]);
     setInput("");
-    const sentFiles = files;
-    setFiles([]);
     setLoading(true);
     try {
       const res = await base44.functions.invoke("agentChat", {
         message: text,
         language,
         history: messages.filter((m) => m.role === "user" || m.role === "assistant").map((m) => ({ role: m.role, content: m.content })),
-        file_urls: sentFiles.map((f) => f.url),
       });
       const reply = res?.data?.reply || res?.reply || "Sorry, I couldn't generate a response.";
       setMessages((m) => [...m, { role: "assistant", content: reply }]);
@@ -67,31 +61,6 @@ export default function AgentBot() {
   const handleQuickAction = (action) => {
     send(action.prompt);
   };
-
-  const handleFileSelect = async (e) => {
-    const selected = Array.from(e.target.files || []);
-    if (!selected.length) return;
-    setUploading(true);
-    try {
-      const uploaded = [];
-      for (const file of selected) {
-        if (file.size > 10 * 1024 * 1024) {
-          setMessages((m) => [...m, { role: "assistant", content: `File "${file.name}" is too large (max 10MB).` }]);
-          continue;
-        }
-        const { file_url } = await base44.integrations.Core.UploadFile({ file });
-        uploaded.push({ name: file.name, url: file_url });
-      }
-      setFiles((f) => [...f, ...uploaded]);
-    } catch (err) {
-      setMessages((m) => [...m, { role: "assistant", content: "Failed to upload file. Please try again." }]);
-    } finally {
-      setUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    }
-  };
-
-  const removeFile = (idx) => setFiles((f) => f.filter((_, i) => i !== idx));
 
   const openPanel = () => {
     setOpen(true);
@@ -151,15 +120,6 @@ export default function AgentBot() {
                         : "bg-muted text-foreground rounded-bl-sm"
                     )}
                   >
-                    {m.files?.length > 0 && (
-                      <div className="mb-1.5 flex flex-wrap gap-1">
-                        {m.files.map((fn, fi) => (
-                          <span key={fi} className="inline-flex items-center gap-1 text-[11px] bg-primary-foreground/15 rounded px-1.5 py-0.5">
-                            <Paperclip className="w-2.5 h-2.5" /> {fn}
-                          </span>
-                        ))}
-                      </div>
-                    )}
                     <div className="whitespace-pre-wrap break-words">{m.content}</div>
                   </div>
                 </div>
@@ -200,41 +160,9 @@ export default function AgentBot() {
               </div>
             )}
 
-            {/* Uploaded files */}
-            {files.length > 0 && (
-              <div className="px-3 pb-2 flex flex-wrap gap-1.5">
-                {files.map((f, i) => (
-                  <span key={i} className="inline-flex items-center gap-1 text-xs bg-muted border border-border rounded-md pl-2 pr-1 py-1">
-                    <Paperclip className="w-3 h-3 text-muted-foreground" />
-                    <span className="max-w-[120px] truncate">{f.name}</span>
-                    <button onClick={() => removeFile(i)} className="text-muted-foreground hover:text-destructive">
-                      <X className="w-3 h-3" />
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
-
             {/* Input */}
             <div className="p-3 border-t border-border">
               <div className="flex items-center gap-2">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  multiple
-                  accept="image/*,application/pdf,.pdf,.doc,.docx,.txt"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                />
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={loading || uploading}
-                  className="w-9 h-9 rounded-lg border border-border bg-card text-muted-foreground hover:text-foreground hover:bg-muted flex items-center justify-center transition-colors disabled:opacity-50 shrink-0"
-                  aria-label="Attach file"
-                  title={language === "hi" ? "फ़ाइल अटैच करें (इमेज, PDF)" : language === "gu" ? "ફાઇલ જોડો (ઇમેજ, PDF)" : "Attach file (image, PDF)"}
-                >
-                  {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Paperclip className="w-4 h-4" />}
-                </button>
                 <input
                   type="text"
                   value={input}
@@ -246,7 +174,7 @@ export default function AgentBot() {
                 />
                 <button
                   onClick={() => send()}
-                  disabled={loading || (!input.trim() && files.length === 0)}
+                  disabled={loading || !input.trim()}
                   className="w-9 h-9 rounded-lg bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
                   aria-label="Send"
                 >
