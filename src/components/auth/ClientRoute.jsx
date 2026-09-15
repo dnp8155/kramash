@@ -24,7 +24,7 @@ export default function ClientRoute() {
     if (getPortalSession()) {
       return <Outlet />;
     }
-    return <Navigate to="/client-login" replace />;
+    return <Navigate to="/" replace />;
   }
 
   return <Outlet />;

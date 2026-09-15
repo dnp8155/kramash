@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, forwardRef, useImperativeHandle } from "react";
 import { base44 } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
@@ -11,7 +11,7 @@ import {
 // "Quick Portal Access" section for the Client Details page.
 // Lets the workspace admin enable/disable the password-only portal gate,
 // view the shareable link + generated password, and regenerate the password.
-export default function PortalAccessSection({ client, workspaceId }) {
+const PortalAccessSection = forwardRef(function PortalAccessSection({ client, workspaceId }, ref) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -96,6 +96,8 @@ export default function PortalAccessSection({ client, workspaceId }) {
       setTimeout(() => setCopiedField(""), 2000);
     });
   };
+
+  useImperativeHandle(ref, () => ({ handleEnable }));
 
   if (!enabled) {
     return (
@@ -185,4 +187,6 @@ export default function PortalAccessSection({ client, workspaceId }) {
       </div>
     </div>
   );
-}
+});
+
+export default PortalAccessSection;

@@ -101,7 +101,7 @@ export default function ClientPortal() {
   const handleLogout = () => {
     clearPortalSession();
     if (logout) logout(false);
-    window.location.href = "/client-login";
+    window.location.href = "/";
   };
 
   if (loading) {
