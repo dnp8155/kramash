@@ -16,7 +16,7 @@ import { Crown, Lock } from "lucide-react";
 import { isValidIndianPhone, isValidEmail } from "@/lib/validation";
 import { cn } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
-import { invalidateEntity } from "@/lib/queryInvalidation";
+import { invalidateRelated, upsertOptimistic } from "@/lib/queryInvalidation";
 import { useSubmitGuard } from "@/hooks/useSubmitGuard";
 
 // Master Team Member form — identity + role + contact + status + notes only.
@@ -141,7 +141,9 @@ export default function TeamMemberForm({ open, onClose, onSaved, member = null, 
         const res = await base44.functions.invoke("createTeamMember", payload);
         saved = res?.data || res;
       }
-      invalidateEntity(queryClient, "TeamMember");
+      upsertOptimistic(queryClient, ["team", workspaceId], saved,
+        (d) => d?.members, (d, list) => ({ ...d, members: list }));
+      invalidateRelated(queryClient, "TeamMember");
       onSaved?.(saved);
       onClose?.();
     } catch (err) {

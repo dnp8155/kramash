@@ -9,7 +9,7 @@ import Select from "@/components/common/Select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Loader2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { invalidateEntity } from "@/lib/queryInvalidation";
+import { invalidateRelated, upsertOptimistic } from "@/lib/queryInvalidation";
 import { useSubmitGuard } from "@/hooks/useSubmitGuard";
 
 const SOURCES = [
@@ -109,14 +109,17 @@ export default function LeadForm({ open, onClose, editingLead, onSaved }) {
         notes: form.notes?.trim() || ""
       };
 
+      let saved;
       if (editingLead) {
-        await base44.entities.Lead.update(editingLead.id, payload);
+        saved = await base44.entities.Lead.update(editingLead.id, payload);
         toast({ title: "Lead updated successfully" });
       } else {
-        await base44.entities.Lead.create(payload);
+        saved = await base44.entities.Lead.create(payload);
         toast({ title: "Lead created successfully" });
       }
-      invalidateEntity(queryClient, "Lead");
+      upsertOptimistic(queryClient, ["leads", workspaceId], saved,
+        (d) => d, (d, list) => list);
+      invalidateRelated(queryClient, "Lead");
       onSaved?.();
       onClose();
     } catch (err) {

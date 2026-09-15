@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { lookupCity } from "@/lib/cityMapping";
 import { isValidIndianPhone, isValidEmail } from "@/lib/validation";
 import { useQueryClient } from "@tanstack/react-query";
-import { invalidateEntity } from "@/lib/queryInvalidation";
+import { invalidateRelated, upsertOptimistic } from "@/lib/queryInvalidation";
 import { useSubmitGuard } from "@/hooks/useSubmitGuard";
 
 const empty = {
@@ -86,7 +86,9 @@ export default function ClientForm({ open, onClose, onSaved, client = null, work
       } else {
         saved = await base44.entities.Client.create(payload);
       }
-      invalidateEntity(queryClient, "Client");
+      upsertOptimistic(queryClient, ["clients", workspaceId], saved,
+        (d) => d?.clients, (d, list) => ({ ...d, clients: list }));
+      invalidateRelated(queryClient, "Client");
       onSaved?.(saved);
       onClose?.();
     } catch (err) {

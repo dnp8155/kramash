@@ -9,7 +9,7 @@ import Select from "@/components/common/Select";
 import { Label } from "@/components/ui/label";
 import { SERVICE_RATE_TYPES, GST_RATE_OPTIONS } from "@/constants/quotationConfig";
 import { useQueryClient } from "@tanstack/react-query";
-import { invalidateEntity } from "@/lib/queryInvalidation";
+import { invalidateRelated } from "@/lib/queryInvalidation";
 import { useSubmitGuard } from "@/hooks/useSubmitGuard";
 
 const empty = {
@@ -74,7 +74,7 @@ export default function ServiceForm({
         const res = await base44.functions.invoke("createService", payload);
         saved = res?.data || res;
       }
-      invalidateEntity(queryClient, "Service");
+      invalidateRelated(queryClient, "Service");
       onSaved?.(saved);
       onClose?.();
     } catch (err) {

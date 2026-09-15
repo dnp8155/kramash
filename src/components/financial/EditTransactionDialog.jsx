@@ -11,7 +11,7 @@ import { PAYMENT_METHOD_LIST, TRANSACTION_TYPES } from "@/constants/financeConfi
 import { resolveFYForDate } from "@/lib/financialYearService";
 import { useFinancialYear } from "@/hooks/useFinancialYear";
 import { useQueryClient } from "@tanstack/react-query";
-import { invalidateEntity } from "@/lib/queryInvalidation";
+import { invalidateRelated, upsertOptimistic } from "@/lib/queryInvalidation";
 import { editTransaction } from "@/lib/financeService";
 import { useWorkspace } from "@/lib/WorkspaceContext";
 import { useSubmitGuard } from "@/hooks/useSubmitGuard";
@@ -85,9 +85,11 @@ export default function EditTransactionDialog({
         setError(data.message || data.error);
         return;
       }
-      invalidateEntity(queryClient, "FinancialTransaction");
-      invalidateEntity(queryClient, "Invoice");
-      invalidateEntity(queryClient, "PaymentMilestone");
+      upsertOptimistic(queryClient, ["financial", workspaceId], data,
+        (d) => d?.allTx, (d, list) => ({ ...d, allTx: list }));
+      invalidateRelated(queryClient, "FinancialTransaction");
+      invalidateRelated(queryClient, "Invoice");
+      invalidateRelated(queryClient, "PaymentMilestone");
       onSaved?.(data);
       onClose?.();
     } catch (err) {

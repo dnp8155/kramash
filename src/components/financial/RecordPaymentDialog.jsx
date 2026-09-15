@@ -20,7 +20,7 @@ import { useSubmitGuard } from "@/hooks/useSubmitGuard";
 import { assertOnline } from "@/lib/offlineGuard";
 import { AlertTriangle, Crown } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { invalidateEntity } from "@/lib/queryInvalidation";
+import { invalidateRelated, upsertOptimistic } from "@/lib/queryInvalidation";
 
 // Unified dialog for recording a Client Payment or a Team Payment.
 // mode = "client" | "team"
@@ -170,7 +170,9 @@ export default function RecordPaymentDialog({
         });
         saved = _res?.data || _res;
       }
-      invalidateEntity(queryClient, "FinancialTransaction");
+      upsertOptimistic(queryClient, ["financial", workspaceId], saved,
+        (d) => d?.allTx, (d, list) => ({ ...d, allTx: list }));
+      invalidateRelated(queryClient, "FinancialTransaction");
       onSaved?.(saved);
       onClose?.();
     } catch (err) {

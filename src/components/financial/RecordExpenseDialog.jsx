@@ -12,7 +12,7 @@ import { resolveFYForDate } from "@/lib/financialYearService";
 import { useFinancialYear } from "@/hooks/useFinancialYear";
 import { todayISO } from "@/lib/dates";
 import { useQueryClient } from "@tanstack/react-query";
-import { invalidateEntity } from "@/lib/queryInvalidation";
+import { invalidateRelated, upsertOptimistic } from "@/lib/queryInvalidation";
 import ExpenseCategoryAutocomplete from "@/components/financial/ExpenseCategoryAutocomplete";
 import { useSubmitGuard } from "@/hooks/useSubmitGuard";
 import { assertOnline } from "@/lib/offlineGuard";
@@ -114,7 +114,9 @@ export default function RecordExpenseDialog({
         status: "ACTIVE"
       };
       const saved = await base44.entities.FinancialTransaction.create(payload);
-      invalidateEntity(queryClient, "FinancialTransaction");
+      upsertOptimistic(queryClient, ["financial", workspaceId], saved,
+        (d) => d?.allTx, (d, list) => ({ ...d, allTx: list }));
+      invalidateRelated(queryClient, "FinancialTransaction");
       onSaved?.(saved);
       onClose?.();
     } catch (err) {

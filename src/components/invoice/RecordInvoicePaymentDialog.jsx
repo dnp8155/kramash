@@ -6,7 +6,7 @@ import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
 import { recordInvoicePayment } from "@/lib/invoiceService";
 import { formatMoney } from "@/utils/format";
-import { invalidateEntities } from "@/lib/queryInvalidation";
+import { invalidateRelated } from "@/lib/queryInvalidation";
 import { useQueryClient } from "@tanstack/react-query";
 import { ensureDefaultFY, resolveFYForDate } from "@/lib/financialYearService";
 import { X, AlertCircle } from "lucide-react";
@@ -81,7 +81,9 @@ export default function RecordInvoicePaymentDialog({ open, onClose, invoice, onR
         setError(data.message || data.error);
         return;
       }
-      invalidateEntities(queryClient, ["Invoice", "InvoiceItem", "FinancialTransaction", "PaymentMilestone"]);
+      invalidateRelated(queryClient, "Invoice");
+      invalidateRelated(queryClient, "FinancialTransaction");
+      invalidateRelated(queryClient, "PaymentMilestone");
       toast({ title: "Payment recorded successfully" });
       onRecorded?.(data);
       onClose();
