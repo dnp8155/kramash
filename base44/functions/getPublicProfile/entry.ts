@@ -1,8 +1,8 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 
 // Public endpoint — no auth required.
-// Returns workspace public profile data + active services + active team members
-// based on the public_profile_slug.
+// Returns workspace public profile data + social links (from display_preferences)
+// + per-field contact visibility flags + business category (for hero image selection).
 export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
@@ -31,18 +31,47 @@ export default async function(req) {
       return Response.json({ error: 'Profile not found or not published' }, { status: 404 });
     }
 
+    // Parse display_preferences JSON for social links + visibility flags
+    let dp = {};
+    try {
+      dp = workspace.display_preferences ? JSON.parse(workspace.display_preferences) : {};
+    } catch (e) { /* malformed JSON — treat as empty */ }
+
+    // Visibility flags — default true so existing profiles stay fully visible
+    const visibility = {
+      phone: dp.public_show_phone !== false,
+      email: dp.public_show_email !== false,
+      address: dp.public_show_address !== false,
+      website: dp.public_show_website !== false,
+      social: dp.public_show_social !== false,
+    };
+
+    // Social links from Quotation Preferences (display_preferences)
+    const social_links = {
+      instagram: dp.social_instagram || "",
+      youtube: dp.social_youtube || "",
+      website: dp.social_website || "",
+      portfolio: dp.social_portfolio || "",
+    };
+
     return Response.json({
       workspace: {
         name: workspace.name,
         tagline: workspace.tagline || '',
         logo: workspace.logo || '',
+        business_category: workspace.business_category || 'OTHER',
+        business_type: workspace.business_type || '',
+        custom_business_type: workspace.custom_business_type || '',
+        about: workspace.public_profile_about || '',
         address: workspace.address || '',
         city: workspace.city || '',
         state: workspace.state || '',
         country: workspace.country || '',
         phone: workspace.phone || '',
         email: workspace.email || '',
-        website: workspace.website || ''
+        website: workspace.website || '',
+        social_links,
+        visibility,
       }
     });
   } catch (error) {

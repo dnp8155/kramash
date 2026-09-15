@@ -60,6 +60,13 @@ export default function ProfileWorkspaceSection() {
   const isPhoneLocked = !!(workspace?.phone);
   const isEmailLocked = !!(workspace?.email);
 
+  // Parse display_preferences for public profile visibility flags
+  const dp = (() => {
+    try {
+      return workspace?.display_preferences ? JSON.parse(workspace.display_preferences) : {};
+    } catch { return {}; }
+  })();
+
   // Initialize workspace form when workspace loads
   if (!form && workspace) {
     setForm({
@@ -85,7 +92,13 @@ export default function ProfileWorkspaceSection() {
       default_gst_rate: workspace.default_gst_rate ?? 18,
       logo: workspace.logo || "",
       public_profile_enabled: !!workspace.public_profile_enabled,
-      public_profile_slug: workspace.public_profile_slug || slugify(workspace.name) || ""
+      public_profile_slug: workspace.public_profile_slug || slugify(workspace.name) || "",
+      // Public profile contact visibility (default true)
+      public_show_phone: dp.public_show_phone !== false,
+      public_show_email: dp.public_show_email !== false,
+      public_show_address: dp.public_show_address !== false,
+      public_show_website: dp.public_show_website !== false,
+      public_show_social: dp.public_show_social !== false,
     });
   }
 
@@ -138,6 +151,16 @@ export default function ProfileWorkspaceSection() {
     }
     setSaving(true);
     try {
+      // Merge visibility flags into display_preferences (preserve existing keys like social links, bank details)
+      const existingDp = workspace?.display_preferences ? JSON.parse(workspace.display_preferences) : {};
+      const updatedDp = {
+        ...existingDp,
+        public_show_phone: form.public_show_phone,
+        public_show_email: form.public_show_email,
+        public_show_address: form.public_show_address,
+        public_show_website: form.public_show_website,
+        public_show_social: form.public_show_social,
+      };
       const updated = await base44.entities.Workspace.update(workspace.id, {
         name: form.name,
         tagline: form.tagline,
@@ -160,7 +183,8 @@ export default function ProfileWorkspaceSection() {
         gst_state: form.gst_state,
         default_gst_rate: form.default_gst_rate,
         public_profile_enabled: form.public_profile_enabled,
-        public_profile_slug: form.public_profile_slug || slugify(form.name)
+        public_profile_slug: form.public_profile_slug || slugify(form.name),
+        display_preferences: JSON.stringify(updatedDp),
       });
       setWorkspace(updated);
       toast({ title: "Settings saved" });
@@ -451,6 +475,19 @@ export default function ProfileWorkspaceSection() {
                   </div>
                 )}
               </Field>
+
+              {/* Contact visibility toggles */}
+              <div className="pt-3 mt-3 border-t border-border">
+                <h5 className="text-xs font-semibold text-foreground mb-1">Show on Public Page</h5>
+                <p className="text-xs text-muted-foreground mb-3">Control which contact details are visible on your public profile.</p>
+                <div className="space-y-2.5">
+                  <VisibilityToggle label="Phone" checked={form.public_show_phone} onChange={(v) => set("public_show_phone", v)} />
+                  <VisibilityToggle label="Email" checked={form.public_show_email} onChange={(v) => set("public_show_email", v)} />
+                  <VisibilityToggle label="Address" checked={form.public_show_address} onChange={(v) => set("public_show_address", v)} />
+                  <VisibilityToggle label="Website" checked={form.public_show_website} onChange={(v) => set("public_show_website", v)} />
+                  <VisibilityToggle label="Social Links" checked={form.public_show_social} onChange={(v) => set("public_show_social", v)} />
+                </div>
+              </div>
             </div>
           </div>
 
@@ -479,6 +516,15 @@ function Field({ label, className, children }) {
     <div className={className}>
       <label className="block text-xs font-medium text-muted-foreground mb-1">{label}</label>
       {children}
+    </div>
+  );
+}
+
+function VisibilityToggle({ label, checked, onChange }) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <span className="text-sm text-foreground">{label}</span>
+      <Toggle checked={checked} onChange={onChange} label={label} />
     </div>
   );
 }
