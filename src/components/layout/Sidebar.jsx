@@ -5,7 +5,7 @@ import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
 import { useT } from "@/hooks/useT";
 import { Settings, X, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Image } from "@/components/ui/image";
+import WorkspaceLogo from "@/components/common/WorkspaceLogo";
 import WorkspaceSwitcher from "@/components/layout/WorkspaceSwitcher";
 
 export default function Sidebar({ mobile = false, onClose, collapsed = false, onToggleCollapse }) {
@@ -68,11 +68,7 @@ export default function Sidebar({ mobile = false, onClose, collapsed = false, on
         </div>
         <div className="h-px bg-border" />
         <div className="flex flex-col items-center gap-2 px-2 py-3">
-          <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center text-foreground font-semibold text-sm overflow-hidden border border-border">
-            {user?.data?.profile_image || user?.profile_image
-              ? <Image src={user.data?.profile_image || user.profile_image} alt="Profile" fittingType="fill" className="w-full h-full" />
-              : (user?.full_name || user?.email || "K").charAt(0).toUpperCase()}
-          </div>
+          <WorkspaceLogo size={36} />
           <button
             onClick={() => logout()}
             className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-colors"
@@ -143,11 +139,7 @@ export default function Sidebar({ mobile = false, onClose, collapsed = false, on
       <div className="h-px bg-border" />
 
       <div className="flex items-center gap-3 px-3 pt-3.5 pb-5">
-        <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center text-foreground font-semibold text-sm shrink-0 overflow-hidden border border-border">
-          {user?.data?.profile_image || user?.profile_image
-            ? <Image src={user.data?.profile_image || user.profile_image} alt="Profile" fittingType="fill" className="w-full h-full" />
-            : (user?.full_name || user?.email || "K").charAt(0).toUpperCase()}
-        </div>
+        <WorkspaceLogo size={36} className="shrink-0" />
         <div className="flex-1 min-w-0">
           <div className="text-sm font-semibold truncate">{user?.full_name || t("User")}</div>
           <div className="text-xs text-muted-foreground truncate">{user?.email || "—"}</div>

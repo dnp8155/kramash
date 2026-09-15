@@ -8,7 +8,7 @@ import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
 import Toggle from "@/components/common/Toggle";
 import ChangePasswordDialog from "@/components/settings/ChangePasswordDialog";
-import { Pencil, Check, Camera, Loader2, Upload, User, Building2, Lock, KeyRound, Globe, Copy, ExternalLink } from "lucide-react";
+import { Pencil, Check, Loader2, Upload, User, Building2, Lock, KeyRound, Globe, Copy, ExternalLink } from "lucide-react";
 import { isValidIndianPhone, isValidEmail } from "@/lib/validation";
 
 const currencies = [{ v: "INR", l: "INR (₹)" }, { v: "USD", l: "USD ($)" }, { v: "EUR", l: "EUR (€)" }, { v: "AED", l: "AED (د.إ)" }];
@@ -46,10 +46,7 @@ export default function ProfileWorkspaceSection() {
   const [editingName, setEditingName] = useState(false);
   const [name, setName] = useState(user?.full_name || "");
   const [savingName, setSavingName] = useState(false);
-  const [uploadingImg, setUploadingImg] = useState(false);
   const [showChangePwd, setShowChangePwd] = useState(false);
-  const profileFileRef = useRef(null);
-  const profileImage = user?.data?.profile_image || user?.profile_image;
 
   // ---- Workspace state ----
   const [form, setForm] = useState(null);
@@ -93,34 +90,6 @@ export default function ProfileWorkspaceSection() {
   }
 
   // ---- Profile handlers ----
-  const onProfileImage = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith("image/")) { toast({ title: "Please choose an image file." }); return; }
-    if (file.size > 5 * 1024 * 1024) { toast({ title: "Image too large (max 5MB)." }); return; }
-    setUploadingImg(true);
-    try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      await base44.auth.updateMe({ profile_image: file_url });
-      await checkUserAuth();
-      toast({ title: "Profile photo updated" });
-    } catch (err) {
-      toast({ title: "Upload failed", description: err?.message, variant: "destructive" });
-    } finally {
-      setUploadingImg(false);
-    }
-  };
-
-  const removeProfileImage = async () => {
-    try {
-      await base44.auth.updateMe({ profile_image: "" });
-      await checkUserAuth();
-      toast({ title: "Profile photo removed" });
-    } catch (err) {
-      toast({ title: "Failed to remove photo", description: err?.message, variant: "destructive" });
-    }
-  };
-
   const saveName = async () => {
     if (!name.trim()) { toast({ title: "Name cannot be empty." }); return; }
     setSavingName(true);
@@ -213,39 +182,6 @@ export default function ProfileWorkspaceSection() {
           <h3 className="text-sm font-semibold">Owner Profile</h3>
         </div>
 
-        <div className="flex items-center gap-4 mb-5">
-          <div className="relative group shrink-0">
-            <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center text-foreground font-bold text-xl overflow-hidden border border-border">
-              {profileImage
-                ? <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
-                : <span>{(user?.full_name || user?.email || "K").charAt(0).toUpperCase()}</span>}
-            </div>
-            <input ref={profileFileRef} type="file" accept="image/*" className="hidden" onChange={onProfileImage} />
-            <button
-              type="button"
-              onClick={() => profileFileRef.current?.click()}
-              disabled={uploadingImg}
-              className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-card border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shadow-sm"
-              aria-label="Change profile photo"
-              title="Change photo"
-            >
-              {uploadingImg ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
-            </button>
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="font-semibold text-sm truncate">{user?.full_name || "User"}</div>
-            <div className="text-xs text-muted-foreground truncate">{user?.email}</div>
-            {profileImage && (
-              <button
-                onClick={removeProfileImage}
-                className="text-xs text-muted-foreground hover:text-destructive mt-1 transition-colors"
-              >
-                Remove photo
-              </button>
-            )}
-          </div>
-        </div>
-
         <div className="space-y-0">
           {/* Full Name — locked once set */}
           <div className="flex items-center justify-between py-3 border-b border-border">
@@ -330,17 +266,21 @@ export default function ProfileWorkspaceSection() {
           <h3 className="text-sm font-semibold">Business & Workspace</h3>
         </div>
 
-        {/* Logo */}
+        {/* Branding Image — single image used across the entire app */}
+        <div className="mb-1">
+          <h4 className="text-sm font-semibold text-foreground">Branding Image</h4>
+          <p className="text-xs text-muted-foreground mt-0.5">This image is used as your workspace logo, sidebar avatar, invoice logo, and on all public pages.</p>
+        </div>
         <div className="flex items-center gap-3 mb-5">
-          <div className="w-14 h-14 rounded-full bg-muted border border-border flex items-center justify-center overflow-hidden">
+          <div className="w-14 h-14 rounded-lg bg-muted border border-border flex items-center justify-center overflow-hidden">
             {form.logo
-              ? <img src={form.logo} alt="Workspace logo" className="w-full h-full object-cover" />
+              ? <img src={form.logo} alt="Branding image" className="w-full h-full object-cover" />
               : <Upload className="w-5 h-5 text-muted-foreground" />}
           </div>
           <input ref={logoFileRef} type="file" accept="image/*" className="hidden" onChange={onLogo} />
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => logoFileRef.current?.click()} disabled={uploading}>
-              {uploading ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />Uploading…</> : form.logo ? "Replace" : "Upload Logo"}
+              {uploading ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />Uploading…</> : form.logo ? "Replace" : "Upload Image"}
             </Button>
             {form.logo && (
               <Button variant="ghost" size="sm" onClick={async () => {
