@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useWorkspace } from "@/lib/WorkspaceContext";
+import { getBusinessTerminology } from "@/lib/businessTerminology";
 import { useToast } from "@/components/ui/use-toast";
 import Button from "@/components/common/Button";
 import Input from "@/components/common/Input";
@@ -50,7 +51,8 @@ const empty = {
 };
 
 export default function LeadForm({ open, onClose, editingLead, onSaved }) {
-  const { workspaceId } = useWorkspace();
+  const { workspaceId, workspace } = useWorkspace();
+  const term = getBusinessTerminology(workspace);
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [form, setForm] = useState(empty);
@@ -201,17 +203,17 @@ export default function LeadForm({ open, onClose, editingLead, onSaved }) {
           </div>
 
           <div>
-            <label className="text-sm font-medium mb-1.5 block">Interested In</label>
+            <label className="text-sm font-medium mb-1.5 block">{term.workItemTypeLabel}</label>
             <Input
               value={form.event_type}
               onChange={(e) => set("event_type", e.target.value)}
-              placeholder="e.g. Wedding, Pre-wedding, Birthday..."
+              placeholder={term.titlePlaceholder}
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-sm font-medium mb-1.5 block">Tentative Event Date</label>
+              <label className="text-sm font-medium mb-1.5 block">Tentative {term.workItemSingular} Date</label>
               <Input
                 type="date"
                 value={form.event_date}

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useWorkspace } from "@/lib/WorkspaceContext";
+import { getBusinessTerminology } from "@/lib/businessTerminology";
 import SearchInput from "@/components/common/SearchInput";
 import Button from "@/components/common/Button";
 import Select from "@/components/common/Select";
@@ -41,7 +42,8 @@ const SOURCE_LABELS = {
 };
 
 export default function Leads() {
-  const { workspaceId } = useWorkspace();
+  const { workspaceId, workspace } = useWorkspace();
+  const term = getBusinessTerminology(workspace);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -106,7 +108,7 @@ export default function Leads() {
   };
 
   const handleConvertToEvent = async (lead) => {
-    if (!window.confirm(`Convert "${lead.name}" to an event? This will create a client and event.`)) return;
+    if (!window.confirm(`Convert "${lead.name}" to a ${term.workItemSingular.toLowerCase()}? This will create a client and ${term.workItemSingular.toLowerCase()}.`)) return;
     try {
       const client = await base44.entities.Client.create({
         workspace_id: workspaceId,
@@ -119,7 +121,7 @@ export default function Leads() {
       const event = await base44.entities.Event.create({
         workspace_id: workspaceId,
         client_id: client.id,
-        title: lead.event_type || `${lead.name} - Event`,
+        title: lead.event_type || `${lead.name} - ${term.workItemSingular}`,
         event_type: lead.event_type || "",
         start_date: startDate,
         end_date: lead.event_date || "",
@@ -130,7 +132,7 @@ export default function Leads() {
         notes: lead.notes || ""
       });
       await base44.entities.Lead.update(lead.id, { status: "won", converted_client_id: client.id });
-      toast({ title: "Lead converted to event" });
+      toast({ title: `Lead converted to ${term.workItemSingular.toLowerCase()}` });
       invalidate();
       navigate(`/events/${event.id}`);
     } catch (err) {
@@ -242,7 +244,7 @@ export default function Leads() {
 
                 {lead.status !== "won" && (
                   <Button variant="outline" size="sm" className="w-full mb-3" onClick={() => handleConvertToEvent(lead)}>
-                    <CalendarPlus className="w-3.5 h-3.5" /> Convert to Event
+                    <CalendarPlus className="w-3.5 h-3.5" /> Convert to {term.workItemSingular}
                   </Button>
                 )}
                 <div className="flex items-center gap-2 pt-3 border-t border-border">
