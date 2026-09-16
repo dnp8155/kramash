@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { Unlock, Ban } from "lucide-react";
 import Button from "@/components/common/Button";
-import Card from "@/components/common/Card";
+import { AppDialog, AppDialogContent, AppDialogHeader, AppDialogTitle, AppDialogDescription, AppDialogBody, AppDialogFooter } from "@/components/ui/AppDialog";
 
 export default function UnblockDatesDialog({ open, onClose, blockDates, members, onUnblock }) {
   const activeBlocks = useMemo(() => {
@@ -16,8 +16,6 @@ export default function UnblockDatesDialog({ open, onClose, blockDates, members,
       .sort((a, b) => (a.block.start_date || "").localeCompare(b.block.start_date || ""));
   }, [open, blockDates, members]);
 
-  if (!open) return null;
-
   const fmt = (start, end) => {
     const s = new Date(start + "T12:00:00").toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
     if (!end || end === start) return s;
@@ -26,16 +24,17 @@ export default function UnblockDatesDialog({ open, onClose, blockDates, members,
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <Card className="max-w-md w-full p-5 max-h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center gap-2 mb-1">
-          <Unlock className="w-5 h-5 text-success" />
-          <h3 className="text-sm font-bold text-foreground">Unblock Dates</h3>
-        </div>
-        <p className="text-xs text-muted-foreground mb-4">
-          {activeBlocks.length} active block{activeBlocks.length !== 1 ? "s" : ""}. Tap Unblock to make a member available again.
-        </p>
-        <div className="space-y-2 overflow-y-auto -mr-1 pr-1 flex-1">
+    <AppDialog open={open} onOpenChange={(o) => !o && onClose?.()}>
+      <AppDialogContent maxWidth="max-w-md">
+        <AppDialogHeader>
+          <AppDialogTitle className="flex items-center gap-2">
+            <Unlock className="w-5 h-5 text-success" /> Unblock Dates
+          </AppDialogTitle>
+          <AppDialogDescription>
+            {activeBlocks.length} active block{activeBlocks.length !== 1 ? "s" : ""}. Tap Unblock to make a member available again.
+          </AppDialogDescription>
+        </AppDialogHeader>
+        <AppDialogBody className="space-y-2">
           {activeBlocks.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-center">
               <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-2">
@@ -59,11 +58,11 @@ export default function UnblockDatesDialog({ open, onClose, blockDates, members,
               </div>
             ))
           )}
-        </div>
-        <div className="flex justify-end mt-4 pt-3 border-t border-border">
-          <Button variant="outline" size="sm" onClick={onClose}>Done</Button>
-        </div>
-      </Card>
-    </div>
+        </AppDialogBody>
+        <AppDialogFooter>
+          <Button variant="outline" onClick={onClose}>Done</Button>
+        </AppDialogFooter>
+      </AppDialogContent>
+    </AppDialog>
   );
 }

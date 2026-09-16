@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription
-} from "@/components/ui/dialog";
+  AppDialog, AppDialogContent, AppDialogHeader, AppDialogTitle, AppDialogDescription, AppDialogBody, AppDialogFooter
+} from "@/components/ui/AppDialog";
 import Button from "@/components/common/Button";
 import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
@@ -127,14 +127,15 @@ export default function RecordExpenseDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && onClose?.()}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{miscMode ? "Misc Expense Category" : "Record Expense"}</DialogTitle>
-          <DialogDescription>{miscMode ? "Record an expense not tied to any event — added directly to the financial year." : "Record a business, event, or misc expense."}</DialogDescription>
-        </DialogHeader>
+    <AppDialog open={open} onOpenChange={(o) => !o && onClose?.()}>
+      <AppDialogContent>
+        <AppDialogHeader>
+          <AppDialogTitle>{miscMode ? "Misc Expense Category" : "Record Expense"}</AppDialogTitle>
+          <AppDialogDescription>{miscMode ? "Record an expense not tied to any event — added directly to the financial year." : "Record a business, event, or misc expense."}</AppDialogDescription>
+        </AppDialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-3">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+          <AppDialogBody className="space-y-3">
           {!miscMode && (
             <div className="space-y-1.5">
               <Label>Event <span className="text-muted-foreground font-normal">(optional — leave blank for misc expense)</span></Label>
@@ -207,15 +208,16 @@ export default function RecordExpenseDialog({
           </div>
 
           {error && <p className="text-sm text-destructive">{error}</p>}
+          </AppDialogBody>
 
-          <DialogFooter className="pt-2">
+          <AppDialogFooter>
             <Button type="button" variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
             <Button type="submit" disabled={saving}>
               {saving ? "Saving…" : "Record Expense"}
             </Button>
-          </DialogFooter>
+          </AppDialogFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </AppDialogContent>
+    </AppDialog>
   );
 }

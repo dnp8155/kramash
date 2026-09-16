@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription
-} from "@/components/ui/dialog";
+  AppDialog, AppDialogContent, AppDialogHeader, AppDialogTitle, AppDialogDescription, AppDialogBody, AppDialogFooter
+} from "@/components/ui/AppDialog";
 import Button from "@/components/common/Button";
 import Input from "@/components/common/Input";
 import { Textarea } from "@/components/ui/textarea";
@@ -99,16 +99,17 @@ export default function ClientForm({ open, onClose, onSaved, client = null, work
   };
 
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && onClose?.()}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{client ? "Edit Client" : "Add Client"}</DialogTitle>
-          <DialogDescription>
+    <AppDialog open={open} onOpenChange={(o) => !o && onClose?.()}>
+      <AppDialogContent>
+        <AppDialogHeader>
+          <AppDialogTitle>{client ? "Edit Client" : "Add Client"}</AppDialogTitle>
+          <AppDialogDescription>
             {client ? "Update client details." : "Create a new client in this workspace."}
-          </DialogDescription>
-        </DialogHeader>
+          </AppDialogDescription>
+        </AppDialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-3">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+          <AppDialogBody className="space-y-3">
           <div className="space-y-1.5">
             <Label>Client Name <span className="text-destructive">*</span></Label>
             <Input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="e.g. Rahul Shah" autoFocus />
@@ -156,15 +157,16 @@ export default function ClientForm({ open, onClose, onSaved, client = null, work
           </div>
 
           {error && <p className="text-sm text-destructive">{error}</p>}
+          </AppDialogBody>
 
-          <DialogFooter className="pt-2">
+          <AppDialogFooter>
             <Button type="button" variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
             <Button type="submit" disabled={saving}>
               {saving ? "Saving…" : client ? "Save Changes" : "Add Client"}
             </Button>
-          </DialogFooter>
+          </AppDialogFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </AppDialogContent>
+    </AppDialog>
   );
 }

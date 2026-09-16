@@ -10,7 +10,8 @@ import { loadMilestones } from "@/lib/milestoneService";
 import { formatMoney } from "@/utils/format";
 import { invalidateEntities } from "@/lib/queryInvalidation";
 import { useQueryClient } from "@tanstack/react-query";
-import { X, FileText, Clock, AlertCircle, CheckCircle2 } from "lucide-react";
+import { AppDialog, AppDialogContent, AppDialogHeader, AppDialogTitle, AppDialogBody, AppDialogFooter } from "@/components/ui/AppDialog";
+import { FileText, Clock, AlertCircle, CheckCircle2 } from "lucide-react";
 
 const DUE_DATE_TYPES = [
   { value: "due_on_receipt", label: "Due on Receipt" },
@@ -58,7 +59,7 @@ export default function CreateInvoiceDialog({ open, onClose, quotation }) {
     })();
   }, [open, quotation, workspaceId]);
 
-  if (!open || !quotation) return null;
+  if (!quotation) return null;
 
   const grandTotal = Number(quotation.grand_total) || 0;
   const alreadyInvoiced = (existingInvoices || [])
@@ -115,16 +116,12 @@ export default function CreateInvoiceDialog({ open, onClose, quotation }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-card border border-border rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between p-5 border-b border-border">
-          <h2 className="text-lg font-bold text-foreground">Create Invoice from Quotation</h2>
-          <button onClick={onClose} className="w-8 h-8 rounded-full border border-border bg-card flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        <div className="p-5 space-y-4">
+    <AppDialog open={open} onOpenChange={(o) => !o && onClose?.()}>
+      <AppDialogContent>
+        <AppDialogHeader>
+          <AppDialogTitle>Create Invoice from Quotation</AppDialogTitle>
+        </AppDialogHeader>
+        <AppDialogBody className="space-y-4">
           <div className="bg-muted/50 rounded-lg p-3 text-sm">
             <div className="text-muted-foreground">Quotation {quotation.quotation_number}</div>
             <div className="font-semibold text-foreground mt-1">{formatMoney(grandTotal, currency)}</div>
@@ -223,15 +220,15 @@ export default function CreateInvoiceDialog({ open, onClose, quotation }) {
               ))}
             </Select>
           </div>
-        </div>
+        </AppDialogBody>
 
-        <div className="flex items-center justify-end gap-2 p-5 border-t border-border">
+        <AppDialogFooter>
           <Button variant="outline" onClick={onClose} disabled={creating}>Cancel</Button>
           <Button onClick={handleCreate} disabled={creating || (mode === "milestone" && !selectedMilestoneId) || hasFullInvoice}>
             {creating ? "Creating…" : "Create Invoice"}
           </Button>
-        </div>
-      </div>
-    </div>
+        </AppDialogFooter>
+      </AppDialogContent>
+    </AppDialog>
   );
 }

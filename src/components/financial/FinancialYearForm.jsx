@@ -1,12 +1,13 @@
 import { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+  AppDialog,
+  AppDialogContent,
+  AppDialogHeader,
+  AppDialogTitle,
+  AppDialogBody,
+  AppDialogFooter,
+} from "@/components/ui/AppDialog";
 import Button from "@/components/common/Button";
 import Input from "@/components/common/Input";
 import { useToast } from "@/components/ui/use-toast";
@@ -95,14 +96,14 @@ export default function FinancialYearForm({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>
+    <AppDialog open={open} onOpenChange={onClose}>
+      <AppDialogContent maxWidth="max-w-md">
+        <AppDialogHeader>
+          <AppDialogTitle>
             {editing ? t("Edit Financial Year") : t("Add Financial Year")}
-          </DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4 py-2">
+          </AppDialogTitle>
+        </AppDialogHeader>
+        <AppDialogBody className="space-y-4">
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-foreground">
               {t("Start Date")}
@@ -135,16 +136,16 @@ export default function FinancialYearForm({
               </div>
             </div>
           )}
-        </div>
-        <DialogFooter>
-          <Button variant="outline" size="sm" onClick={onClose}>
+        </AppDialogBody>
+        <AppDialogFooter>
+          <Button variant="outline" onClick={onClose}>
             {t("Cancel")}
           </Button>
-          <Button size="sm" onClick={handleSave} disabled={!canSave}>
+          <Button onClick={handleSave} disabled={!canSave}>
             {saving ? t("Saving...") : t("Save")}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </AppDialogFooter>
+      </AppDialogContent>
+    </AppDialog>
   );
 }

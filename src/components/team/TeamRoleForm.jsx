@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription
-} from "@/components/ui/dialog";
+  AppDialog, AppDialogContent, AppDialogHeader, AppDialogTitle, AppDialogDescription, AppDialogBody, AppDialogFooter
+} from "@/components/ui/AppDialog";
 import Button from "@/components/common/Button";
 import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
@@ -61,16 +61,17 @@ export default function TeamRoleForm({ open, onClose, onSaved, role = null, work
   };
 
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && onClose?.()}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{role ? "Edit Role" : "Add Role"}</DialogTitle>
-          <DialogDescription>
+    <AppDialog open={open} onOpenChange={(o) => !o && onClose?.()}>
+      <AppDialogContent maxWidth="max-w-md">
+        <AppDialogHeader>
+          <AppDialogTitle>{role ? "Edit Role" : "Add Role"}</AppDialogTitle>
+          <AppDialogDescription>
             {role ? "Update this team role." : "Create a new team role for your workspace."}
-          </DialogDescription>
-        </DialogHeader>
+          </AppDialogDescription>
+        </AppDialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-3">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+          <AppDialogBody className="space-y-3">
           <div className="space-y-1.5">
             <Label>Role Name <span className="text-destructive">*</span></Label>
             <Input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="e.g. Drone Operator" autoFocus />
@@ -104,15 +105,16 @@ export default function TeamRoleForm({ open, onClose, onSaved, role = null, work
           </div>
 
           {error && <p className="text-sm text-destructive">{error}</p>}
+          </AppDialogBody>
 
-          <DialogFooter className="pt-2">
+          <AppDialogFooter>
             <Button type="button" variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
             <Button type="submit" disabled={saving}>
               {saving ? "Saving…" : role ? "Save Changes" : "Add Role"}
             </Button>
-          </DialogFooter>
+          </AppDialogFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </AppDialogContent>
+    </AppDialog>
   );
 }

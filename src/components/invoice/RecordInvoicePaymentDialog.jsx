@@ -9,8 +9,9 @@ import { formatMoney } from "@/utils/format";
 import { invalidateRelated } from "@/lib/queryInvalidation";
 import { useQueryClient } from "@tanstack/react-query";
 import { ensureDefaultFY, resolveFYForDate } from "@/lib/financialYearService";
-import { X, AlertCircle } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { useSubmitGuard } from "@/hooks/useSubmitGuard";
+import { AppDialog, AppDialogContent, AppDialogHeader, AppDialogTitle, AppDialogBody, AppDialogFooter } from "@/components/ui/AppDialog";
 import { assertOnline } from "@/lib/offlineGuard";
 
 const PAYMENT_METHODS = ["UPI", "Bank Transfer", "Cash", "Cheque", "Card", "Other"];
@@ -49,7 +50,7 @@ export default function RecordInvoicePaymentDialog({ open, onClose, invoice, onR
     })();
   }, [open, workspaceId]);
 
-  if (!open || !invoice) return null;
+  if (!invoice) return null;
 
   const grandTotal = Number(invoice.grand_total) || 0;
   const currentPaid = Number(invoice.amount_paid) || 0;
@@ -96,16 +97,12 @@ export default function RecordInvoicePaymentDialog({ open, onClose, invoice, onR
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-card border border-border rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between p-5 border-b border-border">
-          <h2 className="text-lg font-bold text-foreground">Record Payment</h2>
-          <button onClick={onClose} className="w-8 h-8 rounded-full border border-border bg-card flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        <div className="p-5 space-y-4">
+    <AppDialog open={open} onOpenChange={(o) => !o && onClose?.()}>
+      <AppDialogContent maxWidth="max-w-md">
+        <AppDialogHeader>
+          <AppDialogTitle>Record Payment</AppDialogTitle>
+        </AppDialogHeader>
+        <AppDialogBody className="space-y-4">
           <div className="bg-muted/50 rounded-lg p-3 space-y-1 text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Invoice</span>
@@ -180,15 +177,15 @@ export default function RecordInvoicePaymentDialog({ open, onClose, invoice, onR
               placeholder="Internal notes"
             />
           </div>
-        </div>
+        </AppDialogBody>
 
-        <div className="flex items-center justify-end gap-2 p-5 border-t border-border">
+        <AppDialogFooter>
           <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
           <Button variant="success" onClick={handleSave} disabled={saving}>
             {saving ? "Recording…" : "Record Payment"}
           </Button>
-        </div>
-      </div>
-    </div>
+        </AppDialogFooter>
+      </AppDialogContent>
+    </AppDialog>
   );
 }

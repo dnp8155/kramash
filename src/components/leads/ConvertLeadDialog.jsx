@@ -3,7 +3,7 @@ import { useWorkspace } from "@/lib/WorkspaceContext";
 import { getBusinessTerminology } from "@/lib/businessTerminology";
 import { useToast } from "@/components/ui/use-toast";
 import Button from "@/components/common/Button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { AppDialog, AppDialogContent, AppDialogHeader, AppDialogTitle, AppDialogDescription, AppDialogBody, AppDialogFooter } from "@/components/ui/AppDialog";
 import { Loader2, User, Calendar, IndianRupee, Phone, Mail, FileText } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { invalidateEntities } from "@/lib/queryInvalidation";
@@ -76,16 +76,16 @@ export default function ConvertLeadDialog({ open, onClose, lead, onConverted }) 
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Convert to {workItem}</DialogTitle>
-          <DialogDescription>
+    <AppDialog open={open} onOpenChange={onClose}>
+      <AppDialogContent>
+        <AppDialogHeader>
+          <AppDialogTitle>Convert to {workItem}</AppDialogTitle>
+          <AppDialogDescription>
             This will create a new client and {workItemLower} from this lead's details.
-          </DialogDescription>
-        </DialogHeader>
+          </AppDialogDescription>
+        </AppDialogHeader>
 
-        <div className="space-y-4 pt-2">
+        <AppDialogBody className="space-y-4">
           {/* Client preview */}
           <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-2">
             <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
@@ -138,15 +138,16 @@ export default function ConvertLeadDialog({ open, onClose, lead, onConverted }) 
             </div>
           )}
 
-          <div className="flex justify-end gap-2 pt-2">
-            <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
-            <Button onClick={handleConfirm} disabled={saving}>
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-              Confirm & Create
-            </Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </AppDialogBody>
+
+        <AppDialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
+          <Button onClick={handleConfirm} disabled={saving}>
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+            Confirm & Create
+          </Button>
+        </AppDialogFooter>
+      </AppDialogContent>
+    </AppDialog>
   );
 }

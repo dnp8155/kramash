@@ -6,7 +6,7 @@ import { useToast } from "@/components/ui/use-toast";
 import Button from "@/components/common/Button";
 import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AppDialog, AppDialogContent, AppDialogHeader, AppDialogTitle, AppDialogBody, AppDialogFooter } from "@/components/ui/AppDialog";
 import { Loader2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { invalidateRelated, upsertOptimistic } from "@/lib/queryInvalidation";
@@ -132,13 +132,13 @@ export default function LeadForm({ open, onClose, editingLead, onSaved }) {
   const inputErr = (k) => errors[k] ? "border-destructive" : "";
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{editingLead ? "Edit Lead" : "Add New Lead"}</DialogTitle>
-        </DialogHeader>
+    <AppDialog open={open} onOpenChange={onClose}>
+      <AppDialogContent>
+        <AppDialogHeader>
+          <AppDialogTitle>{editingLead ? "Edit Lead" : "Add New Lead"}</AppDialogTitle>
+        </AppDialogHeader>
 
-        <div className="space-y-4 pt-2">
+        <AppDialogBody className="space-y-4">
           <div>
             <label className="text-sm font-medium mb-1.5 block">Name <span className="text-destructive">*</span></label>
             <Input
@@ -244,15 +244,16 @@ export default function LeadForm({ open, onClose, editingLead, onSaved }) {
             />
           </div>
 
-          <div className="flex justify-end gap-2 pt-2">
-            <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
-            <Button onClick={handleSave} disabled={saving}>
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-              {editingLead ? "Update Lead" : "Create Lead"}
-            </Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </AppDialogBody>
+
+        <AppDialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
+          <Button onClick={handleSave} disabled={saving}>
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+            {editingLead ? "Update Lead" : "Create Lead"}
+          </Button>
+        </AppDialogFooter>
+      </AppDialogContent>
+    </AppDialog>
   );
 }

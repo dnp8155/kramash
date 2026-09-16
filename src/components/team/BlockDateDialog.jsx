@@ -4,11 +4,12 @@ import Button from "@/components/common/Button";
 import Select from "@/components/common/Select";
 import Input from "@/components/common/Input";
 import { useToast } from "@/components/ui/use-toast";
-import { X, Ban } from "lucide-react";
+import { Ban } from "lucide-react";
 import { todayISO } from "@/lib/dates";
 import { useQueryClient } from "@tanstack/react-query";
 import { invalidateEntity } from "@/lib/queryInvalidation";
 import { useSubmitGuard } from "@/hooks/useSubmitGuard";
+import { AppDialog, AppDialogContent, AppDialogHeader, AppDialogTitle, AppDialogBody, AppDialogFooter } from "@/components/ui/AppDialog";
 
 const REASONS = ["Leave", "Sick", "Personal", "Holiday", "Other"];
 
@@ -31,8 +32,6 @@ export default function BlockDateDialog({ open, onClose, onSaved, workspaceId, m
       setError("");
     }
   }, [open, preselectedMemberId, preselectedDate]);
-
-  if (!open) return null;
 
   const activeMembers = members.filter((m) => m.status === "active");
 
@@ -63,19 +62,14 @@ export default function BlockDateDialog({ open, onClose, onSaved, workspaceId, m
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div className="bg-card border border-border rounded-xl shadow-lg max-w-md w-full p-5" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Ban className="w-5 h-5 text-warning" />
-            <h2 className="text-base font-bold text-foreground">Block Dates</h2>
-          </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-full border border-border bg-card flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        <div className="space-y-3">
+    <AppDialog open={open} onOpenChange={(o) => !o && onClose?.()}>
+      <AppDialogContent maxWidth="max-w-md">
+        <AppDialogHeader>
+          <AppDialogTitle className="flex items-center gap-2">
+            <Ban className="w-5 h-5 text-warning" /> Block Dates
+          </AppDialogTitle>
+        </AppDialogHeader>
+        <AppDialogBody className="space-y-3">
           <div>
             <label className="text-xs font-semibold text-muted-foreground mb-1 block">Team Member *</label>
             <Select value={memberId} onChange={(e) => setMemberId(e.target.value)} className="w-full">
@@ -105,15 +99,14 @@ export default function BlockDateDialog({ open, onClose, onSaved, workspaceId, m
           </div>
 
           {error && <p className="text-xs text-destructive">{error}</p>}
-        </div>
-
-        <div className="flex justify-end gap-2 mt-5">
-          <Button variant="outline" size="sm" onClick={onClose} disabled={saving}>Cancel</Button>
-          <Button variant="primary" size="sm" onClick={submit} disabled={saving}>
+        </AppDialogBody>
+        <AppDialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
+          <Button onClick={submit} disabled={saving}>
             {saving ? "Blocking…" : "Block Dates"}
           </Button>
-        </div>
-      </div>
-    </div>
+        </AppDialogFooter>
+      </AppDialogContent>
+    </AppDialog>
   );
 }
