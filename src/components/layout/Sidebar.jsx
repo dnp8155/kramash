@@ -1,18 +1,21 @@
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, Link } from "react-router-dom";
 import { navGroups, aboutLegalNav } from "@/constants/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
 import { useT } from "@/hooks/useT";
-import { Settings, X, LogOut } from "lucide-react";
+import { Settings, X, LogOut, UserCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import WorkspaceLogo from "@/components/common/WorkspaceLogo";
 import WorkspaceSwitcher from "@/components/layout/WorkspaceSwitcher";
+import { useWorkspace } from "@/lib/WorkspaceContext";
+import Button from "@/components/common/Button";
 
 export default function Sidebar({ mobile = false, onClose, collapsed = false, onToggleCollapse }) {
   const location = useLocation();
   const { user, logout } = useAuth();
   const term = useBusinessTerminology();
   const t = useT();
+  const { workspace } = useWorkspace();
 
   // Resolve a dynamic label for a nav item (Events -> Projects for Architecture/Other).
   const navLabel = (item) => t(item.path === "/events" ? term.workItemPlural : item.label);
@@ -138,20 +141,22 @@ export default function Sidebar({ mobile = false, onClose, collapsed = false, on
 
       <div className="h-px bg-border" />
 
-      <div className="flex items-center gap-3 px-3 pt-3.5 pb-5">
-        <WorkspaceLogo size={36} className="shrink-0" />
-        <div className="flex-1 min-w-0">
-          <div className="text-sm font-semibold truncate">{user?.full_name || t("User")}</div>
-          <div className="text-xs text-muted-foreground truncate">{user?.email || "—"}</div>
+      <div className="px-3 pt-3.5 pb-5 space-y-3">
+        <div className="flex items-center gap-3">
+          <WorkspaceLogo size={36} className="shrink-0" />
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-semibold truncate">{workspace?.name || t("Business")}</div>
+            <div className="text-xs text-muted-foreground truncate">{user?.email || "—"}</div>
+          </div>
         </div>
-        <button
-          onClick={() => logout()}
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-colors shrink-0"
-          aria-label={t("Log out")}
-          title={t("Log out")}
-        >
-          <LogOut className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" asChild className="flex-1">
+            <Link to="/preferences"><UserCircle className="w-3.5 h-3.5" />{t("Profile")}</Link>
+          </Button>
+          <Button variant="reset" size="sm" onClick={() => logout()} className="flex-1">
+            <LogOut className="w-3.5 h-3.5" />{t("Log out")}
+          </Button>
+        </div>
       </div>
     </div>
   );
