@@ -225,7 +225,18 @@ export default async function(req) {
 
     // Calculate totals
     const gstApplicable = !!q.gst_applicable;
-    const gstRate = Number(q.gst_applicable ? (workspace.default_gst_rate || 18) : 0);
+    let gstRate = 0;
+    if (gstApplicable) {
+      // Derive effective flat rate from quotation's per-item GST calculation
+      // so invoice GST matches quotation GST exactly.
+      const taxable = Number(q.taxable_amount) || 0;
+      const gstTotal = Number(q.gst_total) || 0;
+      if (taxable > 0 && gstTotal > 0) {
+        gstRate = round2((gstTotal / taxable) * 100);
+      } else {
+        gstRate = Number(workspace.default_gst_rate) || 18;
+      }
+    }
     const totals = computeInvoiceTotals(invoiceItems, {
       discountType: mode === "full" ? (q.discount_type || "percent") : "percent",
       discountValue: mode === "full" ? (q.discount_value || 0) : 0,
@@ -271,8 +282,10 @@ export default async function(req) {
       client_snapshot: buildClientSnapshot(client) || q.client_snapshot || "",
       business_snapshot: buildBusinessSnapshot(workspace) || q.business_snapshot || "",
       event_snapshot: buildEventSnapshot(event) || q.event_snapshot || "",
+      bank_details_snapshot: q.bank_details_snapshot || "",
+      social_links_snapshot: q.social_links_snapshot || "",
       notes: "",
-      payment_terms: q.terms_and_conditions || "",
+      payment_terms: q.payment_conditions || q.terms_and_conditions || "",
       terms_and_conditions: q.terms_and_conditions || ""
     };
 

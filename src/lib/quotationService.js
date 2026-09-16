@@ -75,7 +75,9 @@ export function buildClientSnapshot(client) {
     email: client.email || "",
     address: client.address || "",
     city: client.city || "",
-    state: client.state || ""
+    state: client.state || "",
+    country: client.country || "",
+    gstin: client.gstin || ""
   });
 }
 
@@ -103,8 +105,10 @@ export function buildEventSnapshot(event) {
   if (!event) return "";
   return JSON.stringify({
     title: event.title || "",
+    event_type: event.event_type || "",
     start_date: event.start_date || "",
     end_date: event.end_date || "",
+    event_dates: Array.isArray(event.event_dates) ? event.event_dates : [],
     venue: event.venue || "",
     venue_address: event.venue_address || ""
   });

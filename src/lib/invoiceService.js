@@ -157,6 +157,7 @@ export function buildEventSnapshot(event) {
     event_type: event.event_type || "",
     start_date: event.start_date || "",
     end_date: event.end_date || "",
+    event_dates: Array.isArray(event.event_dates) ? event.event_dates : [],
     venue: event.venue || "",
     venue_address: event.venue_address || ""
   });
@@ -520,6 +521,15 @@ export async function createFromQuotation(workspaceId, quotation, quotationItems
       unit_rate: round2(Math.max(0, Number(it.unit_rate) || 0))
     }));
   }
+  const gstApplicable = !!quotation.gst_applicable;
+  let gstRate = 0;
+  if (gstApplicable) {
+    const taxable = Number(quotation.taxable_amount) || 0;
+    const gstTotal = Number(quotation.gst_total) || 0;
+    if (taxable > 0 && gstTotal > 0) {
+      gstRate = round2((gstTotal / taxable) * 100);
+    }
+  }
   const data = {
     invoice_number: invoiceNumber,
     quotation_id: quotation.id || "",
@@ -531,17 +541,19 @@ export async function createFromQuotation(workspaceId, quotation, quotationItems
     invoice_type: "full",
     discount_type: quotation.discount_type || "percent",
     discount_value: quotation.discount_value || 0,
-    gst_applicable: !!quotation.gst_applicable,
-    gst_rate: 0,
+    gst_applicable: gstApplicable,
+    gst_rate: gstRate,
     gst_mode: quotation.gst_mode || "cgst_sgst",
     notes: quotation.notes || "",
-    payment_terms: quotation.terms_and_conditions || "",
+    payment_terms: quotation.payment_conditions || quotation.terms_and_conditions || "",
     terms_and_conditions: quotation.terms_and_conditions || ""
   };
   return createInvoice(workspaceId, data, items, {
     client_snapshot: quotation.client_snapshot || "",
     business_snapshot: quotation.business_snapshot || "",
-    event_snapshot: quotation.event_snapshot || ""
+    event_snapshot: quotation.event_snapshot || "",
+    bank_details_snapshot: quotation.bank_details_snapshot || "",
+    social_links_snapshot: quotation.social_links_snapshot || ""
   });
 }
 
