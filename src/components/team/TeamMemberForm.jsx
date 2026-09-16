@@ -181,7 +181,7 @@ export default function TeamMemberForm({ open, onClose, onSaved, member = null, 
 
           <div className="space-y-1.5">
             <Label>Mobile Number (optional)</Label>
-            <Input value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="10-digit mobile (e.g. 9876543210)" inputMode="tel" maxLength="13" />
+            <Input type="tel" value={form.phone} onChange={(e) => set("phone", e.target.value.replace(/[^\d+]/g, ""))} placeholder="10-digit mobile (e.g. 9876543210)" inputMode="tel" maxLength="13" />
           </div>
 
           <div className="space-y-1.5">
@@ -208,6 +208,7 @@ export default function TeamMemberForm({ open, onClose, onSaved, member = null, 
               <Input
                 type="number"
                 min="0"
+                step="0.01"
                 value={form.default_rate}
                 onChange={(e) => set("default_rate", e.target.value)}
                 placeholder="0"

@@ -118,11 +118,11 @@ export default function ClientForm({ open, onClose, onSaved, client = null, work
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>Phone</Label>
-              <Input value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="10-digit mobile (e.g. 9876543210)" inputMode="tel" maxLength="13" />
+              <Input type="tel" value={form.phone} onChange={(e) => set("phone", e.target.value.replace(/[^\d+]/g, ""))} placeholder="10-digit mobile (e.g. 9876543210)" inputMode="tel" maxLength="13" />
             </div>
             <div className="space-y-1.5">
               <Label>Alternate Phone</Label>
-              <Input value={form.alternate_phone} onChange={(e) => set("alternate_phone", e.target.value)} placeholder="Optional" inputMode="tel" maxLength="13" />
+              <Input type="tel" value={form.alternate_phone} onChange={(e) => set("alternate_phone", e.target.value.replace(/[^\d+]/g, ""))} placeholder="Optional" inputMode="tel" maxLength="13" />
             </div>
           </div>
 

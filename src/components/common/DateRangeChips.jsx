@@ -140,7 +140,7 @@ export default function DateRangeChips({
               type="date"
               value={startDate}
               onChange={(e) => handleStartChange(e.target.value)}
-              className="w-full h-10 pl-10 pr-3 bg-card border border-border rounded-md text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring/40"
+              className="w-full h-10 pl-10 pr-3 bg-card border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring/40 focus:border-primary/40"
             />
           </div>
         </div>
@@ -153,7 +153,7 @@ export default function DateRangeChips({
               value={endDate}
               min={startDate || undefined}
               onChange={(e) => onEndChange?.(e.target.value)}
-              className="w-full h-10 pl-10 pr-3 bg-card border border-border rounded-md text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring/40"
+              className="w-full h-10 pl-10 pr-3 bg-card border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring/40 focus:border-primary/40"
             />
           </div>
         </div>

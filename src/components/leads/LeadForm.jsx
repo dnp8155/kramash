@@ -153,9 +153,11 @@ export default function LeadForm({ open, onClose, editingLead, onSaved }) {
             <div>
               <label className="text-sm font-medium mb-1.5 block">Phone</label>
               <Input
+                type="tel"
                 value={form.phone}
-                onChange={(e) => set("phone", e.target.value)}
+                onChange={(e) => set("phone", e.target.value.replace(/[^\d+]/g, ""))}
                 placeholder="10-digit mobile"
+                inputMode="tel"
                 maxLength={10}
                 className={inputErr("phone")}
               />
@@ -198,6 +200,8 @@ export default function LeadForm({ open, onClose, editingLead, onSaved }) {
               <label className="text-sm font-medium mb-1.5 block">Budget (₹)</label>
               <Input
                 type="number"
+                min="0"
+                step="0.01"
                 value={form.budget}
                 onChange={(e) => set("budget", e.target.value)}
                 placeholder="0"
