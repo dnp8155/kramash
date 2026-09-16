@@ -55,7 +55,7 @@ export default function TopHeader() {
         <Logo size={32} />
         <div className="min-w-0">
           <div className="font-bold text-sm leading-tight tracking-wide uppercase text-foreground truncate">
-            {workspace?.name || "Kramasha"}
+            Kramasha
           </div>
           <div className="text-xs text-muted-foreground truncate">{categoryText}</div>
         </div>
