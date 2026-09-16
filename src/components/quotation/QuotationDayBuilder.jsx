@@ -13,7 +13,8 @@ export default function QuotationDayBuilder({
   services,
   currency,
   readOnly,
-  itemErrors = {}
+  itemErrors = {},
+  mode = "day_wise"
 }) {
   const incDates = useMemo(
     () => includedDates(startDate, endDate, excludedDates),
@@ -152,7 +153,7 @@ export default function QuotationDayBuilder({
         </div>
       )}
 
-      {incDates.map((date) => (
+      {mode === "day_wise" && incDates.map((date) => (
         <QuotationDayCard
           key={date}
           date={date}

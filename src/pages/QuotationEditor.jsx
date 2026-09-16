@@ -830,6 +830,7 @@ export default function QuotationEditor() {
           currency={currency}
           readOnly={readOnly}
           itemErrors={fieldErrors.items || {}}
+          mode={mode}
         />
       </div>
 
