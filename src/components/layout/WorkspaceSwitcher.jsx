@@ -1,5 +1,5 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import WorkspaceLogo from "@/components/common/WorkspaceLogo";
+import { ChevronRight } from "lucide-react";
+import Logo from "@/components/common/Logo";
 import { useWorkspace } from "@/lib/WorkspaceContext";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
 import { categoryLabel } from "@/lib/businessTerminology";
@@ -17,7 +17,7 @@ export default function WorkspaceSwitcher({ mobile = false, collapsed = false, o
   if (collapsed) {
     return (
       <div className="flex flex-col items-center gap-2 px-2 py-3">
-        <WorkspaceLogo size={36} />
+        <Logo size={36} />
         <button
           onClick={onToggleCollapse}
           className="w-8 h-8 rounded-lg border border-border bg-card flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
@@ -33,8 +33,8 @@ export default function WorkspaceSwitcher({ mobile = false, collapsed = false, o
   return (
     <div className="px-3 py-3">
       <div className="flex items-center gap-2.5">
-        {/* Avatar */}
-        <WorkspaceLogo size={48} />
+        {/* Logo */}
+        <Logo size={48} />
 
         {/* Text */}
         <div className="flex-1 min-w-0">
@@ -43,16 +43,6 @@ export default function WorkspaceSwitcher({ mobile = false, collapsed = false, o
           </div>
           <div className="text-xs text-muted-foreground truncate">{sub}</div>
         </div>
-
-        {/* Toggle button */}
-        <button
-          onClick={onToggleCollapse}
-          className="w-8 h-8 rounded-lg border border-border bg-card flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
-          aria-label="Collapse panel"
-          title="Collapse"
-        >
-          <ChevronLeft className="w-4 h-4" />
-        </button>
       </div>
     </div>
   );
