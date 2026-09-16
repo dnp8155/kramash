@@ -193,7 +193,7 @@ export default function Team() {
           <Download className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">Export</span>
         </Button>
-        <Button variant="dark" onClick={openNew}>
+        <Button onClick={openNew}>
           <Plus className="w-4 h-4" /> Add Team Member
         </Button>
       </PageHeader>
