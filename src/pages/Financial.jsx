@@ -39,6 +39,9 @@ import { exportFinancialXlsx } from "@/lib/exportUtils";
 import PageHeader from "@/components/common/PageHeader";
 import { useT } from "@/hooks/useT";
 import { invalidateEntities } from "@/lib/queryInvalidation";
+import { motion } from "framer-motion";
+import TabTransition from "@/components/common/TabTransition";
+import { DURATION_FAST, EASE } from "@/lib/motionVariants";
 
 const TAB_KEYS = ["Payment Activity", "Financial Years"];
 
@@ -277,13 +280,18 @@ export default function Financial() {
               key={tabKey}
               onClick={() => setTab(tabKey)}
               className={cn(
-                "px-4 py-1.5 text-sm font-medium rounded-md transition-all whitespace-nowrap flex-1 sm:flex-initial",
-                tab === tabKey
-                  ? "bg-card text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
+                "relative px-4 py-1.5 text-sm font-medium rounded-md transition-colors whitespace-nowrap flex-1 sm:flex-initial",
+                tab === tabKey ? "text-foreground" : "text-muted-foreground hover:text-foreground"
               )}
             >
-              {t(tabKey)}
+              {tab === tabKey && (
+                <motion.div
+                  layoutId="financial-tab-indicator"
+                  className="absolute inset-0 bg-card shadow-sm rounded-md"
+                  transition={{ duration: DURATION_FAST, ease: EASE }}
+                />
+              )}
+              <span className="relative z-10">{t(tabKey)}</span>
             </button>
           ))}
         </div>
@@ -305,6 +313,7 @@ export default function Financial() {
         )}
       </div>
 
+      <TabTransition tabKey={tab}>
       {tab === "Payment Activity" && (
         <>
           {/* Showing / export */}
@@ -389,11 +398,18 @@ export default function Financial() {
                     key={m}
                     onClick={() => setMethod(m)}
                     className={cn(
-                      "px-3 py-1 text-xs font-medium rounded transition-colors",
-                      method === m ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+                      "relative px-3 py-1 text-xs font-medium rounded transition-colors",
+                      method === m ? "text-foreground" : "text-muted-foreground"
                     )}
                   >
-                    {m}
+                    {method === m && (
+                      <motion.div
+                        layoutId="financial-method-indicator"
+                        className="absolute inset-0 bg-card shadow-sm rounded"
+                        transition={{ duration: DURATION_FAST, ease: EASE }}
+                      />
+                    )}
+                    <span className="relative z-10">{m}</span>
                   </button>
                 ))}
               </div>
@@ -406,11 +422,18 @@ export default function Financial() {
                     key={pt}
                     onClick={() => setType(pt)}
                     className={cn(
-                      "px-3 py-1 text-xs font-medium rounded transition-colors",
-                      type === pt ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+                      "relative px-3 py-1 text-xs font-medium rounded transition-colors",
+                      type === pt ? "text-foreground" : "text-muted-foreground"
                     )}
                   >
-                    {pt}
+                    {type === pt && (
+                      <motion.div
+                        layoutId="financial-type-indicator"
+                        className="absolute inset-0 bg-card shadow-sm rounded"
+                        transition={{ duration: DURATION_FAST, ease: EASE }}
+                      />
+                    )}
+                    <span className="relative z-10">{pt}</span>
                   </button>
                 ))}
               </div>
@@ -476,6 +499,7 @@ export default function Financial() {
           </div>
         </>
       )}
+      </TabTransition>
 
       {/* Dialogs */}
       <RecordPaymentDialog

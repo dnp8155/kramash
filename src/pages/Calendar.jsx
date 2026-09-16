@@ -12,6 +12,9 @@ import CalendarPageSkeleton from "@/components/calendar/CalendarPageSkeleton";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
 import { ChevronLeft, ChevronRight, CalendarRange, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
+import TabTransition from "@/components/common/TabTransition";
+import { DURATION_FAST, EASE } from "@/lib/motionVariants";
 
 const VIEWS = ["year", "month", "week", "day"];
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -94,11 +97,18 @@ export default function Calendar() {
                 key={v}
                 onClick={() => setView(v)}
                 className={cn(
-                  "px-3 py-1.5 rounded-md text-xs font-medium capitalize transition-colors",
-                  view === v ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                  "relative px-3 py-1.5 rounded-md text-xs font-medium capitalize transition-colors",
+                  view === v ? "text-foreground" : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                {v}
+                {view === v && (
+                  <motion.div
+                    layoutId="calendar-view-indicator"
+                    className="absolute inset-0 bg-card shadow-sm rounded-md"
+                    transition={{ duration: DURATION_FAST, ease: EASE }}
+                  />
+                )}
+                <span className="relative z-10">{v}</span>
               </button>
             ))}
           </div>
@@ -142,6 +152,7 @@ export default function Calendar() {
 
       <div className="flex gap-4">
         <div className="flex-1 min-w-0">
+          <TabTransition tabKey={view}>
           {view === "year" && (
             <CalendarYearView
               currentDate={currentDate}
@@ -172,6 +183,7 @@ export default function Calendar() {
               onEventClick={onEventClick}
             />
           )}
+          </TabTransition>
         </div>
         <CalendarSidePanel events={events} search={search} />
       </div>

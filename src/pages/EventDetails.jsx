@@ -44,6 +44,9 @@ import { useDisplayPreferences } from "@/hooks/useDisplayPreferences";
 import { invalidateEntities } from "@/lib/queryInvalidation";
 import PaymentDot from "@/components/common/PaymentDot";
 import EventTypeBadge from "@/components/common/EventTypeBadge";
+import { motion } from "framer-motion";
+import TabTransition from "@/components/common/TabTransition";
+import { DURATION_FAST, EASE } from "@/lib/motionVariants";
 
 export default function EventDetails() {
   const { id } = useParams();
@@ -523,18 +526,24 @@ export default function EventDetails() {
             key={t}
             onClick={() => setTab(t)}
             className={cn(
-              "px-4 py-1.5 text-sm font-medium rounded-md transition-all whitespace-nowrap",
-              tab === t
-                ? "bg-card text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
+              "relative px-4 py-1.5 text-sm font-medium rounded-md transition-colors whitespace-nowrap",
+              tab === t ? "text-foreground" : "text-muted-foreground hover:text-foreground"
             )}
           >
-            {t}
+            {tab === t && (
+              <motion.div
+                layoutId="event-tab-indicator"
+                className="absolute inset-0 bg-card shadow-sm rounded-md"
+                transition={{ duration: DURATION_FAST, ease: EASE }}
+              />
+            )}
+            <span className="relative z-10">{t}</span>
           </button>
         ))}
       </div>
 
       {/* Tab content */}
+      <TabTransition tabKey={tab}>
       {tab === "Financials" && (
         <EventFinancialsTab
           event={event}
@@ -682,6 +691,7 @@ export default function EventDetails() {
       {tab === "Notes" && (
         <EventNotesTab event={event} term={term} />
       )}
+      </TabTransition>
 
       {/* Dialogs */}
       <EventForm

@@ -12,6 +12,9 @@ import { useFinancialYear } from "@/hooks/useFinancialYear";
 import { usePlan } from "@/hooks/usePlan";
 import PreferencesSections from "@/components/preferences/PreferencesSections";
 import PlanLimitDialog from "@/components/common/PlanLimitDialog";
+import { motion } from "framer-motion";
+import TabTransition from "@/components/common/TabTransition";
+import { DURATION_FAST, EASE } from "@/lib/motionVariants";
 
 const NAV_GROUPS = [
   {
@@ -260,14 +263,19 @@ export default function Preferences() {
                     key={item.key}
                     onClick={() => setActiveGroup(group.key)}
                     className={cn(
-                      "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-left transition-all",
-                      isActive
-                        ? "bg-primary text-primary-foreground"
-                        : "text-foreground hover:bg-muted"
+                      "relative w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-left transition-colors",
+                      isActive ? "text-primary-foreground" : "text-foreground hover:bg-muted"
                     )}
                   >
-                    <Icon className="w-4 h-4 shrink-0" />
-                    <span className="truncate">{item.label}</span>
+                    {isActive && (
+                      <motion.div
+                        layoutId="prefs-desktop-indicator"
+                        className="absolute inset-0 bg-primary rounded-lg"
+                        transition={{ duration: DURATION_FAST, ease: EASE }}
+                      />
+                    )}
+                    <Icon className="w-4 h-4 shrink-0 relative z-10" />
+                    <span className="truncate relative z-10">{item.label}</span>
                   </button>
                 );
               })}
@@ -283,13 +291,18 @@ export default function Preferences() {
             key={group.key}
             onClick={() => setActiveGroup(group.key)}
             className={cn(
-              "shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all",
-              activeGroup === group.key
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground hover:bg-secondary"
+              "relative shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors",
+              activeGroup === group.key ? "text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-secondary"
             )}
           >
-            {group.label}
+            {activeGroup === group.key && (
+              <motion.div
+                layoutId="prefs-mobile-indicator"
+                className="absolute inset-0 bg-primary rounded-full"
+                transition={{ duration: DURATION_FAST, ease: EASE }}
+              />
+            )}
+            <span className="relative z-10">{group.label}</span>
           </button>
         ))}
       </div>
@@ -300,11 +313,13 @@ export default function Preferences() {
           <h1 className="text-xl font-bold text-foreground">Preferences</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Manage your workspace, business, and app settings — each section saves independently.</p>
         </div>
-        {activeGroupConfig.items.map((item) => (
-          <div key={item.key}>
-            <PreferencesSections sectionKey={item.key} {...sectionProps} />
-          </div>
-        ))}
+        <TabTransition tabKey={activeGroup}>
+          {activeGroupConfig.items.map((item) => (
+            <div key={item.key}>
+              <PreferencesSections sectionKey={item.key} {...sectionProps} />
+            </div>
+          ))}
+        </TabTransition>
       </main>
 
       <TeamRoleForm
