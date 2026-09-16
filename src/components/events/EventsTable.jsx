@@ -234,7 +234,7 @@ function Row({ event, clientName, teamMap, serviceMap, assignmentsByEvent, recei
                 </div>
               </div>
             )}
-            {prefs?.showServicesOnCards && serviceNames.length > 0 && (
+            {prefs?.showServices && serviceNames.length > 0 && (
               <div className="flex items-start gap-2 text-muted-foreground">
                 <Briefcase className="w-3.5 h-3.5 mt-0.5 shrink-0" />
                 <div className="flex flex-wrap gap-1.5">
