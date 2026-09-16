@@ -6,7 +6,7 @@ import { useReducedMotion, EASE, DURATION, DURATION_FAST } from "@/lib/motionVar
 const Card = forwardRef(function Card({ className, hover = false, entrance = false, children, ...props }, ref) {
   const reduce = useReducedMotion();
   const baseClass = cn(
-    "bg-card border border-border rounded-xl shadow-card",
+    "bg-card border border-border rounded-[15px] shadow-card",
     hover && "hover:shadow-card-hover hover:border-border/80 cursor-pointer transition-shadow duration-200",
     className
   );

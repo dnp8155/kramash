@@ -19,7 +19,7 @@ export default function PaymentTable({
 
   if (transactions.length === 0) {
     return (
-      <div className="bg-card border border-border rounded-lg p-10 text-center text-sm text-muted-foreground">
+      <div className="bg-card border border-border rounded-[15px] p-10 text-center text-sm text-muted-foreground">
         No payment activity yet.
         <br />
         Recorded payments and expenses will appear here.
@@ -58,7 +58,7 @@ export default function PaymentTable({
   };
 
   return (
-    <div className="bg-card border border-border rounded-lg overflow-hidden">
+    <div className="bg-card border border-border rounded-[15px] overflow-hidden">
       {transactions.map((t) => {
         const meta = TRANSACTION_TYPES[t.transaction_type] || {};
         const isVoid = t.status === "VOID";
@@ -110,7 +110,7 @@ export default function PaymentTable({
                   {onEdit && (
                     <button
                       onClick={() => onEdit(t)}
-                      className="text-muted-foreground hover:text-foreground p-1"
+                      className="text-muted-foreground hover:text-foreground p-1 rounded-full hover:bg-muted transition-colors"
                       aria-label="Edit transaction"
                     >
                       <Pencil className="w-3.5 h-3.5" />
@@ -119,7 +119,7 @@ export default function PaymentTable({
                   {onVoid && (
                     <button
                       onClick={() => onVoid(t)}
-                      className="text-muted-foreground hover:text-destructive p-1"
+                      className="text-muted-foreground hover:text-destructive p-1 rounded-full hover:bg-destructive/5 transition-colors"
                       aria-label="Void transaction"
                     >
                       <Ban className="w-3.5 h-3.5" />
@@ -128,7 +128,7 @@ export default function PaymentTable({
                   {onDelete && (
                     <button
                       onClick={() => onDelete(t)}
-                      className="text-muted-foreground hover:text-destructive p-1"
+                      className="text-muted-foreground hover:text-destructive p-1 rounded-full hover:bg-destructive/5 transition-colors"
                       aria-label="Delete transaction"
                     >
                       <Trash2 className="w-3.5 h-3.5" />

@@ -168,7 +168,7 @@ export default function Leads() {
             const pr = PRIORITY_STYLES[lead.priority] || PRIORITY_STYLES.warm;
             const PrIcon = pr.icon;
             return (
-              <div key={lead.id} className="bg-card border border-border rounded-xl p-4 shadow-card hover:shadow-card-hover hover-lift transition-all">
+              <div key={lead.id} className="bg-card border border-border rounded-[15px] p-4 shadow-card hover:shadow-card-hover hover-lift transition-all">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1 min-w-0">
                     <h3 className="font-heading font-semibold text-foreground truncate">{lead.name}</h3>

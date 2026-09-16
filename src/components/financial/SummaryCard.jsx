@@ -12,7 +12,7 @@ const toneStyles = {
 export default function SummaryCard({ label, value, tone, currency = "INR", icon: Icon, className }) {
   const valueColor = toneStyles[tone] || toneStyles.default;
   return (
-    <div className={cn("bg-card border border-border rounded-lg p-4", className)}>
+    <div className={cn("bg-card border border-border rounded-[15px] p-4", className)}>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <div className="text-xs font-medium text-muted-foreground">{label}</div>

@@ -26,7 +26,7 @@ export default function FinancialYearCard({
   return (
     <div
       className={cn(
-        "bg-card rounded-lg p-4 transition-all",
+        "bg-card rounded-[15px] p-4 transition-all",
         isActive ? "border-2 border-success" : "border border-border hover:border-border/80"
       )}
     >

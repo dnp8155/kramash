@@ -61,7 +61,7 @@ export default function TeamMemberCard({ member, assignments = [], transactions 
   const statusColor = member.status === "inactive" ? "#ef4444" : "#10b981";
 
   return (
-    <div className="bg-card border border-border rounded-lg p-4 relative overflow-hidden">
+    <div className="bg-card border border-border rounded-[15px] p-4 relative overflow-hidden">
       {/* Header: status dot + name + SELF badge + role + actions */}
       <div className="flex items-center gap-2 pl-1">
         <span className="team-chip-dot w-3 h-3 rounded-full shrink-0 border border-border" style={{ backgroundColor: statusColor }} />
@@ -79,18 +79,18 @@ export default function TeamMemberCard({ member, assignments = [], transactions 
         <span className="text-xs text-muted-foreground ml-auto truncate hidden sm:block">
           {member.profession || "—"}
         </span>
-        <button onClick={() => onEdit?.(member)} className="text-muted-foreground hover:text-foreground shrink-0 p-1.5 rounded-md hover:bg-muted transition-colors" aria-label="Edit">
+        <button onClick={() => onEdit?.(member)} className="text-muted-foreground hover:text-foreground shrink-0 p-1.5 rounded-full hover:bg-muted transition-colors" aria-label="Edit">
           <Pencil className="w-3.5 h-3.5" />
         </button>
         <button
           onClick={() => onArchive?.(member)}
-          className="text-muted-foreground hover:text-warning shrink-0 p-1.5 rounded-md hover:bg-muted transition-colors"
+          className="text-muted-foreground hover:text-warning shrink-0 p-1.5 rounded-full hover:bg-muted transition-colors"
           aria-label={active ? "Archive" : "Reactivate"}
           title={active ? "Set inactive" : "Set active"}
         >
           {active ? <Archive className="w-3.5 h-3.5" /> : <RotateCcw className="w-3.5 h-3.5" />}
         </button>
-        <button onClick={() => onDelete?.(member)} className="text-muted-foreground hover:text-destructive shrink-0 p-1.5 rounded-md hover:bg-destructive/5 transition-colors" aria-label="Delete">
+        <button onClick={() => onDelete?.(member)} className="text-muted-foreground hover:text-destructive shrink-0 p-1.5 rounded-full hover:bg-destructive/5 transition-colors" aria-label="Delete">
           <Trash2 className="w-3.5 h-3.5" />
         </button>
       </div>

@@ -9,7 +9,7 @@ export default function UpcomingEventsWidget({ events = [], clientsById = {}, cu
   const list = events.slice(0, 5);
 
   return (
-    <div className="bg-card border border-border rounded-xl shadow-card h-full">
+    <div className="bg-card border border-border rounded-[15px] shadow-card h-full">
       <div className="flex items-center justify-between px-4 py-3.5 border-b border-border">
         <div className="flex items-center gap-2">
           <CalendarDays className="w-4 h-4 text-primary" />

@@ -7,7 +7,7 @@ export default function RevenueTrendChart({ data = [], currency = "INR", isLoadi
   const t = useT();
 
   return (
-    <div className="bg-card border border-border rounded-xl shadow-card h-full">
+    <div className="bg-card border border-border rounded-[15px] shadow-card h-full">
       <div className="flex items-center justify-between px-4 py-3.5 border-b border-border">
         <div className="flex items-center gap-2">
           <TrendingUp className="w-4 h-4 text-primary" />

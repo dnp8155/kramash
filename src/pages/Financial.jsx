@@ -342,7 +342,7 @@ export default function Financial() {
 
           {/* Breakdown */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="bg-card border border-border rounded-lg p-4">
+            <div className="bg-card border border-border rounded-[15px] p-4">
               <div className="flex items-center justify-between mb-3">
                 <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("Online")}</div>
                 <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
@@ -364,7 +364,7 @@ export default function Financial() {
                 </span>
               </div>
             </div>
-            <div className="bg-card border border-border rounded-lg p-4">
+            <div className="bg-card border border-border rounded-[15px] p-4">
               <div className="flex items-center justify-between mb-3">
                 <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("Cash")}</div>
                 <div className="w-8 h-8 rounded-full bg-warning/10 flex items-center justify-center">
@@ -463,7 +463,7 @@ export default function Financial() {
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {fiscalYears.length === 0 && (
-              <div className="col-span-full bg-card border border-border rounded-lg p-10 text-center text-sm text-muted-foreground">
+              <div className="col-span-full bg-card border border-border rounded-[15px] p-10 text-center text-sm text-muted-foreground">
                 {t("No financial years set up yet.")}
                 <br />
                 <Button size="sm" className="mt-3" onClick={() => { setEditingFY(null); setShowFYForm(true); }}>
@@ -563,7 +563,7 @@ export default function Financial() {
       {/* Delete FY confirmation */}
       {deletingFY && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setDeletingFY(null)}>
-          <div className="bg-card border border-border rounded-lg max-w-sm w-full p-5" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-card border border-border rounded-[15px] max-w-sm w-full p-5" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-start gap-2">
               {fyHasTransactions(deletingFY, allTx) ? (
                 <Lock className="w-5 h-5 text-destructive mt-0.5 shrink-0" />
@@ -606,7 +606,7 @@ export default function Financial() {
       {/* Void confirmation */}
       {voiding && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setVoiding(null)}>
-          <div className="bg-card border border-border rounded-lg max-w-sm w-full p-5" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-card border border-border rounded-[15px] max-w-sm w-full p-5" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-start gap-2">
               <AlertTriangle className="w-5 h-5 text-destructive mt-0.5 shrink-0" />
               <div>
@@ -628,7 +628,7 @@ export default function Financial() {
       {/* Delete confirmation */}
       {deleting && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setDeleting(null)}>
-          <div className="bg-card border border-border rounded-lg max-w-sm w-full p-5" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-card border border-border rounded-[15px] max-w-sm w-full p-5" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-start gap-2">
               <Trash2 className="w-5 h-5 text-destructive mt-0.5 shrink-0" />
               <div>

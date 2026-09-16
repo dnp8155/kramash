@@ -7,7 +7,7 @@ export default function TeamWagesDueWidget({ dues = [], totalDue = 0, currency =
   const t = useT();
 
   return (
-    <div className="bg-card border border-border rounded-xl shadow-card h-full">
+    <div className="bg-card border border-border rounded-[15px] shadow-card h-full">
       <div className="flex items-center justify-between px-4 py-3.5 border-b border-border">
         <div className="flex items-center gap-2">
           <Wallet className="w-4 h-4 text-warning" />

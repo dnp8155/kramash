@@ -112,7 +112,7 @@ export default function Clients() {
       {isLoading ? (
         <ClientsPageSkeleton />
       ) : filtered.length === 0 ? (
-        <div className="bg-card border border-border rounded-lg">
+        <div className="bg-card border border-border rounded-[15px]">
           <EmptyState
             title={query ? t("No clients found") : t("No clients yet")}
             description={query ? t("Try a different search term.") : `Add a client to create and manage ${term.workItemPlural.toLowerCase()}.`}
@@ -120,7 +120,7 @@ export default function Clients() {
           />
         </div>
       ) : (
-        <div className="bg-card border border-border rounded-lg overflow-hidden">
+        <div className="bg-card border border-border rounded-[15px] overflow-hidden">
           <div className="hidden sm:grid grid-cols-[1.4fr_1fr_1.4fr_1fr_80px_auto] gap-4 items-center px-4 py-2.5 border-b border-border text-xs font-medium text-muted-foreground uppercase tracking-wide">
             <span>{t("Name")}</span>
             <span>{t("Phone")}</span>

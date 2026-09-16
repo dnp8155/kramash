@@ -22,7 +22,7 @@ export default function StatCard({ label, value, icon: Icon, tone = "primary", s
   return (
     <div
       className={cn(
-        "relative bg-card border border-border rounded-xl p-4 sm:p-5 shadow-card overflow-hidden",
+        "relative bg-card border border-border rounded-[15px] p-4 sm:p-5 shadow-card overflow-hidden",
         className
       )}
     >

@@ -228,7 +228,7 @@ export default function Quotation() {
             const cl = clientsById[qt.client_id];
             const ev = eventsById[qt.event_id];
             return (
-              <div key={qt.id} className="bg-card border border-border rounded-xl p-4 shadow-card cursor-pointer hover:shadow-card-hover hover:border-border/80 transition-shadow" onClick={() => navigate(`/quotation/${qt.id}`)}>
+              <div key={qt.id} className="bg-card border border-border rounded-[15px] p-4 shadow-card cursor-pointer hover:shadow-card-hover hover:border-border/80 transition-shadow" onClick={() => navigate(`/quotation/${qt.id}`)}>
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-sm font-mono font-medium text-foreground">{qt.quotation_number}</span>
                   <span className={cn("text-xs px-2 py-1 rounded font-medium uppercase tracking-wide", QUOTATION_STATUS_META[qt.status]?.className)}>
@@ -241,7 +241,7 @@ export default function Quotation() {
                   <span className="text-sm font-semibold text-foreground">{formatMoney(qt.grand_total, currency)}</span>
                   <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                     {qt.status === "accepted" && (
-                      <button onClick={() => createInvoice(qt)} className="text-primary hover:bg-primary/10 p-1 rounded-md" title="Create Invoice"><Receipt className="w-4 h-4" /></button>
+                      <button onClick={() => createInvoice(qt)} className="text-primary hover:bg-primary/10 p-1 rounded-full" title="Create Invoice"><Receipt className="w-4 h-4" /></button>
                     )}
                     {(qt.status === "finalized" || qt.status === "accepted") && (
                       <>
@@ -259,7 +259,7 @@ export default function Quotation() {
         </div>
 
         {/* Desktop table */}
-        <div className="hidden sm:block bg-card border border-border rounded-xl overflow-hidden shadow-card">
+        <div className="hidden sm:block bg-card border border-border rounded-[15px] overflow-hidden shadow-card">
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[860px]">
               <thead className="bg-muted/40 text-[11px] text-muted-foreground uppercase tracking-[0.08em] border-b border-border">
@@ -311,7 +311,7 @@ export default function Quotation() {
                               <button
                                 onClick={() => previewPdf(qt)}
                                 disabled={generatingId === qt.id}
-                                className="text-muted-foreground hover:text-primary p-1.5 rounded-md hover:bg-muted transition-colors"
+                                className="text-muted-foreground hover:text-primary p-1.5 rounded-full hover:bg-muted transition-colors"
                                 title="Preview PDF"
                               >
                                 <Eye className="w-4 h-4" />
@@ -319,7 +319,7 @@ export default function Quotation() {
                               <button
                                 onClick={() => downloadPdf(qt)}
                                 disabled={generatingId === qt.id}
-                                className="text-muted-foreground hover:text-primary p-1.5 rounded-md hover:bg-muted transition-colors"
+                                className="text-muted-foreground hover:text-primary p-1.5 rounded-full hover:bg-muted transition-colors"
                                 title="Download PDF"
                               >
                                 <FileDown className="w-4 h-4" />
@@ -328,14 +328,14 @@ export default function Quotation() {
                           )}
                           <button
                             onClick={() => onDuplicate(qt)}
-                            className="text-muted-foreground hover:text-primary p-1.5 rounded-md hover:bg-muted transition-colors"
+                            className="text-muted-foreground hover:text-primary p-1.5 rounded-full hover:bg-muted transition-colors"
                             title="Duplicate"
                           >
                             <Copy className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => onDelete(qt)}
-                            className="text-muted-foreground hover:text-destructive p-1.5 rounded-md hover:bg-muted transition-colors"
+                            className="text-muted-foreground hover:text-destructive p-1.5 rounded-full hover:bg-muted transition-colors"
                             title="Delete"
                           >
                             <Trash2 className="w-4 h-4" />

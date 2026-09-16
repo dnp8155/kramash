@@ -195,7 +195,7 @@ export default function Invoices() {
               const ev = eventsById[inv.event_id];
               const balance = Number(inv.balance_due) || 0;
               return (
-                <div key={inv.id} className="bg-card border border-border rounded-xl p-4 shadow-card cursor-pointer hover:shadow-card-hover transition-shadow" onClick={() => navigate(`/invoices/${inv.id}`)}>
+                <div key={inv.id} className="bg-card border border-border rounded-[15px] p-4 shadow-card cursor-pointer hover:shadow-card-hover transition-shadow" onClick={() => navigate(`/invoices/${inv.id}`)}>
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-sm font-mono font-medium text-foreground">{inv.invoice_number}</span>
                     <span className={cn("text-xs px-2 py-1 rounded font-medium uppercase tracking-wide", INVOICE_STATUS_META[inv.status]?.className)}>
@@ -229,7 +229,7 @@ export default function Invoices() {
           </div>
 
           {/* Desktop table */}
-          <div className="hidden sm:block bg-card border border-border rounded-xl overflow-hidden shadow-card">
+          <div className="hidden sm:block bg-card border border-border rounded-[15px] overflow-hidden shadow-card">
             <div className="overflow-x-auto">
               <table className="w-full text-sm min-w-[860px]">
                 <thead className="bg-muted/40 text-[11px] text-muted-foreground uppercase tracking-[0.08em] border-b border-border">
@@ -273,13 +273,13 @@ export default function Invoices() {
                         </td>
                         <td className="px-4 py-3.5" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center gap-1">
-                            <button onClick={() => onPrint(inv)} className="text-muted-foreground hover:text-foreground p-1.5 rounded-md hover:bg-muted transition-colors" title="View / Print">
+                            <button onClick={() => onPrint(inv)} className="text-muted-foreground hover:text-foreground p-1.5 rounded-full hover:bg-muted transition-colors" title="View / Print">
                               <Printer className="w-4 h-4" />
                             </button>
-                            <button onClick={() => onCopy(inv)} className="text-muted-foreground hover:text-foreground p-1.5 rounded-md hover:bg-muted transition-colors" title="Copy Invoice">
+                            <button onClick={() => onCopy(inv)} className="text-muted-foreground hover:text-foreground p-1.5 rounded-full hover:bg-muted transition-colors" title="Copy Invoice">
                               <Copy className="w-4 h-4" />
                             </button>
-                            <button onClick={() => onDelete(inv)} className="text-muted-foreground hover:text-destructive p-1.5 rounded-md hover:bg-muted transition-colors" title="Delete">
+                            <button onClick={() => onDelete(inv)} className="text-muted-foreground hover:text-destructive p-1.5 rounded-full hover:bg-muted transition-colors" title="Delete">
                               <Trash2 className="w-4 h-4" />
                             </button>
                           </div>

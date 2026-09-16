@@ -9,7 +9,7 @@ const variants = {
   ghost: "bg-transparent text-foreground hover:bg-muted",
   dark: "bg-sidebar-primary text-sidebar-primary-foreground hover:opacity-90 shadow-sm",
   success: "bg-success text-success-foreground hover:opacity-90 shadow-sm",
-  destructive: "bg-card border border-destructive/60 text-destructive hover:bg-destructive/5",
+  destructive: "bg-destructive text-destructive-foreground hover:opacity-90 shadow-sm",
   reset: "bg-card border border-destructive/60 text-destructive hover:bg-destructive hover:text-destructive-foreground hover:border-destructive",
   subtle: "bg-muted text-foreground hover:bg-secondary"
 };
@@ -37,7 +37,7 @@ export default function Button({
       <ShadButton
         variant="ghost"
         asChild={asChild}
-        className={cn(variants[variant], sizes[size], "rounded-lg font-medium gap-1.5 transition-all", className)}
+        className={cn(variants[variant], sizes[size], "rounded-full font-medium gap-1.5 transition-all", className)}
         {...props}
       >
         {children}
@@ -52,7 +52,7 @@ export default function Button({
       whileHover={{ y: -1 }}
       transition={{ duration: 0.12, ease: [0.16, 1, 0.3, 1] }}
       className={cn(
-        "inline-flex items-center justify-center whitespace-nowrap rounded-lg font-medium gap-1.5 transition-all",
+        "inline-flex items-center justify-center whitespace-nowrap rounded-full font-medium gap-1.5 transition-all",
         "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
         "[&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
         variants[variant],
