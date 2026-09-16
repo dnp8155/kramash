@@ -84,21 +84,28 @@ export default function NotificationBell() {
               notifications.map((n) => {
                 const Icon = ICONS[n.type] || Bell;
                 return (
-                  <button
+                  <div
                     key={n.id}
-                    onClick={() => handleClick(n)}
                     className={cn(
-                      "w-full flex items-start gap-3 px-4 py-3 border-b border-border last:border-0 hover:bg-muted/40 transition-colors text-left",
+                      "flex items-start gap-3 px-4 py-3 border-b border-border last:border-0 hover:bg-muted/40 transition-colors",
                       !n.read && "bg-primary/5"
                     )}
                   >
                     <Icon className={cn("w-4 h-4 mt-0.5 shrink-0", TYPE_COLORS[n.type] || "text-muted-foreground")} />
-                    <div className="flex-1 min-w-0">
+                    <button onClick={() => handleClick(n)} className="flex-1 min-w-0 text-left">
                       <div className="text-sm font-medium text-foreground truncate">{n.title}</div>
                       <div className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{n.message}</div>
-                    </div>
-                    {!n.read && <span className="w-2 h-2 rounded-full bg-primary shrink-0 mt-1.5" />}
-                  </button>
+                    </button>
+                    {!n.read && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); markRead(n.id); }}
+                        className="shrink-0 mt-0.5 text-[10px] font-medium text-primary hover:text-primary-hover flex items-center gap-0.5 px-1.5 py-1 rounded hover:bg-primary/10 transition-colors"
+                        title="Mark as read"
+                      >
+                        <Check className="w-3 h-3" /> Mark as read
+                      </button>
+                    )}
+                  </div>
                 );
               })
             )}
