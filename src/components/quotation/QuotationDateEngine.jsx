@@ -2,12 +2,13 @@ import Input from "@/components/common/Input";
 import { Section, Field } from "@/components/quotation/QuotationParts";
 import { datesInRange, formatDateChip, formatDateFull } from "@/lib/quotationCalc";
 import { cn } from "@/lib/utils";
-import { Calendar, X } from "lucide-react";
+import { Calendar, X, Layers, List } from "lucide-react";
 
 export default function QuotationDateEngine({
   startDate, setStartDate,
   endDate, setEndDate,
   excludedDates, setExcludedDates,
+  mode, setMode,
   readOnly
 }) {
   const allDates = datesInRange(startDate, endDate);
@@ -72,6 +73,53 @@ export default function QuotationDateEngine({
           {includedCount === 0 && (
             <p className="text-xs text-warning mt-2">All dates are excluded. Include at least one date for the quotation scope.</p>
           )}
+        </div>
+      )}
+
+      {/* Quotation Mode — Day-wise vs Regular */}
+      {includedCount > 0 && (
+        <div className="mt-4 pt-3 border-t border-border">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xs font-medium text-muted-foreground">Quotation Mode</span>
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => !readOnly && setMode("day_wise")}
+              disabled={readOnly}
+              className={cn(
+                "flex items-center gap-2 px-3 py-2 rounded-lg text-sm border transition-colors",
+                mode === "day_wise"
+                  ? "border-primary bg-primary/10 text-foreground"
+                  : "border-border text-muted-foreground hover:bg-muted/40",
+                !readOnly && "cursor-pointer"
+              )}
+            >
+              <Layers className="w-4 h-4" />
+              <div className="text-left">
+                <div className="text-sm font-medium">Day-wise</div>
+                <div className="text-[11px] text-muted-foreground">Each date is a separate section with its own items & total</div>
+              </div>
+            </button>
+            <button
+              type="button"
+              onClick={() => !readOnly && setMode("regular")}
+              disabled={readOnly}
+              className={cn(
+                "flex items-center gap-2 px-3 py-2 rounded-lg text-sm border transition-colors",
+                mode === "regular" || !mode
+                  ? "border-primary bg-primary/10 text-foreground"
+                  : "border-border text-muted-foreground hover:bg-muted/40",
+                !readOnly && "cursor-pointer"
+              )}
+            >
+              <List className="w-4 h-4" />
+              <div className="text-left">
+                <div className="text-sm font-medium">Regular (Full)</div>
+                <div className="text-[11px] text-muted-foreground">All items grouped under "General" — no per-date breakdown</div>
+              </div>
+            </button>
+          </div>
         </div>
       )}
     </Section>

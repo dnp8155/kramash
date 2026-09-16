@@ -3,6 +3,7 @@ import Toggle from "@/components/common/Toggle";
 import { Section, Field } from "@/components/quotation/QuotationParts";
 import { Textarea } from "@/components/ui/textarea";
 import WordCounterTextarea from "@/components/common/WordCounterTextarea";
+import SectionVisibilityToggles from "@/components/quotation/SectionVisibilityToggles";
 import { Eye, Building2, Share2, MessageSquare, StickyNote, Instagram, Youtube, Globe, Link as LinkIcon } from "lucide-react";
 import { getSocialIcon } from "@/lib/socialIcons";
 
@@ -25,7 +26,8 @@ export default function QuotationPresentationSection({
   socialLinks, setSocialLinks,
   footerMessage, setFooterMessage,
   specialNotes, setSpecialNotes,
-  workspace, readOnly
+  workspace, readOnly,
+  visibility, setVisibility
 }) {
   // Parse workspace display_preferences for bank/social defaults
   const getWorkspaceDefaults = () => {
@@ -71,6 +73,9 @@ export default function QuotationPresentationSection({
 
       {/* Bank & UPI Details */}
       <Section icon={Building2} title="Bank & UPI Details">
+        <div className="mb-3">
+          <SectionVisibilityToggles sectionKey="bank" visibility={visibility} setVisibility={setVisibility} readOnly={readOnly} />
+        </div>
         <div className="flex items-center justify-between mb-2">
           <p className="text-xs text-muted-foreground">Snapshot — future Preference changes won't affect this quotation.</p>
           {!readOnly && (
@@ -98,6 +103,9 @@ export default function QuotationPresentationSection({
 
       {/* Social Links */}
       <Section icon={Share2} title="Social Links">
+        <div className="mb-3">
+          <SectionVisibilityToggles sectionKey="social" visibility={visibility} setVisibility={setVisibility} readOnly={readOnly} />
+        </div>
         <div className="flex items-center justify-between mb-2">
           <p className="text-xs text-muted-foreground">Only non-empty links will be shown to the client. Icons auto-detect from the URL.</p>
           {!readOnly && (
@@ -114,6 +122,9 @@ export default function QuotationPresentationSection({
 
       {/* Footer Message */}
       <Section icon={MessageSquare} title="Footer / Thank You Message">
+        <div className="mb-3">
+          <SectionVisibilityToggles sectionKey="footer" visibility={visibility} setVisibility={setVisibility} readOnly={readOnly} />
+        </div>
         <Textarea
           value={footerMessage || ""}
           onChange={(e) => setFooterMessage(e.target.value)}
@@ -125,6 +136,9 @@ export default function QuotationPresentationSection({
 
       {/* Special Notes */}
       <Section icon={StickyNote} title="Special Notes (Scope-Specific)">
+        <div className="mb-3">
+          <SectionVisibilityToggles sectionKey="special_notes" visibility={visibility} setVisibility={setVisibility} readOnly={readOnly} />
+        </div>
         <WordCounterTextarea
           value={specialNotes || ""}
           onChange={(e) => setSpecialNotes(e.target.value)}

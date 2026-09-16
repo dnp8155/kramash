@@ -44,6 +44,7 @@ import { QUOTATION_TEMPLATES, renderTemplate } from "@/constants/quotationTempla
 import QuotationTemplatePreview from "@/components/quotation/QuotationTemplatePreview";
 import QuotationTemplateSettings from "@/components/quotation/QuotationTemplateSettings";
 import PublicLinkPanel from "@/components/quotation/PublicLinkPanel";
+import SectionVisibilityToggles from "@/components/quotation/SectionVisibilityToggles";
 import RichTextEditor from "@/components/common/RichTextEditor";
 import WordCounterTextarea from "@/components/common/WordCounterTextarea";
 import { isWithinLimit } from "@/lib/wordLimit";
@@ -135,6 +136,13 @@ export default function QuotationEditor() {
   const [templateConfig, setTemplateConfig] = useState({});
   const [projectTitle, setProjectTitle] = useState("");
   const [projectSummary, setProjectSummary] = useState("");
+
+  // Quotation mode — day_wise (per-date sections) or regular (General)
+  const [mode, setMode] = useState("day_wise");
+
+  // Per-section visibility (stored in template_config.visibility)
+  // Each section: { pdf: true, link: true }
+  const [visibility, setVisibility] = useState({});
 
   // Data
   const [clients, setClients] = useState([]);
@@ -266,7 +274,12 @@ export default function QuotationEditor() {
         setNotes(q.notes || "");
         setFooterMessage(q.footer_message || DEFAULT_FOOTER_MESSAGE);
         setTemplateId(q.template_id || "black_premium");
-        try { setTemplateConfig(JSON.parse(q.template_config || "{}")); } catch { setTemplateConfig({}); }
+        try {
+          const tc = JSON.parse(q.template_config || "{}");
+          setTemplateConfig(tc);
+          setVisibility(tc.visibility || {});
+          setMode(tc.mode || "day_wise");
+        } catch { setTemplateConfig({}); }
         setProjectTitle(q.project_title || "");
         setProjectSummary(q.project_summary || "");
         setAccessPassword(q.client_access_password || "");
@@ -376,7 +389,7 @@ export default function QuotationEditor() {
     payment_schedule_json: JSON.stringify(milestones.filter((m) => m.name || m.value)),
     footer_message: footerMessage,
     template_id: templateId,
-    template_config: JSON.stringify(templateConfig),
+    template_config: JSON.stringify({ ...templateConfig, visibility, mode }),
     project_title: projectTitle,
     project_summary: projectSummary,
     client_access_password: accessPassword || ""
@@ -790,6 +803,8 @@ export default function QuotationEditor() {
         setEndDate={setEndDate}
         excludedDates={excludedDates}
         setExcludedDates={setExcludedDates}
+        mode={mode}
+        setMode={setMode}
         readOnly={readOnly}
       />
 
@@ -861,24 +876,34 @@ export default function QuotationEditor() {
         setSpecialNotes={setSpecialNotes}
         workspace={workspace}
         readOnly={readOnly}
+        visibility={visibility}
+        setVisibility={setVisibility}
       />
 
       {/* Terms & notes */}
       <Section icon={FileText} title="Terms & Conditions">
+        <div className="mb-3">
+          <SectionVisibilityToggles sectionKey="terms" visibility={visibility} setVisibility={setVisibility} readOnly={readOnly} />
+        </div>
         <RichTextEditor
           value={terms}
           onChange={setTerms}
           readOnly={readOnly}
           placeholder="Enter terms & conditions…"
         />
-        <Field label="Payment Conditions (shown on PDF)">
-          <RichTextEditor
-            value={paymentConditions}
-            onChange={setPaymentConditions}
-            readOnly={readOnly}
-            placeholder="e.g. 50% advance to confirm booking. Balance due on or before event day."
-          />
-        </Field>
+        <div className="mt-4">
+          <Field label="Payment Conditions (shown on PDF)">
+            <div className="mb-2">
+              <SectionVisibilityToggles sectionKey="payment_conditions" visibility={visibility} setVisibility={setVisibility} readOnly={readOnly} />
+            </div>
+            <RichTextEditor
+              value={paymentConditions}
+              onChange={setPaymentConditions}
+              readOnly={readOnly}
+              placeholder="e.g. 50% advance to confirm booking. Balance due on or before event day."
+            />
+          </Field>
+        </div>
         <Field label="Notes (internal)">
           <WordCounterTextarea
             value={notes}
