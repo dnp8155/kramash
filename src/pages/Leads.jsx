@@ -261,7 +261,7 @@ export default function Leads() {
         open={showForm}
         onClose={() => setShowForm(false)}
         editingLead={editingLead}
-        onSaved={invalidate}
+        onSaved={() => {}}
       />
 
       <ConvertLeadDialog

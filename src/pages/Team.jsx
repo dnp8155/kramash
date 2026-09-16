@@ -340,7 +340,7 @@ export default function Team() {
       <TeamMemberForm
         open={showForm}
         onClose={() => setShowForm(false)}
-        onSaved={invalidate}
+        onSaved={() => {}}
         member={editing}
         workspaceId={workspaceId}
       />

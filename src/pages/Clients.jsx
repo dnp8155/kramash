@@ -155,7 +155,7 @@ export default function Clients() {
       <ClientForm
         open={showForm}
         onClose={() => setShowForm(false)}
-        onSaved={invalidate}
+        onSaved={() => {}}
         client={editingClient}
         workspaceId={workspaceId}
       />
