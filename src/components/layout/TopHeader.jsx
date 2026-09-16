@@ -50,16 +50,8 @@ export default function TopHeader() {
         </button>
       )}
 
-      {/* Desktop: logo + workspace name + category (left side) */}
-      <div className="hidden lg:flex items-center gap-2.5 flex-1 min-w-0">
-        <Logo size={32} />
-        <div className="min-w-0">
-          <div className="font-bold text-sm leading-tight tracking-wide uppercase text-foreground truncate">
-            Kramasha
-          </div>
-          <div className="text-xs text-muted-foreground truncate">{categoryText}</div>
-        </div>
-      </div>
+      {/* Desktop left spacer (keeps search centered on large screens) */}
+      <div className="hidden lg:block flex-1" />
 
       {/* Search — grows on mobile, centered on desktop */}
       <div className="flex-1 lg:flex-none max-w-2xl flex justify-center">
