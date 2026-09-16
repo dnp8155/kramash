@@ -310,7 +310,7 @@ export default function Financial() {
           {/* Showing / export */}
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("Showing")}</span>
-            <FiscalYearSelector size="sm" />
+            <FiscalYearSelector size="sm" align="left" />
             <Button
               variant="outline"
               size="sm"

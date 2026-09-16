@@ -5,7 +5,7 @@ import { useFinancialYear } from "@/hooks/useFinancialYear";
 import { buildDateRangePresets } from "@/lib/dateRangePresets";
 import { scaleInVariants, EASE, DURATION_FAST } from "@/lib/motionVariants";
 
-export default function FiscalYearSelector({ size = "md" }) {
+export default function FiscalYearSelector({ size = "md", align = "right" }) {
   const { fiscalYears, activeFY, dateRange, selectDateRange, loading } = useFinancialYear();
   const [open, setOpen] = useState(false);
   const [customFrom, setCustomFrom] = useState("");
@@ -77,7 +77,11 @@ export default function FiscalYearSelector({ size = "md" }) {
             animate="animate"
             exit="exit"
             transition={{ duration: DURATION_FAST, ease: EASE }}
-            className="absolute left-0 lg:left-auto lg:right-0 mt-1.5 w-64 max-w-[calc(100vw-2rem)] rounded-xl border border-border bg-popover shadow-lg z-[200] overflow-hidden origin-top lg:origin-top-right"
+            className={`absolute mt-1.5 w-64 max-w-[calc(100vw-2rem)] rounded-xl border border-border bg-popover shadow-lg z-[200] overflow-hidden origin-top ${
+              align === "left"
+                ? "left-0"
+                : "left-0 lg:left-auto lg:right-0 lg:origin-top-right"
+            }`}
           >
             <div className="max-h-72 overflow-y-auto scrollbar-thin">
               {presets.map((preset, idx) => {
