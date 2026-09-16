@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription
-} from "@/components/ui/dialog";
+  AppDialog, AppDialogContent, AppDialogHeader, AppDialogTitle, AppDialogDescription, AppDialogBody, AppDialogFooter
+} from "@/components/ui/AppDialog";
+import DialogContextCard from "@/components/common/DialogContextCard";
 import Button from "@/components/common/Button";
 import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
@@ -111,17 +112,19 @@ export default function RecordServicePaymentDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && onClose?.()}>
-      <DialogContent className="max-w-lg max-h-[90dvh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Record Service Payment</DialogTitle>
-          <DialogDescription>
+    <AppDialog open={open} onOpenChange={(o) => !o && onClose?.()}>
+      <AppDialogContent>
+        <AppDialogHeader>
+          <AppDialogTitle>Record Service Payment</AppDialogTitle>
+          <AppDialogDescription>
             {assignment.service_name_snapshot || "Service"}
             {assignment.provider_name_snapshot ? ` · ${assignment.provider_name_snapshot}` : ""}
-          </DialogDescription>
-        </DialogHeader>
+          </AppDialogDescription>
+        </AppDialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-3">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+          <AppDialogBody className="space-y-3">
+            <DialogContextCard event={event} />
           {/* Summary */}
           <div className="grid grid-cols-3 gap-3 rounded-lg border border-border bg-muted/20 p-3">
             <div>
@@ -188,15 +191,16 @@ export default function RecordServicePaymentDialog({
           })()}
 
           {error && <p className="text-sm text-destructive">{error}</p>}
+          </AppDialogBody>
 
-          <DialogFooter className="pt-2">
+          <AppDialogFooter>
             <Button type="button" variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
             <Button type="submit" disabled={saving}>
               {saving ? "Saving…" : "Record Payment"}
             </Button>
-          </DialogFooter>
+          </AppDialogFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </AppDialogContent>
+    </AppDialog>
   );
 }

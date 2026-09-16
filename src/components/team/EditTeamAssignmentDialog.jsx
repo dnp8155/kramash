@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription
-} from "@/components/ui/dialog";
+  AppDialog, AppDialogContent, AppDialogHeader, AppDialogTitle, AppDialogDescription, AppDialogBody, AppDialogFooter
+} from "@/components/ui/AppDialog";
+import DialogContextCard from "@/components/common/DialogContextCard";
 import Button from "@/components/common/Button";
 import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
@@ -157,25 +158,26 @@ export default function EditTeamAssignmentDialog({
   if (!assignment) return null;
 
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && onClose?.()}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Edit Team Assignment</DialogTitle>
-          <DialogDescription>
+    <AppDialog open={open} onOpenChange={(o) => !o && onClose?.()}>
+      <AppDialogContent>
+        <AppDialogHeader>
+          <AppDialogTitle>Edit Team Assignment</AppDialogTitle>
+          <AppDialogDescription>
             {event ? `${event.title} · ${formatEventDate(event.start_date, event.end_date)}` : "Update this event assignment."}
-          </DialogDescription>
-        </DialogHeader>
+          </AppDialogDescription>
+        </AppDialogHeader>
 
-        {/* Info banner — clarifies this edits the assignment, not the master record */}
-        <div className="flex items-start gap-2 rounded-lg border border-primary/20 bg-primary/5 p-3">
-          <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-          <p className="text-xs text-foreground">
-            Editing the event assignment for <span className="font-semibold">{member?.name || "this member"}</span>.
-            This does not change the team member's master record or any existing payments.
-          </p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-3">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+          <AppDialogBody className="space-y-3">
+            <DialogContextCard event={event} />
+            {/* Info banner — clarifies this edits the assignment, not the master record */}
+            <div className="flex items-start gap-2 rounded-lg border border-primary/20 bg-primary/5 p-3">
+              <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+              <p className="text-xs text-foreground">
+                Editing the event assignment for <span className="font-semibold">{member?.name || "this member"}</span>.
+                This does not change the team member's master record or any existing payments.
+              </p>
+            </div>
           {/* Member name — read-only */}
           <div className="space-y-1.5">
             <Label>Team Member</Label>
@@ -285,15 +287,16 @@ export default function EditTeamAssignmentDialog({
           </div>
 
           {error && <p className="text-sm text-destructive">{error}</p>}
+          </AppDialogBody>
 
-          <DialogFooter className="pt-2">
+          <AppDialogFooter>
             <Button type="button" variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
             <Button type="submit" disabled={saving}>
               {saving ? "Saving…" : "Save Changes"}
             </Button>
-          </DialogFooter>
+          </AppDialogFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </AppDialogContent>
+    </AppDialog>
   );
 }
