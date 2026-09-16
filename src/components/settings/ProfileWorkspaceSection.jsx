@@ -308,6 +308,11 @@ export default function ProfileWorkspaceSection() {
         <div className="mb-1">
           <h4 className="text-sm font-semibold text-foreground">Branding Image</h4>
           <p className="text-xs text-muted-foreground mt-0.5">This image is used as your workspace logo, sidebar avatar, invoice logo, and on all public pages.</p>
+          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs">
+            <span className="text-muted-foreground">Recommended: <span className="font-medium text-foreground">512 × 512 px</span> (square)</span>
+            <span className="text-muted-foreground">Maximum size: <span className="font-medium text-foreground">5 MB</span></span>
+            <span className="text-muted-foreground">Format: <span className="font-medium text-foreground">PNG / JPG / WebP</span></span>
+          </div>
         </div>
         <div className="flex items-center gap-3 mb-5">
           <div className="w-14 h-14 rounded-lg bg-muted border border-border flex items-center justify-center overflow-hidden">
