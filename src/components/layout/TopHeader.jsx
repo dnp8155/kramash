@@ -5,6 +5,9 @@ import GlobalSearch from "@/components/layout/GlobalSearch";
 import AgentBot from "@/components/layout/AgentBot";
 import LanguageSwitcher from "@/components/layout/LanguageSwitcher";
 import Logo from "@/components/common/Logo";
+import { useWorkspace } from "@/lib/WorkspaceContext";
+import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
+import { categoryLabel } from "@/lib/businessTerminology";
 
 const MAIN_PAGES = new Set([
   "/dashboard",
@@ -23,6 +26,12 @@ export default function TopHeader() {
   const location = useLocation();
   const navigate = useNavigate();
   const isMainPage = MAIN_PAGES.has(location.pathname);
+  const { workspace } = useWorkspace();
+  const term = useBusinessTerminology();
+  const categoryText =
+    workspace?.business_category === "OTHER" && workspace?.custom_business_type
+      ? workspace.custom_business_type
+      : categoryLabel(term.category);
 
   return (
     <header className="flex items-center gap-2 sm:gap-3 px-3 sm:px-6 h-14 border-b border-border bg-card/80 backdrop-blur-md sticky top-0 z-20 shadow-sm safe-area-top">
@@ -41,8 +50,16 @@ export default function TopHeader() {
         </button>
       )}
 
-      {/* Desktop left spacer (keeps search centered on large screens) */}
-      <div className="hidden lg:block flex-1" />
+      {/* Desktop: logo + workspace name + category (left side) */}
+      <div className="hidden lg:flex items-center gap-2.5 flex-1 min-w-0">
+        <Logo size={32} />
+        <div className="min-w-0">
+          <div className="font-bold text-sm leading-tight tracking-wide uppercase text-foreground truncate">
+            {workspace?.name || "Kramasha"}
+          </div>
+          <div className="text-xs text-muted-foreground truncate">{categoryText}</div>
+        </div>
+      </div>
 
       {/* Search — grows on mobile, centered on desktop */}
       <div className="flex-1 lg:flex-none max-w-2xl flex justify-center">
