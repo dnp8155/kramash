@@ -7,7 +7,9 @@ import { invalidateEntity } from "@/lib/queryInvalidation";
 import Card from "@/components/common/Card";
 import Button from "@/components/common/Button";
 import EmptyState from "@/components/common/EmptyState";
-import { Textarea } from "@/components/ui/textarea";
+import WordCounterTextarea from "@/components/common/WordCounterTextarea";
+import { countWords, WORD_LIMIT } from "@/lib/wordLimit";
+import { cn } from "@/lib/utils";
 
 export default function EventNotesTab({ event, term }) {
   const { toast } = useToast();
@@ -59,7 +61,7 @@ export default function EventNotesTab({ event, term }) {
             <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground mb-1.5">
               <FileText className="w-3.5 h-3.5" /> Description
             </div>
-            <Textarea
+            <WordCounterTextarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Add a description..."
@@ -70,7 +72,7 @@ export default function EventNotesTab({ event, term }) {
             <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground mb-1.5">
               <StickyNote className="w-3.5 h-3.5" /> Notes
             </div>
-            <Textarea
+            <WordCounterTextarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Add internal notes..."
@@ -90,13 +92,19 @@ export default function EventNotesTab({ event, term }) {
         <div className="space-y-3">
           {event.description && (
             <div>
-              <div className="text-xs font-medium text-muted-foreground mb-1">Description</div>
+              <div className="flex items-center justify-between mb-1">
+                <div className="text-xs font-medium text-muted-foreground">Description</div>
+                <WordCountBadge text={event.description} />
+              </div>
               <p className="text-sm text-foreground whitespace-pre-wrap">{event.description}</p>
             </div>
           )}
           {event.notes && (
             <div>
-              <div className="text-xs font-medium text-muted-foreground mb-1">Notes</div>
+              <div className="flex items-center justify-between mb-1">
+                <div className="text-xs font-medium text-muted-foreground">Notes</div>
+                <WordCountBadge text={event.notes} />
+              </div>
               <p className="text-sm text-foreground whitespace-pre-wrap">{event.notes}</p>
             </div>
           )}
@@ -105,5 +113,19 @@ export default function EventNotesTab({ event, term }) {
         <EmptyState title="No notes" description={`Add notes or a description for this ${term?.workItemSingular?.toLowerCase() || "entry"}.`} />
       )}
     </Card>
+  );
+}
+
+function WordCountBadge({ text }) {
+  const count = countWords(text);
+  const isOver = count > WORD_LIMIT;
+  const isNear = count >= 130 && !isOver;
+  return (
+    <span className={cn(
+      "text-[11px] tabular-nums px-1.5 py-0.5 rounded-full",
+      isOver ? "bg-destructive/10 text-destructive font-medium" : isNear ? "bg-warning/10 text-warning" : "bg-muted text-muted-foreground"
+    )}>
+      {count} / {WORD_LIMIT} words
+    </span>
   );
 }
