@@ -10,6 +10,7 @@ import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
 
 export default function EventServicesTab({
   event, services, serviceAssignments, currency,
+  contractValue,
   transactions, membersById = {},
   costOverrun,
   onAddService, onRemoveService, onEditService, onAddPayment, onShareService,
@@ -74,6 +75,7 @@ export default function EventServicesTab({
                 service={svc}
                 event={event}
                 currency={currency}
+                contractValue={contractValue}
                 transactions={transactions}
                 membersById={membersById}
                 onAddPayment={onAddPayment}

@@ -489,7 +489,7 @@ export default function EventDetails() {
         {/* Financial summary — right column */}
         <div className="space-y-3">
           <FinancialMiniCard label="Received" value={formatMoney(fin.received, currency)} tone="success" />
-          <FinancialMiniCard label="Paid" value={formatMoney(fin.teamPaid, currency)} tone="warning" />
+          <FinancialMiniCard label="Paid" value={formatMoney(fin.teamPaid + fin.expenses, currency)} tone="warning" />
           <FinancialMiniCard label="Left Balance" value={formatMoney(Math.max(0, fin.pending), currency)} tone="accent" />
           <FinancialMiniCard label="Profit" value={formatMoney(fin.profit, currency)} tone="success" />
         </div>
@@ -555,6 +555,7 @@ export default function EventDetails() {
           services={services}
           serviceAssignments={serviceAssignments}
           currency={currency}
+          contractValue={fin.contractValue}
           transactions={transactions}
           membersById={membersById}
           costOverrun={costOverrun}
@@ -632,6 +633,7 @@ export default function EventDetails() {
                     member={membersById[a.team_member_id]}
                     event={event}
                     currency={currency}
+                    contractValue={fin.contractValue}
                     transactions={transactions}
                     isSelf={!!membersById[a.team_member_id]?.is_self}
                     onAddPayment={(asg) => setTeamPayAssignment(asg)}

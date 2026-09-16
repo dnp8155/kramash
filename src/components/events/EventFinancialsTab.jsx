@@ -14,7 +14,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   FileText, Receipt, CheckCircle2, Clock, ArrowRight,
   Copy, Link as LinkIcon, Eye, Download, Pencil, Trash2,
-  Users, Wallet, TrendingUp
+  Users, Wallet, TrendingUp, Briefcase
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -57,6 +57,21 @@ export default function EventFinancialsTab({
   const pct = (v) => packageValue > 0 ? Math.round((v / packageValue) * 100) : 0;
   const miscItems = useMemo(() => parseMiscExpenses(event?.misc_expenses_json), [event?.misc_expenses_json]);
   const miscTotal = miscExpensesTotal(miscItems);
+
+  // Split expenses into service-provider payments vs other business expenses
+  const { servicePayments, otherExpenses } = useMemo(() => {
+    const evTx = (transactions || []).filter(
+      (t) => t.event_id === event?.id && t.status === "ACTIVE" && t.transaction_type === "BUSINESS_EXPENSE"
+    );
+    let svc = 0;
+    let other = 0;
+    for (const t of evTx) {
+      const amt = Number(t.amount) || 0;
+      if (t.service_assignment_id) svc += amt;
+      else other += amt;
+    }
+    return { servicePayments: svc, otherExpenses: other };
+  }, [transactions, event?.id]);
 
   const openInvoicePreview = async (inv) => {
     setPreviewInvoice(inv);
@@ -116,12 +131,13 @@ export default function EventFinancialsTab({
   return (
     <div className="space-y-5">
       {/* 6 Financial summary cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
         <FinCard label="Package" value={formatMoney(packageValue, currency)} sub={(fin.addonTotal + fin.miscTotal) > 0 ? `Base ${formatMoney(fin.baseContractValue, currency)} + Add-ons ${formatMoney(fin.addonTotal + fin.miscTotal, currency)}` : `${pct(packageValue)}% base`} icon={Wallet} />
         <FinCard label="Received" value={formatMoney(fin.received, currency)} sub={`${pct(fin.received)}% collected`} icon={CheckCircle2} tone="default" />
         <FinCard label="Balance Due" value={formatMoney(fin.pending, currency)} sub={`${pct(fin.pending)}% pending`} icon={Clock} tone={fin.pending > 0 ? "danger" : "success"} />
         <FinCard label="Team Cost" value={formatMoney(fin.teamPaid, currency)} sub={`${pct(fin.teamPaid)}% of package`} icon={Users} tone="warning" />
-        <FinCard label="Other Expenses" value={formatMoney(fin.expenses, currency)} sub={`${pct(fin.expenses)}% of package`} icon={Receipt} />
+        <FinCard label="Service Payments" value={formatMoney(servicePayments, currency)} sub={`${pct(servicePayments)}% of package`} icon={Briefcase} tone="warning" />
+        <FinCard label="Other Expenses" value={formatMoney(otherExpenses, currency)} sub={`${pct(otherExpenses)}% of package`} icon={Receipt} />
         <FinCard label="Net Profit" value={formatMoney(fin.profit, currency)} sub={`${pct(fin.profit)}% margin`} icon={TrendingUp} tone="success" />
       </div>
 

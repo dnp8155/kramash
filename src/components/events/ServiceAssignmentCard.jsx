@@ -19,6 +19,7 @@ export default function ServiceAssignmentCard({
   service,
   event,
   currency,
+  contractValue,
   transactions,
   membersById = {},
   onAddPayment,
@@ -55,7 +56,7 @@ export default function ServiceAssignmentCard({
   const clientPaid = (transactions || [])
     .filter((t) => t.transaction_type === "CLIENT_RECEIPT" && t.status === "ACTIVE" && t.event_id === event?.id)
     .reduce((sum, t) => sum + Number(t.amount || 0), 0);
-  const clientTotal = Number(event?.contract_value) || 0;
+  const clientTotal = contractValue != null ? contractValue : (Number(event?.contract_value) || 0);
   const clientFullyPaid = clientTotal > 0 && clientPaid >= clientTotal;
 
   const statusLabel = isSelf ? (clientFullyPaid ? "Settled" : "Unsettled") : isPaid ? "Paid" : isPartiallyPaid ? "Partially Paid" : "Pending";

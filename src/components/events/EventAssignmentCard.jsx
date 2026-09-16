@@ -17,6 +17,7 @@ export default function EventAssignmentCard({
   member,
   event,
   currency,
+  contractValue,
   transactions,
   isSelf = false,
   onAddPayment,
@@ -49,7 +50,7 @@ export default function EventAssignmentCard({
   const clientPaid = (transactions || [])
     .filter((t) => t.transaction_type === "CLIENT_RECEIPT" && t.status === "ACTIVE" && t.event_id === event?.id)
     .reduce((sum, t) => sum + Number(t.amount || 0), 0);
-  const clientTotal = Number(event?.contract_value) || 0;
+  const clientTotal = contractValue != null ? contractValue : (Number(event?.contract_value) || 0);
   const clientFullyPaid = clientTotal > 0 && clientPaid >= clientTotal;
 
   // Per-member booking dates stored on the assignment, else fall back to event dates
