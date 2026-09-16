@@ -379,22 +379,6 @@ export default function AvailabilityCalendar({
                       )}
                     </div>
                   )}
-                  {(servicesByDate[iso] || []).length > 0 && (
-                    <div className="flex flex-col gap-0.5 w-full overflow-hidden mt-0.5">
-                      {(servicesByDate[iso] || []).slice(0, hasBooked ? 1 : 2).map((s) => (
-                        <span
-                          key={s.id}
-                          title={s.name}
-                          className="text-[9px] font-medium px-1 py-0.5 rounded leading-tight truncate bg-muted text-muted-foreground flex items-center gap-0.5"
-                        >
-                          <Briefcase className="w-2 h-2 shrink-0" /> {s.name}
-                        </span>
-                      ))}
-                      {(servicesByDate[iso] || []).length > (hasBooked ? 1 : 2) && (
-                        <span className="text-[9px] font-semibold text-muted-foreground leading-tight px-1">+{(servicesByDate[iso] || []).length - (hasBooked ? 1 : 2)} svc</span>
-                      )}
-                    </div>
-                  )}
                   {!hasBooked && hasBlocked && (
                     <div className="flex flex-col gap-0.5 w-full overflow-hidden mt-0.5">
                       {blocked.slice(0, 1).map((b) => (
@@ -522,22 +506,6 @@ export default function AvailabilityCalendar({
                       ))}
                       {dayEvents.length > 4 && (
                         <span className="text-[9px] font-semibold text-[#d97706] leading-tight px-1">+{dayEvents.length - 4} more</span>
-                      )}
-                    </div>
-                  )}
-                  {(servicesByDate[iso] || []).length > 0 && (
-                    <div className="flex flex-col gap-0.5 w-full overflow-hidden mt-1">
-                      {(servicesByDate[iso] || []).slice(0, hasBooked ? 2 : 3).map((s) => (
-                        <span
-                          key={s.id}
-                          title={s.name}
-                          className="text-[9px] font-medium px-1 py-0.5 rounded leading-tight truncate bg-muted text-muted-foreground flex items-center gap-0.5"
-                        >
-                          <Briefcase className="w-2 h-2 shrink-0" /> {s.name}
-                        </span>
-                      ))}
-                      {(servicesByDate[iso] || []).length > (hasBooked ? 2 : 3) && (
-                        <span className="text-[9px] font-semibold text-muted-foreground leading-tight px-1">+{(servicesByDate[iso] || []).length - (hasBooked ? 2 : 3)} svc</span>
                       )}
                     </div>
                   )}

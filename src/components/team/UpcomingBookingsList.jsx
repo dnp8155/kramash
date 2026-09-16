@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { todayISO, parseISODate, toISODate } from "@/lib/dates";
-import { CalendarDays, Users, Briefcase, Crown } from "lucide-react";
+import { CalendarDays, Users, Briefcase, Crown, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Returns the actual dates a team assignment covers.
@@ -34,12 +34,19 @@ export default function UpcomingBookingsList({
   serviceAssignments = [], dayAssignments = [], services = [],
   onEventClick
 }) {
-  const { teamRows, serviceRows } = useMemo(() => {
+  const { teamRows, serviceRows, addonRows } = useMemo(() => {
     const today = todayISO();
     const memberMap = {};
     members.forEach((m) => { memberMap[m.id] = m; });
     const serviceMap = {};
     services.forEach((s) => { serviceMap[s.id] = s; });
+
+    // Map: (event_id, service_id) → is_addon, from EventServiceAssignment records
+    const addonLookup = {};
+    for (const sa of (serviceAssignments || [])) {
+      if (sa.assignment_status === "removed") continue;
+      addonLookup[`${sa.event_id}:${sa.service_id}`] = !!sa.is_addon;
+    }
 
     // Team bookings — one row per (member, event, assigned date)
     const tRows = [];
@@ -56,8 +63,9 @@ export default function UpcomingBookingsList({
       }
     }
 
-    // Service bookings — one row per (service, event, scheduled date)
+    // Service & add-on bookings — one row per (service, event, scheduled date)
     const sRows = [];
+    const aRows = [];
     for (const da of dayAssignments) {
       if (!da.date || da.date < today) continue;
       const ev = eventsById[da.event_id];
@@ -66,7 +74,12 @@ export default function UpcomingBookingsList({
       for (const sid of svcIds) {
         const svc = serviceMap[sid];
         if (!svc) continue;
-        sRows.push({ key: `${da.id}-${sid}`, type: "service", service: svc, event: ev, date: da.date });
+        const row = { key: `${da.id}-${sid}`, type: "service", service: svc, event: ev, date: da.date };
+        if (addonLookup[`${ev.id}:${sid}`]) {
+          aRows.push(row);
+        } else {
+          sRows.push(row);
+        }
       }
     }
 
@@ -78,11 +91,12 @@ export default function UpcomingBookingsList({
 
     tRows.sort(sortFn);
     sRows.sort(sortFn);
+    aRows.sort(sortFn);
 
-    return { teamRows: tRows.slice(0, 30), serviceRows: sRows.slice(0, 30) };
-  }, [members, assignments, eventsById, dayAssignments, services]);
+    return { teamRows: tRows.slice(0, 30), serviceRows: sRows.slice(0, 30), addonRows: aRows.slice(0, 30) };
+  }, [members, assignments, eventsById, dayAssignments, services, serviceAssignments]);
 
-  const total = teamRows.length + serviceRows.length;
+  const total = teamRows.length + serviceRows.length + addonRows.length;
   const fmt = (s) => {
     try {
       return new Date(s + "T12:00:00").toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
@@ -151,7 +165,7 @@ export default function UpcomingBookingsList({
         {serviceRows.length > 0 && (
           <div className={teamRows.length > 0 ? "pt-3 border-t border-border" : ""}>
             <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-              <Briefcase className="w-3.5 h-3.5" /> Service
+              <Briefcase className="w-3.5 h-3.5" /> Services
             </div>
             <div className="divide-y divide-border">
               {serviceRows.map((r) => (
@@ -161,6 +175,39 @@ export default function UpcomingBookingsList({
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="text-sm font-medium text-foreground truncate">{r.service.name}</div>
+                    <button
+                      onClick={() => onEventClick?.(r.event)}
+                      className="text-xs text-primary hover:underline truncate block text-left"
+                    >
+                      {r.event.title}
+                    </button>
+                  </div>
+                  <div className="text-xs text-muted-foreground text-right whitespace-nowrap shrink-0">
+                    {fmt(r.date)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Add-on bookings */}
+        {addonRows.length > 0 && (
+          <div className={(teamRows.length > 0 || serviceRows.length > 0) ? "pt-3 border-t border-border" : ""}>
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+              <Sparkles className="w-3.5 h-3.5" /> Add-ons
+            </div>
+            <div className="divide-y divide-border">
+              {addonRows.map((r) => (
+                <div key={r.key} className="flex items-center gap-3 py-2.5">
+                  <div className="w-9 h-9 rounded-full bg-warning/10 text-warning flex items-center justify-center shrink-0">
+                    <Sparkles className="w-4 h-4 text-warning" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-medium text-foreground truncate">
+                      {r.service.name}
+                      <span className="text-[10px] font-semibold text-warning ml-1.5">ADD-ON</span>
+                    </div>
                     <button
                       onClick={() => onEventClick?.(r.event)}
                       className="text-xs text-primary hover:underline truncate block text-left"

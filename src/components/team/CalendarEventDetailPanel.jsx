@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { formatEventDates, isAssignedToDate } from "@/lib/dates";
-import { Calendar, Users, Briefcase, ArrowRight, Crown, Tag } from "lucide-react";
+import { Calendar, Users, Briefcase, ArrowRight, Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import MemberTypeTag from "@/components/common/MemberTypeTag";
 
@@ -84,11 +84,6 @@ export default function CalendarEventDetailPanel({
               <div className="min-w-0">
                 <div className="text-sm font-semibold text-foreground truncate">{ev.title}</div>
                 <div className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1.5 flex-wrap">
-                  {ev.event_type && (
-                    <span className="inline-flex items-center gap-0.5">
-                      <Tag className="w-3 h-3" /> {ev.event_type}
-                    </span>
-                  )}
                   <span className="inline-flex items-center gap-0.5">
                     <Calendar className="w-3 h-3" /> {formatEventDates(ev)}
                   </span>
