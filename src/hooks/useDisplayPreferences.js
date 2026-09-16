@@ -25,6 +25,8 @@ const DEFAULTS = {
   showMenubarLabels: true,
   // Pastel theme — custom palette (array of 3–5 hex strings). null = use category default.
   pastelPalette: null,
+  // Pastel theme — which palette color is the active theme color (0-indexed)
+  pastelThemeIndex: 0,
   // Shared invoice
   showLogo: false,
   // Quotation defaults (set in Preferences → Quotation tab)

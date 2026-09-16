@@ -7,7 +7,8 @@ import { useWorkspace } from "@/lib/WorkspaceContext";
 import { useToast } from "@/components/ui/use-toast";
 import { useDisplayPreferences } from "@/hooks/useDisplayPreferences";
 import { getDefaultPalette, MIN_PALETTE, MAX_PALETTE } from "@/lib/pastelTheme";
-import { RotateCcw, Plus, X } from "lucide-react";
+import { RotateCcw, Plus, X, Check } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default function PastelPalettePicker() {
   const { workspace, setWorkspace } = useWorkspace();
@@ -20,6 +21,7 @@ export default function PastelPalettePicker() {
     prefs.pastelPalette && prefs.pastelPalette.length > 0 ? prefs.pastelPalette : defaults
   );
   const [saving, setSaving] = useState(false);
+  const activeIdx = prefs.pastelThemeIndex ?? 0;
 
   // Sync local state if workspace prefs change externally
   useEffect(() => {
@@ -28,10 +30,9 @@ export default function PastelPalettePicker() {
     );
   }, [prefs.pastelPalette, category]);
 
-  const persist = async (next) => {
+  const persistPrefs = async (newPrefs) => {
     setSaving(true);
     try {
-      const newPrefs = { ...prefs, pastelPalette: next };
       await base44.entities.Workspace.update(workspace.id, {
         display_preferences: JSON.stringify(newPrefs),
       });
@@ -42,6 +43,9 @@ export default function PastelPalettePicker() {
       setSaving(false);
     }
   };
+
+  const persist = (next) => persistPrefs({ ...prefs, pastelPalette: next });
+  const selectActive = (idx) => persistPrefs({ ...prefs, pastelThemeIndex: idx });
 
   const updateColor = (idx, hex) => {
     const next = [...palette];
@@ -72,6 +76,30 @@ export default function PastelPalettePicker() {
 
   return (
     <div className="mt-4 p-4 rounded-lg border border-primary/20 bg-primary/5">
+      {/* Select active theme color — same interaction pattern as the theme selector */}
+      <div className="mb-4">
+        <p className="text-xs font-medium text-muted-foreground mb-2">Select theme color</p>
+        <div className="grid grid-cols-5 gap-2">
+          {palette.map((color, idx) => (
+            <button
+              key={`select-${idx}`}
+              type="button"
+              onClick={() => selectActive(idx)}
+              className={cn(
+                "h-11 rounded-lg border-2 transition-all flex items-center justify-center",
+                activeIdx === idx
+                  ? "border-primary ring-2 ring-primary/20 shadow-sm"
+                  : "border-border hover:border-primary/40"
+              )}
+              style={{ backgroundColor: color }}
+              aria-label={`Select ${color} as theme color`}
+            >
+              {activeIdx === idx && <Check className="w-4 h-4 text-foreground" />}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="flex items-center justify-between mb-3">
         <div>
           <h4 className="text-sm font-semibold text-foreground">Pastel Palette</h4>
@@ -93,7 +121,10 @@ export default function PastelPalettePicker() {
           <div key={idx} className="flex flex-col items-center gap-1.5">
             <div className="relative group">
               <label
-                className="block w-12 h-12 rounded-lg border-2 border-border group-hover:border-primary/40 transition-colors shadow-sm cursor-pointer"
+                className={cn(
+                  "block w-12 h-12 rounded-lg border-2 transition-colors shadow-sm cursor-pointer",
+                  idx === activeIdx ? "border-primary ring-2 ring-primary/20" : "border-border group-hover:border-primary/40"
+                )}
                 style={{ backgroundColor: color }}
               >
                 <input

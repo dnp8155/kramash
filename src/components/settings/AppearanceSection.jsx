@@ -6,6 +6,7 @@ import Toggle from "@/components/common/Toggle";
 import { useToast } from "@/components/ui/use-toast";
 import { useDisplayPreferences } from "@/hooks/useDisplayPreferences";
 import PastelPalettePicker from "@/components/settings/PastelPalettePicker";
+import { getDefaultPalette, hexToHsl } from "@/lib/pastelTheme";
 import { cn } from "@/lib/utils";
 
 export default function AppearanceSection() {
@@ -23,7 +24,38 @@ export default function AppearanceSection() {
     if (theme === "Night") root.classList.add("dark");
     else root.classList.remove("dark");
     localStorage.setItem("app-theme", theme);
-  }, [theme]);
+
+    // Pastel theme — apply the selected pastel color as primary/accent/ring tokens
+    if (theme === "Pastel") {
+      const category = workspace?.business_category || "OTHER";
+      const defaultPalette = getDefaultPalette(category);
+      const palette = prefs.pastelPalette?.length > 0 ? prefs.pastelPalette : defaultPalette;
+      const idx = prefs.pastelThemeIndex ?? 0;
+      const activeColor = palette[idx] || palette[0];
+      if (activeColor) {
+        try {
+          const { h, s, l } = hexToHsl(activeColor);
+          root.style.setProperty("--primary", `${h} ${s}% ${l}%`);
+          root.style.setProperty("--primary-hover", `${h} ${s}% ${Math.max(0, l - 7)}%`);
+          root.style.setProperty("--primary-foreground", "220 26% 14%");
+          root.style.setProperty("--accent", `${h} ${s}% ${l}%`);
+          root.style.setProperty("--accent-foreground", "220 26% 14%");
+          root.style.setProperty("--ring", `${h} ${s}% ${l}%`);
+          root.style.setProperty("--sidebar-primary", `${h} ${s}% ${l}%`);
+          root.style.setProperty("--sidebar-primary-foreground", "220 26% 14%");
+        } catch {}
+      }
+    } else {
+      root.style.removeProperty("--primary");
+      root.style.removeProperty("--primary-hover");
+      root.style.removeProperty("--primary-foreground");
+      root.style.removeProperty("--accent");
+      root.style.removeProperty("--accent-foreground");
+      root.style.removeProperty("--ring");
+      root.style.removeProperty("--sidebar-primary");
+      root.style.removeProperty("--sidebar-primary-foreground");
+    }
+  }, [theme, prefs.pastelPalette, prefs.pastelThemeIndex, workspace]);
 
   const setPref = (key) => async (v) => {
     const next = { ...prefs, [key]: v };
