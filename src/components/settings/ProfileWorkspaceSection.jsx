@@ -8,6 +8,7 @@ import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
 import Toggle from "@/components/common/Toggle";
 import ChangePasswordDialog from "@/components/settings/ChangePasswordDialog";
+import WordCounterTextarea from "@/components/common/WordCounterTextarea";
 import { Pencil, Check, Loader2, Upload, User, Building2, Lock, KeyRound, Globe, Copy, ExternalLink } from "lucide-react";
 import { isValidIndianPhone, isValidEmail } from "@/lib/validation";
 
@@ -93,6 +94,7 @@ export default function ProfileWorkspaceSection() {
       logo: workspace.logo || "",
       public_profile_enabled: !!workspace.public_profile_enabled,
       public_profile_slug: workspace.public_profile_slug || slugify(workspace.name) || "",
+      public_profile_about: workspace.public_profile_about || "",
       // Public profile contact visibility (default true)
       public_show_phone: dp.public_show_phone !== false,
       public_show_email: dp.public_show_email !== false,
@@ -184,6 +186,7 @@ export default function ProfileWorkspaceSection() {
         default_gst_rate: form.default_gst_rate,
         public_profile_enabled: form.public_profile_enabled,
         public_profile_slug: form.public_profile_slug || slugify(form.name),
+        public_profile_about: form.public_profile_about,
         display_preferences: JSON.stringify(updatedDp),
       });
       setWorkspace(updated);
@@ -474,6 +477,16 @@ export default function ProfileWorkspaceSection() {
                     )}
                   </div>
                 )}
+              </Field>
+
+              {/* About — shown on public profile page */}
+              <Field label="About (shown on public profile)">
+                <WordCounterTextarea
+                  value={form.public_profile_about}
+                  onChange={(e) => set("public_profile_about", e.target.value)}
+                  placeholder="Tell visitors about your business, specialties, and what makes you unique…"
+                  rows={4}
+                />
               </Field>
 
               {/* Contact visibility toggles */}
