@@ -136,33 +136,22 @@ export default function PreferencesSections({
             <Card title="Event / Work Types">
               <EventTypeManager workspace={workspace} />
             </Card>
-            <Card title="Detail Page Display">
-              <p className="text-xs text-muted-foreground mb-3">Control what appears on the full event detail page.</p>
+            <Card title="Event Display">
+              <p className="text-xs text-muted-foreground mb-3">Control what appears on event detail pages, cards, and table rows.</p>
               <div className="space-y-3">
-                <ToggleRow label="Show team" hint="Display assigned team members on the event detail page" checked={toggles.showTeam} onChange={setT("showTeam")} />
-                <ToggleRow label="Show services" hint="Display assigned services on the event detail page" checked={toggles.showServices} onChange={setT("showServices")} />
-              </div>
-            </Card>
-            <Card title="Card & Table Display">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-xs text-muted-foreground">Show on compact cards & tables</span>
-                {!isPro && (
-                  <span className="text-[10px] font-bold uppercase tracking-wide bg-primary/10 text-primary px-1.5 py-0.5 rounded">Pro</span>
-                )}
-              </div>
-              <div className="space-y-3">
+                <ToggleRow label="Show team members" hint="Display assigned team on the event detail page tab and event cards" checked={toggles.showTeam} onChange={setT("showTeam")} />
+                <ToggleRow label="Show services" hint="Display assigned services on the event detail page tab and event cards" checked={toggles.showServices} onChange={setT("showServices")} />
+                <div className="flex items-center gap-2 pt-1">
+                  <span className="text-xs text-muted-foreground">Pro-only</span>
+                  {!isPro && (
+                    <span className="text-[10px] font-bold uppercase tracking-wide bg-primary/10 text-primary px-1.5 py-0.5 rounded">Pro</span>
+                  )}
+                </div>
                 <ToggleRow
-                  label="Show address & venue"
-                  hint="Display client address and venue on compact cards"
+                  label="Show address & venue on cards"
+                  hint="Display client address and venue on compact event cards"
                   checked={isPro && toggles.showAddressOnCards}
                   onChange={setT("showAddressOnCards")}
-                  disabled={!isPro}
-                />
-                <ToggleRow
-                  label="Show services on cards & tables"
-                  hint="Display services on compact cards and table rows"
-                  checked={isPro && toggles.showServicesOnCards}
-                  onChange={setT("showServicesOnCards")}
                   disabled={!isPro}
                 />
               </div>
