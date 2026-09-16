@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter
-} from "@/components/ui/dialog";
+  AppDialog, AppDialogContent, AppDialogHeader, AppDialogTitle, AppDialogBody, AppDialogFooter
+} from "@/components/ui/AppDialog";
 import Button from "@/components/common/Button";
 import Input from "@/components/common/Input";
 import { loadPackages, createPackage, deletePackage, serializePackageStructure } from "@/lib/quotationService";
@@ -72,14 +72,14 @@ export default function QuotationPackageDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+    <AppDialog open={open} onOpenChange={onClose}>
+      <AppDialogContent>
+        <AppDialogHeader>
+          <AppDialogTitle className="flex items-center gap-2">
             <Package className="w-4 h-4" /> Quotation Packages
-          </DialogTitle>
-        </DialogHeader>
-
+          </AppDialogTitle>
+        </AppDialogHeader>
+        <AppDialogBody>
         <div className="flex gap-2 border-b border-border pb-2 mb-3">
           <button
             onClick={() => setTab("apply")}
@@ -204,16 +204,17 @@ export default function QuotationPackageDialog({
             </div>
           </div>
         )}
+        </AppDialogBody>
 
-        <DialogFooter>
+        <AppDialogFooter>
           {tab === "save" && (
             <Button onClick={handleSave} disabled={saving || readOnly || !pkgName.trim() || !items?.length}>
               <Plus className="w-3.5 h-3.5" /> {saving ? "Saving…" : "Save Package"}
             </Button>
           )}
           <Button variant="outline" onClick={onClose}>Close</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </AppDialogFooter>
+      </AppDialogContent>
+    </AppDialog>
   );
 }

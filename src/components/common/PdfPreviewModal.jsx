@@ -1,9 +1,8 @@
-import { createPortal } from "react-dom";
-import { X, Download, FileText } from "lucide-react";
+import { Download, FileText } from "lucide-react";
+import { AppDialog, AppDialogContent, AppDialogHeader, AppDialogTitle, AppDialogBody, AppDialogFooter } from "@/components/ui/AppDialog";
+import Button from "@/components/common/Button";
 
 export default function PdfPreviewModal({ url, filename, open, onClose, loading }) {
-  if (!open) return null;
-
   const handleDownload = () => {
     if (!url) return;
     const a = document.createElement("a");
@@ -14,37 +13,16 @@ export default function PdfPreviewModal({ url, filename, open, onClose, loading 
     a.remove();
   };
 
-  return createPortal(
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-4xl h-[85dvh] bg-card border border-border rounded-lg shadow-xl flex flex-col animate-fade-in">
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-          <div className="flex items-center gap-2 min-w-0">
+  return (
+    <AppDialog open={open} onOpenChange={(o) => !o && onClose?.()}>
+      <AppDialogContent maxWidth="max-w-4xl">
+        <AppDialogHeader>
+          <AppDialogTitle className="flex items-center gap-2">
             <FileText className="w-4 h-4 text-primary shrink-0" />
-            <span className="text-sm font-semibold text-foreground truncate">{filename || "PDF Preview"}</span>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            {url && (
-              <button
-                onClick={handleDownload}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:bg-primary-hover transition-colors"
-              >
-                <Download className="w-3.5 h-3.5" /> Download
-              </button>
-            )}
-            <button
-              onClick={onClose}
-              className="w-8 h-8 rounded-full border border-border bg-card flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-              aria-label="Close"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-
-        {/* Body */}
-        <div className="flex-1 overflow-hidden rounded-b-lg bg-muted/20">
+            {filename || "PDF Preview"}
+          </AppDialogTitle>
+        </AppDialogHeader>
+        <AppDialogBody className="p-0 overflow-hidden">
           {loading ? (
             <div className="flex flex-col items-center justify-center h-full gap-2">
               <div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin"></div>
@@ -57,9 +35,15 @@ export default function PdfPreviewModal({ url, filename, open, onClose, loading 
               Failed to generate preview.
             </div>
           )}
-        </div>
-      </div>
-    </div>,
-    document.body
+        </AppDialogBody>
+        {url && !loading && (
+          <AppDialogFooter>
+            <Button onClick={handleDownload}>
+              <Download className="w-4 h-4" /> Download
+            </Button>
+          </AppDialogFooter>
+        )}
+      </AppDialogContent>
+    </AppDialog>
   );
 }

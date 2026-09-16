@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Download, Share2, Save, Loader2, Link2, Check } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { AppDialog, AppDialogContent, AppDialogHeader, AppDialogTitle, AppDialogDescription, AppDialogBody, AppDialogFooter } from "@/components/ui/AppDialog";
 import Button from "@/components/common/Button";
 import { useToast } from "@/components/ui/use-toast";
 import { base44 } from "@/api/base44Client";
@@ -57,12 +57,13 @@ export default function ExportPreviewModal({ open, onClose, blobUrl, fileName })
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>Signed PDF Preview</DialogTitle>
-          <DialogDescription>Review your signed PDF, then download, share, or save it.</DialogDescription>
-        </DialogHeader>
+    <AppDialog open={open} onOpenChange={onClose}>
+      <AppDialogContent maxWidth="max-w-2xl">
+        <AppDialogHeader>
+          <AppDialogTitle>Signed PDF Preview</AppDialogTitle>
+          <AppDialogDescription>Review your signed PDF, then download, share, or save it.</AppDialogDescription>
+        </AppDialogHeader>
+        <AppDialogBody className="space-y-3">
         <div className="border border-border rounded-lg overflow-hidden bg-muted/20">
           <iframe src={blobUrl} title="Signed PDF" className="w-full h-[400px]" />
         </div>
@@ -75,19 +76,20 @@ export default function ExportPreviewModal({ open, onClose, blobUrl, fileName })
             </Button>
           </div>
         )}
-        <div className="flex flex-col sm:flex-row gap-2">
-          <Button onClick={handleDownload} className="flex-1">
+        </AppDialogBody>
+        <AppDialogFooter>
+          <Button onClick={handleDownload}>
             <Download className="w-4 h-4" /> Download
           </Button>
-          <Button variant="outline" onClick={handleShare} className="flex-1">
+          <Button variant="outline" onClick={handleShare}>
             <Share2 className="w-4 h-4" /> Share
           </Button>
-          <Button variant="outline" onClick={handleSave} disabled={saving} className="flex-1">
+          <Button variant="outline" onClick={handleSave} disabled={saving}>
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             {saving ? "Saving…" : "Save to App"}
           </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </AppDialogFooter>
+      </AppDialogContent>
+    </AppDialog>
   );
 }

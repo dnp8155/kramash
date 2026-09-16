@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";
 import Button from "@/components/common/Button";
 import Input from "@/components/common/Input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AppDialog, AppDialogContent, AppDialogHeader, AppDialogTitle, AppDialogBody, AppDialogFooter } from "@/components/ui/AppDialog";
 import { Loader2, Lock, Eye, EyeOff } from "lucide-react";
 
 export default function ChangePasswordDialog({ open, onClose }) {
@@ -65,14 +65,15 @@ export default function ChangePasswordDialog({ open, onClose }) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+    <AppDialog open={open} onOpenChange={(v) => !v && handleClose()}>
+      <AppDialogContent maxWidth="max-w-md">
+        <AppDialogHeader>
+          <AppDialogTitle className="flex items-center gap-2">
             <Lock className="w-4 h-4" /> Change Password
-          </DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+          </AppDialogTitle>
+        </AppDialogHeader>
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+          <AppDialogBody className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-muted-foreground mb-1">Current Password</label>
             <div className="relative">
@@ -118,14 +119,15 @@ export default function ChangePasswordDialog({ open, onClose }) {
               onChange={(e) => setConfirmPassword(e.target.value)}
             />
           </div>
-          <div className="flex items-center justify-end gap-2 pt-2">
-            <Button type="button" variant="outline" size="sm" onClick={handleClose}>Cancel</Button>
-            <Button type="submit" size="sm" disabled={saving}>
+          </AppDialogBody>
+          <AppDialogFooter>
+            <Button type="button" variant="outline" onClick={handleClose}>Cancel</Button>
+            <Button type="submit" disabled={saving}>
               {saving ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />Changing…</> : "Change Password"}
             </Button>
-          </div>
+          </AppDialogFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </AppDialogContent>
+    </AppDialog>
   );
 }

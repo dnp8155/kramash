@@ -2,13 +2,14 @@ import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter
-} from "@/components/ui/dialog";
+  AppDialog,
+  AppDialogContent,
+  AppDialogHeader,
+  AppDialogTitle,
+  AppDialogDescription,
+  AppDialogBody,
+  AppDialogFooter
+} from "@/components/ui/AppDialog";
 import Button from "@/components/common/Button";
 import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
@@ -57,13 +58,13 @@ export function CreatePlanDialog({ open, onOpenChange, onCreated }) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Create New Plan</DialogTitle>
-          <DialogDescription>Add a new subscription plan. Configure its limits and pricing after creation.</DialogDescription>
-        </DialogHeader>
-        <div className="space-y-3">
+    <AppDialog open={open} onOpenChange={onOpenChange}>
+      <AppDialogContent>
+        <AppDialogHeader>
+          <AppDialogTitle>Create New Plan</AppDialogTitle>
+          <AppDialogDescription>Add a new subscription plan. Configure its limits and pricing after creation.</AppDialogDescription>
+        </AppDialogHeader>
+        <AppDialogBody className="space-y-3">
           <div className="space-y-1.5">
             <Label>Plan Code <span className="text-destructive">*</span></Label>
             <Input
@@ -97,13 +98,13 @@ export function CreatePlanDialog({ open, onOpenChange, onCreated }) {
               onChange={(e) => setForm({ ...form, sort_order: e.target.value })}
             />
           </div>
-        </div>
-        <DialogFooter>
+        </AppDialogBody>
+        <AppDialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button onClick={submit} disabled={saving}>Create Plan</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </AppDialogFooter>
+      </AppDialogContent>
+    </AppDialog>
   );
 }
 
@@ -144,13 +145,13 @@ export function AddLimitDialog({ open, onOpenChange, planId, existingKeys, onAdd
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Add Limit</DialogTitle>
-          <DialogDescription>Configure a resource or feature limit for this plan.</DialogDescription>
-        </DialogHeader>
-        <div className="space-y-3">
+    <AppDialog open={open} onOpenChange={onOpenChange}>
+      <AppDialogContent>
+        <AppDialogHeader>
+          <AppDialogTitle>Add Limit</AppDialogTitle>
+          <AppDialogDescription>Configure a resource or feature limit for this plan.</AppDialogDescription>
+        </AppDialogHeader>
+        <AppDialogBody className="space-y-3">
           <div className="space-y-1.5">
             <Label>Limit</Label>
             <Select value={key} onChange={(e) => {
@@ -176,13 +177,13 @@ export function AddLimitDialog({ open, onOpenChange, planId, existingKeys, onAdd
               <Input type="number" value={value} onChange={(e) => setValue(e.target.value)} placeholder="Use 999999 for unlimited" />
             )}
           </div>
-        </div>
-        <DialogFooter>
+        </AppDialogBody>
+        <AppDialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button onClick={submit} disabled={saving || available.length === 0}>Add Limit</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </AppDialogFooter>
+      </AppDialogContent>
+    </AppDialog>
   );
 }
 
@@ -225,13 +226,13 @@ export function AddPricingDialog({ open, onOpenChange, planId, existingCycles, o
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Add Pricing Option</DialogTitle>
-          <DialogDescription>Add a billing cycle price for this plan.</DialogDescription>
-        </DialogHeader>
-        <div className="space-y-3">
+    <AppDialog open={open} onOpenChange={onOpenChange}>
+      <AppDialogContent>
+        <AppDialogHeader>
+          <AppDialogTitle>Add Pricing Option</AppDialogTitle>
+          <AppDialogDescription>Add a billing cycle price for this plan.</AppDialogDescription>
+        </AppDialogHeader>
+        <AppDialogBody className="space-y-3">
           <div className="space-y-1.5">
             <Label>Billing Cycle</Label>
             <Select value={cycle} onChange={(e) => setCycle(e.target.value)}>
@@ -250,12 +251,12 @@ export function AddPricingDialog({ open, onOpenChange, planId, existingCycles, o
             <Input type="number" value={storageGb} onChange={(e) => setStorageGb(e.target.value)} placeholder="e.g. 5, 50, 100" />
             <p className="text-[11px] text-muted-foreground">Storage allotted for this billing cycle.</p>
           </div>
-        </div>
-        <DialogFooter>
+        </AppDialogBody>
+        <AppDialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button onClick={submit} disabled={saving || availableCycles.length === 0}>Add Pricing</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </AppDialogFooter>
+      </AppDialogContent>
+    </AppDialog>
   );
 }
