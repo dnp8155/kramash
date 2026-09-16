@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import Input from "@/components/common/Input";
 import Toggle from "@/components/common/Toggle";
 import Button from "@/components/common/Button";
-import { Loader2, Save, FileText, CreditCard, Image as ImageIcon, Building2, Share2, Instagram, Youtube, Globe, Link as LinkIcon } from "lucide-react";
+import { Loader2, Save, FileText, CreditCard, Image as ImageIcon, Building2 } from "lucide-react";
 import RichTextEditor from "@/components/common/RichTextEditor";
 
 export default function QuotationDefaultsSection() {
@@ -31,18 +31,12 @@ export default function QuotationDefaultsSection() {
         bank_account_number: parsed.bank_account_number || "",
         bank_ifsc: parsed.bank_ifsc || "",
         bank_upi_id: parsed.bank_upi_id || "",
-        // Social
-        social_instagram: parsed.social_instagram || "",
-        social_youtube: parsed.social_youtube || "",
-        social_website: parsed.social_website || "",
-        social_portfolio: parsed.social_portfolio || "",
       });
     } catch {
       setPrefs({
         defaultTerms: "", defaultPaymentMethod: "", defaultPaymentInstructions: "",
         defaultPaymentConditions: "", showLogoOnQuotation: true, showLogoWatermark: true,
         bank_account_name: "", bank_name: "", bank_account_number: "", bank_ifsc: "", bank_upi_id: "",
-        social_instagram: "", social_youtube: "", social_website: "", social_portfolio: "",
       });
     }
   }, [workspace]);
@@ -165,37 +159,9 @@ export default function QuotationDefaultsSection() {
         <CardSave save={save} saving={saving} />
       </div>
 
-      {/* Social Links */}
-      <div className="bg-card border border-border rounded-lg p-4">
-        <div className="flex items-center gap-2 mb-1">
-          <Share2 className="w-4 h-4 text-primary" />
-          <h3 className="text-sm font-semibold">Default Social Links</h3>
-        </div>
-        <p className="text-xs text-muted-foreground mb-3">Only non-empty links will be shown on the quotation. Icons auto-detect from the URL.</p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <SocialField label="Instagram" value={prefs.social_instagram} onChange={(v) => set("social_instagram", v)} placeholder="https://instagram.com/…" Icon={Instagram} />
-          <SocialField label="YouTube" value={prefs.social_youtube} onChange={(v) => set("social_youtube", v)} placeholder="https://youtube.com/…" Icon={Youtube} />
-          <SocialField label="Website" value={prefs.social_website} onChange={(v) => set("social_website", v)} placeholder="https://…" Icon={Globe} />
-          <SocialField label="Portfolio" value={prefs.social_portfolio} onChange={(v) => set("social_portfolio", v)} placeholder="https://…" Icon={LinkIcon} />
-        </div>
-        <CardSave save={save} saving={saving} />
-      </div>
-
       <Button onClick={save} disabled={saving}>
         {saving ? <><Loader2 className="w-4 h-4 animate-spin" />Saving…</> : <><Save className="w-4 h-4" />Save Defaults</>}
       </Button>
-    </div>
-  );
-}
-
-function SocialField({ label, value, onChange, placeholder, Icon }) {
-  return (
-    <div>
-      <label className="block text-xs font-medium text-muted-foreground mb-1">{label}</label>
-      <div className="relative">
-        <Icon className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-        <Input value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="pl-9" />
-      </div>
     </div>
   );
 }

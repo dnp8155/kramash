@@ -9,7 +9,7 @@ import Select from "@/components/common/Select";
 import Toggle from "@/components/common/Toggle";
 import ChangePasswordDialog from "@/components/settings/ChangePasswordDialog";
 import WordCounterTextarea from "@/components/common/WordCounterTextarea";
-import { Pencil, Check, Loader2, Upload, User, Building2, Lock, KeyRound, Globe, Copy, ExternalLink } from "lucide-react";
+import { Pencil, Check, Loader2, Upload, User, Building2, Lock, KeyRound, Globe, Copy, ExternalLink, Share2, Instagram, Youtube, Link as LinkIcon } from "lucide-react";
 import { isValidIndianPhone, isValidEmail } from "@/lib/validation";
 
 const currencies = [{ v: "INR", l: "INR (₹)" }, { v: "USD", l: "USD ($)" }, { v: "EUR", l: "EUR (€)" }, { v: "AED", l: "AED (د.إ)" }];
@@ -103,6 +103,11 @@ export default function ProfileWorkspaceSection() {
       public_show_address: dp.public_show_address !== false,
       public_show_website: dp.public_show_website !== false,
       public_show_social: dp.public_show_social !== false,
+      // Social links (used on quotations + public profile)
+      social_instagram: dp.social_instagram || "",
+      social_youtube: dp.social_youtube || "",
+      social_website: dp.social_website || "",
+      social_portfolio: dp.social_portfolio || "",
     });
   }
 
@@ -164,6 +169,10 @@ export default function ProfileWorkspaceSection() {
         public_show_address: form.public_show_address,
         public_show_website: form.public_show_website,
         public_show_social: form.public_show_social,
+        social_instagram: form.social_instagram,
+        social_youtube: form.social_youtube,
+        social_website: form.social_website,
+        social_portfolio: form.social_portfolio,
       };
       const updated = await base44.entities.Workspace.update(workspace.id, {
         name: form.name,
@@ -518,6 +527,21 @@ export default function ProfileWorkspaceSection() {
             </div>
           </div>
 
+          {/* Social Links — used on quotations and public profile */}
+          <div className="pt-3 mt-3 border-t border-border">
+            <div className="flex items-center gap-2 mb-1">
+              <Share2 className="w-4 h-4 text-primary" />
+              <h4 className="text-sm font-semibold text-foreground">Social Links</h4>
+            </div>
+            <p className="text-xs text-muted-foreground mb-3">Shown on quotations and your public profile page. Icons auto-detect from the URL.</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <SocialField label="Instagram" value={form.social_instagram} onChange={(v) => set("social_instagram", v)} placeholder="https://instagram.com/…" Icon={Instagram} />
+              <SocialField label="YouTube" value={form.social_youtube} onChange={(v) => set("social_youtube", v)} placeholder="https://youtube.com/…" Icon={Youtube} />
+              <SocialField label="Website" value={form.social_website} onChange={(v) => set("social_website", v)} placeholder="https://…" Icon={Globe} />
+              <SocialField label="Portfolio" value={form.social_portfolio} onChange={(v) => set("social_portfolio", v)} placeholder="https://…" Icon={LinkIcon} />
+            </div>
+          </div>
+
           <Button onClick={saveWorkspace} disabled={saving}>
             {saving ? <><Loader2 className="w-4 h-4 animate-spin" />Saving…</> : "Save Settings"}
           </Button>
@@ -552,6 +576,18 @@ function VisibilityToggle({ label, checked, onChange }) {
     <div className="flex items-center justify-between gap-3">
       <span className="text-sm text-foreground">{label}</span>
       <Toggle checked={checked} onChange={onChange} label={label} />
+    </div>
+  );
+}
+
+function SocialField({ label, value, onChange, placeholder, Icon }) {
+  return (
+    <div>
+      <label className="block text-xs font-medium text-muted-foreground mb-1">{label}</label>
+      <div className="relative">
+        <Icon className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+        <Input value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="pl-9" />
+      </div>
     </div>
   );
 }
