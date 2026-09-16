@@ -1,16 +1,16 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";
 import Button from "@/components/common/Button";
 import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
 import { Plus, Trash2, Pencil, Check, X } from "lucide-react";
-import { loadMilestones, deriveMilestoneStatus, MILESTONE_STATUS_META, milestoneTotals } from "@/lib/milestoneService";
+import { loadMilestones, deriveMilestoneStatus, MILESTONE_STATUS_META, milestoneTotals, recalculateMilestoneDueAmounts } from "@/lib/milestoneService";
 import { formatMoney } from "@/utils/format";
 import { cn } from "@/lib/utils";
 import { parseMiscExpenses, miscExpensesTotal } from "@/components/events/EventMiscExpenseEditor";
 
-export default function EventMilestonesTab({ event, workspaceId, currency, transactions, onRefresh }) {
+export default function EventMilestonesTab({ event, workspaceId, currency, transactions, serviceAssignments = [], onRefresh }) {
   const { toast } = useToast();
   const [milestones, setMilestones] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -19,13 +19,36 @@ export default function EventMilestonesTab({ event, workspaceId, currency, trans
   const [addForm, setAddForm] = useState({ name: "", type: "percent", value: 0, due_condition: "", due_date: "" });
   const [editForm, setEditForm] = useState(null);
 
-  const contractValue = Number(event?.contract_value) || 0;
+  // Full contract value = base + service add-ons + misc add-ons (same logic as eventFinancialSummary)
+  const fullContractValue = useMemo(() => {
+    const base = Number(event?.contract_value) || 0;
+    const addonTotal = (serviceAssignments || [])
+      .filter((a) => a.assignment_status !== "removed" && a.is_addon)
+      .reduce((s, a) => s + (Number(a.agreed_rate) || 0), 0);
+    const miscItems = parseMiscExpenses(event?.misc_expenses_json);
+    const miscTotal = miscExpensesTotal(miscItems);
+    return base + addonTotal + miscTotal;
+  }, [event?.contract_value, event?.misc_expenses_json, serviceAssignments]);
 
   const load = useCallback(async () => {
     if (!workspaceId || !event?.id) return;
     setLoading(true);
     try {
-      const list = await loadMilestones(workspaceId, { eventId: event.id });
+      let list = await loadMilestones(workspaceId, { eventId: event.id });
+
+      // Recalculate percent milestones' due_amount if the full contract value changed
+      // (e.g. service add-ons or custom add-ons were added/removed)
+      if (fullContractValue > 0) {
+        const needsRecalc = list.some((m) =>
+          m.milestone_type === "percent" &&
+          Math.round((fullContractValue * (Number(m.milestone_value) || 0)) / 100) !== (Number(m.due_amount) || 0)
+        );
+        if (needsRecalc) {
+          await recalculateMilestoneDueAmounts(workspaceId, event.id, fullContractValue);
+          list = await loadMilestones(workspaceId, { eventId: event.id });
+        }
+      }
+
       const enriched = list.map((m) => {
         const paid = (transactions || [])
           .filter((t) => t.milestone_id === m.id && t.status === "ACTIVE")
@@ -38,12 +61,12 @@ export default function EventMilestonesTab({ event, workspaceId, currency, trans
     } finally {
       setLoading(false);
     }
-  }, [workspaceId, event?.id, transactions]);
+  }, [workspaceId, event?.id, transactions, fullContractValue]);
 
   useEffect(() => { load(); }, [load]);
 
   const calcDueAmount = (type, value) => {
-    if (type === "percent") return Math.round((contractValue * value) / 100);
+    if (type === "percent") return Math.round((fullContractValue * value) / 100);
     return value;
   };
 
@@ -139,17 +162,20 @@ export default function EventMilestonesTab({ event, workspaceId, currency, trans
         </div>
       </div>
 
-      {/* Contract value breakdown — milestones use base only, add-ons excluded */}
+      {/* Contract value breakdown — milestones use full contract value (base + add-ons) */}
       {(() => {
+        const baseValue = Number(event?.contract_value) || 0;
+        const addonTotal = (serviceAssignments || [])
+          .filter((a) => a.assignment_status !== "removed" && a.is_addon)
+          .reduce((s, a) => s + (Number(a.agreed_rate) || 0), 0);
         const miscItems = parseMiscExpenses(event?.misc_expenses_json);
         const miscTotal = miscExpensesTotal(miscItems);
-        const baseValue = Number(event?.contract_value) || 0;
-        if (miscTotal <= 0) return null;
-        const totalValue = baseValue + miscTotal;
+        const addons = addonTotal + miscTotal;
+        if (addons <= 0) return null;
         return (
           <div className="text-[11px] text-muted-foreground bg-muted/30 border border-border rounded-lg px-3 py-2">
-            <span className="font-medium">Contract breakdown:</span> Base {formatMoney(baseValue, currency)} · Add-ons {formatMoney(miscTotal, currency)} · Total {formatMoney(totalValue, currency)}
-            <span className="block mt-0.5">Milestone due amounts are calculated from the base contract value only.</span>
+            <span className="font-medium">Contract breakdown:</span> Base {formatMoney(baseValue, currency)} · Add-ons {formatMoney(addons, currency)} · Total {formatMoney(fullContractValue, currency)}
+            <span className="block mt-0.5">Milestone due amounts are calculated from the full contract value (base + add-ons).</span>
           </div>
         );
       })()}
@@ -282,8 +308,8 @@ export default function EventMilestonesTab({ event, workspaceId, currency, trans
               </button>
             </div>
           </div>
-          {contractValue > 0 && addForm.type === "percent" && (
-            <p className="text-xs text-muted-foreground">Calculated: {formatMoney(calcDueAmount(addForm.type, addForm.value), currency)} (from contract value {formatMoney(contractValue, currency)})</p>
+          {fullContractValue > 0 && addForm.type === "percent" && (
+            <p className="text-xs text-muted-foreground">Calculated: {formatMoney(calcDueAmount(addForm.type, addForm.value), currency)} (from contract value {formatMoney(fullContractValue, currency)})</p>
           )}
         </div>
       )}

@@ -674,6 +674,7 @@ export default function EventDetails() {
           workspaceId={workspaceId}
           currency={currency}
           transactions={transactions}
+          serviceAssignments={serviceAssignments}
           onRefresh={load}
         />
       )}

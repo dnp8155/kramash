@@ -112,6 +112,30 @@ export async function reconcileEventMilestones(workspaceId, eventId, transaction
   return updates;
 }
 
+// Recalculate due_amount for percent milestones when the full contract
+// value (base + service add-ons + misc add-ons) changes. Fixed milestones
+// are unaffected. Updates the database only when the value actually changes.
+export async function recalculateMilestoneDueAmounts(workspaceId, eventId, fullContractValue) {
+  if (!workspaceId || !eventId) return [];
+  const milestones = await loadMilestones(workspaceId, { eventId });
+  if (milestones.length === 0) return [];
+
+  const updates = [];
+  for (const m of milestones) {
+    if (m.milestone_type !== "percent") continue;
+    const newDue = round2((fullContractValue * (Number(m.milestone_value) || 0)) / 100);
+    const oldDue = Number(m.due_amount) || 0;
+    if (newDue !== oldDue) {
+      const updated = await base44.entities.PaymentMilestone.update(m.id, {
+        due_amount: newDue,
+        status: deriveMilestoneStatus({ ...m, due_amount: newDue })
+      });
+      updates.push(updated);
+    }
+  }
+  return updates;
+}
+
 // ---- Sync trigger (frontend → backend function) ----
 
 export async function syncAcceptedQuotation(workspaceId, quotationId) {
