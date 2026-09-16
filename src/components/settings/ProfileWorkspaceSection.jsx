@@ -60,6 +60,8 @@ export default function ProfileWorkspaceSection() {
   const isBusinessTypeLocked = !!(workspace?.business_type);
   const isPhoneLocked = !!(workspace?.phone);
   const isEmailLocked = !!(workspace?.email);
+  // Public profile slug is locked once saved — cannot be changed after creation
+  const isSlugLocked = !!(workspace?.public_profile_slug?.trim());
 
   // Parse display_preferences for public profile visibility flags
   const dp = (() => {
@@ -447,13 +449,25 @@ export default function ProfileWorkspaceSection() {
               <Field label="Profile URL Slug">
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-muted-foreground whitespace-nowrap hidden sm:inline">{window.location.origin}/p/</span>
-                  <Input
-                    value={form.public_profile_slug}
-                    onChange={(e) => set("public_profile_slug", slugify(e.target.value))}
-                    placeholder="your-business"
-                    className="flex-1"
-                  />
+                  <div className="relative flex-1">
+                    <Input
+                      value={form.public_profile_slug}
+                      onChange={(e) => set("public_profile_slug", slugify(e.target.value))}
+                      placeholder="your-business"
+                      readOnly={isSlugLocked}
+                      className={isSlugLocked ? "w-full bg-muted/50 cursor-not-allowed text-muted-foreground pr-8" : "w-full pr-8"}
+                    />
+                    {isSlugLocked && <Lock className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />}
+                  </div>
                 </div>
+                {isSlugLocked ? (
+                  <div className="flex items-center gap-1.5 mt-2 text-xs text-muted-foreground">
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-success" />
+                    URL is already configured and cannot be changed.
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground mt-1.5">Choose carefully — this URL cannot be changed once saved.</p>
+                )}
                 {form.public_profile_slug && (
                   <div className="flex items-center gap-2 mt-2">
                     <div className="flex-1 min-w-0 px-3 py-1.5 rounded-md bg-muted text-xs text-muted-foreground truncate">
