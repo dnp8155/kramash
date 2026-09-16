@@ -3,7 +3,7 @@ import EmptyState from "@/components/common/EmptyState";
 import { AlertCircle, ArrowRight, CheckCircle2 } from "lucide-react";
 import { useT } from "@/hooks/useT";
 
-export default function OutstandingDuesWidget({ dues = [], currency = "INR", onClientClick, onSeeAll }) {
+export default function OutstandingDuesWidget({ dues = [], currency = "INR", isLoading, onClientClick, onSeeAll }) {
   const t = useT();
   return (
     <div className="bg-card border border-border rounded-xl shadow-card">
@@ -18,7 +18,13 @@ export default function OutstandingDuesWidget({ dues = [], currency = "INR", onC
       </div>
 
       <div className="p-2">
-        {dues.length === 0 ? (
+        {isLoading ? (
+          <div className="space-y-2 p-2">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="h-12 rounded-md bg-muted/50 animate-pulse" />
+            ))}
+          </div>
+        ) : dues.length === 0 ? (
           <div className="py-6">
             <EmptyState
               title="All dues settled"

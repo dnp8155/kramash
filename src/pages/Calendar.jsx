@@ -8,6 +8,7 @@ import CalendarWeekView from "@/components/calendar/CalendarWeekView";
 import CalendarDayView from "@/components/calendar/CalendarDayView";
 import CalendarYearView from "@/components/calendar/CalendarYearView";
 import CalendarSidePanel from "@/components/calendar/CalendarSidePanel";
+import CalendarPageSkeleton from "@/components/calendar/CalendarPageSkeleton";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
 import { ChevronLeft, ChevronRight, CalendarRange, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -23,7 +24,7 @@ export default function Calendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [search, setSearch] = useState("");
 
-  const { data: events = [] } = useQuery({
+  const { data: events = [], isLoading } = useQuery({
     queryKey: ["calendar-events", workspaceId],
     queryFn: async () => base44.entities.Event.filter({ workspace_id: workspaceId }, "-start_date", 500),
     enabled: !!workspaceId,
@@ -77,6 +78,8 @@ export default function Calendar() {
   }, [currentDate, view]);
 
   const onEventClick = (ev) => navigate(`/events/${ev.id}`);
+
+  if (isLoading) return <CalendarPageSkeleton />;
 
   return (
     <div className="p-4 sm:p-6 space-y-4">

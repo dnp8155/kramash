@@ -9,6 +9,7 @@ import UpgradeBanner from "@/components/events/UpgradeBanner";
 import EventsTable from "@/components/events/EventsTable";
 import EventsRightPanel from "@/components/events/EventsRightPanel";
 import EventForm from "@/components/events/EventForm";
+import EventsPageSkeleton from "@/components/events/EventsPageSkeleton";
 import SearchInput from "@/components/common/SearchInput";
 import Select from "@/components/common/Select";
 import Button from "@/components/common/Button";
@@ -184,6 +185,8 @@ export default function Events() {
   const upcomingCount = events.filter((e) => isUpcomingDate(e.start_date) && e.status !== "completed" && e.status !== "cancelled").length;
   const completedCount = events.filter((e) => e.status === "completed").length;
   const inProgressCount = events.filter((e) => e.status === "in-progress").length;
+
+  if (isLoading) return <EventsPageSkeleton />;
 
   return (
     <div className="p-4 sm:p-6 space-y-4">

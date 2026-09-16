@@ -295,6 +295,7 @@ export default function Dashboard() {
       <OutstandingDuesWidget
         dues={stats.topDues}
         currency={currency}
+        isLoading={isLoading}
         onClientClick={(c) => navigate(`/clients/${c.id}`)}
         onSeeAll={() => navigate("/financial")}
       />
