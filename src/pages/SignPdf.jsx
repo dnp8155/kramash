@@ -1,23 +1,44 @@
-import { useState, useRef } from "react";
-import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
-import { UploadCloud, Download, FileText, Trash2, Loader2, PenLine } from "lucide-react";
+import { useState, useRef, useCallback } from "react";
+import { PDFDocument } from "pdf-lib";
+import {
+  UploadCloud, FileText, Loader2, PenLine, PencilLine, Type,
+  Plus, Eye, RotateCcw, Trash2,
+} from "lucide-react";
 import Button from "@/components/common/Button";
 import Select from "@/components/common/Select";
 import SignaturePad from "@/components/common/SignaturePad";
+import TextSignatureInput from "@/components/esign/TextSignatureInput";
+import PdfPreview from "@/components/esign/PdfPreview";
+import PendingQueue from "@/components/esign/PendingQueue";
+import ExportPreviewModal from "@/components/esign/ExportPreviewModal";
+import {
+  AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogFooter,
+  AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/components/ui/use-toast";
+import { processSignatureDataUrl, overlayToPdfRect, presetToPdfRect } from "@/lib/esignUtils";
 
 export default function SignPdf() {
   const { toast } = useToast();
   const [file, setFile] = useState(null);
-  const [fileUrl, setFileUrl] = useState("");
   const [pageCount, setPageCount] = useState(0);
-  const [signature, setSignature] = useState("");
-  const [signPage, setSignPage] = useState(1);
-  const [position, setPosition] = useState("bottom-right");
-  const [signerName, setSignerName] = useState("");
-  const [processing, setProcessing] = useState(false);
+  const [signingMethod, setSigningMethod] = useState("draw");
+  const [currentSignature, setCurrentSignature] = useState("");
+  const [pendingQueue, setPendingQueue] = useState([]);
+  const [previewPage, setPreviewPage] = useState(1);
+  const [overlay, setOverlay] = useState({ x: 50, y: 50, width: 180, height: 80 });
+  const [renderedSize, setRenderedSize] = useState(null);
+  const [pdfPageSizes, setPdfPageSizes] = useState({});
+  const [fallbackMode, setFallbackMode] = useState(false);
+  const [fallbackPage, setFallbackPage] = useState(1);
+  const [fallbackCorner, setFallbackCorner] = useState("bottom-right");
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [signedBlobUrl, setSignedBlobUrl] = useState("");
+  const [showResetDialog, setShowResetDialog] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const fileRef = useRef(null);
 
+  // ── File upload ──
   const onFileChange = async (f) => {
     if (!f) return;
     if (f.type !== "application/pdf") {
@@ -29,105 +50,184 @@ export default function SignPdf() {
       return;
     }
     setFile(f);
-    setSignature("");
-    if (fileUrl) URL.revokeObjectURL(fileUrl);
-    setFileUrl(URL.createObjectURL(f));
+    setPendingQueue([]);
+    setCurrentSignature("");
+    setFallbackMode(false);
     try {
       const bytes = await f.arrayBuffer();
       const pdfDoc = await PDFDocument.load(bytes);
       setPageCount(pdfDoc.getPageCount());
-      setSignPage(1);
+      setPreviewPage(1);
+      setFallbackPage(1);
     } catch (e) {
       toast({ title: "Failed to read PDF", description: e?.message, variant: "destructive" });
       setPageCount(0);
     }
   };
 
-  const downloadSigned = async () => {
-    if (!file || !signature) return;
-    setProcessing(true);
+  // ── Signature handlers ──
+  const onSignatureChange = useCallback(async (rawDataUrl) => {
+    if (!rawDataUrl) {
+      setCurrentSignature("");
+      return;
+    }
     try {
-      const bytes = await file.arrayBuffer();
-      const pdfDoc = await PDFDocument.load(bytes);
-
-      const base64 = signature.split(",")[1];
-      const sigBytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
-      const pngImage = await pdfDoc.embedPng(sigBytes);
-
-      const pageIdx = Math.min(Math.max(1, signPage), pageCount) - 1;
-      const page = pdfDoc.getPage(pageIdx);
-      const { width: pw } = page.getSize();
-
-      const sigWidth = 180;
-      const sigHeight = sigWidth * (pngImage.height / pngImage.width);
-      const margin = 40;
-
-      let x;
-      switch (position) {
-        case "bottom-left": x = margin; break;
-        case "bottom-center": x = (pw - sigWidth) / 2; break;
-        case "bottom-right": x = pw - sigWidth - margin; break;
-        default: x = pw - sigWidth - margin;
+      const processed = await processSignatureDataUrl(rawDataUrl);
+      setCurrentSignature(processed.dataUrl);
+      // Adjust overlay to maintain signature aspect ratio
+      if (processed.width && processed.height) {
+        const targetW = 180;
+        const targetH = Math.round(targetW * (processed.height / processed.width));
+        setOverlay((prev) => ({ ...prev, width: targetW, height: Math.max(40, targetH) }));
       }
-      const y = margin;
+    } catch {
+      setCurrentSignature(rawDataUrl);
+    }
+  }, []);
 
-      page.drawImage(pngImage, { x, y, width: sigWidth, height: sigHeight });
+  const onPdfRendered = useCallback((rSize, pdfSize) => {
+    setRenderedSize(rSize);
+    setPdfPageSizes((prev) => ({ ...prev, [previewPage]: pdfSize }));
+    // Center overlay if it's at default position
+    setOverlay((prev) => ({
+      ...prev,
+      x: Math.max(10, rSize.width - prev.width - 40),
+      y: Math.max(10, rSize.height - prev.height - 40),
+    }));
+  }, [previewPage]);
 
-      if (signerName.trim()) {
-        const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-        const text = `Signed by ${signerName} on ${new Date().toLocaleDateString()}`;
-        const fontSize = 9;
-        const textWidth = font.widthOfTextAtSize(text, fontSize);
-        page.drawText(text, {
-          x: x + (sigWidth - textWidth) / 2,
-          y: y - 12,
-          size: fontSize,
-          font,
-          color: rgb(0.2, 0.2, 0.2),
-        });
+  // ── Add to pending queue ──
+  const addToPdf = () => {
+    if (!currentSignature) {
+      toast({ title: "Create a signature or text first", variant: "destructive" });
+      return;
+    }
+    const entry = {
+      id: `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      type: signingMethod,
+      pngDataUrl: currentSignature,
+    };
+    if (fallbackMode) {
+      entry.page = fallbackPage;
+      entry.preset = fallbackCorner;
+    } else {
+      entry.page = previewPage;
+      entry.overlay = { ...overlay };
+      entry.renderedSize = { ...renderedSize };
+    }
+    setPendingQueue((prev) => [...prev, entry]);
+    setCurrentSignature("");
+    toast({ title: "Added to PDF", description: `${pendingQueue.length + 1} stamp(s) pending` });
+  };
+
+  // ── Queue management ──
+  const onQueueEdit = (entry) => {
+    setPendingQueue((prev) => prev.filter((e) => e.id !== entry.id));
+    setCurrentSignature(entry.pngDataUrl);
+    setSigningMethod(entry.type);
+    if (entry.preset) {
+      setFallbackMode(true);
+      setFallbackPage(entry.page);
+      setFallbackCorner(entry.preset);
+    } else {
+      setFallbackMode(false);
+      setPreviewPage(entry.page);
+      if (entry.overlay) setOverlay(entry.overlay);
+    }
+    toast({ title: "Loaded for editing — adjust and re-add" });
+  };
+
+  const onQueueRemove = (id) => {
+    setPendingQueue((prev) => prev.filter((e) => e.id !== id));
+  };
+
+  // ── Export: stamp all entries onto clean copy ──
+  const previewAndShare = async () => {
+    if (!pendingQueue.length) {
+      toast({ title: "Add at least one signature first", variant: "destructive" });
+      return;
+    }
+    setExporting(true);
+    try {
+      const originalBytes = await file.arrayBuffer();
+      const pdfDoc = await PDFDocument.load(originalBytes);
+      const pages = pdfDoc.getPages();
+
+      // Cache embedded PNGs by dataURL
+      const pngCache = {};
+      for (const entry of pendingQueue) {
+        if (pngCache[entry.pngDataUrl]) continue;
+        const base64 = entry.pngDataUrl.split(",")[1];
+        const sigBytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+        pngCache[entry.pngDataUrl] = await pdfDoc.embedPng(sigBytes);
+      }
+
+      for (const entry of pendingQueue) {
+        const page = pages[entry.page - 1];
+        if (!page) continue;
+        const pdfSize = page.getSize();
+        const png = pngCache[entry.pngDataUrl];
+
+        let rect;
+        if (entry.preset) {
+          rect = presetToPdfRect(entry.preset, pdfSize);
+        } else {
+          rect = overlayToPdfRect(entry.overlay, entry.renderedSize, pdfSize);
+        }
+        page.drawImage(png, { x: rect.x, y: rect.y, width: rect.width, height: rect.height });
       }
 
       const signedBytes = await pdfDoc.save();
       const blob = new Blob([signedBytes], { type: "application/pdf" });
+      if (signedBlobUrl) URL.revokeObjectURL(signedBlobUrl);
       const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `signed_${file.name}`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
-      toast({ title: "Signed PDF downloaded", description: `${file.name} has been signed and downloaded.` });
-    } catch (e) {
-      toast({ title: "Failed to sign PDF", description: e?.message, variant: "destructive" });
+      setSignedBlobUrl(url);
+      setShowExportModal(true);
+    } catch (err) {
+      toast({ title: "Failed to generate signed PDF", description: err?.message, variant: "destructive" });
     } finally {
-      setProcessing(false);
+      setExporting(false);
     }
   };
 
-  const reset = () => {
-    if (fileUrl) URL.revokeObjectURL(fileUrl);
+  // ── Reset ──
+  const doReset = () => {
+    if (signedBlobUrl) URL.revokeObjectURL(signedBlobUrl);
     setFile(null);
-    setFileUrl("");
-    setSignature("");
     setPageCount(0);
-    setSignPage(1);
-    setSignerName("");
+    setCurrentSignature("");
+    setPendingQueue([]);
+    setPreviewPage(1);
+    setFallbackPage(1);
+    setOverlay({ x: 50, y: 50, width: 180, height: 80 });
+    setRenderedSize(null);
+    setPdfPageSizes({});
+    setFallbackMode(false);
+    setFallbackCorner("bottom-right");
+    setShowExportModal(false);
+    setSignedBlobUrl("");
     if (fileRef.current) fileRef.current.value = "";
   };
 
+  const closeExportModal = () => {
+    setShowExportModal(false);
+    if (signedBlobUrl) URL.revokeObjectURL(signedBlobUrl);
+    setSignedBlobUrl("");
+  };
+
   return (
-    <div className="p-4 sm:p-6 max-w-[800px] mx-auto space-y-5">
+    <div className="p-4 sm:p-6 max-w-[900px] mx-auto space-y-5">
+      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-foreground">Sign a PDF</h1>
         <p className="text-sm text-muted-foreground mt-0.5">
-          Upload an agreement or contract, draw your signature, and download the signed copy.
+          Draw or type your signature, place it on any page, and export a flattened signed PDF — all in your browser.
         </p>
       </div>
 
+      {/* Upload */}
       <div className="bg-card border border-border rounded-xl p-6">
-        <label className="flex flex-col items-center justify-center border-2 border-dashed border-border rounded-lg py-12 cursor-pointer hover:bg-muted/40 hover:border-primary/40 transition-colors">
+        <label className="flex flex-col items-center justify-center border-2 border-dashed border-border rounded-lg py-10 cursor-pointer hover:bg-muted/40 hover:border-primary/40 transition-colors">
           <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-3">
             <UploadCloud className="w-7 h-7 text-primary" />
           </div>
@@ -144,7 +244,7 @@ export default function SignPdf() {
           ) : (
             <>
               <span className="text-sm text-foreground font-medium">Click to upload a PDF</span>
-              <span className="text-xs text-muted-foreground mt-1">PDF up to 10MB</span>
+              <span className="text-xs text-muted-foreground mt-1">PDF up to 10MB · stays on your device</span>
             </>
           )}
           <input
@@ -155,66 +255,155 @@ export default function SignPdf() {
             onChange={(e) => onFileChange(e.target.files?.[0] || null)}
           />
         </label>
-
-        {file && (
-          <>
-            <div className="mt-5 border border-border rounded-lg overflow-hidden bg-muted/20">
-              <iframe src={fileUrl} title="PDF Preview" className="w-full h-[400px]" />
-            </div>
-
-            <div className="mt-5">
-              <label className="block text-sm font-medium text-foreground mb-2">Draw your signature</label>
-              <SignaturePad onChange={setSignature} />
-            </div>
-
-            <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-muted-foreground mb-1">Sign on page</label>
-                <Select value={signPage} onChange={(e) => setSignPage(Number(e.target.value))} className="w-full">
-                  {Array.from({ length: pageCount }, (_, i) => i + 1).map((p) => (
-                    <option key={p} value={p}>Page {p}</option>
-                  ))}
-                </Select>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-muted-foreground mb-1">Position</label>
-                <Select value={position} onChange={(e) => setPosition(e.target.value)} className="w-full">
-                  <option value="bottom-left">Bottom Left</option>
-                  <option value="bottom-center">Bottom Center</option>
-                  <option value="bottom-right">Bottom Right</option>
-                </Select>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-muted-foreground mb-1">Signed by (optional)</label>
-                <input
-                  type="text"
-                  value={signerName}
-                  onChange={(e) => setSignerName(e.target.value)}
-                  placeholder="Your name"
-                  className="w-full h-9 px-3 text-sm bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring/40 focus:border-primary/40"
-                />
-              </div>
-            </div>
-
-            <div className="mt-5 flex flex-col sm:flex-row gap-2">
-              <Button onClick={downloadSigned} disabled={!signature || processing}>
-                {processing ? (
-                  <><Loader2 className="w-4 h-4 animate-spin" /> Signing…</>
-                ) : (
-                  <><Download className="w-4 h-4" /> Download Signed PDF</>
-                )}
-              </Button>
-              <Button variant="outline" onClick={reset}>
-                <Trash2 className="w-4 h-4" /> Remove File
-              </Button>
-            </div>
-            {!signature && (
-              <p className="text-xs text-muted-foreground mt-2">Draw your signature above to enable download.</p>
-            )}
-          </>
-        )}
       </div>
 
+      {file && (
+        <div className="bg-card border border-border rounded-xl p-6 space-y-5">
+          {/* Signing method tabs */}
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">Add your signature</label>
+            <div className="flex gap-2 mb-3">
+              <button
+                onClick={() => { setSigningMethod("draw"); setCurrentSignature(""); }}
+                className={`flex-1 flex items-center justify-center gap-2 h-10 rounded-lg border text-sm font-medium transition-colors ${
+                  signingMethod === "draw"
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border bg-card text-muted-foreground hover:bg-muted/40"
+                }`}
+              >
+                <PencilLine className="w-4 h-4" /> Draw
+              </button>
+              <button
+                onClick={() => { setSigningMethod("type"); setCurrentSignature(""); }}
+                className={`flex-1 flex items-center justify-center gap-2 h-10 rounded-lg border text-sm font-medium transition-colors ${
+                  signingMethod === "type"
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border bg-card text-muted-foreground hover:bg-muted/40"
+                }`}
+              >
+                <Type className="w-4 h-4" /> Type
+              </button>
+            </div>
+            {signingMethod === "draw" ? (
+              <SignaturePad onChange={onSignatureChange} />
+            ) : (
+              <TextSignatureInput onChange={onSignatureChange} />
+            )}
+          </div>
+
+          {/* Preview + placement */}
+          {currentSignature ? (
+            <>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="w-8 h-8 rounded border border-border bg-white flex items-center justify-center overflow-hidden">
+                  <img src={currentSignature} alt="current" className="max-w-full max-h-full object-contain" />
+                </div>
+                Signature ready — position it on the page below, then click "Add to PDF".
+              </div>
+
+              {fallbackMode ? (
+                /* Fallback: simple page + corner picker */
+                <div className="space-y-3">
+                  <div className="bg-warning/10 border border-warning/30 rounded-lg p-3 text-xs text-warning-foreground">
+                    Live preview unavailable — using simple placement mode.
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-muted-foreground mb-1">Page</label>
+                      <Select value={fallbackPage} onChange={(e) => setFallbackPage(Number(e.target.value))} className="w-full">
+                        {Array.from({ length: pageCount }, (_, i) => i + 1).map((p) => (
+                          <option key={p} value={p}>Page {p}</option>
+                        ))}
+                      </Select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-muted-foreground mb-1">Position</label>
+                      <Select value={fallbackCorner} onChange={(e) => setFallbackCorner(e.target.value)} className="w-full">
+                        <option value="bottom-right">Bottom Right</option>
+                        <option value="bottom-center">Bottom Center</option>
+                        <option value="bottom-left">Bottom Left</option>
+                        <option value="top-right">Top Right</option>
+                        <option value="top-left">Top Left</option>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                /* Live pdf.js preview with draggable overlay */
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <label className="text-xs font-medium text-muted-foreground">Page</label>
+                    <Select
+                      size="sm"
+                      value={previewPage}
+                      onChange={(e) => setPreviewPage(Number(e.target.value))}
+                    >
+                      {Array.from({ length: pageCount }, (_, i) => i + 1).map((p) => (
+                        <option key={p} value={p}>Page {p}</option>
+                      ))}
+                    </Select>
+                  </div>
+                  <PdfPreview
+                    file={file}
+                    pageNumber={previewPage}
+                    overlay={overlay}
+                    onOverlayChange={setOverlay}
+                    onRendered={onPdfRendered}
+                    onFallback={() => setFallbackMode(true)}
+                  />
+                </div>
+              )}
+
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button onClick={addToPdf} className="flex-1">
+                  <Plus className="w-4 h-4" /> Add to PDF
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={previewAndShare}
+                  disabled={!pendingQueue.length || exporting}
+                  className="flex-1"
+                >
+                  {exporting ? (
+                    <><Loader2 className="w-4 h-4 animate-spin" /> Generating…</>
+                  ) : (
+                    <><Eye className="w-4 h-4" /> Preview & Share PDF</>
+                  )}
+                </Button>
+              </div>
+            </>
+          ) : (
+            pendingQueue.length > 0 && (
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button
+                  variant="primary"
+                  onClick={previewAndShare}
+                  disabled={exporting}
+                  className="flex-1"
+                >
+                  {exporting ? (
+                    <><Loader2 className="w-4 h-4 animate-spin" /> Generating…</>
+                  ) : (
+                    <><Eye className="w-4 h-4" /> Preview & Share PDF ({pendingQueue.length})</>
+                  )}
+                </Button>
+              </div>
+            )
+          )}
+
+          {/* Pending queue */}
+          <PendingQueue queue={pendingQueue} onEdit={onQueueEdit} onRemove={onQueueRemove} />
+
+          {/* Reset */}
+          <div className="pt-3 border-t border-border">
+            <Button variant="destructive" onClick={() => setShowResetDialog(true)} className="w-full sm:w-auto">
+              <RotateCcw className="w-4 h-4" /> Reset All
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* How it works */}
       <div className="bg-muted/40 border border-border rounded-lg p-4 flex items-start gap-3">
         <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
           <PenLine className="w-4 h-4 text-primary" />
@@ -222,11 +411,43 @@ export default function SignPdf() {
         <div>
           <div className="text-sm font-medium text-foreground">How it works</div>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Upload your PDF, draw your signature, choose the page and position, then download. The signature is
-            embedded directly into the PDF — everything happens in your browser, no upload to any server.
+            Draw or type your signature, drag it onto the page preview, and add as many stamps as you need.
+            Everything stays editable in the "Added so far" list until you click "Preview & Share PDF" —
+            then a flattened, signed copy is generated entirely in your browser. No file is uploaded anywhere.
           </p>
         </div>
       </div>
+
+      {/* Reset confirmation */}
+      <AlertDialog open={showResetDialog} onOpenChange={setShowResetDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reset everything?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will remove the uploaded file, all signatures, and the entire pending queue. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => { doReset(); setShowResetDialog(false); }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              <Trash2 className="w-4 h-4" /> Reset All
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Export modal */}
+      {showExportModal && (
+        <ExportPreviewModal
+          open={showExportModal}
+          onClose={closeExportModal}
+          blobUrl={signedBlobUrl}
+          fileName={`signed_${file?.name || "document.pdf"}`}
+        />
+      )}
     </div>
   );
 }
