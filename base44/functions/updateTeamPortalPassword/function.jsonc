@@ -1,0 +1,4 @@
+{
+  "name": "updateTeamPortalPassword",
+  "description": "Workspace admin changes a team member's portal password. Auto-generates a new random password if requested. Returns the plaintext password once."
+}

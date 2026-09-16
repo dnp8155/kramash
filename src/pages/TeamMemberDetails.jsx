@@ -22,6 +22,7 @@ import { invalidateEntities } from "@/lib/queryInvalidation";
 import { isSelfMember } from "@/lib/teamService";
 import { buildPersonStatements } from "@/lib/personStatementService";
 import PersonStatementCard from "@/components/team/PersonStatementCard";
+import TeamPortalAccessSection from "@/components/team/TeamPortalAccessSection";
 
 export default function TeamMemberDetails() {
   const { id } = useParams();
@@ -222,6 +223,11 @@ export default function TeamMemberDetails() {
       {/* Person Statement */}
       {personStatement && (
         <PersonStatementCard statement={personStatement} currency={currency} />
+      )}
+
+      {/* Team Member Portal Access (not shown for self/owner members) */}
+      {!selfMember && (
+        <TeamPortalAccessSection member={member} workspaceId={workspaceId} />
       )}
 
       {/* Upcoming assignments */}

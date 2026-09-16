@@ -1,0 +1,4 @@
+{
+  "name": "verifyTeamPortalAccess",
+  "description": "Public endpoint validating a team member's portal password against their access token. Returns a session token on success."
+}

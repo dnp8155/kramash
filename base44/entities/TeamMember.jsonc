@@ -68,6 +68,19 @@
         "active",
         "inactive"
       ]
+    },
+    "portal_access_token": {
+      "type": "string",
+      "title": "Portal Access Token (unique random token for password-only portal link)"
+    },
+    "portal_password_hash": {
+      "type": "string",
+      "title": "Portal Password Hash (salt:hash, never store plaintext)"
+    },
+    "portal_access_enabled": {
+      "type": "boolean",
+      "title": "Portal Access Enabled (admin master control for password-only portal)",
+      "default": false
     }
   },
   "required": [

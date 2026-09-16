@@ -6,7 +6,8 @@
       "enum": [
         "admin",
         "user",
-        "client"
+        "client",
+        "team_member"
       ]
     },
     "phone": {
@@ -30,10 +31,15 @@
       "title": "Linked Client ID",
       "description": "For client-role users: the Client record this user is linked to"
     },
+    "linked_team_member_id": {
+      "type": "string",
+      "title": "Linked Team Member ID",
+      "description": "For team_member-role users: the TeamMember record this user is linked to"
+    },
     "linked_workspace_id": {
       "type": "string",
       "title": "Linked Workspace ID",
-      "description": "For client-role users: the workspace this client belongs to"
+      "description": "For client/team_member-role users: the workspace this record belongs to"
     },
     "app_lock_enabled": {
       "type": "boolean",

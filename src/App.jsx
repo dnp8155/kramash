@@ -58,7 +58,10 @@ import PublicInvoice from '@/pages/PublicInvoice';
 import ClientPasswordLogin from '@/pages/ClientPasswordLogin';
 import ClientPortal from '@/pages/ClientPortal';
 import ClientRoute from '@/components/auth/ClientRoute';
+import TeamMemberRoute from '@/components/auth/TeamMemberRoute';
 import PublicProfile from '@/pages/PublicProfile';
+import TeamMemberPasswordLogin from '@/pages/TeamMemberPasswordLogin';
+import TeamMemberPortal from '@/pages/TeamMemberPortal';
 // Add page imports here
 
 const AuthenticatedApp = () => {
@@ -114,6 +117,12 @@ const AuthenticatedApp = () => {
       <Route path="/client-login/:token" element={<ClientPasswordLogin />} />
       <Route element={<ClientRoute />}>
         <Route path="/client-portal" element={<ClientPortal />} />
+      </Route>
+
+      {/* Team Member Portal — password-only login + authenticated dashboard for team_member-role users */}
+      <Route path="/team-login/:token" element={<TeamMemberPasswordLogin />} />
+      <Route element={<TeamMemberRoute />}>
+        <Route path="/team-portal" element={<TeamMemberPortal />} />
       </Route>
 
       {/* Public business profile page */}

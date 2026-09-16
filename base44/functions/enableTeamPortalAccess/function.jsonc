@@ -1,0 +1,4 @@
+{
+  "name": "enableTeamPortalAccess",
+  "description": "Workspace admin enables (or disables) password-only portal access for a team member. Self members are not allowed. On enable, auto-generates a random access token + password and returns the plaintext password once for the admin to share."
+}
