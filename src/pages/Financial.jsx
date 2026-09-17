@@ -84,10 +84,6 @@ export default function Financial() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["financial", workspaceId],
     queryFn: async () => {
-      // 400ms delay lets hook queries (plan, FY, notifications) fire first,
-      // so this query's 6 staggered calls don't compete with them and
-      // trigger 429 rate limits on fresh page loads.
-      await new Promise((r) => setTimeout(r, 400));
       const results = await staggeredAllSettled(
         [
           () => loadAllTransactions(workspaceId),

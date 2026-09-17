@@ -58,12 +58,7 @@ export default function Invoices() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["invoices", workspaceId],
     queryFn: async () => {
-      // 400ms delay lets hook queries (plan, FY, notifications) fire first,
-      // so this query's calls don't compete with them and trigger 429.
-      await new Promise((r) => setTimeout(r, 400));
-      // Sequential (waveSize=1) with 300ms delay — avoids concurrent call
-      // peaks that trigger 429 rate limits when hook queries (plan, FY,
-      // notifications) fire on the same mount.
+      // Staggered (waveSize=2, 300ms delay) — spaces out calls to avoid 429.
       const results = await staggeredAllSettled(
         [
           () => loadInvoices(workspaceId),
