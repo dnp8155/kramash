@@ -51,6 +51,9 @@ export default function Quotation() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["quotations", workspaceId],
     queryFn: async () => {
+      // 400ms delay lets hook queries (plan, FY, notifications) fire first,
+      // so this query's calls don't compete with them and trigger 429.
+      await new Promise((r) => setTimeout(r, 400));
       // Sequential (waveSize=1) with 300ms delay — avoids concurrent call
       // peaks that trigger 429 rate limits when hook queries fire on mount.
       const results = await staggeredAllSettled(

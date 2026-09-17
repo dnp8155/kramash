@@ -20,11 +20,16 @@ let planConfigCache = null;
 // Load the global plan/pricing/limit configuration (readable by all authenticated users).
 export async function loadPlanConfig(force = false) {
   if (planConfigCache && !force) return planConfigCache;
-  const [plans, pricings, allLimits] = await Promise.all([
-    base44.entities.Plan.list(),
-    base44.entities.PlanPricing.list(),
-    base44.entities.PlanLimit.list()
-  ]);
+  // Sequential (waveSize=1) — avoids 3-call concurrent burst that triggers
+  // 429 rate limits when this fires alongside page data queries on mount.
+  const [plansR, pricingsR, allLimitsR] = await staggeredAllSettled([
+    () => base44.entities.Plan.list(),
+    () => base44.entities.PlanPricing.list(),
+    () => base44.entities.PlanLimit.list()
+  ], { waveSize: 1, waveDelay: 150 });
+  const plans = plansR.status === "fulfilled" ? plansR.value : [];
+  const pricings = pricingsR.status === "fulfilled" ? pricingsR.value : [];
+  const allLimits = allLimitsR.status === "fulfilled" ? allLimitsR.value : [];
   const limitsByPlan = {};
   for (const pl of allLimits) {
     if (!pl.enabled) continue;
@@ -107,7 +112,7 @@ export async function getUsage(workspaceId) {
     () => base44.entities.TeamMember.filter({ workspace_id: workspaceId, status: "active" }),
     () => base44.entities.Service.filter({ workspace_id: workspaceId, status: "active" }),
     () => base44.entities.Lead.filter({ workspace_id: workspaceId })
-  ]);
+  ], { waveSize: 1, waveDelay: 200 });
   return {
     events: evR.status === "fulfilled" ? (evR.value || []).length : 0,
     team_members: mbR.status === "fulfilled" ? (mbR.value || []).length : 0,

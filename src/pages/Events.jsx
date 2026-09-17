@@ -75,6 +75,10 @@ export default function Events() {
   const { data, isLoading, error, isFetching } = useQuery({
     queryKey: ["events", workspaceId],
     queryFn: async () => {
+      // 400ms delay lets hook queries (plan, FY, notifications) fire first,
+      // so this query's 7 staggered calls don't compete with them and
+      // trigger 429 rate limits on fresh page loads.
+      await new Promise((r) => setTimeout(r, 400));
       const results = await staggeredAllSettled(
         [
           () => base44.entities.Event.filter({ workspace_id: workspaceId }, "-start_date", 500),

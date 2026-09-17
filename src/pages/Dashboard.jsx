@@ -41,14 +41,21 @@ export default function Dashboard() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["dashboard", workspaceId],
     queryFn: async () => {
-      const results = await staggeredAllSettled([
-        () => base44.entities.Event.filter({ workspace_id: workspaceId }, "start_date", 500),
-        () => loadTransactions(workspaceId),
-        () => loadTeamMembers(workspaceId),
-        () => loadAssignments(workspaceId),
-        () => base44.entities.Client.filter({ workspace_id: workspaceId }, "name", 500),
-        () => loadBlockDates(workspaceId)
-      ]);
+      // 400ms delay lets hook queries (plan, FY, notifications) fire first,
+      // so this query's 6 staggered calls don't compete with them and
+      // trigger 429 rate limits on fresh page loads.
+      await new Promise((r) => setTimeout(r, 400));
+      const results = await staggeredAllSettled(
+        [
+          () => base44.entities.Event.filter({ workspace_id: workspaceId }, "start_date", 500),
+          () => loadTransactions(workspaceId),
+          () => loadTeamMembers(workspaceId),
+          () => loadAssignments(workspaceId),
+          () => base44.entities.Client.filter({ workspace_id: workspaceId }, "name", 500),
+          () => loadBlockDates(workspaceId)
+        ],
+        { waveSize: 2, waveDelay: 300 }
+      );
       const [evR, txR, memR, asgR, clR, bdR] = results;
       return {
         events: evR.status === "fulfilled" ? evR.value : [],
@@ -61,7 +68,7 @@ export default function Dashboard() {
       };
     },
     enabled: !!workspaceId,
-    staleTime: 30 * 1000,
+    staleTime: 60 * 1000,
     placeholderData: (prev) => prev
   });
 

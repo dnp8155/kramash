@@ -84,14 +84,21 @@ export default function Financial() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["financial", workspaceId],
     queryFn: async () => {
-      const results = await staggeredAllSettled([
-        () => loadAllTransactions(workspaceId),
-        () => base44.entities.Event.filter({ workspace_id: workspaceId }, "-start_date", 500),
-        () => base44.entities.Client.filter({ workspace_id: workspaceId }, "name", 500),
-        () => base44.entities.TeamMember.filter({ workspace_id: workspaceId }, "name", 500),
-        () => base44.entities.EventTeamAssignment.filter({ workspace_id: workspaceId }, "-created_date", 1000),
-        () => loadExpenseCategories(workspaceId)
-      ]);
+      // 400ms delay lets hook queries (plan, FY, notifications) fire first,
+      // so this query's 6 staggered calls don't compete with them and
+      // trigger 429 rate limits on fresh page loads.
+      await new Promise((r) => setTimeout(r, 400));
+      const results = await staggeredAllSettled(
+        [
+          () => loadAllTransactions(workspaceId),
+          () => base44.entities.Event.filter({ workspace_id: workspaceId }, "-start_date", 500),
+          () => base44.entities.Client.filter({ workspace_id: workspaceId }, "name", 500),
+          () => base44.entities.TeamMember.filter({ workspace_id: workspaceId }, "name", 500),
+          () => base44.entities.EventTeamAssignment.filter({ workspace_id: workspaceId }, "-created_date", 1000),
+          () => loadExpenseCategories(workspaceId)
+        ],
+        { waveSize: 2, waveDelay: 300 }
+      );
       const [txR, evsR, clsR, membsR, asgnsR, catsR] = results;
       const partialError = results.some((r) => r.status === "rejected");
       return {
