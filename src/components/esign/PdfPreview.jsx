@@ -1,9 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import * as pdfjsLib from "pdfjs-dist";
-import workerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import { Loader2, Move, Maximize2 } from "lucide-react";
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
+// Vite-idiomatic worker URL — `new URL(..., import.meta.url)` is statically
+// analyzed by Vite and emitted as a bundled asset. The `?url` import breaks
+// on pdfjs-dist v4 .mjs workers ("does not provide an export named 'default'").
+pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+  "pdfjs-dist/build/pdf.worker.min.mjs",
+  import.meta.url
+).href;
 
 // Live PDF page preview using pdf.js with a draggable + resizable overlay
 // box. If pdf.js fails to initialize or render, calls onFallback so the
