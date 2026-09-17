@@ -13,12 +13,13 @@ export default function QuotationDefaultsSection() {
   const { workspace, setWorkspace } = useWorkspace();
   const { toast } = useToast();
   const [prefs, setPrefs] = useState({});
+  const [savedPrefs, setSavedPrefs] = useState({});
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     try {
       const parsed = workspace?.display_preferences ? JSON.parse(workspace.display_preferences) : {};
-      setPrefs({
+      const initial = {
         defaultTerms: parsed.defaultTerms || "",
         defaultPaymentMethod: parsed.defaultPaymentMethod || "",
         defaultPaymentInstructions: parsed.defaultPaymentInstructions || "",
@@ -31,17 +32,29 @@ export default function QuotationDefaultsSection() {
         bank_account_number: parsed.bank_account_number || "",
         bank_ifsc: parsed.bank_ifsc || "",
         bank_upi_id: parsed.bank_upi_id || "",
-      });
+      };
+      setPrefs(initial);
+      setSavedPrefs(initial);
     } catch {
-      setPrefs({
+      const fallback = {
         defaultTerms: "", defaultPaymentMethod: "", defaultPaymentInstructions: "",
         defaultPaymentConditions: "", showLogoOnQuotation: true, showLogoWatermark: true,
         bank_account_name: "", bank_name: "", bank_account_number: "", bank_ifsc: "", bank_upi_id: "",
-      });
+      };
+      setPrefs(fallback);
+      setSavedPrefs(fallback);
     }
   }, [workspace]);
 
   const set = (key, value) => setPrefs((p) => ({ ...p, [key]: value }));
+
+  // Compare current prefs vs saved prefs for a set of field keys → card dirty state
+  const isCardDirty = (fields) => fields.some((f) => (prefs[f] ?? "") !== (savedPrefs[f] ?? ""));
+  const isDirty = isCardDirty([
+    "defaultTerms", "defaultPaymentMethod", "defaultPaymentInstructions",
+    "defaultPaymentConditions", "showLogoOnQuotation", "showLogoWatermark",
+    "bank_account_name", "bank_name", "bank_account_number", "bank_ifsc", "bank_upi_id",
+  ]);
 
   const save = async () => {
     setSaving(true);
@@ -50,6 +63,7 @@ export default function QuotationDefaultsSection() {
       const updated = { ...existing, ...prefs };
       await base44.entities.Workspace.update(workspace.id, { display_preferences: JSON.stringify(updated) });
       setWorkspace((w) => ({ ...w, display_preferences: JSON.stringify(updated) }));
+      setSavedPrefs(prefs);
       toast({ title: "Quotation defaults saved" });
     } catch (e) {
       toast({ title: "Save failed", description: e?.message, variant: "destructive" });
@@ -85,7 +99,7 @@ export default function QuotationDefaultsSection() {
             onChange={(v) => set("showLogoWatermark", v)}
           />
         </div>
-        <CardSave save={save} saving={saving} />
+        <CardSave save={save} saving={saving} dirty={isCardDirty(["showLogoOnQuotation", "showLogoWatermark"])} />
       </div>
 
       {/* T&C */}
@@ -100,7 +114,7 @@ export default function QuotationDefaultsSection() {
           placeholder="Enter default terms & conditions for all quotations…"
         />
         <p className="text-xs text-muted-foreground mt-2">Used as the starting T&C for new quotations. Can be overridden per quotation.</p>
-        <CardSave save={save} saving={saving} />
+        <CardSave save={save} saving={saving} dirty={isCardDirty(["defaultTerms"])} />
       </div>
 
       {/* Payment */}
@@ -124,7 +138,7 @@ export default function QuotationDefaultsSection() {
             <p className="text-xs text-muted-foreground mt-1">Shown as a separate section on the quotation PDF.</p>
           </div>
         </div>
-        <CardSave save={save} saving={saving} />
+        <CardSave save={save} saving={saving} dirty={isCardDirty(["defaultPaymentMethod", "defaultPaymentInstructions", "defaultPaymentConditions"])} />
       </div>
 
       {/* Bank & UPI Details */}
@@ -156,10 +170,10 @@ export default function QuotationDefaultsSection() {
             <Input value={prefs.bank_upi_id} onChange={(e) => set("bank_upi_id", e.target.value)} placeholder="e.g. name@oksbi" />
           </div>
         </div>
-        <CardSave save={save} saving={saving} />
+        <CardSave save={save} saving={saving} dirty={isCardDirty(["bank_account_name", "bank_name", "bank_account_number", "bank_ifsc", "bank_upi_id"])} />
       </div>
 
-      <Button onClick={save} disabled={saving}>
+      <Button onClick={save} disabled={saving || !isDirty} variant={isDirty ? "primary" : "outline"}>
         {saving ? <><Loader2 className="w-4 h-4 animate-spin" />Saving…</> : <><Save className="w-4 h-4" />Save Defaults</>}
       </Button>
     </div>
@@ -178,10 +192,16 @@ function ToggleRow({ label, hint, checked, onChange }) {
   );
 }
 
-function CardSave({ save, saving }) {
+// Per-card Save button: disabled/white when no changes, active primary color when dirty
+function CardSave({ save, saving, dirty }) {
   return (
     <div className="pt-3 mt-3 border-t border-border flex justify-end">
-      <Button size="sm" variant="outline" onClick={save} disabled={saving}>
+      <Button
+        size="sm"
+        variant={dirty ? "primary" : "outline"}
+        onClick={save}
+        disabled={saving || !dirty}
+      >
         {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />} Save
       </Button>
     </div>
