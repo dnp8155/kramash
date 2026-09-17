@@ -56,6 +56,19 @@ export default async function(req) {
     try { bankDetails = inv.bank_details_snapshot ? JSON.parse(inv.bank_details_snapshot) : null; } catch (e) {}
     try { socialLinks = inv.social_links_snapshot ? JSON.parse(inv.social_links_snapshot) : null; } catch (e) {}
 
+    // Fetch live event type (so updated event type reflects on the public invoice link)
+    if (inv.event_id) {
+      try {
+        const liveEvent = await base44.asServiceRole.entities.Event.get(inv.event_id);
+        if (liveEvent) {
+          event = event || {};
+          event.event_type = liveEvent.event_type || event.event_type || "";
+          event.title = liveEvent.title || event.title || "";
+          event.venue = liveEvent.venue || event.venue || "";
+        }
+      } catch (e) { /* keep snapshot data */ }
+    }
+
     // Get invoice items
     const items = await base44.asServiceRole.entities.InvoiceItem.filter(
       { invoice_id: inv.id }, "sort_order", 500

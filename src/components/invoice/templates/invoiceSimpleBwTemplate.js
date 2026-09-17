@@ -105,6 +105,7 @@ export function renderInvoiceSimpleBw(data) {
     try { return JSON.parse(invoice.event_snapshot); } catch { return null; }
   })() || {};
   const eventTitle = ev.title || "";
+  const eventType = ev.event_type || "";
   const eventStart = ev.start_date ? fmtDateLong(ev.start_date) : "";
   const eventEnd = ev.end_date && ev.end_date !== ev.start_date ? fmtDateLong(ev.end_date) : "";
   const eventDateRange = eventStart ? (eventEnd ? `${eventStart} — ${eventEnd}` : eventStart) : "";
@@ -250,6 +251,7 @@ export function renderInvoiceSimpleBw(data) {
       ${clientPhone ? `<div class="detail-line"><span class="detail-label">Contact Number:</span> ${escapeHtml(clientPhone)}</div>` : ""}
       ${clientEmail ? `<div class="detail-line"><span class="detail-label">Email:</span> ${escapeHtml(clientEmail)}</div>` : ""}
       ${eventTitle ? `<div class="detail-line"><span class="detail-label">Project:</span> ${escapeHtml(eventTitle)}</div>` : ""}
+      ${eventType ? `<div class="detail-line"><span class="detail-label">Project Type:</span> ${escapeHtml(eventType)}</div>` : ""}
       ${eventDateRange ? `<div class="detail-line"><span class="detail-label">Project Date:</span> ${escapeHtml(eventDateRange)}</div>` : ""}
 
       <div class="section-title">ITEMS</div>

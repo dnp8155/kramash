@@ -210,6 +210,7 @@ export default function PublicInvoice() {
           <div className="bg-card border border-border rounded-xl p-5 shadow-card">
             <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Project / Event</div>
             <div className="font-semibold text-foreground">{event?.title || "—"}</div>
+            {event?.event_type && <div className="text-sm text-muted-foreground mt-1">{event.event_type}</div>}
             {event?.venue && <div className="text-sm text-muted-foreground mt-1">{event.venue}</div>}
             <div className="text-xs text-muted-foreground mt-1">
               {event?.start_date && fmtDate(event.start_date)}
