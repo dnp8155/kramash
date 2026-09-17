@@ -75,15 +75,18 @@ export default function Events() {
   const { data, isLoading, error, isFetching } = useQuery({
     queryKey: ["events", workspaceId],
     queryFn: async () => {
-      const results = await staggeredAllSettled([
-        () => base44.entities.Event.filter({ workspace_id: workspaceId }, "-start_date", 500),
-        () => base44.entities.Client.filter({ workspace_id: workspaceId }, "name", 500),
-        () => base44.entities.TeamMember.filter({ workspace_id: workspaceId }, "name", 500),
-        () => base44.entities.Service.filter({ workspace_id: workspaceId }, "name", 500),
-        () => base44.entities.EventTeamAssignment.filter({ workspace_id: workspaceId }, "-created_date", 1000),
-        () => base44.entities.EventServiceAssignment.filter({ workspace_id: workspaceId }, "-created_date", 1000),
-        () => base44.entities.FinancialTransaction.filter({ workspace_id: workspaceId, transaction_type: "CLIENT_RECEIPT", status: "ACTIVE" }, "-transaction_date", 2000)
-      ]);
+      const results = await staggeredAllSettled(
+        [
+          () => base44.entities.Event.filter({ workspace_id: workspaceId }, "-start_date", 500),
+          () => base44.entities.Client.filter({ workspace_id: workspaceId }, "name", 500),
+          () => base44.entities.TeamMember.filter({ workspace_id: workspaceId }, "name", 500),
+          () => base44.entities.Service.filter({ workspace_id: workspaceId }, "name", 500),
+          () => base44.entities.EventTeamAssignment.filter({ workspace_id: workspaceId }, "-created_date", 1000),
+          () => base44.entities.EventServiceAssignment.filter({ workspace_id: workspaceId }, "-created_date", 1000),
+          () => base44.entities.FinancialTransaction.filter({ workspace_id: workspaceId, transaction_type: "CLIENT_RECEIPT", status: "ACTIVE" }, "-transaction_date", 2000)
+        ],
+        { waveSize: 2, waveDelay: 400 }
+      );
       const [evR, clR, tmR, svR, asgR, svcAsgR, txR] = results;
       const evList = evR.status === "fulfilled" ? evR.value : [];
       const clList = clR.status === "fulfilled" ? clR.value : [];

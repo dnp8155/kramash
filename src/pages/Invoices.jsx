@@ -58,11 +58,17 @@ export default function Invoices() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["invoices", workspaceId],
     queryFn: async () => {
-      const results = await staggeredAllSettled([
-        () => loadInvoices(workspaceId),
-        () => base44.entities.Client.filter({ workspace_id: workspaceId }, "name", 500),
-        () => base44.entities.Event.filter({ workspace_id: workspaceId }, "-start_date", 500)
-      ]);
+      // Sequential (waveSize=1) with 300ms delay — avoids concurrent call
+      // peaks that trigger 429 rate limits when hook queries (plan, FY,
+      // notifications) fire on the same mount.
+      const results = await staggeredAllSettled(
+        [
+          () => loadInvoices(workspaceId),
+          () => base44.entities.Client.filter({ workspace_id: workspaceId }, "name", 500),
+          () => base44.entities.Event.filter({ workspace_id: workspaceId }, "-start_date", 500)
+        ],
+        { waveSize: 1, waveDelay: 300 }
+      );
       const [invsR, clR, evR] = results;
       const partialError = results.some((r) => r.status === "rejected");
       return {
@@ -73,7 +79,7 @@ export default function Invoices() {
       };
     },
     enabled: !!workspaceId,
-    staleTime: 30 * 1000,
+    staleTime: 60 * 1000,
     placeholderData: (prev) => prev
   });
 

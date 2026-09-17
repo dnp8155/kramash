@@ -30,7 +30,7 @@ export default function ProGate({
   children,
 }) {
   const { workspace } = useWorkspace();
-  const { plan, loading } = usePlan();
+  const { plan, loading } = usePlan({ loadUsage: false });
 
   // While plan is loading, render children to avoid flash of locked UI
   if (loading) return children;
@@ -100,7 +100,7 @@ export default function ProGate({
  */
 export function useProGate() {
   const { workspace } = useWorkspace();
-  const { plan, loading } = usePlan();
+  const { plan, loading } = usePlan({ loadUsage: false });
   const isPro = plan?.planCode === "PRO" || workspace?.plan_type === "pro";
   return { isPro, canAccess: isPro, loading };
 }
@@ -113,7 +113,9 @@ export function useProGate() {
  * Render {FeatureGateDialog} somewhere in your component JSX.
  */
 export function useFeatureGate() {
-  const { plan, loading } = usePlan();
+  // Feature gates only need the plan config, not usage counts — skip the
+  // 4-call usage query to reduce API load on feature-gated pages.
+  const { plan, loading } = usePlan({ loadUsage: false });
   const [gate, setGate] = useState(null);
   const isPro = plan?.planCode === "PRO";
 

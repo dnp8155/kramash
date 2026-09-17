@@ -19,7 +19,15 @@ const USAGE_KEY_MAP = {
   max_leads: "leads",
 };
 
-export function usePlan() {
+/**
+ * usePlan — loads workspace plan config and (optionally) usage counts.
+ *
+ * @param {Object} opts
+ * @param {boolean} opts.loadUsage — set false to skip the 4-call usage
+ *   count query (use by feature-gate-only consumers that never call
+ *   canCreate). Defaults to true.
+ */
+export function usePlan({ loadUsage = true } = {}) {
   const { workspaceId } = useWorkspace();
   const queryClient = useQueryClient();
 
@@ -34,16 +42,17 @@ export function usePlan() {
   });
 
   // Usage counts — cached for 60s (changes when user creates entities).
+  // Only fetched when loadUsage is true — feature-gate consumers skip it.
   const { data: usage, isLoading: usageLoading } = useQuery({
     queryKey: ["plan-usage", workspaceId],
     queryFn: () => getUsage(workspaceId),
-    enabled: !!workspaceId,
+    enabled: !!workspaceId && loadUsage,
     staleTime: 60 * 1000,
     gcTime: 5 * 60 * 1000,
     placeholderData: (prev) => prev,
   });
 
-  const loading = planLoading || usageLoading;
+  const loading = planLoading || (loadUsage && usageLoading);
 
   const canCreate = (key) => {
     if (!plan || !usage) return { allowed: true, limit: Infinity };
