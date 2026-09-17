@@ -81,7 +81,6 @@ export default function ChangePasswordDialog({ open, onClose }) {
                 type={showCurrent ? "text" : "password"}
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
-                autoFocus
                 className="pr-9"
               />
               <button

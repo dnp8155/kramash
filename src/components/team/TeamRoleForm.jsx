@@ -74,7 +74,7 @@ export default function TeamRoleForm({ open, onClose, onSaved, role = null, work
           <AppDialogBody className="space-y-3">
           <div className="space-y-1.5">
             <Label>Role Name <span className="text-destructive">*</span></Label>
-            <Input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="e.g. Drone Operator" autoFocus />
+            <Input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="e.g. Drone Operator" />
           </div>
 
           <div className="grid grid-cols-2 gap-3">

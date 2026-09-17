@@ -48,7 +48,7 @@ export default function QuickClientForm({ workspaceId, onSaved, onCancel }) {
 
   return (
     <div className="space-y-2">
-      <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Client name *" autoFocus disabled={saving} />
+      <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Client name *" disabled={saving} />
       <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="10-digit mobile" inputMode="tel" maxLength="13" disabled={saving} />
       <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" disabled={saving} />
       {error && <p className="text-xs text-destructive">{error}</p>}

@@ -176,7 +176,7 @@ export default function TeamMemberForm({ open, onClose, onSaved, member = null, 
           <AppDialogBody className="space-y-3">
           <div className="space-y-1.5">
             <Label>Name <span className="text-destructive">*</span></Label>
-            <Input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="Enter team member name" autoFocus />
+            <Input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="Enter team member name" />
           </div>
 
           <div className="space-y-1.5">

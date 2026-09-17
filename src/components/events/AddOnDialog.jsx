@@ -67,7 +67,7 @@ export default function AddOnDialog({ open, onClose, onSaved, event, currency = 
             <DialogContextCard event={event} />
             <div className="space-y-1.5">
               <Label className="text-xs">Name <span className="text-destructive">*</span></Label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Travel, Extra Album" autoFocus />
+              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Travel, Extra Album" />
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Amount <span className="text-destructive">*</span></Label>

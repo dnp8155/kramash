@@ -225,7 +225,7 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
                   <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">{t.workItemDetailsLabel || "Project Details"}</p>
                   <div className="space-y-1.5">
                     <Label className="text-xs">{t.workItemTitleLabel || "Event Title"} <span className="text-destructive">*</span></Label>
-                    <Input value={form.title} onChange={(e) => set("title", e.target.value)} placeholder={t.category === "ARCHITECTURE" || t.category === "OTHER" ? "e.g. Riverside Villa Project" : "e.g. Meera & Dev"} autoFocus />
+                    <Input value={form.title} onChange={(e) => set("title", e.target.value)} placeholder={t.category === "ARCHITECTURE" || t.category === "OTHER" ? "e.g. Riverside Villa Project" : "e.g. Meera & Dev"} />
                   </div>
 
                   <div className="space-y-1.5">

@@ -104,7 +104,7 @@ export default function ServiceForm({
         <form onSubmit={handleSubmit} className="space-y-3">
           <div className="space-y-1.5">
             <Label>Service Name <span className="text-destructive">*</span></Label>
-            <Input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="e.g. Wedding Photography" autoFocus />
+            <Input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="e.g. Wedding Photography" />
           </div>
 
           <div className="space-y-1.5">

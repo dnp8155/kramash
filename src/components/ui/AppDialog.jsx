@@ -16,6 +16,20 @@ const AppDialogContent = React.forwardRef(({ className, children, maxWidth = "ma
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center pointer-events-none sm:p-4">
       <DialogPrimitive.Content
         ref={ref}
+        onOpenAutoFocus={(e) => e.preventDefault()}
+        onFocusCapture={(e) => {
+          const target = e.target;
+          if (
+            target instanceof HTMLInputElement ||
+            target instanceof HTMLTextAreaElement ||
+            target instanceof HTMLSelectElement ||
+            target.isContentEditable
+          ) {
+            setTimeout(() => {
+              target.scrollIntoView({ block: "center", behavior: "smooth" });
+            }, 300);
+          }
+        }}
         className={cn(
           "pointer-events-auto relative flex flex-col bg-background border shadow-xl w-full overflow-hidden",
           // Mobile: bottom sheet

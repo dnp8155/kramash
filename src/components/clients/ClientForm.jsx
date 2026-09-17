@@ -112,7 +112,7 @@ export default function ClientForm({ open, onClose, onSaved, client = null, work
           <AppDialogBody className="space-y-3">
           <div className="space-y-1.5">
             <Label>Client Name <span className="text-destructive">*</span></Label>
-            <Input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="e.g. Rahul Shah" autoFocus />
+            <Input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="e.g. Rahul Shah" />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
