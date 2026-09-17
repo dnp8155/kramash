@@ -1,7 +1,17 @@
 import { base44 } from "@/api/base44Client";
 
 // Limit keys that are boolean feature flags vs numeric resource caps.
-const BOOLEAN_KEYS = new Set(["pdf_export_enabled", "reminders_enabled"]);
+const BOOLEAN_KEYS = new Set([
+  "pdf_export_enabled",
+  "reminders_enabled",
+  "notifications_enabled",
+  "link_sharing_enabled",
+  "client_portal_enabled",
+  "team_portal_enabled",
+  "excel_csv_export_enabled",
+  "event_display_customization_enabled",
+  "quotation_logo_enabled"
+]);
 const UNLIMITED = 999999;
 
 let planConfigCache = null;
@@ -90,15 +100,17 @@ export async function resolveWorkspacePlan(workspaceId) {
 
 // Count real usage from database records.
 export async function getUsage(workspaceId) {
-  const [events, members, services] = await Promise.all([
+  const [events, members, services, leads] = await Promise.all([
     base44.entities.Event.filter({ workspace_id: workspaceId }),
     base44.entities.TeamMember.filter({ workspace_id: workspaceId, status: "active" }),
-    base44.entities.Service.filter({ workspace_id: workspaceId, status: "active" })
+    base44.entities.Service.filter({ workspace_id: workspaceId, status: "active" }),
+    base44.entities.Lead.filter({ workspace_id: workspaceId })
   ]);
   return {
     events: events.length,
     team_members: members.length,
-    services: services.length
+    services: services.length,
+    leads: leads.length
   };
 }
 

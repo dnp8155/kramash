@@ -4,6 +4,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { invalidateEntities } from "@/lib/queryInvalidation";
 import Button from "@/components/common/Button";
+import { useFeatureGate } from "@/components/common/ProGate";
 import {
   KeyRound, Link2, Copy, CheckCircle2, RefreshCw, Loader2, Lock, Eye, EyeOff, Power
 } from "lucide-react";
@@ -22,6 +23,7 @@ const TeamPortalAccessSection = forwardRef(function TeamPortalAccessSection({ me
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [copiedField, setCopiedField] = useState("");
+  const { checkFeature, FeatureGateDialog } = useFeatureGate();
 
   const reload = () => {
     queryClient.invalidateQueries({ queryKey: ["team-member", member.id, workspaceId] });
@@ -29,6 +31,7 @@ const TeamPortalAccessSection = forwardRef(function TeamPortalAccessSection({ me
   };
 
   const handleEnable = async () => {
+    if (!checkFeature("team_portal_enabled", "Team Member Portal")) return;
     setBusy(true);
     try {
       const res = await base44.functions.invoke("enableTeamPortalAccess", {
@@ -118,6 +121,7 @@ const TeamPortalAccessSection = forwardRef(function TeamPortalAccessSection({ me
             </Button>
           </div>
         </div>
+        {FeatureGateDialog}
       </div>
     );
   }
@@ -186,6 +190,7 @@ const TeamPortalAccessSection = forwardRef(function TeamPortalAccessSection({ me
           Regenerate Password
         </Button>
       </div>
+      {FeatureGateDialog}
     </div>
   );
 });

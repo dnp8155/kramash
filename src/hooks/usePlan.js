@@ -16,6 +16,7 @@ const USAGE_KEY_MAP = {
   max_team_members: "team_members",
   max_events: "events",
   max_services: "services",
+  max_leads: "leads",
 };
 
 export function usePlan() {

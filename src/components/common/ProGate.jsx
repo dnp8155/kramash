@@ -1,8 +1,10 @@
 import { Crown, Lock } from "lucide-react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useWorkspace } from "@/lib/WorkspaceContext";
 import { usePlan } from "@/hooks/usePlan";
 import Button from "@/components/common/Button";
+import PlanLimitDialog from "@/components/common/PlanLimitDialog";
 import { cn } from "@/lib/utils";
 
 /**
@@ -101,4 +103,34 @@ export function useProGate() {
   const { plan, loading } = usePlan();
   const isPro = plan?.planCode === "PRO" || workspace?.plan_type === "pro";
   return { isPro, canAccess: isPro, loading };
+}
+
+/**
+ * useFeatureGate — hook for gating PRO-only boolean features.
+ * Returns { isPro, checkFeature, FeatureGateDialog, loading }.
+ * Call checkFeature("limit_key", "Feature Label") before performing the gated action.
+ * If the feature is not allowed, it opens an upgrade dialog and returns false.
+ * Render {FeatureGateDialog} somewhere in your component JSX.
+ */
+export function useFeatureGate() {
+  const { plan, loading } = usePlan();
+  const [gate, setGate] = useState(null);
+  const isPro = plan?.planCode === "PRO";
+
+  const checkFeature = (key, label) => {
+    if (loading) return false;
+    if (isPro || plan?.limits?.[key]) return true;
+    setGate({ featureLabel: label });
+    return false;
+  };
+
+  const FeatureGateDialog = (
+    <PlanLimitDialog
+      open={!!gate}
+      onClose={() => setGate(null)}
+      featureLabel={gate?.featureLabel}
+    />
+  );
+
+  return { isPro, checkFeature, FeatureGateDialog, loading };
 }

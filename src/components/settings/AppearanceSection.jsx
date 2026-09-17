@@ -7,12 +7,16 @@ import { useToast } from "@/components/ui/use-toast";
 import { useDisplayPreferences } from "@/hooks/useDisplayPreferences";
 import PastelPalettePicker from "@/components/settings/PastelPalettePicker";
 import { getDefaultPalette, hexToHsl } from "@/lib/pastelTheme";
+import { useFeatureGate } from "@/components/common/ProGate";
+import { Crown } from "lucide-react";
+import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 export default function AppearanceSection() {
   const { workspace, setWorkspace } = useWorkspace();
   const { toast } = useToast();
   const prefs = useDisplayPreferences();
+  const { isPro, FeatureGateDialog } = useFeatureGate();
 
   const [theme, setTheme] = useState(() => {
     if (typeof window === "undefined") return "Contact Sheet";
@@ -69,25 +73,48 @@ export default function AppearanceSection() {
     }
   };
 
+  const PRO_THEMES = ["Night", "Pastel"];
+  const handleTheme = (t) => {
+    if (PRO_THEMES.includes(t) && !isPro) return;
+    setTheme(t);
+  };
+
   return (
     <div className="bg-card border border-border rounded-lg p-5 max-w-lg space-y-5">
       <div>
         <h3 className="text-sm font-semibold mb-3">Theme</h3>
         <div className="grid grid-cols-3 gap-2">
-          {themes.map((t) => (
-            <button
-              key={t}
-              onClick={() => setTheme(t)}
-              className={cn(
-                "px-3 py-2 rounded-md text-sm border transition-colors",
-                theme === t ? "border-primary bg-primary/5 text-foreground" : "border-border text-muted-foreground hover:bg-muted/40"
-              )}
-            >
-              {t}
-            </button>
-          ))}
+          {themes.map((t) => {
+            const isProTheme = PRO_THEMES.includes(t);
+            const locked = isProTheme && !isPro;
+            return (
+              <button
+                key={t}
+                onClick={() => handleTheme(t)}
+                className={cn(
+                  "relative px-3 py-2 rounded-md text-sm border transition-colors",
+                  theme === t ? "border-primary bg-primary/5 text-foreground" : "border-border text-muted-foreground hover:bg-muted/40",
+                  locked && "opacity-60 cursor-not-allowed"
+                )}
+              >
+                {t}
+                {isProTheme && (
+                  <span className="absolute top-1 right-1 inline-flex items-center">
+                    <Crown className="w-3 h-3 text-warning" />
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
-        {theme === "Pastel" && <PastelPalettePicker />}
+        {!isPro && (
+          <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1.5">
+            <Crown className="w-3.5 h-3.5 text-warning" />
+            Night & Pastel themes are Pro features.{" "}
+            <Link to="/plan" className="font-semibold text-warning underline">Upgrade</Link>
+          </p>
+        )}
+        {theme === "Pastel" && isPro && <PastelPalettePicker />}
       </div>
       <div className="pt-4 border-t border-border">
         <h3 className="text-sm font-semibold mb-3">Display</h3>
@@ -99,6 +126,7 @@ export default function AppearanceSection() {
           <ToggleRow label="Show menubar labels" hint="Show text labels under icons in the mobile bottom navigation" checked={prefs.showMenubarLabels} onChange={setPref("showMenubarLabels")} />
         </div>
       </div>
+      {FeatureGateDialog}
     </div>
   );
 }

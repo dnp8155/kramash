@@ -4,6 +4,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { invalidateEntities } from "@/lib/queryInvalidation";
 import Button from "@/components/common/Button";
+import { useFeatureGate } from "@/components/common/ProGate";
 import {
   KeyRound, Link2, Copy, CheckCircle2, RefreshCw, Loader2, Lock, Eye, EyeOff, Power
 } from "lucide-react";
@@ -21,6 +22,7 @@ const PortalAccessSection = forwardRef(function PortalAccessSection({ client, wo
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [copiedField, setCopiedField] = useState("");
+  const { checkFeature, FeatureGateDialog } = useFeatureGate();
 
   const reload = () => {
     queryClient.invalidateQueries({ queryKey: ["client", client.id, workspaceId] });
@@ -28,6 +30,7 @@ const PortalAccessSection = forwardRef(function PortalAccessSection({ client, wo
   };
 
   const handleEnable = async () => {
+    if (!checkFeature("client_portal_enabled", "Client Portal")) return;
     setBusy(true);
     try {
       const res = await base44.functions.invoke("enableClientPortalAccess", {
@@ -117,6 +120,7 @@ const PortalAccessSection = forwardRef(function PortalAccessSection({ client, wo
             </Button>
           </div>
         </div>
+        {FeatureGateDialog}
       </div>
     );
   }
@@ -185,6 +189,7 @@ const PortalAccessSection = forwardRef(function PortalAccessSection({ client, wo
           Regenerate Password
         </Button>
       </div>
+      {FeatureGateDialog}
     </div>
   );
 });

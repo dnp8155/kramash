@@ -17,8 +17,17 @@ const LIMIT_LABELS = {
   max_events: "Work Items",
   max_team_members: "Team Members",
   max_services: "Services",
+  max_leads: "Leads",
   pdf_export_enabled: "PDF Export",
-  reminders_enabled: "Reminders"
+  reminders_enabled: "Reminders",
+  excel_csv_export_enabled: "Excel/CSV Export",
+  notifications_enabled: "Notifications",
+  link_sharing_enabled: "Link Sharing",
+  client_portal_enabled: "Client Portal",
+  team_portal_enabled: "Team Portal",
+  event_display_customization_enabled: "Event Display Customization",
+  quotation_logo_enabled: "Quotation Logo",
+  advanced_theme_enabled: "Night & Pastel Themes"
 };
 
 export default function YourPlan() {
@@ -140,7 +149,8 @@ export default function YourPlan() {
   const usageRows = [
     { key: "max_events", label: term.workItemPlural, current: usage?.events || 0 },
     { key: "max_team_members", label: "Team Members", current: usage?.team_members || 0 },
-    { key: "max_services", label: "Services", current: usage?.services || 0 }
+    { key: "max_services", label: "Services", current: usage?.services || 0 },
+    { key: "max_leads", label: "Leads", current: usage?.leads || 0 }
   ];
 
   return (
@@ -193,10 +203,19 @@ export default function YourPlan() {
         <div className="bg-card border border-border rounded-lg p-5">
           <h3 className="text-sm font-semibold mb-3">Features</h3>
           <ul className="space-y-2">
-            <FeatureRow label="PDF Export" enabled={!!plan?.limits?.pdf_export_enabled} />
             <FeatureRow label="Reminders" enabled={!!plan?.limits?.reminders_enabled} />
-            <FeatureRow label="Quotations & GST" enabled={true} />
-            <FeatureRow label="Payment Tracking" enabled={true} />
+            <FeatureRow label="Quotations & Invoices" enabled={true} />
+            <FeatureRow label="Public Profile URL" enabled={true} />
+            <FeatureRow label="App Lock" enabled={true} />
+            <FeatureRow label="Data Export" enabled={true} />
+            <FeatureRow label="Excel/CSV Export" enabled={!!plan?.limits?.excel_csv_export_enabled} />
+            <FeatureRow label="Notifications" enabled={!!plan?.limits?.notifications_enabled} />
+            <FeatureRow label="Link Sharing" enabled={!!plan?.limits?.link_sharing_enabled} />
+            <FeatureRow label="Client Portal" enabled={!!plan?.limits?.client_portal_enabled} />
+            <FeatureRow label="Team Portal" enabled={!!plan?.limits?.team_portal_enabled} />
+            <FeatureRow label="Night & Pastel Themes" enabled={!!plan?.limits?.advanced_theme_enabled} />
+            <FeatureRow label="Event Display Customization" enabled={!!plan?.limits?.event_display_customization_enabled} />
+            <FeatureRow label="Quotation Logo" enabled={!!plan?.limits?.quotation_logo_enabled} />
           </ul>
         </div>
       </div>
@@ -284,9 +303,20 @@ export default function YourPlan() {
               <CompareRow label={term.workItemPlural} free={plan?.limits?.max_events} pro="Unlimited" />
               <CompareRow label="Team Members" free={plan?.limits?.max_team_members} pro="Up to 50" />
               <CompareRow label="Services" free={plan?.limits?.max_services} pro="Unlimited" />
-              <CompareRow label="PDF Export" free={false} pro={true} />
-              <CompareRow label="Reminders" free={false} pro={true} />
-              <CompareRow label="Quotations & GST" free={true} pro={true} />
+              <CompareRow label="Leads" free={plan?.limits?.max_leads} pro="Unlimited" />
+              <CompareRow label="Quotations & Invoices" free={true} pro={true} />
+              <CompareRow label="Reminders" free={true} pro={true} />
+              <CompareRow label="Public Profile URL" free={true} pro={true} />
+              <CompareRow label="App Lock" free={true} pro={true} />
+              <CompareRow label="Data Export" free={true} pro={true} />
+              <CompareRow label="Excel/CSV Export" free={false} pro={true} />
+              <CompareRow label="Notifications" free={false} pro={true} />
+              <CompareRow label="Link Sharing" free={false} pro={true} />
+              <CompareRow label="Client Portal" free={false} pro={true} />
+              <CompareRow label="Team Portal" free={false} pro={true} />
+              <CompareRow label="Night & Pastel Themes" free={false} pro={true} />
+              <CompareRow label="Event Display Customization" free={false} pro={true} />
+              <CompareRow label="Quotation Logo" free={false} pro={true} />
             </tbody>
           </table>
         </div>

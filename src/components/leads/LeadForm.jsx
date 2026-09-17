@@ -114,7 +114,7 @@ export default function LeadForm({ open, onClose, editingLead, onSaved }) {
         saved = await base44.entities.Lead.update(editingLead.id, payload);
         toast({ title: "Lead updated successfully" });
       } else {
-        saved = await base44.entities.Lead.create(payload);
+        saved = await base44.functions.invoke("createLead", payload);
         toast({ title: "Lead created successfully" });
       }
       upsertOptimistic(queryClient, ["leads", workspaceId], saved,
@@ -123,7 +123,12 @@ export default function LeadForm({ open, onClose, editingLead, onSaved }) {
       onSaved?.();
       onClose();
     } catch (err) {
-      toast({ title: "Failed to save lead", variant: "destructive" });
+      const errData = err?.data || err;
+      if (errData?.error === "PLAN_LIMIT_REACHED") {
+        toast({ title: "Lead limit reached", description: `Free plan allows up to ${errData.limit} leads. Upgrade to Pro for unlimited leads.`, variant: "destructive" });
+      } else {
+        toast({ title: "Failed to save lead", variant: "destructive" });
+      }
     } finally {
       stop();
     }

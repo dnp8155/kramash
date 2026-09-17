@@ -4,7 +4,17 @@
 export const PLAN_CODES = { FREE: "FREE", PRO: "PRO" };
 export const SUB_STATUS = { ACTIVE: "ACTIVE", EXPIRED: "EXPIRED", CANCELLED: "CANCELLED", SUSPENDED: "SUSPENDED" };
 
-export const BOOLEAN_LIMIT_KEYS = new Set(["pdf_export_enabled", "reminders_enabled"]);
+export const BOOLEAN_LIMIT_KEYS = new Set([
+  "pdf_export_enabled",
+  "reminders_enabled",
+  "notifications_enabled",
+  "link_sharing_enabled",
+  "client_portal_enabled",
+  "team_portal_enabled",
+  "excel_csv_export_enabled",
+  "event_display_customization_enabled",
+  "quotation_logo_enabled"
+]);
 
 // "Unlimited" sentinel — any limit >= this is treated as no cap.
 export const UNLIMITED = 999999;
@@ -121,6 +131,10 @@ export async function countUsage(base44, workspaceId, resourceKey) {
         status: "active"
       });
       return services.length;
+    }
+    case "max_leads": {
+      const leads = await base44.asServiceRole.entities.Lead.filter({ workspace_id: workspaceId });
+      return leads.length;
     }
     default:
       return 0;

@@ -5,18 +5,21 @@ import { invalidateEntities } from "@/lib/queryInvalidation";
 import { useQueryClient } from "@tanstack/react-query";
 import Toggle from "@/components/common/Toggle";
 import Button from "@/components/common/Button";
+import { useFeatureGate } from "@/components/common/ProGate";
 import { Copy, ExternalLink, Eye, EyeOff } from "lucide-react";
 
 export default function InvoicePublicLinkPanel({ invoice, onUpdate }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [toggling, setToggling] = useState(false);
+  const { checkFeature, FeatureGateDialog } = useFeatureGate();
 
   const enabled = !!invoice?.public_link_enabled;
   const token = invoice?.public_token || "";
   const publicUrl = token ? `${window.location.origin}/invoice/${token}` : "";
 
   const handleToggle = async () => {
+    if (!enabled && !checkFeature("link_sharing_enabled", "Link Sharing")) return;
     setToggling(true);
     try {
       const res = await toggleInvoicePublicLink(invoice.id, !enabled);
@@ -83,6 +86,7 @@ export default function InvoicePublicLinkPanel({ invoice, onUpdate }) {
           Enable to generate a secure public link for this invoice. The link uses a non-guessable token — internal IDs are never exposed.
         </p>
       )}
+      {FeatureGateDialog}
     </div>
   );
 }
