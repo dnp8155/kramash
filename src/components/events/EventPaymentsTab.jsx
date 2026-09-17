@@ -167,19 +167,19 @@ export default function EventPaymentsTab({
   return (
     <div className="space-y-3">
       {/* Header with add actions */}
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div className="text-sm font-semibold text-foreground">
           Transactions ({activeTx.length})
         </div>
-        <div className="flex gap-2">
-          <Button size="sm" onClick={onAddClientPayment}>
-            <Wallet className="w-3.5 h-3.5" /> Client Payment
+        <div className="grid grid-cols-3 sm:flex sm:flex-wrap gap-2">
+          <Button size="sm" onClick={onAddClientPayment} className="justify-center sm:justify-start">
+            <Wallet className="w-3.5 h-3.5 shrink-0" /> <span className="truncate">Client Payment</span>
           </Button>
-          <Button size="sm" variant="outline" onClick={() => { setEditingAddOn(null); setShowAddOn(true); }}>
-            <Plus className="w-3.5 h-3.5" /> Add-on
+          <Button size="sm" variant="outline" onClick={() => { setEditingAddOn(null); setShowAddOn(true); }} className="justify-center sm:justify-start">
+            <Plus className="w-3.5 h-3.5 shrink-0" /> <span className="truncate">Add-on</span>
           </Button>
-          <Button size="sm" variant="outline" onClick={onAddExpense}>
-            <Receipt className="w-3.5 h-3.5" /> Expense
+          <Button size="sm" variant="outline" onClick={onAddExpense} className="justify-center sm:justify-start">
+            <Receipt className="w-3.5 h-3.5 shrink-0" /> <span className="truncate">Expense</span>
           </Button>
         </div>
       </div>
