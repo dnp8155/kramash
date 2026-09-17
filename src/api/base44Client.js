@@ -8,7 +8,7 @@ const activeToken = token || import.meta.env.VITE_BASE44_API_KEY;
 
 export const base44 = createClient({
   appId: activeAppId,
-  token: activeToken,
+  token,
   functionsVersion,
   serverUrl: '',
   appBaseUrl
