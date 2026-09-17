@@ -125,6 +125,27 @@
   body {
     @apply bg-background text-foreground font-body antialiased overflow-x-hidden;
   }
+
+  /* Native date/datetime/time inputs — normalize so they never overflow
+     cards, dialogs or modals on any browser. */
+  input[type="date"],
+  input[type="datetime-local"],
+  input[type="time"],
+  input[type="month"],
+  input[type="week"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  /* Keep the native calendar/clock indicator clickable but tidy */
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+  input[type="time"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+  }
 }
 
 @layer utilities {

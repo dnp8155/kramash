@@ -9,6 +9,9 @@ if (typeof window !== "undefined") {
   if (savedTheme === "Night") {
     document.documentElement.classList.add("dark");
   }
+
+  // Disable the browser right-click context menu app-wide.
+  window.addEventListener("contextmenu", (e) => e.preventDefault());
 }
 
 // Register service worker for PWA (production only to avoid dev HMR conflicts).
