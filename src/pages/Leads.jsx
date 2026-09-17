@@ -18,6 +18,7 @@ import { invalidateEntities } from "@/lib/queryInvalidation";
 import { formatEventDate } from "@/lib/dates";
 import { Plus, Pencil, Trash2, Phone, Mail, Calendar, TrendingUp, Flame, Users, Target, CalendarPlus, ArrowRight, CheckCircle2, FileSpreadsheet } from "lucide-react";
 import { exportLeadsXlsx } from "@/lib/exportUtils";
+import { useFeatureGate } from "@/components/common/ProGate";
 
 const STATUS_STYLES = {
   new: { bg: "bg-blue-50", text: "text-blue-700", label: "New" },
@@ -49,6 +50,7 @@ export default function Leads() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { checkFeature, FeatureGateDialog } = useFeatureGate();
 
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -119,7 +121,7 @@ export default function Leads() {
     <div className="p-4 sm:p-6 space-y-5">
       <PageHeader title="Leads" subtitle="Track and manage potential clients through your sales pipeline.">
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => exportLeadsXlsx(filtered)} disabled={filtered.length === 0}>
+          <Button variant="outline" onClick={() => { if (!checkFeature("excel_export_enabled", "Excel Export")) return; exportLeadsXlsx(filtered); }} disabled={filtered.length === 0}>
             <FileSpreadsheet className="w-4 h-4" /> Export
           </Button>
           <Button onClick={openNew}>
@@ -270,6 +272,7 @@ export default function Leads() {
         onClose={() => setConvertLead(null)}
         onConverted={handleConverted}
       />
+      {FeatureGateDialog}
     </div>
   );
 }

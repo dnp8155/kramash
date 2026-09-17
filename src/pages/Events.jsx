@@ -25,6 +25,7 @@ import { useT } from "@/hooks/useT";
 import { invalidateEntities } from "@/lib/queryInvalidation";
 import { useFinancialYear } from "@/hooks/useFinancialYear";
 import { fyDisplayLabel, fyRecordValue } from "@/lib/financialYearService";
+import { useFeatureGate } from "@/components/common/ProGate";
 
 export default function Events() {
   const { workspaceId, workspace } = useWorkspace();
@@ -32,6 +33,7 @@ export default function Events() {
   const term = useBusinessTerminology();
   const t = useT();
   const { fiscalYears, activeFY } = useFinancialYear();
+  const { checkFeature, FeatureGateDialog } = useFeatureGate();
 
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -263,7 +265,10 @@ export default function Events() {
             size="icon"
             aria-label="Export"
             className="shrink-0"
-            onClick={() => exportEventsXlsx(filtered, clients, fyFilter !== "all" ? fyFilter : null, term, receiptsByEvent, addonsByEvent)}
+            onClick={() => {
+              if (!checkFeature("excel_export_enabled", "Excel Export")) return;
+              exportEventsXlsx(filtered, clients, fyFilter !== "all" ? fyFilter : null, term, receiptsByEvent, addonsByEvent);
+            }}
             disabled={filtered.length === 0}
           >
             <Download className="w-4 h-4" />
@@ -306,6 +311,7 @@ export default function Events() {
         <EventsRightPanel events={events} onEventClick={openEvent} term={term} />
       </div>
 
+      {FeatureGateDialog}
     </div>
   );
 }

@@ -11,6 +11,7 @@ import ClientsPageSkeleton from "@/components/clients/ClientsPageSkeleton";
 import ClientForm from "@/components/clients/ClientForm";
 import { Plus, Pencil, Eye, Download, Users, CalendarCheck, UserCheck, Share2 } from "lucide-react";
 import { exportClientsXlsx } from "@/lib/exportUtils";
+import { useFeatureGate } from "@/components/common/ProGate";
 import StatCard from "@/components/common/StatCard";
 import PageHeader from "@/components/common/PageHeader";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
@@ -29,6 +30,7 @@ export default function Clients() {
   const [editingClient, setEditingClient] = useState(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { checkFeature, FeatureGateDialog } = useFeatureGate();
 
   const copyPortalLink = () => {
     const url = `${window.location.origin}/client-login`;
@@ -79,7 +81,7 @@ export default function Clients() {
           <Share2 className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">Portal Link</span>
         </Button>
-        <Button variant="outline" size="sm" onClick={() => exportClientsXlsx(filtered, eventCounts, term)} disabled={filtered.length === 0}>
+        <Button variant="outline" size="sm" onClick={() => { if (!checkFeature("excel_export_enabled", "Excel Export")) return; exportClientsXlsx(filtered, eventCounts, term); }} disabled={filtered.length === 0}>
           <Download className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">{t("Export")}</span>
         </Button>
@@ -159,6 +161,7 @@ export default function Clients() {
         client={editingClient}
         workspaceId={workspaceId}
       />
+      {FeatureGateDialog}
     </div>
   );
 }

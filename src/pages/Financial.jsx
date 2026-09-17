@@ -36,6 +36,7 @@ import { formatMoney } from "@/utils/format";
 import { Download, Plus, Wallet, Receipt, AlertTriangle, Trash2, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { exportFinancialXlsx } from "@/lib/exportUtils";
+import { useFeatureGate } from "@/components/common/ProGate";
 import PageHeader from "@/components/common/PageHeader";
 import { useT } from "@/hooks/useT";
 import { invalidateEntities } from "@/lib/queryInvalidation";
@@ -48,6 +49,7 @@ const TAB_KEYS = ["Payment Activity", "Financial Years"];
 export default function Financial() {
   const { workspace, workspaceId } = useWorkspace();
   const { toast } = useToast();
+  const { checkFeature, FeatureGateDialog } = useFeatureGate();
   const currency = workspace?.currency || "INR";
   const t = useT();
   const tabs = TAB_KEYS;
@@ -340,7 +342,7 @@ export default function Financial() {
               variant="outline"
               size="sm"
               className="sm:ml-auto"
-              onClick={() => exportFinancialXlsx(fyTx, { eventsById, clientsById, membersById }, currency, dateRange?.label)}
+              onClick={() => { if (!checkFeature("excel_export_enabled", "Excel Export")) return; exportFinancialXlsx(fyTx, { eventsById, clientsById, membersById }, currency, dateRange?.label); }}
               disabled={fyTx.length === 0}
             >
               <Download className="w-3.5 h-3.5" />
@@ -662,6 +664,7 @@ export default function Financial() {
           </div>
         </div>
       )}
+      {FeatureGateDialog}
     </div>
   );
 }

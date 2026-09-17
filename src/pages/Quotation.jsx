@@ -17,6 +17,7 @@ import { generateQuotationPdf } from "@/lib/quotationPdf";
 import { base44 } from "@/api/base44Client";
 import { Plus, Search, Trash2, FileDown, Eye, FileText, FileSpreadsheet, IndianRupee, CheckCircle2, Pencil, Receipt, Copy } from "lucide-react";
 import { exportQuotationsXlsx } from "@/lib/exportUtils";
+import { useFeatureGate } from "@/components/common/ProGate";
 import PdfPreviewModal from "@/components/common/PdfPreviewModal";
 import PageHeader from "@/components/common/PageHeader";
 import StatCard from "@/components/common/StatCard";
@@ -43,6 +44,7 @@ export default function Quotation() {
   const [generatingId, setGeneratingId] = useState("");
   const [preview, setPreview] = useState({ url: "", filename: "", open: false, loading: false });
   const queryClient = useQueryClient();
+  const { checkFeature, FeatureGateDialog } = useFeatureGate();
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["quotations", workspaceId],
@@ -181,7 +183,7 @@ export default function Quotation() {
     <div className="p-4 sm:p-6 space-y-5">
       <PageHeader eyebrow="Sales" title="Quotations" subtitle="Create, track and finalize client quotations.">
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => exportQuotationsXlsx(filtered, clientsById, eventsById)} disabled={filtered.length === 0}>
+          <Button variant="outline" onClick={() => { if (!checkFeature("excel_export_enabled", "Excel Export")) return; exportQuotationsXlsx(filtered, clientsById, eventsById); }} disabled={filtered.length === 0}>
             <FileSpreadsheet className="w-4 h-4" /> Export
           </Button>
           <Button onClick={() => navigate("/quotation/new")}>
@@ -359,6 +361,7 @@ export default function Quotation() {
         loading={preview.loading}
         onClose={() => setPreview((p) => ({ ...p, open: false }))}
       />
+      {FeatureGateDialog}
     </div>
   );
 }

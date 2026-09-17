@@ -14,6 +14,7 @@ import { loadInvoices, deleteInvoice, duplicateInvoice } from "@/lib/invoiceServ
 import { base44 } from "@/api/base44Client";
 import { Plus, Search, Trash2, FileText, FileSpreadsheet, IndianRupee, CheckCircle2, Clock, Printer, Copy } from "lucide-react";
 import { exportInvoicesXlsx } from "@/lib/exportUtils";
+import { useFeatureGate } from "@/components/common/ProGate";
 import PageHeader from "@/components/common/PageHeader";
 import StatCard from "@/components/common/StatCard";
 import { cn } from "@/lib/utils";
@@ -45,6 +46,7 @@ export default function Invoices() {
   const { toast } = useToast();
   const currency = workspace?.currency || "INR";
   const queryClient = useQueryClient();
+  const { checkFeature, FeatureGateDialog } = useFeatureGate();
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
@@ -146,7 +148,7 @@ export default function Invoices() {
     <div className="p-4 sm:p-6 space-y-5">
       <PageHeader eyebrow="Sales" title="Invoices" subtitle="Create and track client invoices from approved quotations.">
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => exportInvoicesXlsx(filtered, clientsById, eventsById)} disabled={filtered.length === 0}>
+          <Button variant="outline" onClick={() => { if (!checkFeature("excel_export_enabled", "Excel Export")) return; exportInvoicesXlsx(filtered, clientsById, eventsById); }} disabled={filtered.length === 0}>
             <FileSpreadsheet className="w-4 h-4" /> Export
           </Button>
           <Button onClick={() => navigate("/invoices/new")}><Plus className="w-4 h-4" /> Create Invoice</Button>
@@ -304,6 +306,7 @@ export default function Invoices() {
           currency={currency}
         />
       )}
+      {FeatureGateDialog}
     </div>
   );
 }

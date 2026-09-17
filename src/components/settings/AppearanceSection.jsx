@@ -16,7 +16,7 @@ export default function AppearanceSection() {
   const { workspace, setWorkspace } = useWorkspace();
   const { toast } = useToast();
   const prefs = useDisplayPreferences();
-  const { isPro, FeatureGateDialog } = useFeatureGate();
+  const { isPro, checkFeature, FeatureGateDialog } = useFeatureGate();
 
   const [theme, setTheme] = useState(() => {
     if (typeof window === "undefined") return "Contact Sheet";
@@ -73,6 +73,11 @@ export default function AppearanceSection() {
     }
   };
 
+  const gatedSetPref = (key) => async (v) => {
+    if (!checkFeature("event_display_customization_enabled", "Display Customization")) return;
+    return setPref(key)(v);
+  };
+
   const PRO_THEMES = ["Night", "Pastel"];
   const handleTheme = (t) => {
     if (PRO_THEMES.includes(t) && !isPro) return;
@@ -117,12 +122,19 @@ export default function AppearanceSection() {
         {theme === "Pastel" && isPro && <PastelPalettePicker />}
       </div>
       <div className="pt-4 border-t border-border">
-        <h3 className="text-sm font-semibold mb-3">Display</h3>
+        <div className="flex items-center gap-2 mb-3">
+          <h3 className="text-sm font-semibold">Display</h3>
+          {!isPro && (
+            <span className="inline-flex items-center gap-1 text-xs text-warning font-medium">
+              <Crown className="w-3 h-3" /> Pro
+            </span>
+          )}
+        </div>
         <div className="space-y-3">
-          <ToggleRow label="Show event status" hint="Event status colors (Upcoming, In Progress, Completed, Cancelled)" checked={prefs.showProgressIndicators} onChange={setPref("showProgressIndicators")} />
-          <ToggleRow label="Show member type colors" hint="Color-code team member type tags (Bride Side, Groom Side, etc.)" checked={prefs.showMemberTypeColors} onChange={setPref("showMemberTypeColors")} />
-          <ToggleRow label="Show status dots" hint="Colored dots before event & team names — turn off to remove all dots" checked={prefs.showStatusDots} onChange={setPref("showStatusDots")} />
-          <ToggleRow label="Group upcoming events" hint="Show events grouped by This Week / All, or as a flat list" checked={prefs.groupUpcoming} onChange={setPref("groupUpcoming")} />
+          <ToggleRow label="Show event status" hint="Event status colors (Upcoming, In Progress, Completed, Cancelled)" checked={prefs.showProgressIndicators} onChange={gatedSetPref("showProgressIndicators")} />
+          <ToggleRow label="Show member type colors" hint="Color-code team member type tags (Bride Side, Groom Side, etc.)" checked={prefs.showMemberTypeColors} onChange={gatedSetPref("showMemberTypeColors")} />
+          <ToggleRow label="Show status dots" hint="Colored dots before event & team names — turn off to remove all dots" checked={prefs.showStatusDots} onChange={gatedSetPref("showStatusDots")} />
+          <ToggleRow label="Group upcoming events" hint="Show events grouped by This Week / All, or as a flat list" checked={prefs.groupUpcoming} onChange={gatedSetPref("groupUpcoming")} />
           <ToggleRow label="Show menubar labels" hint="Show text labels under icons in the mobile bottom navigation" checked={prefs.showMenubarLabels} onChange={setPref("showMenubarLabels")} />
         </div>
       </div>

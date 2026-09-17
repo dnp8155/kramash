@@ -9,8 +9,9 @@ import Select from "@/components/common/Select";
 import Toggle from "@/components/common/Toggle";
 import ChangePasswordDialog from "@/components/settings/ChangePasswordDialog";
 import WordCounterTextarea from "@/components/common/WordCounterTextarea";
-import { Pencil, Check, Loader2, Upload, User, Building2, Lock, KeyRound, Globe, Copy, ExternalLink, Share2, Instagram, Youtube, Link as LinkIcon } from "lucide-react";
+import { Pencil, Check, Loader2, Upload, User, Building2, Lock, KeyRound, Globe, Copy, ExternalLink, Share2, Instagram, Youtube, Link as LinkIcon, Crown } from "lucide-react";
 import { isValidIndianPhone, isValidEmail } from "@/lib/validation";
+import { useFeatureGate } from "@/components/common/ProGate";
 
 const currencies = [{ v: "INR", l: "INR (₹)" }, { v: "USD", l: "USD ($)" }, { v: "EUR", l: "EUR (€)" }, { v: "AED", l: "AED (د.إ)" }];
 const timezones = ["Asia/Kolkata", "UTC", "Asia/Dubai", "America/New_York", "Europe/London", "Australia/Sydney"];
@@ -42,6 +43,7 @@ export default function ProfileWorkspaceSection() {
   const { workspace, setWorkspace } = useWorkspace();
   const { toast } = useToast();
   const [copiedSlug, setCopiedSlug] = useState(false);
+  const { isPro, checkFeature, FeatureGateDialog } = useFeatureGate();
 
   // ---- Profile state ----
   const [editingName, setEditingName] = useState(false);
@@ -133,6 +135,7 @@ export default function ProfileWorkspaceSection() {
   const onLogo = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (!checkFeature("quotation_logo_enabled", "Branding Image / Logo")) return;
     if (!file.type.startsWith("image/")) { toast({ title: "Please choose an image file." }); return; }
     if (file.size > 5 * 1024 * 1024) { toast({ title: "Image too large (max 5MB)." }); return; }
     setUploading(true);
@@ -306,7 +309,14 @@ export default function ProfileWorkspaceSection() {
 
         {/* Branding Image — single image used across the entire app */}
         <div className="mb-1">
-          <h4 className="text-sm font-semibold text-foreground">Branding Image</h4>
+          <div className="flex items-center gap-2">
+            <h4 className="text-sm font-semibold text-foreground">Branding Image</h4>
+            {!isPro && (
+              <span className="inline-flex items-center gap-1 text-xs text-warning font-medium">
+                <Crown className="w-3 h-3" /> Pro
+              </span>
+            )}
+          </div>
           <p className="text-xs text-muted-foreground mt-0.5">This image is used as your workspace logo, sidebar avatar, invoice logo, and on all public pages.</p>
           <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs">
             <span className="text-muted-foreground">Recommended: <span className="font-medium text-foreground">512 × 512 px</span> (square)</span>
@@ -554,6 +564,7 @@ export default function ProfileWorkspaceSection() {
       </div>
 
       <ChangePasswordDialog open={showChangePwd} onClose={() => setShowChangePwd(false)} />
+      {FeatureGateDialog}
     </div>
   );
 }
