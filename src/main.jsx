@@ -2,6 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from '@/App.jsx'
 import '@/index.css'
+import '@/lib/apiConcurrency' // side-effect: patches base44 entities with concurrency limiting
 
 // Apply saved theme before React renders to prevent flash.
 if (typeof window !== "undefined") {
