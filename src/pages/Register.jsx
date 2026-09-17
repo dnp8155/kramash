@@ -165,7 +165,7 @@ export default function Register() {
   return (
     <div className="h-dvh flex flex-col lg:flex-row bg-background overflow-hidden">
       {/* Left: Content column */}
-      <div className="flex-1 flex flex-col px-6 py-6 sm:px-10 lg:px-12 xl:px-16 lg:py-8">
+      <div className="flex-1 flex flex-col px-6 py-6 sm:px-10 lg:px-12 xl:px-16 lg:py-8 overflow-y-auto">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2.5 self-start relative z-50 cursor-pointer hover:opacity-80 transition-opacity">
           <Logo size={36} className="shadow-md" />
