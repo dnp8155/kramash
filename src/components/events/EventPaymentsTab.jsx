@@ -8,6 +8,7 @@ import { voidTransaction, deleteTransaction } from "@/lib/financeService";
 import { useWorkspace } from "@/lib/WorkspaceContext";
 import { formatMoney } from "@/utils/format";
 import { formatEventDate } from "@/lib/dates";
+import { useDisplayPreferences } from "@/hooks/useDisplayPreferences";
 import EditTransactionDialog from "@/components/financial/EditTransactionDialog";
 import EmptyState from "@/components/common/EmptyState";
 import Button from "@/components/common/Button";
@@ -34,6 +35,7 @@ export default function EventPaymentsTab({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { workspaceId, workspace } = useWorkspace();
+  const prefs = useDisplayPreferences();
   const [editing, setEditing] = useState(null);
   const [voiding, setVoiding] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -328,6 +330,7 @@ export default function EventPaymentsTab({
             currency={currency}
             particularFor={particularFor}
             typeLabel={typeLabel}
+            showLogo={prefs.showLogo}
           />
         </div>
       )}
