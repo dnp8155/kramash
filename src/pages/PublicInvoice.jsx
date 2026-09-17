@@ -165,17 +165,19 @@ export default function PublicInvoice() {
         <div className="bg-card border border-border rounded-xl p-5 sm:p-6 shadow-card">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div className="min-w-0">
-              {business?.logo && (
-                <img src={business.logo} alt="Logo" className="h-12 w-auto mb-3 object-contain" />
-              )}
-              <h1 className="text-lg font-bold text-foreground">{business?.name || "Business"}</h1>
+              <div className="flex items-center gap-3 mb-1">
+                {business?.logo && (
+                  <img src={business.logo} alt="Logo" className="h-12 w-12 rounded-lg object-contain shrink-0 border border-border/50" />
+                )}
+                <h1 className="text-lg font-bold text-foreground break-anywhere">{business?.name || "Business"}</h1>
+              </div>
               {business?.address && <p className="text-sm text-muted-foreground mt-1 break-anywhere">{business.address}</p>}
               <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-muted-foreground mt-1">
-                {business?.phone && <span>{business.phone}</span>}
-                {business?.email && <span>{business.email}</span>}
+                {business?.phone && <span className="break-anywhere">{business.phone}</span>}
+                {business?.email && <span className="break-anywhere">{business.email}</span>}
               </div>
               {invoice.gst_applicable && business?.gstin && (
-                <div className="text-xs text-muted-foreground mt-1">GSTIN: {business.gstin}</div>
+                <div className="text-xs text-muted-foreground mt-1 break-anywhere">GSTIN: {business.gstin}</div>
               )}
             </div>
             <div className="sm:text-right shrink-0">
@@ -386,7 +388,7 @@ export default function PublicInvoice() {
         {invoice.terms_and_conditions && (
           <div className="bg-card border border-border rounded-xl p-5 shadow-card">
             <h2 className="text-sm font-semibold text-foreground mb-2">Terms & Conditions</h2>
-            <div className="text-sm text-muted-foreground leading-relaxed [&_p]:mb-1 [&_ul]:list-disc [&_ol]:list-decimal [&_ul]:pl-5 [&_ol]:pl-5" dangerouslySetInnerHTML={{ __html: invoice.terms_and_conditions }} />
+            <div className="text-sm text-muted-foreground leading-relaxed break-anywhere overflow-x-hidden [&_p]:mb-1 [&_ul]:list-disc [&_ol]:list-decimal [&_ul]:pl-5 [&_ol]:pl-5 [&_img]:max-w-full [&_img]:h-auto [&_table]:max-w-full [&_table]:overflow-x-auto [&_pre]:overflow-x-auto [&_pre]:max-w-full [&_a]:break-anywhere" dangerouslySetInnerHTML={{ __html: invoice.terms_and_conditions }} />
           </div>
         )}
 
@@ -394,7 +396,7 @@ export default function PublicInvoice() {
         {invoice.payment_terms && (
           <div className="bg-card border border-border rounded-xl p-5 shadow-card">
             <h2 className="text-sm font-semibold text-foreground mb-2">Payment Terms</h2>
-            <div className="text-sm text-muted-foreground leading-relaxed [&_p]:mb-1 [&_ul]:list-disc [&_ol]:list-decimal [&_ul]:pl-5 [&_ol]:pl-5" dangerouslySetInnerHTML={{ __html: invoice.payment_terms }} />
+            <div className="text-sm text-muted-foreground leading-relaxed break-anywhere overflow-x-hidden [&_p]:mb-1 [&_ul]:list-disc [&_ol]:list-decimal [&_ul]:pl-5 [&_ol]:pl-5 [&_img]:max-w-full [&_img]:h-auto [&_table]:max-w-full [&_table]:overflow-x-auto [&_pre]:overflow-x-auto [&_pre]:max-w-full [&_a]:break-anywhere" dangerouslySetInnerHTML={{ __html: invoice.payment_terms }} />
           </div>
         )}
 
