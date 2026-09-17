@@ -38,42 +38,48 @@ export default function Dashboard() {
     queryKey: ["dashboard-events", workspaceId],
     queryFn: () => base44.entities.Event.filter({ workspace_id: workspaceId }, "start_date", 500),
     enabled: !!workspaceId,
-    staleTime: 0,
+    staleTime: 30 * 1000,
+    placeholderData: (prev) => prev,
   });
 
   const { data: transactions = [], isLoading: loadingTx } = useQuery({
     queryKey: ["dashboard-transactions", workspaceId],
     queryFn: () => loadTransactions(workspaceId),
     enabled: !!workspaceId,
-    staleTime: 0,
+    staleTime: 30 * 1000,
+    placeholderData: (prev) => prev,
   });
 
   const { data: members = [] } = useQuery({
     queryKey: ["dashboard-members", workspaceId],
     queryFn: () => loadTeamMembers(workspaceId),
     enabled: !!workspaceId,
-    staleTime: 0,
+    staleTime: 30 * 1000,
+    placeholderData: (prev) => prev,
   });
 
   const { data: assignments = [] } = useQuery({
     queryKey: ["dashboard-assignments", workspaceId],
     queryFn: () => loadAssignments(workspaceId),
     enabled: !!workspaceId,
-    staleTime: 0,
+    staleTime: 30 * 1000,
+    placeholderData: (prev) => prev,
   });
 
   const { data: clients = [] } = useQuery({
     queryKey: ["dashboard-clients", workspaceId],
     queryFn: () => base44.entities.Client.filter({ workspace_id: workspaceId }, "name", 500),
     enabled: !!workspaceId,
-    staleTime: 0,
+    staleTime: 30 * 1000,
+    placeholderData: (prev) => prev,
   });
 
   const { data: blockDates = [] } = useQuery({
     queryKey: ["dashboard-blockdates", workspaceId],
     queryFn: () => loadBlockDates(workspaceId),
     enabled: !!workspaceId,
-    staleTime: 0,
+    staleTime: 30 * 1000,
+    placeholderData: (prev) => prev,
   });
 
   const eventsById = useMemo(() => Object.fromEntries(events.map((e) => [e.id, e])), [events]);

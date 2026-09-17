@@ -78,7 +78,7 @@ export default function Financial() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["financial", workspaceId],
     queryFn: async () => {
-      const [tx, evs, cls, membs, asgns, cats] = await Promise.all([
+      const results = await Promise.allSettled([
         loadAllTransactions(workspaceId),
         base44.entities.Event.filter({ workspace_id: workspaceId }, "-start_date", 500),
         base44.entities.Client.filter({ workspace_id: workspaceId }, "name", 500),
@@ -86,10 +86,21 @@ export default function Financial() {
         base44.entities.EventTeamAssignment.filter({ workspace_id: workspaceId }, "-created_date", 1000),
         loadExpenseCategories(workspaceId)
       ]);
-      return { allTx: tx || [], events: evs || [], clients: cls || [], members: membs || [], assignments: asgns || [], categories: cats || [] };
+      const [txR, evsR, clsR, membsR, asgnsR, catsR] = results;
+      const partialError = results.some((r) => r.status === "rejected");
+      return {
+        allTx: txR.status === "fulfilled" ? (txR.value || []) : [],
+        events: evsR.status === "fulfilled" ? (evsR.value || []) : [],
+        clients: clsR.status === "fulfilled" ? (clsR.value || []) : [],
+        members: membsR.status === "fulfilled" ? (membsR.value || []) : [],
+        assignments: asgnsR.status === "fulfilled" ? (asgnsR.value || []) : [],
+        categories: catsR.status === "fulfilled" ? (catsR.value || []) : [],
+        partialError
+      };
     },
     enabled: !!workspaceId,
-    staleTime: 60 * 1000
+    staleTime: 60 * 1000,
+    placeholderData: (prev) => prev
   });
   const allTx = data?.allTx || [];
   const events = data?.events || [];
@@ -97,6 +108,7 @@ export default function Financial() {
   const members = data?.members || [];
   const assignments = data?.assignments || [];
   const categories = data?.categories || [];
+  const partialError = data?.partialError;
   const load = () => {
     queryClient.invalidateQueries({ queryKey: ["financial"] });
     refreshFY();
@@ -146,6 +158,10 @@ export default function Financial() {
   useEffect(() => {
     if (error) toast({ title: t("Failed to load financial activity"), description: error?.message, variant: "destructive" });
   }, [error, toast]);
+
+  useEffect(() => {
+    if (partialError && !error) toast({ title: t("Some data could not be loaded — showing last saved."), variant: "default" });
+  }, [partialError, error, toast]);
 
   // FY-scoped events — only events in the selected financial year
   const fyEvents = useMemo(() => events.filter((e) => eventInRange(e, dateRange)), [events, dateRange]);
