@@ -4,8 +4,9 @@ import Input from "@/components/common/Input";
 import { processSignatureDataUrl } from "@/lib/esignUtils";
 
 // Text-input signing mode: renders typed text to a canvas using the
-// Caveat handwritten font, then normalizes to black + trims.
-export default function TextSignatureInput({ onChange }) {
+// Caveat handwritten font, then normalizes + trims.
+// `color` controls text color (hex string, default black).
+export default function TextSignatureInput({ onChange, color = "#000000" }) {
   const [text, setText] = useState("");
   const [fontReady, setFontReady] = useState(false);
 
@@ -32,12 +33,12 @@ export default function TextSignatureInput({ onChange }) {
     canvas.height = h;
     const ctx = canvas.getContext("2d");
     ctx.font = fontStr;
-    ctx.fillStyle = "#000000";
+    ctx.fillStyle = color;
     ctx.textBaseline = "middle";
     ctx.fillText(value, 12, h / 2);
     const processed = await processSignatureDataUrl(canvas.toDataURL("image/png"));
     onChange(processed.dataUrl);
-  }, [fontReady, onChange]);
+  }, [fontReady, onChange, color]);
 
   useEffect(() => { render(text); }, [text, render]);
 
@@ -46,8 +47,8 @@ export default function TextSignatureInput({ onChange }) {
       <div className="relative border border-border rounded-lg bg-card overflow-hidden h-36 flex items-center justify-center">
         {text.trim() && fontReady ? (
           <span
-            className="text-5xl text-foreground leading-none"
-            style={{ fontFamily: '"Caveat", cursive' }}
+            className="text-5xl leading-none"
+            style={{ fontFamily: '"Caveat", cursive', color }}
           >
             {text}
           </span>

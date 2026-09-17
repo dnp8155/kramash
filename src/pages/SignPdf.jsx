@@ -23,6 +23,7 @@ export default function SignPdf() {
   const [file, setFile] = useState(null);
   const [pageCount, setPageCount] = useState(0);
   const [signingMethod, setSigningMethod] = useState("draw");
+  const [sigColor, setSigColor] = useState("#000000");
   const [currentSignature, setCurrentSignature] = useState("");
   const [pendingQueue, setPendingQueue] = useState([]);
   const [previewPage, setPreviewPage] = useState(1);
@@ -204,6 +205,7 @@ export default function SignPdf() {
     setPdfPageSizes({});
     setFallbackMode(false);
     setFallbackCorner("bottom-right");
+    setSigColor("#000000");
     setShowExportModal(false);
     setSignedBlobUrl("");
     if (fileRef.current) fileRef.current.value = "";
@@ -284,10 +286,34 @@ export default function SignPdf() {
                 <Type className="w-4 h-4" /> Type
               </button>
             </div>
+            {/* Signature color — Black / Blue */}
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-xs font-medium text-muted-foreground">Color</span>
+              <button
+                onClick={() => setSigColor("#000000")}
+                className={`flex items-center gap-1.5 h-8 px-3 rounded-full border text-xs font-medium transition-colors ${
+                  sigColor === "#000000"
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border bg-card text-muted-foreground hover:bg-muted/40"
+                }`}
+              >
+                <span className="w-3 h-3 rounded-full bg-black border border-border/40" /> Black
+              </button>
+              <button
+                onClick={() => setSigColor("#1d4ed8")}
+                className={`flex items-center gap-1.5 h-8 px-3 rounded-full border text-xs font-medium transition-colors ${
+                  sigColor === "#1d4ed8"
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border bg-card text-muted-foreground hover:bg-muted/40"
+                }`}
+              >
+                <span className="w-3 h-3 rounded-full" style={{ background: "#1d4ed8" }} /> Blue
+              </button>
+            </div>
             {signingMethod === "draw" ? (
-              <SignaturePad onChange={onSignatureChange} />
+              <SignaturePad onChange={onSignatureChange} color={sigColor} />
             ) : (
-              <TextSignatureInput onChange={onSignatureChange} />
+              <TextSignatureInput onChange={onSignatureChange} color={sigColor} />
             )}
           </div>
 
@@ -428,10 +454,10 @@ export default function SignPdf() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="rounded-full">Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => { doReset(); setShowResetDialog(false); }}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-full"
             >
               <Trash2 className="w-4 h-4" /> Reset All
             </AlertDialogAction>

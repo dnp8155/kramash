@@ -4,10 +4,14 @@ import Button from "@/components/common/Button";
 
 // Simple canvas-based signature pad. Calls onChange(dataUrl) whenever strokes
 // change; exposes a clear button. Returns null (empty) when the canvas is blank.
-export default function SignaturePad({ onChange, disabled }) {
+// `color` controls stroke color (hex string, default black).
+export default function SignaturePad({ onChange, disabled, color = "#000000" }) {
   const canvasRef = useRef(null);
   const drawing = useRef(false);
+  const colorRef = useRef(color);
   const [hasInk, setHasInk] = useState(false);
+
+  useEffect(() => { colorRef.current = color; }, [color]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -26,7 +30,7 @@ export default function SignaturePad({ onChange, disabled }) {
       ctx.lineWidth = 2;
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
-      ctx.strokeStyle = "hsl(var(--foreground))";
+      ctx.strokeStyle = colorRef.current;
       const img = new Image();
       img.onload = () => ctx.drawImage(img, 0, 0, rect.width, rect.height);
       img.src = oldData;
@@ -51,6 +55,7 @@ export default function SignaturePad({ onChange, disabled }) {
     e.preventDefault();
     drawing.current = true;
     const ctx = canvasRef.current.getContext("2d");
+    ctx.strokeStyle = colorRef.current;
     const { x, y } = pos(e);
     ctx.beginPath();
     ctx.moveTo(x, y);
@@ -60,6 +65,7 @@ export default function SignaturePad({ onChange, disabled }) {
     if (!drawing.current || disabled) return;
     e.preventDefault();
     const ctx = canvasRef.current.getContext("2d");
+    ctx.strokeStyle = colorRef.current;
     const { x, y } = pos(e);
     ctx.lineTo(x, y);
     ctx.stroke();
