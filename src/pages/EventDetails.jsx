@@ -23,6 +23,7 @@ import EditServiceAssignmentDialog from "@/components/events/EditServiceAssignme
 import RecordServicePaymentDialog from "@/components/events/RecordServicePaymentDialog";
 import RecordPaymentDialog from "@/components/financial/RecordPaymentDialog";
 import RecordExpenseDialog from "@/components/financial/RecordExpenseDialog";
+import EventShareDialog from "@/components/events/EventShareDialog";
 import EventMilestonesTab from "@/components/events/EventMilestonesTab";
 import EventNotesTab from "@/components/events/EventNotesTab";
 import { loadServiceProviders } from "@/lib/serviceProviderService";
@@ -65,6 +66,7 @@ export default function EventDetails() {
   const [editingAssignment, setEditingAssignment] = useState(null);
   const [editingServiceAssignment, setEditingServiceAssignment] = useState(null);
   const [servicePayAssignment, setServicePayAssignment] = useState(null);
+  const [showShare, setShowShare] = useState(false);
   const [tab, setTab] = useState("Team");
   const queryClient = useQueryClient();
 
@@ -514,7 +516,7 @@ export default function EventDetails() {
         <Button size="sm" variant="outline" onClick={addToCalendar}>
           <CalendarPlus className="w-3.5 h-3.5" /> Add to Calendar
         </Button>
-        <Button size="sm" variant="primary" onClick={shareEventLink}>
+        <Button size="sm" variant="primary" onClick={() => setShowShare(true)}>
           <Share2 className="w-3.5 h-3.5" /> Share Link
         </Button>
         {fin.pending > 0 && (
@@ -833,6 +835,16 @@ export default function EventDetails() {
         events={[event]}
         categories={categories}
         preselectedEventId={event.id}
+      />
+
+      <EventShareDialog
+        open={showShare}
+        onClose={() => setShowShare(false)}
+        event={event}
+        client={client}
+        assignments={assignments}
+        membersById={membersById}
+        workspaceId={workspaceId}
       />
 
     </div>
