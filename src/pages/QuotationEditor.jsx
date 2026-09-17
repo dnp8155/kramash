@@ -227,7 +227,6 @@ export default function QuotationEditor() {
                   });
                 });
                 (serviceAsgns || []).forEach((a) => {
-                  if (a.is_addon) return; // add-ons are last-minute, skip auto-import
                   const rate = Number(a.agreed_rate) || 0;
                   imported.push({
                     item_type: "service",
@@ -238,9 +237,27 @@ export default function QuotationEditor() {
                     rate_type: a.rate_type || "Fixed",
                     days: 1,
                     quantity: 1,
-                    line_total: rate
+                    line_total: rate,
+                    is_addon: !!a.is_addon
                   });
                 });
+                // Import misc expenses from the event as custom line items
+                try {
+                  const misc = JSON.parse(qpEvent.misc_expenses_json || "[]");
+                  (Array.isArray(misc) ? misc : []).forEach((m) => {
+                    const amt = Number(m.amount) || 0;
+                    imported.push({
+                      item_type: "custom",
+                      name: m.name || "Misc Expense",
+                      description: m.notes || "",
+                      unit_rate: amt,
+                      rate_type: "Fixed",
+                      days: 1,
+                      quantity: 1,
+                      line_total: amt
+                    });
+                  });
+                } catch { /* ignore parse errors */ }
                 if (imported.length) setItems(imported);
               } catch (e) { /* non-fatal — user can add items manually */ }
             }
