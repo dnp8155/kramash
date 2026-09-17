@@ -29,7 +29,7 @@ export default function PersonStatementCard({ statement, currency = "INR" }) {
   const hasOverdue = dueNow > 0;
 
   return (
-    <div className="bg-card border border-border rounded-xl p-4 flex flex-col gap-3 hover:shadow-card-hover hover-lift transition-all">
+    <div className="bg-card border border-border rounded-xl p-4 flex flex-col gap-3 transition-all">
       {/* Header */}
       <div>
         <div className="flex items-center gap-1.5">
