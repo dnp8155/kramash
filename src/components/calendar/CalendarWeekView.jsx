@@ -26,7 +26,8 @@ export default function CalendarWeekView({ currentDate, eventsByDate, onDayClick
 
   return (
     <div className="bg-card border border-border rounded-lg p-4 shadow-card">
-      <div className="grid grid-cols-7 gap-2">
+      <div className="overflow-x-auto scrollbar-thin -mx-1 px-1">
+      <div className="grid grid-cols-7 gap-2 min-w-[700px]">
         {weekDays.map(({ iso, date, weekday }) => {
           const dayEvents = eventsByDate[iso] || [];
           const isToday = iso === today;
@@ -65,6 +66,7 @@ export default function CalendarWeekView({ currentDate, eventsByDate, onDayClick
             </div>
           );
         })}
+      </div>
       </div>
     </div>
   );
