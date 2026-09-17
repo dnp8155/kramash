@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription
-} from "@/components/ui/dialog";
+  AppDialog, AppDialogContent, AppDialogHeader, AppDialogTitle, AppDialogDescription, AppDialogBody, AppDialogFooter
+} from "@/components/ui/AppDialog";
 import { useToast } from "@/components/ui/use-toast";
 import Button from "@/components/common/Button";
 import Input from "@/components/common/Input";
@@ -251,19 +251,17 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
 
   return (
     <>
-      <Dialog open={open && !showClientForm} onOpenChange={(o) => !o && onClose?.()}>
-        <DialogContent className="max-w-3xl max-h-[90dvh] overflow-y-auto p-0 gap-0">
-          <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-muted/30">
-            <div>
-              <DialogTitle className="text-lg font-bold tracking-tight">{event ? t.editWorkItemLabel || "Edit Event" : t.addWorkItemLabel || "Add Event"}</DialogTitle>
-              <DialogDescription className="text-xs mt-0.5">
-                {event ? `Update ${t.workItemSingular?.toLowerCase() || "event"} details.` : `Create a new ${t.workItemSingular?.toLowerCase() || "event"} for a client.`}
-              </DialogDescription>
-            </div>
-          </div>
-
-          <form onSubmit={handleSubmit}>
-            <div className="px-6 py-5 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+      <AppDialog open={open && !showClientForm} onOpenChange={(o) => !o && onClose?.()}>
+        <AppDialogContent maxWidth="max-w-3xl">
+          <AppDialogHeader>
+            <AppDialogTitle>{event ? t.editWorkItemLabel || "Edit Event" : t.addWorkItemLabel || "Add Event"}</AppDialogTitle>
+            <AppDialogDescription>
+              {event ? `Update ${t.workItemSingular?.toLowerCase() || "event"} details.` : `Create a new ${t.workItemSingular?.toLowerCase() || "event"} for a client.`}
+            </AppDialogDescription>
+          </AppDialogHeader>
+          <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
+            <AppDialogBody>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
               {/* Left column — core details */}
               <div className="space-y-4">
                 <div className="space-y-2.5">
@@ -384,20 +382,20 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
             </div>
 
             {error && (
-              <div className="mx-6 mb-3 p-2.5 rounded-md bg-destructive/8 text-destructive text-sm border border-destructive/15">
+              <div className="mb-3 p-2.5 rounded-md bg-destructive/8 text-destructive text-sm border border-destructive/15">
                 {error}
               </div>
             )}
-
-            <DialogFooter className="px-6 py-4 border-t border-border bg-muted/30 flex-row-reverse gap-2">
+            </AppDialogBody>
+            <AppDialogFooter>
               <Button type="submit" disabled={saving}>
                 {saving ? "Saving…" : event ? "Save Changes" : t.addWorkItemLabel || "Add Event"}
               </Button>
               <Button type="button" variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
-            </DialogFooter>
+            </AppDialogFooter>
           </form>
-        </DialogContent>
-      </Dialog>
+        </AppDialogContent>
+      </AppDialog>
 
       <ClientForm
         open={showClientForm}
