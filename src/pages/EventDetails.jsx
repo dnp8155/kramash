@@ -250,20 +250,127 @@ export default function EventDetails() {
     }
   };
 
+  const fmtDateShort = (d) => {
+    const dt = new Date(d + "T00:00:00");
+    return `${dt.getDate()} ${dt.toLocaleString("en-IN", { month: "short" })}`;
+  };
+
+  const fmtDateRange = (dates) => {
+    if (!dates || dates.length === 0) return "";
+    const sorted = [...dates].sort();
+    if (sorted.length === 1) return fmtDateShort(sorted[0]);
+    let consecutive = true;
+    for (let i = 1; i < sorted.length; i++) {
+      const diff = (new Date(sorted[i] + "T00:00:00") - new Date(sorted[i - 1] + "T00:00:00")) / 86400000;
+      if (diff !== 1) { consecutive = false; break; }
+    }
+    if (consecutive) {
+      const first = new Date(sorted[0] + "T00:00:00");
+      const last = new Date(sorted[sorted.length - 1] + "T00:00:00");
+      if (first.getMonth() === last.getMonth() && first.getFullYear() === last.getFullYear()) {
+        return `${first.getDate()}–${last.getDate()} ${first.toLocaleString("en-IN", { month: "short" })}`;
+      }
+      return `${fmtDateShort(sorted[0])} – ${fmtDateShort(sorted[sorted.length - 1])}`;
+    }
+    return sorted.map(fmtDateShort).join(", ");
+  };
+
   const addToCalendar = () => {
     if (!event) return;
-    const start = event.start_date ? event.start_date.replace(/-/g, "") : "";
-    const end = event.end_date ? event.end_date.replace(/-/g, "") : start;
+    const allDates = (event.event_dates?.length ? event.event_dates : [event.start_date]).filter(Boolean);
+    if (allDates.length === 0) return;
+
+    const sorted = [...allDates].sort();
+    let consecutive = sorted.length <= 1;
+    if (sorted.length > 1) {
+      consecutive = true;
+      for (let i = 1; i < sorted.length; i++) {
+        const diff = (new Date(sorted[i] + "T00:00:00") - new Date(sorted[i - 1] + "T00:00:00")) / 86400000;
+        if (diff !== 1) { consecutive = false; break; }
+      }
+    }
+
+    // Build description: TEAM / SERVICES / ADD-ON / NOTES
+    const descLines = [];
+
+    const teamLines = eventAssignments.map((a) => {
+      const m = membersById[a.team_member_id];
+      const name = m?.name || "Team Member";
+      const role = a.role_name_snapshot || m?.profession || "";
+      const wDates = a.working_dates?.length ? a.working_dates : allDates;
+      return `${name}${role ? ` [${role}]` : ""} [${fmtDateRange(wDates)}]`;
+    });
+    if (teamLines.length) {
+      descLines.push("TEAM");
+      descLines.push(teamLines.join("\n"));
+    }
+
+    const svcLines = serviceAssignments
+      .filter((a) => a.assignment_status !== "removed" && !a.is_addon)
+      .map((a) => {
+        const name = a.service_name_snapshot || "Service";
+        const provider = a.provider_name_snapshot || "";
+        return `${name}${provider ? ` [${provider}]` : ""} [${fmtDateRange(allDates)}]`;
+      });
+    if (svcLines.length) {
+      descLines.push("");
+      descLines.push("SERVICES");
+      descLines.push(svcLines.join("\n"));
+    }
+
+    const addonLines = serviceAssignments
+      .filter((a) => a.assignment_status !== "removed" && a.is_addon)
+      .map((a) => {
+        const name = a.service_name_snapshot || "Add-on";
+        const provider = a.provider_name_snapshot || "";
+        return `${name}${provider ? ` [${provider}]` : ""}`;
+      });
+    if (addonLines.length) {
+      descLines.push("");
+      descLines.push("ADD-ON");
+      descLines.push(addonLines.join("\n"));
+    }
+
+    const notes = event.description || event.notes || "";
+    if (notes) {
+      descLines.push("");
+      descLines.push("NOTES/DESCRIPTION");
+      descLines.push(notes);
+    }
+
+    const description = descLines.join("\n").replace(/\n/g, "\\n");
+
+    // Build VEVENT(s) — one multi-day event for consecutive dates, separate
+    // single-day events for non-consecutive dates so each shows accurately.
+    const vevents = [];
+    const buildVevent = (uid, dtStart) => {
+      const next = new Date(dtStart + "T00:00:00");
+      next.setDate(next.getDate() + 1); // DTEND is exclusive for all-day events
+      const dtEnd = next.toISOString().slice(0, 10).replace(/-/g, "");
+      return [
+        "BEGIN:VEVENT",
+        `UID:${uid}`,
+        `DTSTART;VALUE=DATE:${dtStart.replace(/-/g, "")}`,
+        `DTEND;VALUE=DATE:${dtEnd}`,
+        `SUMMARY:${event.title}`,
+        `DESCRIPTION:${description}`,
+        event.venue ? `LOCATION:${event.venue}` : "",
+        "END:VEVENT"
+      ].filter(Boolean).join("\r\n");
+    };
+
+    if (consecutive) {
+      vevents.push(buildVevent(`${event.id}@kramas`, sorted[0]));
+    } else {
+      sorted.forEach((d, i) => vevents.push(buildVevent(`${event.id}-${i}@kramas`, d)));
+    }
+
     const ics = [
-      "BEGIN:VCALENDAR", "VERSION:2.0",       "PRODID:-//Kramasha//WorkItem//EN",
-      "BEGIN:VEVENT",
-      `UID:${event.id}@kramas`,
-      `DTSTART;VALUE=DATE:${start}`,
-      `DTEND;VALUE=DATE:${end}`,
-      `SUMMARY:${event.title}`,
-      event.venue ? `LOCATION:${event.venue}` : "",
-      "END:VEVENT", "END:VCALENDAR"
-    ].filter(Boolean).join("\r\n");
+      "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Kramasha//WorkItem//EN",
+      ...vevents,
+      "END:VCALENDAR"
+    ].join("\r\n");
+
     const blob = new Blob([ics], { type: "text/calendar" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
