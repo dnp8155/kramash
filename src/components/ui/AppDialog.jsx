@@ -22,7 +22,7 @@ const AppDialogContent = React.forwardRef(({ className, children, maxWidth = "ma
           "rounded-t-2xl max-h-[92dvh] safe-area-bottom",
           "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom duration-300",
           // Desktop: centered modal (subtle slide, no zoom)
-          "sm:rounded-lg sm:max-h-[90dvh]",
+          "sm:rounded-[15px] sm:max-h-[90dvh]",
           "sm:data-[state=closed]:slide-out-to-bottom-4 sm:data-[state=open]:slide-in-from-bottom-4 sm:duration-200",
           maxWidth,
           className

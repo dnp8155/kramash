@@ -313,7 +313,7 @@ export default function Preferences() {
           <h1 className="text-xl font-bold text-foreground">Preferences</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Manage your workspace, business, and app settings — each section saves independently.</p>
         </div>
-        <TabTransition tabKey={activeGroup}>
+        <TabTransition tabKey={activeGroup} className="space-y-10">
           {activeGroupConfig.items.map((item) => (
             <div key={item.key}>
               <PreferencesSections sectionKey={item.key} {...sectionProps} />

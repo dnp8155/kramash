@@ -1,4 +1,4 @@
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, ChevronLeft } from "lucide-react";
 import Logo from "@/components/common/Logo";
 import { useWorkspace } from "@/lib/WorkspaceContext";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
@@ -43,6 +43,18 @@ export default function WorkspaceSwitcher({ mobile = false, collapsed = false, o
           </div>
           <div className="text-xs text-muted-foreground truncate">{sub}</div>
         </div>
+
+        {/* Collapse button */}
+        {onToggleCollapse && (
+          <button
+            onClick={onToggleCollapse}
+            className="w-8 h-8 rounded-lg border border-border bg-card flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
+            aria-label="Collapse panel"
+            title="Collapse"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+        )}
       </div>
     </div>
   );
