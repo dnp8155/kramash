@@ -15,14 +15,14 @@ export default function PdfPreviewModal({ url, filename, open, onClose, loading 
 
   return (
     <AppDialog open={open} onOpenChange={(o) => !o && onClose?.()}>
-      <AppDialogContent maxWidth="max-w-4xl">
+      <AppDialogContent maxWidth="max-w-5xl">
         <AppDialogHeader>
           <AppDialogTitle className="flex items-center gap-2">
             <FileText className="w-4 h-4 text-primary shrink-0" />
             {filename || "PDF Preview"}
           </AppDialogTitle>
         </AppDialogHeader>
-        <AppDialogBody className="p-0 overflow-hidden">
+        <AppDialogBody className="p-0 overflow-hidden h-[78dvh] sm:h-[80dvh]">
           {loading ? (
             <div className="flex flex-col items-center justify-center h-full gap-2">
               <div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin"></div>

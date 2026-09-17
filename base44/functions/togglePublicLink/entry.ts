@@ -20,6 +20,19 @@ export default async function(req) {
     } catch (e) { /* not found */ }
     if (!q) return Response.json({ error: "Quotation not found" }, { status: 404 });
 
+    // Pro-plan enforcement: Client Project Portal is a Pro-only feature.
+    // Look up the workspace and reject if the plan is not "pro".
+    let workspace = null;
+    try {
+      workspace = await base44.entities.Workspace.get(q.workspace_id);
+    } catch (e) { /* workspace lookup failed */ }
+    const isPro = workspace?.plan_type === "pro";
+    if (!isPro) {
+      return Response.json({
+        error: "Client Project Portal is a Pro feature. Upgrade to share project portals with clients."
+      }, { status: 403 });
+    }
+
     const updates = {};
 
     if (enabled !== undefined) {
