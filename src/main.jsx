@@ -38,25 +38,12 @@ if ('serviceWorker' in navigator) {
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(<App />);
 
-// Remove the branded splash screen from index.html once React has mounted
-// AND the splash logo image has loaded (so the user actually sees the logo).
-// Falls back to a 2.5s timeout so the app never gets stuck behind the splash.
-(function removeSplash() {
+// Remove the branded splash screen once React has mounted (next animation
+// frame). The logo image is preloaded via <link rel="preload"> in index.html
+// so it renders instantly in the splash during that brief frame.
+requestAnimationFrame(() => {
   const splash = document.getElementById('app-splash');
-  if (!splash) return;
-  const logoImg = splash.querySelector('#app-splash-logo img');
-  const remove = () => {
-    if (splash.parentNode) splash.parentNode.removeChild(splash);
-  };
-  let removed = false;
-  const done = () => { if (!removed) { removed = true; remove(); } };
-  if (logoImg && logoImg.complete && logoImg.naturalWidth > 0) {
-    done();
-  } else if (logoImg) {
-    logoImg.addEventListener('load', done, { once: true });
-    logoImg.addEventListener('error', done, { once: true });
-    setTimeout(done, 2500);
-  } else {
-    done();
+  if (splash && splash.parentNode) {
+    splash.parentNode.removeChild(splash);
   }
-})();
+});

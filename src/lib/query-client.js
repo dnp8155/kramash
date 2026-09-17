@@ -1,20 +1,19 @@
 import { QueryClient } from '@tanstack/react-query';
 
-// Only retry queries on transient errors (429 rate limit, 503 service unavailable).
-// Non-retryable errors (404, 403, etc.) fail immediately — no wasted retries.
+// Only retry on 503 (service unavailable). Do NOT retry on 429 (rate limit) —
+// retrying a rate-limited request sends more calls and makes the limit worse.
+// Cached data (placeholderData) is shown when a refetch fails, so failing fast
+// on 429 is safe: the user sees the last good data instead of a retry storm.
 function isRetryableQueryError(error) {
 	const status =
 		error?.status ||
 		error?.statusCode ||
 		error?.response?.status ||
 		error?.data?.status;
-	if (status === 429 || status === 503) return true;
+	if (status === 503) return true;
 	const msg = String(error?.message || error?.data?.message || "").toLowerCase();
 	return (
-		msg.includes("429") ||
 		msg.includes("503") ||
-		msg.includes("rate limit") ||
-		msg.includes("too many requests") ||
 		msg.includes("service unavailable")
 	);
 }
