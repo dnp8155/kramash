@@ -101,13 +101,13 @@ return new Response(JSON.stringify({
 | Client Portal Auth (Base44) | [x] Production Ready |
 | Supabase Auth migration | [ ] Not Started |
 | **Database** | |
-| Base44 Entities (35) | [x] Production Ready |
+| Base44 Entities (37) | [x] Production Ready |
 | Supabase Tables | [ ] Not Started |
 | Supabase RLS Policies | [ ] Not Started |
 | Supabase Triggers | [ ] Not Started |
 | Supabase Indexes | [ ] Not Started |
 | **Backend Functions** | |
-| Base44 Functions (36) | [x] Production Ready |
+| Base44 Functions (52) | [x] Production Ready |
 | Supabase Edge Functions | [ ] Not Started |
 | Supabase RPC Functions | [ ] Not Started |
 | **File Storage** | |
@@ -145,7 +145,7 @@ return new Response(JSON.stringify({
 ### Migration Tasks
 
 - [ ] Create Supabase project and configure auth
-- [ ] Create all 35 PostgreSQL tables with proper types
+- [ ] Create all 37 PostgreSQL tables with proper types
 - [ ] Create PostgreSQL enums for all status fields
 - [ ] Create RLS policies for all tables
 - [ ] Create triggers (handle_new_user, update_updated_at, invoice/milestone payment reconciliation)
@@ -184,3 +184,6 @@ return new Response(JSON.stringify({
 - [ ] No scheduled jobs — `generateNotifications` is on-demand only
 - [ ] No rate limiting on most endpoints (only OTP has cooldown)
 - [ ] Storage usage tracking is manual (caller must call `trackStorageUsage` after upload)
+- [ ] WebAuthn app lock pending secret configuration (functions exist, UI disabled)
+- [ ] Push notifications pending VAPID/FCM configuration (functions exist, no credentials)
+- [ ] `inviteClientToPortal` referenced in docs but does NOT exist as a backend function — client portal invitations use `enableClientPortalAccess` instead

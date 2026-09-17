@@ -78,11 +78,14 @@ Workspace (top-level tenant / business)
 | `id` | UUID PK | Same as `auth.users.id` |
 | `full_name` | TEXT | Built-in (from auth) |
 | `email` | TEXT | Built-in (from auth) |
-| `role` | TEXT | `admin` \| `user` \| `client` (default `user`) |
+| `role` | TEXT | `admin` \| `user` \| `client` \| `team_member` (default `user`) |
 | `phone` | TEXT | E.164 format for OTP login |
 | `language` | TEXT | `en` \| `hi` \| `gu` (default `en`) |
 | `linked_client_id` | UUID FK → `Client.id` | For client-role users |
-| `linked_workspace_id` | UUID FK → `Workspace.id` | For client-role users |
+| `linked_team_member_id` | UUID FK → `TeamMember.id` | For team_member-role users |
+| `linked_workspace_id` | UUID FK → `Workspace.id` | For client/team_member-role users |
+| `app_lock_enabled` | BOOLEAN | `false` | Whether WebAuthn app lock is enabled |
+| `app_lock_relock_after` | INTEGER | `0` | Re-lock after N minutes (0 = re-lock on tab close only) |
 
 **RLS:** Admins can list/update/delete other users. Regular users manage only their own profile.
 
@@ -96,7 +99,7 @@ The top-level business/tenant entity. Every other business record references thi
 |---|---|---|---|
 | `name` | TEXT | — | **Required.** Business name |
 | `business_type` | TEXT | — | Free-text business type |
-| `business_category` | TEXT | `OTHER` | `PHOTOGRAPHY` \| `EVENT_MANAGEMENT` \| `ARCHITECTURE` \| `OTHER` |
+| `business_category` | TEXT | `OTHER` | `PHOTOGRAPHY` \| `EVENT_MANAGEMENT` \| `ARCHITECTURE` \| `INTERIOR` \| `SALON_BEAUTY` \| `CONSULTING` \| `AGENCY` \| `CATERING` \| `CONTRACTING` \| `OTHER` |
 | `custom_business_type` | TEXT | — | For OTHER category |
 | `custom_work_label_singular` | TEXT | — | Custom terminology (e.g. "Shoot" vs "Event") |
 | `custom_work_label_plural` | TEXT | — | Custom terminology (e.g. "Shoots" vs "Events") |
@@ -121,6 +124,15 @@ The top-level business/tenant entity. Every other business record references thi
 | `team_member_types` | TEXT (JSON) | — | JSON array of type objects |
 | `event_types` | TEXT (JSON) | — | JSON array of event type strings |
 | `display_preferences` | TEXT (JSON) | — | JSON of UI toggle preferences |
+| `tagline` | TEXT | — | Business tagline |
+| `website` | TEXT | — | Website URL |
+| `date_format` | TEXT | `DD/MM/YYYY` | `DD/MM/YYYY` \| `MM/DD/YYYY` \| `YYYY-MM-DD` |
+| `number_format` | TEXT | `indian` | `indian` \| `western` |
+| `fy_start_month` | INTEGER | `4` | Financial year start month (1-12) |
+| `public_profile_enabled` | BOOLEAN | `false` | Public business profile toggle |
+| `public_profile_slug` | TEXT | — | URL slug for public profile page |
+| `public_profile_about` | TEXT | — | About text for public profile |
+| `public_profile_social_links` | TEXT (JSON) | — | `{instagram, facebook, youtube, website}` |
 
 **RLS:** Only the owner (`owner_user_id = auth.uid()`) can read/create/update/delete.
 
@@ -1186,6 +1198,8 @@ CREATE UNIQUE INDEX idx_jobsheets_public_token ON job_sheets(public_token) WHERE
 | 33 | `workspace_subscriptions` | Active subscriptions |
 | 34 | `subscription_payments` | Payment records |
 | 35 | `upgrade_requests` | Upgrade requests |
+| 36 | `push_subscriptions` | Per-device push notification credentials |
+| 37 | `user_auth_credentials` | WebAuthn credentials for app lock |
 
 ---
 

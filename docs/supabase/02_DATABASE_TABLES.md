@@ -4,7 +4,7 @@
 
 ## 6. Database Tables
 
-### Complete Entity Registry (35 entities)
+### Complete Entity Registry (37 entities)
 
 #### Core Business Entities
 
@@ -15,7 +15,7 @@
 | `id` | string (PK) | No | auto | |
 | `name` | string | No | | Business name |
 | `business_type` | string | Yes | | Free-text |
-| `business_category` | enum | Yes | `OTHER` | PHOTOGRAPHY, EVENT_MANAGEMENT, ARCHITECTURE, OTHER |
+| `business_category` | enum | Yes | `OTHER` | PHOTOGRAPHY, EVENT_MANAGEMENT, ARCHITECTURE, INTERIOR, SALON_BEAUTY, CONSULTING, AGENCY, CATERING, CONTRACTING, OTHER |
 | `custom_business_type` | string | Yes | | For OTHER category |
 | `custom_work_label_singular` | string | Yes | | e.g. "Project" or "Event" |
 | `custom_work_label_plural` | string | Yes | | e.g. "Projects" or "Events" |
@@ -40,11 +40,22 @@
 | `team_member_types` | string (JSON) | Yes | | JSON array |
 | `event_types` | string (JSON) | Yes | | JSON array |
 | `display_preferences` | string (JSON) | Yes | | |
+| `tagline` | string | Yes | | Business tagline |
+| `website` | string | Yes | | Website URL |
+| `date_format` | enum | Yes | `DD/MM/YYYY` | DD/MM/YYYY, MM/DD/YYYY, YYYY-MM-DD |
+| `number_format` | enum | Yes | `indian` | indian, western |
+| `fy_start_month` | number | Yes | `4` | Financial year start month (1-12) |
+| `public_profile_enabled` | boolean | Yes | `false` | Public business profile toggle |
+| `public_profile_slug` | string | Yes | | URL slug for public profile |
+| `public_profile_about` | string | Yes | | About text for public profile |
+| `public_profile_social_links` | string (JSON) | Yes | | {instagram, facebook, youtube, website} |
 | `created_date` | datetime | No | auto | |
 | `updated_date` | datetime | No | auto | |
 | `created_by_id` | string | No | auto | |
 
 **RLS:** `owner_user_id === user.id`
+
+> **Note:** `business_category` enum expanded to: PHOTOGRAPHY, EVENT_MANAGEMENT, ARCHITECTURE, INTERIOR, SALON_BEAUTY, CONSULTING, AGENCY, CATERING, CONTRACTING, OTHER
 
 ---
 
@@ -75,6 +86,9 @@
 | `state` | string | Yes | | Used for GST mode |
 | `country` | string | Yes | | |
 | `notes` | string | Yes | | |
+| `portal_access_token` | string | Yes | | Portal access token (unique random token for password-only portal link) |
+| `portal_password_hash` | string | Yes | | Portal password hash (salt:hash, never store plaintext) |
+| `portal_access_enabled` | boolean | Yes | `false` | Portal access enabled (admin master control) |
 
 **RLS:** `created_by_id === user.id`
 
@@ -96,10 +110,13 @@
 | `service_ids` | array<string> | Yes | `[]` | Denormalized |
 | `venue` | string | Yes | | |
 | `venue_address` | string | Yes | | |
-| `status` | enum | Yes | `upcoming` | upcoming, in-progress, completed, cancelled |
+| `status` | enum | Yes | `upcoming` | upcoming, in-progress, completed, postponed, cancelled |
 | `contract_value` | number | Yes | `0` | Total agreed amount |
+| `misc_expenses_json` | string (JSON) | Yes | `[]` | Array of {name, amount, notes} |
 | `description` | string | Yes | | |
 | `notes` | string | Yes | | |
+| `public_token` | string | Yes | | Public tracking token (secure random) |
+| `public_tracking_enabled` | boolean | Yes | `false` | Public tracking master toggle |
 
 **RLS:** Read/Update/Delete: `created_by_id === user.id`. Create: open.
 
@@ -122,6 +139,9 @@
 | `rate_type` | enum | Yes | `Per Event` | Per Event, Per Day, Fixed |
 | `notes` | string | Yes | | |
 | `status` | enum | Yes | `active` | active, inactive |
+| `portal_access_token` | string | Yes | | Portal access token (unique random) |
+| `portal_password_hash` | string | Yes | | Portal password hash (salt:hash) |
+| `portal_access_enabled` | boolean | Yes | `false` | Portal access master toggle |
 
 **RLS:** Read/Update/Delete: `created_by_id === user.id`. Create: open.
 
@@ -840,3 +860,41 @@ erDiagram
 6. **FinancialTransaction** links to Event, Client, Invoice, Milestone, TeamMember, Assignment, FY, ExpenseCategory — polymorphic by `transaction_type`
 7. **PaymentMilestone** links Quotation → Event → Client with due/paid amounts
 8. **Snapshots** (client_snapshot, business_snapshot, event_snapshot) are immutable JSON stored at quotation/invoice creation time
+9. **PushSubscription** stores per-device push notification credentials (web push keys or native FCM/APNs tokens)
+10. **UserAuthCredential** stores WebAuthn credential data for app lock / biometric authentication
+
+---
+
+##### 36. PushSubscription
+
+| Column | Type | Nullable | Default | Notes |
+|--------|------|----------|---------|-------|
+| `user_id` | string | No | | FK → User |
+| `platform` | enum | No | | web, android, ios |
+| `endpoint` | string | Yes | | Push service endpoint URL (web push) |
+| `push_token` | string | Yes | | FCM/APNs device token (native push) |
+| `p256dh_key` | string | Yes | | ECDH P-256 public key (base64url, web push) |
+| `auth_key` | string | Yes | | Auth secret (base64url, web push) |
+| `created_date` | datetime | No | auto | |
+| `updated_date` | datetime | No | auto | |
+| `created_by_id` | string | No | auto | |
+
+**RLS:** `user_id === user.id`
+
+---
+
+##### 37. UserAuthCredential
+
+| Column | Type | Nullable | Default | Notes |
+|--------|------|----------|---------|-------|
+| `user_id` | string | No | | FK → User |
+| `credential_id` | string | No | | Credential ID (base64url) |
+| `public_key` | string | No | | Public key (JSON JWK string) |
+| `counter` | number | Yes | `0` | Signature counter |
+| `device_label` | string | Yes | | Device label |
+| `transports` | string (JSON) | Yes | | JSON array: internal, hybrid, usb, nfc, ble |
+| `created_date` | datetime | No | auto | |
+| `updated_date` | datetime | No | auto | |
+| `created_by_id` | string | No | auto | |
+
+**RLS:** `user_id === user.id
