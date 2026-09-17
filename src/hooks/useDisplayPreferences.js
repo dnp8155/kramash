@@ -9,7 +9,7 @@ import { getMemberTypes, getMemberTypeColor } from "@/lib/memberTypeService";
 const DEFAULTS = {
   // Feature 1 — event status colors (dots + badges)
   showProgressIndicators: true,
-  // Feature 2 — member type tag colors (Bride Side / Groom Side / Common, etc.)
+  // Feature 2 — member type tag visibility on cards/tables (e.g. Designer, Developer)
   showMemberTypeColors: true,
   // Feature 3 — ALL status dots (event status dots + person status dots)
   showStatusDots: true,

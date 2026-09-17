@@ -131,7 +131,7 @@ export default function AppearanceSection() {
         </div>
         <div className="space-y-3">
           <ToggleRow label="Show event status" hint="Event status colors (Upcoming, In Progress, Completed, Cancelled)" checked={prefs.showProgressIndicators} onChange={gatedSetPref("showProgressIndicators")} />
-          <ToggleRow label="Show member type colors" hint="Color-code team member type tags (Bride Side, Groom Side, etc.)" checked={prefs.showMemberTypeColors} onChange={gatedSetPref("showMemberTypeColors")} />
+          <ToggleRow label="Show member type" hint="Show team member type tags (e.g. Designer, Developer) on event cards and table rows" checked={prefs.showMemberTypeColors} onChange={gatedSetPref("showMemberTypeColors")} />
           <ToggleRow label="Show status dots" hint="Colored dots before event & team names — turn off to remove all dots" checked={prefs.showStatusDots} onChange={gatedSetPref("showStatusDots")} />
           <ToggleRow label="Group upcoming events" hint="Show events grouped by This Week / All, or as a flat list" checked={prefs.groupUpcoming} onChange={gatedSetPref("groupUpcoming")} />
           <ToggleRow label="Show menubar labels" hint="Show text labels under icons in the mobile bottom navigation" checked={prefs.showMenubarLabels} onChange={gatedSetPref("showMenubarLabels")} />

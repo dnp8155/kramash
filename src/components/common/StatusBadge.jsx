@@ -11,20 +11,14 @@ const styles = {
   cancelled: "bg-destructive/10 text-destructive"
 };
 
-export default function StatusBadge({ status, className }) {
+export default function StatusBadge({ status, className, cardView = false }) {
   const { showProgressIndicators } = useDisplayPreferences();
   const cfg = EVENT_STATUS[status];
   if (!cfg) return null;
 
-  // When progress indicators are OFF, show plain text label without any color.
-  if (!showProgressIndicators) {
-    return (
-      <span className={cn("inline-flex items-center gap-1 text-xs font-medium text-muted-foreground", className)}>
-        <Calendar className="w-3 h-3 shrink-0" />
-        {cfg.label}
-      </span>
-    );
-  }
+  // On card/table views, hide entirely when "Show event status" is OFF.
+  // Event Details and other pages are not affected — always show the colored badge.
+  if (cardView && !showProgressIndicators) return null;
 
   return (
     <span

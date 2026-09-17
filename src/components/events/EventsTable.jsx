@@ -141,7 +141,7 @@ function Row({ event, clientName, teamMap, serviceMap, assignmentsByEvent, recei
         </span>
         <span className="text-sm text-muted-foreground hidden sm:block">{formatEventDates(event)}</span>
         <div className="hidden sm:flex items-center gap-2">
-          <StatusBadge status={event.status} />
+          <StatusBadge status={event.status} cardView />
         </div>
         <button
           className="text-muted-foreground hover:text-foreground justify-self-end"
@@ -214,7 +214,7 @@ function Row({ event, clientName, teamMap, serviceMap, assignmentsByEvent, recei
                     return (
                       <li key={a.id} className="text-xs break-anywhere flex items-center gap-1.5 flex-wrap">
                         {(a.member_type_snapshot || a.member_type_id) && (
-                          <MemberTypeTag label={a.member_type_snapshot} typeId={a.member_type_id} />
+                          <MemberTypeTag label={a.member_type_snapshot} typeId={a.member_type_id} cardView />
                         )}
                         <span className="font-medium text-foreground">{name}</span>
                         <span className="text-muted-foreground">({role})</span>
