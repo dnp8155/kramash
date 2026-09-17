@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useWorkspace } from "@/lib/WorkspaceContext";
 import { useAuth } from "@/lib/AuthContext";
@@ -22,6 +22,9 @@ import TeamAvailabilityWidget from "@/components/dashboard/TeamAvailabilityWidge
 import FiscalYearSelector from "@/components/dashboard/FiscalYearSelector";
 import RevenueTrendChart from "@/components/dashboard/RevenueTrendChart";
 import TeamWagesDueWidget from "@/components/dashboard/TeamWagesDueWidget";
+import { staggeredAllSettled } from "@/lib/staggeredLoader";
+import { usePartialErrorToast } from "@/hooks/usePartialErrorToast";
+import RetryState from "@/components/common/RetryState";
 import { CalendarDays, Wallet, AlertCircle, UserCheck, TrendingUp } from "lucide-react";
 
 export default function Dashboard() {
@@ -33,54 +36,42 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const currency = workspace?.currency || "INR";
   const { dateRange } = useFinancialYear();
+  const queryClient = useQueryClient();
 
-  const { data: events = [], isLoading: loadingEvents } = useQuery({
-    queryKey: ["dashboard-events", workspaceId],
-    queryFn: () => base44.entities.Event.filter({ workspace_id: workspaceId }, "start_date", 500),
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["dashboard", workspaceId],
+    queryFn: async () => {
+      const results = await staggeredAllSettled([
+        () => base44.entities.Event.filter({ workspace_id: workspaceId }, "start_date", 500),
+        () => loadTransactions(workspaceId),
+        () => loadTeamMembers(workspaceId),
+        () => loadAssignments(workspaceId),
+        () => base44.entities.Client.filter({ workspace_id: workspaceId }, "name", 500),
+        () => loadBlockDates(workspaceId)
+      ]);
+      const [evR, txR, memR, asgR, clR, bdR] = results;
+      return {
+        events: evR.status === "fulfilled" ? evR.value : [],
+        transactions: txR.status === "fulfilled" ? txR.value : [],
+        members: memR.status === "fulfilled" ? memR.value : [],
+        assignments: asgR.status === "fulfilled" ? asgR.value : [],
+        clients: clR.status === "fulfilled" ? clR.value : [],
+        blockDates: bdR.status === "fulfilled" ? bdR.value : [],
+        partialError: results.some((r) => r.status === "rejected")
+      };
+    },
     enabled: !!workspaceId,
     staleTime: 30 * 1000,
-    placeholderData: (prev) => prev,
+    placeholderData: (prev) => prev
   });
 
-  const { data: transactions = [], isLoading: loadingTx } = useQuery({
-    queryKey: ["dashboard-transactions", workspaceId],
-    queryFn: () => loadTransactions(workspaceId),
-    enabled: !!workspaceId,
-    staleTime: 30 * 1000,
-    placeholderData: (prev) => prev,
-  });
-
-  const { data: members = [] } = useQuery({
-    queryKey: ["dashboard-members", workspaceId],
-    queryFn: () => loadTeamMembers(workspaceId),
-    enabled: !!workspaceId,
-    staleTime: 30 * 1000,
-    placeholderData: (prev) => prev,
-  });
-
-  const { data: assignments = [] } = useQuery({
-    queryKey: ["dashboard-assignments", workspaceId],
-    queryFn: () => loadAssignments(workspaceId),
-    enabled: !!workspaceId,
-    staleTime: 30 * 1000,
-    placeholderData: (prev) => prev,
-  });
-
-  const { data: clients = [] } = useQuery({
-    queryKey: ["dashboard-clients", workspaceId],
-    queryFn: () => base44.entities.Client.filter({ workspace_id: workspaceId }, "name", 500),
-    enabled: !!workspaceId,
-    staleTime: 30 * 1000,
-    placeholderData: (prev) => prev,
-  });
-
-  const { data: blockDates = [] } = useQuery({
-    queryKey: ["dashboard-blockdates", workspaceId],
-    queryFn: () => loadBlockDates(workspaceId),
-    enabled: !!workspaceId,
-    staleTime: 30 * 1000,
-    placeholderData: (prev) => prev,
-  });
+  const events = data?.events || [];
+  const transactions = data?.transactions || [];
+  const members = data?.members || [];
+  const assignments = data?.assignments || [];
+  const clients = data?.clients || [];
+  const blockDates = data?.blockDates || [];
+  const partialError = data?.partialError;
 
   const eventsById = useMemo(() => Object.fromEntries(events.map((e) => [e.id, e])), [events]);
   const clientsById = useMemo(() => Object.fromEntries(clients.map((c) => [c.id, c])), [clients]);
@@ -185,7 +176,6 @@ export default function Dashboard() {
     return splitAvailability(members, today, assignments, eventsById, blockDates);
   }, [members, assignments, eventsById, blockDates]);
 
-  const isLoading = loadingEvents || loadingTx;
   const greeting = t((() => {
     const h = new Date().getHours();
     if (h < 12) return "Good morning";
@@ -208,6 +198,21 @@ export default function Dashboard() {
   const timeStr = new Intl.DateTimeFormat(dateLocale, {
     hour: "2-digit", minute: "2-digit", hour12: true, timeZone: tz
   }).format(now);
+
+  usePartialErrorToast(partialError, error, !!data);
+
+  if (error && !data) {
+    return (
+      <div className="p-4 sm:p-6 space-y-6">
+        <PageHeader
+          eyebrow="Overview"
+          title={`${greeting}, ${user?.full_name?.split(" ")[0] || t("there")}`}
+          subtitle={`${dateStr} · ${timeStr}`}
+        />
+        <RetryState onRetry={() => queryClient.invalidateQueries({ queryKey: ["dashboard", workspaceId] })} />
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
@@ -261,7 +266,7 @@ export default function Dashboard() {
           <RevenueTrendChart
             data={trendData}
             currency={currency}
-            isLoading={loadingTx}
+            isLoading={isLoading}
           />
         </div>
         <div>
@@ -269,7 +274,7 @@ export default function Dashboard() {
             dues={wagesDue.dues}
             totalDue={wagesDue.totalDue}
             currency={currency}
-            isLoading={loadingTx}
+            isLoading={isLoading}
             onSeeAll={() => navigate("/team")}
           />
         </div>
@@ -282,7 +287,7 @@ export default function Dashboard() {
             events={stats.upcoming}
             clientsById={clientsById}
             currency={currency}
-            isLoading={loadingEvents}
+            isLoading={isLoading}
             onEventClick={(e) => navigate(`/events/${e.id}`)}
             onSeeAll={() => navigate("/events")}
             workItemLabel={term.workItemPlural}
@@ -291,7 +296,7 @@ export default function Dashboard() {
         <div>
           <TeamAvailabilityWidget
             avail={todayAvail}
-            isLoading={loadingEvents}
+            isLoading={isLoading}
             onSeeAll={() => navigate("/team")}
           />
         </div>

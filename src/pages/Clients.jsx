@@ -18,6 +18,9 @@ import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
 import { useT } from "@/hooks/useT";
 import { invalidateEntities } from "@/lib/queryInvalidation";
 import { useToast } from "@/components/ui/use-toast";
+import { staggeredAllSettled } from "@/lib/staggeredLoader";
+import { usePartialErrorToast } from "@/hooks/usePartialErrorToast";
+import RetryState from "@/components/common/RetryState";
 
 export default function Clients() {
   const { workspaceId } = useWorkspace();
@@ -44,18 +47,25 @@ export default function Clients() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["clients", workspaceId],
     queryFn: async () => {
-      const [clList, evList] = await Promise.all([
-        base44.entities.Client.filter({ workspace_id: workspaceId }, "name", 500),
-        base44.entities.Event.filter({ workspace_id: workspaceId }, "-start_date", 500)
+      const results = await staggeredAllSettled([
+        () => base44.entities.Client.filter({ workspace_id: workspaceId }, "name", 500),
+        () => base44.entities.Event.filter({ workspace_id: workspaceId }, "-start_date", 500)
       ]);
+      const [clR, evR] = results;
+      const clList = clR.status === "fulfilled" ? clR.value : [];
+      const evList = evR.status === "fulfilled" ? evR.value : [];
       const counts = {};
       (evList || []).forEach((e) => { counts[e.client_id] = (counts[e.client_id] || 0) + 1; });
-      return { clients: clList || [], eventCounts: counts };
+      return { clients: clList || [], eventCounts: counts, partialError: results.some((r) => r.status === "rejected") };
     },
-    enabled: !!workspaceId
+    enabled: !!workspaceId,
+    staleTime: 60 * 1000,
+    placeholderData: (prev) => prev
   });
   const clients = data?.clients || [];
   const eventCounts = data?.eventCounts || {};
+  const partialError = data?.partialError;
+  usePartialErrorToast(partialError, error, !!data);
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ["clients", workspaceId] });
     invalidateEntities(queryClient, ["Client"]);
@@ -105,11 +115,13 @@ export default function Clients() {
         onChange={(e) => setQuery(e.target.value)}
       />
 
-      {error && (
+      {error && !data ? (
+        <RetryState onRetry={invalidate} message={error?.message} />
+      ) : error ? (
         <div className="text-sm text-destructive bg-destructive/5 border border-destructive/20 rounded-md px-3 py-2">
           {error?.message || t("Failed to load clients.")}
         </div>
-      )}
+      ) : null}
 
       {isLoading ? (
         <ClientsPageSkeleton />

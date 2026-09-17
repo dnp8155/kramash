@@ -26,6 +26,8 @@ import { invalidateEntities } from "@/lib/queryInvalidation";
 import { useFinancialYear } from "@/hooks/useFinancialYear";
 import { fyDisplayLabel, fyRecordValue } from "@/lib/financialYearService";
 import { useFeatureGate } from "@/components/common/ProGate";
+import { staggeredAllSettled } from "@/lib/staggeredLoader";
+import RetryState from "@/components/common/RetryState";
 
 export default function Events() {
   const { workspaceId, workspace } = useWorkspace();
@@ -73,14 +75,14 @@ export default function Events() {
   const { data, isLoading, error, isFetching } = useQuery({
     queryKey: ["events", workspaceId],
     queryFn: async () => {
-      const results = await Promise.allSettled([
-        base44.entities.Event.filter({ workspace_id: workspaceId }, "-start_date", 500),
-        base44.entities.Client.filter({ workspace_id: workspaceId }, "name", 500),
-        base44.entities.TeamMember.filter({ workspace_id: workspaceId }, "name", 500),
-        base44.entities.Service.filter({ workspace_id: workspaceId }, "name", 500),
-        base44.entities.EventTeamAssignment.filter({ workspace_id: workspaceId }, "-created_date", 1000),
-        base44.entities.EventServiceAssignment.filter({ workspace_id: workspaceId }, "-created_date", 1000),
-        base44.entities.FinancialTransaction.filter({ workspace_id: workspaceId, transaction_type: "CLIENT_RECEIPT", status: "ACTIVE" }, "-transaction_date", 2000)
+      const results = await staggeredAllSettled([
+        () => base44.entities.Event.filter({ workspace_id: workspaceId }, "-start_date", 500),
+        () => base44.entities.Client.filter({ workspace_id: workspaceId }, "name", 500),
+        () => base44.entities.TeamMember.filter({ workspace_id: workspaceId }, "name", 500),
+        () => base44.entities.Service.filter({ workspace_id: workspaceId }, "name", 500),
+        () => base44.entities.EventTeamAssignment.filter({ workspace_id: workspaceId }, "-created_date", 1000),
+        () => base44.entities.EventServiceAssignment.filter({ workspace_id: workspaceId }, "-created_date", 1000),
+        () => base44.entities.FinancialTransaction.filter({ workspace_id: workspaceId, transaction_type: "CLIENT_RECEIPT", status: "ACTIVE" }, "-transaction_date", 2000)
       ]);
       const [evR, clR, tmR, svR, asgR, svcAsgR, txR] = results;
       const evList = evR.status === "fulfilled" ? evR.value : [];
@@ -200,6 +202,15 @@ export default function Events() {
   const inProgressCount = events.filter((e) => e.status === "in-progress").length;
 
   if (isLoading) return <EventsPageSkeleton />;
+
+  if (error && !data) {
+    return (
+      <div className="p-4 sm:p-6 space-y-4">
+        <PageHeader eyebrow="Schedule" title={term.workItemPlural} subtitle={`Manage your bookings, schedule, and ${term.workItemSingular.toLowerCase()} details.`} />
+        <RetryState onRetry={() => queryClient.invalidateQueries({ queryKey: ["events", workspaceId] })} />
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 sm:p-6 space-y-4">

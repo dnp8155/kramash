@@ -40,6 +40,9 @@ import { useFeatureGate } from "@/components/common/ProGate";
 import PageHeader from "@/components/common/PageHeader";
 import { useT } from "@/hooks/useT";
 import { invalidateEntities } from "@/lib/queryInvalidation";
+import { staggeredAllSettled } from "@/lib/staggeredLoader";
+import { usePartialErrorToast } from "@/hooks/usePartialErrorToast";
+import RetryState from "@/components/common/RetryState";
 import { motion } from "framer-motion";
 import TabTransition from "@/components/common/TabTransition";
 import { DURATION_FAST, EASE } from "@/lib/motionVariants";
@@ -81,13 +84,13 @@ export default function Financial() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["financial", workspaceId],
     queryFn: async () => {
-      const results = await Promise.allSettled([
-        loadAllTransactions(workspaceId),
-        base44.entities.Event.filter({ workspace_id: workspaceId }, "-start_date", 500),
-        base44.entities.Client.filter({ workspace_id: workspaceId }, "name", 500),
-        base44.entities.TeamMember.filter({ workspace_id: workspaceId }, "name", 500),
-        base44.entities.EventTeamAssignment.filter({ workspace_id: workspaceId }, "-created_date", 1000),
-        loadExpenseCategories(workspaceId)
+      const results = await staggeredAllSettled([
+        () => loadAllTransactions(workspaceId),
+        () => base44.entities.Event.filter({ workspace_id: workspaceId }, "-start_date", 500),
+        () => base44.entities.Client.filter({ workspace_id: workspaceId }, "name", 500),
+        () => base44.entities.TeamMember.filter({ workspace_id: workspaceId }, "name", 500),
+        () => base44.entities.EventTeamAssignment.filter({ workspace_id: workspaceId }, "-created_date", 1000),
+        () => loadExpenseCategories(workspaceId)
       ]);
       const [txR, evsR, clsR, membsR, asgnsR, catsR] = results;
       const partialError = results.some((r) => r.status === "rejected");
@@ -162,9 +165,7 @@ export default function Financial() {
     if (error) toast({ title: t("Failed to load financial activity"), description: error?.message, variant: "destructive" });
   }, [error, toast]);
 
-  useEffect(() => {
-    if (partialError && !error) toast({ title: t("Some data could not be loaded — showing last saved."), variant: "default" });
-  }, [partialError, error, toast]);
+  usePartialErrorToast(partialError, error, !!data);
 
   // FY-scoped events — only events in the selected financial year
   const fyEvents = useMemo(() => events.filter((e) => eventInRange(e, dateRange)), [events, dateRange]);
@@ -287,6 +288,15 @@ export default function Financial() {
   };
 
   if (isLoading) return <FinancialPageSkeleton />;
+
+  if (error && !data) {
+    return (
+      <div className="p-4 sm:p-6 space-y-4">
+        <PageHeader title={t("Financial")} subtitle={t("Track payments, expenses, and profit across financial years.")} />
+        <RetryState onRetry={load} />
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 sm:p-6 space-y-4">

@@ -16,6 +16,7 @@ export const ENTITY_INVALIDATION_KEYS = {
   Event: [
     ["events"],
     ["event"],
+    ["dashboard"],
     ["dashboard-events"],
     ["dashboard-transactions"],
     ["dashboard-assignments"],
@@ -25,11 +26,13 @@ export const ENTITY_INVALIDATION_KEYS = {
   Client: [
     ["clients"],
     ["client"],
+    ["dashboard"],
     ["dashboard-clients"]
   ],
   TeamMember: [
     ["team"],
     ["team-member"],
+    ["dashboard"],
     ["dashboard-members"],
     ["financial"]
   ],
@@ -62,16 +65,19 @@ export const ENTITY_INVALIDATION_KEYS = {
   FinancialTransaction: [
     ["financial"],
     ["event"],
+    ["dashboard"],
     ["dashboard-transactions"]
   ],
   EventTeamAssignment: [
     ["event"],
     ["team"],
     ["team-member"],
+    ["dashboard"],
     ["dashboard-assignments"]
   ],
   EventDayAssignment: [
     ["event"],
+    ["dashboard"],
     ["dashboard-assignments"]
   ],
   EventServiceAssignment: [
@@ -87,6 +93,7 @@ export const ENTITY_INVALIDATION_KEYS = {
   TeamBlockDate: [
     ["team"],
     ["team-member"],
+    ["dashboard"],
     ["dashboard-blockdates"]
   ],
   EventReminder: [
@@ -95,6 +102,7 @@ export const ENTITY_INVALIDATION_KEYS = {
   PaymentMilestone: [
     ["event"],
     ["financial"],
+    ["dashboard"],
     ["dashboard-transactions"]
   ],
   QuotationPackage: [
