@@ -60,15 +60,11 @@ export default function AppLayout() {
         <OfflineBanner />
         <TopHeader />
         <main className="flex-1 overflow-y-auto scrollbar-thin pb-24 lg:pb-0">
-          <AnimatePresence mode="wait">
-            <PageTransition key={location.pathname}>
-              <ErrorBoundary key={location.pathname}>
-                <AppLockGate>
-                  <Outlet />
-                </AppLockGate>
-              </ErrorBoundary>
-            </PageTransition>
-          </AnimatePresence>
+          <ErrorBoundary key={location.pathname}>
+            <AppLockGate>
+              <Outlet />
+            </AppLockGate>
+          </ErrorBoundary>
         </main>
       </div>
 

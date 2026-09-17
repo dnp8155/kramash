@@ -36,8 +36,25 @@ if ('serviceWorker' in navigator) {
   }
 }
 
+class ErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { hasError: false, error: null }; }
+  static getDerivedStateFromError(error) { return { hasError: true, error }; }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: '20px', color: 'red', background: '#fee', zIndex: 99999, position: 'relative' }}>
+          <h2>React Crashed!</h2>
+          <pre style={{ whiteSpace: 'pre-wrap' }}>{this.state.error?.toString()}</pre>
+          <pre style={{ whiteSpace: 'pre-wrap', marginTop: '10px', fontSize: '12px' }}>{this.state.error?.stack}</pre>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(<App />);
+root.render(<ErrorBoundary><App /></ErrorBoundary>);
 
 // Remove the branded splash screen once React has mounted (next animation
 // frame). The logo image is preloaded via <link rel="preload"> in index.html
