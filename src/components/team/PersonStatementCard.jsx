@@ -37,7 +37,7 @@ export default function PersonStatementCard({ statement, currency = "INR" }) {
             Statement for
           </span>
           {member?.is_self && (
-            <span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide bg-primary text-primary-foreground">
+            <span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide bg-primary text-primary-foreground">
               <Crown className="w-2 h-2" /> Self
             </span>
           )}
