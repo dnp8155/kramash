@@ -72,9 +72,10 @@ export default function Financial() {
   const [deletingFY, setDeletingFY] = useState(null);
   const queryClient = useQueryClient();
 
-  // Ensure default expense categories once on mount — not on every refetch
+  // Ensure default expense categories once on mount — not on every refetch.
+  // Swallow errors (e.g. rate-limit) so the page never crashes on mount.
   useEffect(() => {
-    if (workspaceId) ensureDefaultExpenseCategories(workspaceId);
+    if (workspaceId) ensureDefaultExpenseCategories(workspaceId).catch(() => {});
   }, [workspaceId]);
 
   const { data, isLoading, error } = useQuery({

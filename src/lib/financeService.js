@@ -182,18 +182,29 @@ export function methodBreakdown(transactions) {
 
 export async function ensureDefaultExpenseCategories(workspaceId) {
   if (!workspaceId) return 0;
-  const existing = await base44.entities.ExpenseCategory.filter(
-    { workspace_id: workspaceId }, "name", 100
-  );
+  // Gracefully skip on rate-limit / transient errors — this is a best-effort
+  // seed that runs on Financial page mount; it should never crash the page.
+  let existing = [];
+  try {
+    existing = await base44.entities.ExpenseCategory.filter(
+      { workspace_id: workspaceId }, "name", 100
+    );
+  } catch {
+    return 0;
+  }
   if (existing && existing.length > 0) return 0;
-  const created = await base44.entities.ExpenseCategory.bulkCreate(
-    DEFAULT_EXPENSE_CATEGORIES.map((n) => ({
-      workspace_id: workspaceId,
-      name: n,
-      status: "active"
-    }))
-  );
-  return Array.isArray(created) ? created.length : 0;
+  try {
+    const created = await base44.entities.ExpenseCategory.bulkCreate(
+      DEFAULT_EXPENSE_CATEGORIES.map((n) => ({
+        workspace_id: workspaceId,
+        name: n,
+        status: "active"
+      }))
+    );
+    return Array.isArray(created) ? created.length : 0;
+  } catch {
+    return 0;
+  }
 }
 
 export async function loadExpenseCategories(workspaceId) {
