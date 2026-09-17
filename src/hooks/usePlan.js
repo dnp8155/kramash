@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   resolveWorkspacePlan,
   getUsage,
@@ -21,33 +21,29 @@ const USAGE_KEY_MAP = {
 
 export function usePlan() {
   const { workspaceId } = useWorkspace();
-  const [plan, setPlan] = useState(null);
-  const [usage, setUsage] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
-  const load = useCallback(async () => {
-    if (!workspaceId) {
-      setPlan(null);
-      setUsage(null);
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    try {
-      const [p, u] = await Promise.all([resolveWorkspacePlan(workspaceId), getUsage(workspaceId)]);
-      setPlan(p);
-      setUsage(u);
-    } catch (e) {
-      setPlan(null);
-      setUsage(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [workspaceId]);
+  // Plan + limits — cached for 2 minutes (rarely changes).
+  const { data: plan, isLoading: planLoading } = useQuery({
+    queryKey: ["plan", workspaceId],
+    queryFn: () => resolveWorkspacePlan(workspaceId),
+    enabled: !!workspaceId,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
+  });
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  // Usage counts — cached for 60s (changes when user creates entities).
+  const { data: usage, isLoading: usageLoading } = useQuery({
+    queryKey: ["plan-usage", workspaceId],
+    queryFn: () => getUsage(workspaceId),
+    enabled: !!workspaceId,
+    staleTime: 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
+  });
+
+  const loading = planLoading || usageLoading;
 
   const canCreate = (key) => {
     if (!plan || !usage) return { allowed: true, limit: Infinity };
@@ -57,5 +53,10 @@ export function usePlan() {
 
   const canUse = (key) => (plan ? canUseFeature(plan.limits, key) : false);
 
-  return { plan, usage, loading, reload: load, canCreate, canUse, clearCache: clearPlanConfigCache };
+  const reload = () => {
+    queryClient.invalidateQueries({ queryKey: ["plan", workspaceId] });
+    queryClient.invalidateQueries({ queryKey: ["plan-usage", workspaceId] });
+  };
+
+  return { plan, usage, loading, reload, canCreate, canUse, clearCache: clearPlanConfigCache };
 }

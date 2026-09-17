@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import Sidebar from "@/components/layout/Sidebar";
@@ -12,10 +12,14 @@ import OfflineBanner from "@/components/common/OfflineBanner";
 import UpdateBanner from "@/components/common/UpdateBanner";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import { useDotsHidden } from "@/hooks/useDisplayPreferences";
+import { useWorkspace } from "@/lib/WorkspaceContext";
+import { generateNotifications } from "@/lib/notificationService";
 
 export default function AppLayout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const location = useLocation();
+  const { workspaceId } = useWorkspace();
+  const lastGenRef = useRef(null);
 
   // Keep all pages in sync: when any entity changes server-side (create/update/delete),
   // invalidate every query cache that depends on it so dashboards, lists, and detail
@@ -25,6 +29,19 @@ export default function AppLayout() {
   // Apply global "dots-hidden" body class when "Show status dots" preference is OFF.
   // CSS hides .status-dot, .type-dot, .team-chip-dot, .cal-today-dot throughout the app.
   useDotsHidden();
+
+  // Generate notifications ONCE per workspace load, DEFERRED by 4s so it doesn't
+  // compete with page data loading for API rate limits. This backend function
+  // makes 30+ server-side API calls (members, users, events, notifications,
+  // emails) — running it concurrently with page loads caused 429 cascades.
+  useEffect(() => {
+    if (!workspaceId || lastGenRef.current === workspaceId) return;
+    lastGenRef.current = workspaceId;
+    const timer = setTimeout(() => {
+      generateNotifications(workspaceId);
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, [workspaceId]);
 
   return (
     <div className="flex h-[100dvh] overflow-hidden bg-background">

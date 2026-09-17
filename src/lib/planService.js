@@ -1,4 +1,5 @@
 import { base44 } from "@/api/base44Client";
+import { staggeredAllSettled } from "@/lib/staggeredLoader";
 
 // Limit keys that are boolean feature flags vs numeric resource caps.
 const BOOLEAN_KEYS = new Set([
@@ -99,18 +100,19 @@ export async function resolveWorkspacePlan(workspaceId) {
 }
 
 // Count real usage from database records.
+// Uses staggered loading to avoid 429 rate limits from concurrent calls.
 export async function getUsage(workspaceId) {
-  const [events, members, services, leads] = await Promise.all([
-    base44.entities.Event.filter({ workspace_id: workspaceId }),
-    base44.entities.TeamMember.filter({ workspace_id: workspaceId, status: "active" }),
-    base44.entities.Service.filter({ workspace_id: workspaceId, status: "active" }),
-    base44.entities.Lead.filter({ workspace_id: workspaceId })
+  const [evR, mbR, svR, ldR] = await staggeredAllSettled([
+    () => base44.entities.Event.filter({ workspace_id: workspaceId }),
+    () => base44.entities.TeamMember.filter({ workspace_id: workspaceId, status: "active" }),
+    () => base44.entities.Service.filter({ workspace_id: workspaceId, status: "active" }),
+    () => base44.entities.Lead.filter({ workspace_id: workspaceId })
   ]);
   return {
-    events: events.length,
-    team_members: members.length,
-    services: services.length,
-    leads: leads.length
+    events: evR.status === "fulfilled" ? (evR.value || []).length : 0,
+    team_members: mbR.status === "fulfilled" ? (mbR.value || []).length : 0,
+    services: svR.status === "fulfilled" ? (svR.value || []).length : 0,
+    leads: ldR.status === "fulfilled" ? (ldR.value || []).length : 0
   };
 }
 
