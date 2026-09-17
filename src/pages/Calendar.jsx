@@ -150,7 +150,7 @@ export default function Calendar() {
         )}
       </div>
 
-      <div className="flex gap-4">
+      <div className="flex flex-col lg:flex-row gap-4">
         <div className="flex-1 min-w-0">
           <TabTransition tabKey={view}>
           {view === "year" && (
