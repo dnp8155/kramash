@@ -354,20 +354,33 @@ CREATE TABLE profiles (
 ### 2026-09-11
 - Created `SUPABASE_BACKEND_SPEC.md` — initial master specification document
 - Created supplementary detail files in `docs/supabase/`:
-  - `02_DATABASE_TABLES.md` — all 35 entity schemas + relationship diagram
-  - `03_FUNCTIONS.md` — all 36 backend functions + RPC proposals + triggers
+  - `02_DATABASE_TABLES.md` — all 37 entity schemas + relationship diagram
+  - `03_FUNCTIONS.md` — all 52 backend functions + RPC proposals + triggers
   - `04_SECURITY.md` — RLS policies, storage buckets, security checklist, data isolation
   - `05_BUSINESS_LOGIC.md` — business rules, enums, indexes, validation, transactions, idempotency
   - `06_FLOWS.md` — email system, client invitation, auto-link, portal data, public links
   - `07_EXTERNAL.md` — external APIs, webhooks, cron/scheduled jobs
   - `08_MIGRATION.md` — frontend→backend map, Base44→Supabase map, migration SQL, seed data
   - `09_STATUS.md` — implementation status, pending TODO, error handling, audit logging
-- Audited entire application: 35 entities, 36 backend functions, 8 shared modules
-- Documented complete authentication architecture (email+password, Google OAuth, phone OTP, client portal)
+- Audited entire application: 37 entities, 52 backend functions, 8 shared modules
+- Documented complete authentication architecture (email+password, Google OAuth, phone OTP, client portal, team portal)
 - Documented all database tables with full column schemas and RLS patterns
 - Documented all backend functions with purpose, auth, callers, and Supabase replacement
-- Documented client invitation flow (current: `inviteClientToPortal` sends email with registration link)
+- Documented client portal access flow (current: `enableClientPortalAccess` generates token + password hash; `verifyClientPortalAccess` verifies password)
 - Documented client auto-link flow (email-based matching in `getClientPortalData`)
+
+### 2026-09-17
+- Full documentation sync with actual entity schemas and backend functions
+- Added missing entities: `PushSubscription` (push notification credentials), `UserAuthCredential` (WebAuthn app lock)
+- Updated `Workspace` entity: added `tagline`, `website`, `date_format`, `number_format`, `fy_start_month`, `public_profile_enabled`, `public_profile_slug`, `public_profile_about`, `public_profile_social_links`; expanded `business_category` enum from 4 to 10 values (added INTERIOR, SALON_BEAUTY, CONSULTING, AGENCY, CATERING, CONTRACTING)
+- Updated `User` entity: added `team_member` role, `linked_team_member_id`, `app_lock_enabled`, `app_lock_relock_after`
+- Updated `Event` entity: added `postponed` status, `misc_expenses_json`, `public_token`, `public_tracking_enabled`
+- Updated `TeamMember` entity: added `portal_access_token`, `portal_password_hash`, `portal_access_enabled`
+- Updated `Client` entity: added `portal_access_token`, `portal_password_hash`, `portal_access_enabled`
+- Added 16 missing backend functions: `createLead`, `editTransaction`, `voidTransaction`, `deleteTransaction`, `enableClientPortalAccess`, `enableTeamPortalAccess`, `getClientPortalDataByAccess`, `getTeamPortalData`, `getTeamPortalDataByAccess`, `getPublicProfile`, `getPushConfig`, `registerPushSubscription`, `dispatchPushNotification`, `generateWebAuthnRegistrationChallenge`, `generateWebAuthnAssertionChallenge`, `verifyWebAuthnRegistration`, `verifyWebAuthnAssertion`, `verifyClientPortalAccess`, `verifyTeamPortalAccess`, `updateClientPortalPassword`, `updateTeamPortalPassword`
+- Removed non-existent `inviteClientToPortal` function from all docs (replaced by `enableClientPortalAccess`)
+- Updated enums: `Workspace.business_category` (10 values), `Event.status` (+postponed), `User.role` (+team_member), `Invoice.signature_type` (none/text/esign), `PushSubscription.platform` (web/android/ios), `Workspace.date_format`, `Workspace.number_format`
+- Updated entity→table mapping and function→Edge Function/RPC mapping in migration docs
 - Documented client portal data pipeline with summary calculations
 - Documented all public token-based URLs (quotation, invoice, job sheet, event tracking)
 - Documented external APIs (Razorpay, Stripe, LLM, OTP, Firebase)

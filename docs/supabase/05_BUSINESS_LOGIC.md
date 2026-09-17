@@ -168,12 +168,14 @@ On TeamMember creation:
 
 | Entity | Field | Values |
 |--------|-------|--------|
-| Workspace | `business_category` | PHOTOGRAPHY, EVENT_MANAGEMENT, ARCHITECTURE, OTHER |
+| Workspace | `business_category` | PHOTOGRAPHY, EVENT_MANAGEMENT, ARCHITECTURE, INTERIOR, SALON_BEAUTY, CONSULTING, AGENCY, CATERING, CONTRACTING, OTHER |
 | Workspace | `plan_type` | free, pro |
 | Workspace | `plan_status` | active, suspended, cancelled |
+| Workspace | `date_format` | DD/MM/YYYY, MM/DD/YYYY, YYYY-MM-DD |
+| Workspace | `number_format` | indian, western |
 | WorkspaceMember | `role` | owner, admin, accountant, manager, staff |
 | WorkspaceMember | `status` | active, invited, removed |
-| Event | `status` | upcoming, in-progress, completed, cancelled |
+| Event | `status` | upcoming, in-progress, completed, postponed, cancelled |
 | TeamMember | `status` | active, inactive |
 | TeamMember | `rate_type` | Per Event, Per Day, Fixed |
 | TeamRole | `rate_type` | Per Event, Per Day, Fixed |
@@ -205,6 +207,7 @@ On TeamMember creation:
 | Invoice | `due_date_type` | due_on_receipt, net_15, net_30, custom |
 | Invoice | `discount_type` | percent, fixed |
 | Invoice | `gst_mode` | cgst_sgst, igst |
+| Invoice | `signature_type` | none, text, esign |
 | InvoiceItem | `item_type` | package, line_item |
 | FinancialYear | `status` | open, closed |
 | FinancialTransaction | `transaction_type` | CLIENT_RECEIPT, TEAM_PAYMENT, BUSINESS_EXPENSE |
@@ -212,6 +215,7 @@ On TeamMember creation:
 | FinancialTransaction | `status` | ACTIVE, VOID |
 | ExpenseCategory | `status` | active, inactive |
 | JobSheet | `status` | active, archived |
+| PushSubscription | `platform` | web, android, ios |
 | Notification | `type` | event_reminder, payment_due, subscription_expiring, subscription_expired, team_conflict, general |
 | Plan | `code` | FREE, PRO |
 | PlanPricing | `billing_cycle` | MONTHLY, SIX_MONTHS, ANNUAL |
@@ -223,19 +227,19 @@ On TeamMember creation:
 | SupportTicket | `category` | bug, feature_request, billing, account, general |
 | SupportTicket | `priority` | low, medium, high, urgent |
 | SupportTicket | `status` | open, in_progress, resolved, closed |
-| User | `role` | admin, user, client |
+| User | `role` | admin, user, client, team_member |
 | User | `language` | en, hi, gu |
 
 ### PROPOSED PostgreSQL Enums
 
 ```sql
-CREATE TYPE business_category AS ENUM ('PHOTOGRAPHY', 'EVENT_MANAGEMENT', 'ARCHITECTURE', 'OTHER');
-CREATE TYPE event_status AS ENUM ('upcoming', 'in-progress', 'completed', 'cancelled');
+CREATE TYPE business_category AS ENUM ('PHOTOGRAPHY', 'EVENT_MANAGEMENT', 'ARCHITECTURE', 'INTERIOR', 'SALON_BEAUTY', 'CONSULTING', 'AGENCY', 'CATERING', 'CONTRACTING', 'OTHER');
+CREATE TYPE event_status AS ENUM ('upcoming', 'in-progress', 'completed', 'postponed', 'cancelled');
 CREATE TYPE quotation_status AS ENUM ('draft', 'finalized', 'accepted', 'rejected', 'expired', 'cancelled');
 CREATE TYPE invoice_status AS ENUM ('draft', 'due', 'sent', 'paid', 'partial', 'overdue', 'cancelled');
 CREATE TYPE transaction_type AS ENUM ('CLIENT_RECEIPT', 'TEAM_PAYMENT', 'BUSINESS_EXPENSE');
 CREATE TYPE payment_method AS ENUM ('Cash', 'UPI', 'Bank Transfer', 'Card', 'Cheque', 'Other');
-CREATE TYPE user_role AS ENUM ('admin', 'user', 'client');
+CREATE TYPE user_role AS ENUM ('admin', 'user', 'client', 'team_member');
 CREATE TYPE plan_code AS ENUM ('FREE', 'PRO');
 CREATE TYPE subscription_status AS ENUM ('ACTIVE', 'EXPIRED', 'CANCELLED', 'SUSPENDED');
 CREATE TYPE payment_status AS ENUM ('CREATED', 'SUCCESS', 'FAILED', 'REFUNDED');
@@ -289,6 +293,9 @@ CREATE TYPE payment_status AS ENUM ('CREATED', 'SUCCESS', 'FAILED', 'REFUNDED');
 | `workspace_subscriptions` | `idx_ws_workspace_status` | `(workspace_id, status)` | Active subscription |
 | `subscription_payments` | `idx_sp_order` | `gateway_order_id` | Webhook lookup |
 | `subscription_payments` | `idx_sp_workspace` | `workspace_id` | Payment history |
+| `push_subscriptions` | `idx_ps_user` | `user_id` | Find user's push subscriptions |
+| `user_auth_credentials` | `idx_uac_user` | `user_id` | Find user's WebAuthn credentials |
+| `user_auth_credentials` | `idx_uac_credential_id` | `credential_id` | Lookup by credential ID |
 
 ---
 

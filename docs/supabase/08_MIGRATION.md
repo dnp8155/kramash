@@ -26,7 +26,7 @@
 | `EventEditor.jsx` | `base44.functions.invoke("createEvent")`, `base44.entities.Event.update()` |
 | `EventDetails.jsx` | `base44.entities.Event.get()`, `base44.entities.EventTeamAssignment.filter()`, `base44.entities.EventServiceAssignment.filter()` |
 | `Clients.jsx` | `base44.entities.Client.filter()` |
-| `ClientDetails.jsx` | `base44.entities.Client.get()`, `base44.entities.Event.filter()`, `base44.functions.invoke("inviteClientToPortal")` |
+| `ClientDetails.jsx` | `base44.entities.Client.get()`, `base44.entities.Event.filter()`, `base44.functions.invoke("enableClientPortalAccess")` |
 | `Team.jsx` | `base44.entities.TeamMember.filter()`, `base44.functions.invoke("createTeamMember")` |
 | `Financial.jsx` | `base44.entities.FinancialYear.filter()`, `base44.entities.FinancialTransaction.filter()`, `base44.functions.invoke("recordPayment")` |
 | `Quotation.jsx` | `base44.entities.Quotation.filter()` |
@@ -115,6 +115,8 @@
 | UpgradeRequest | `upgrade_requests` |
 | StorageUsage | `storage_usage` |
 | SupportTicket | `support_tickets` |
+| PushSubscription | `push_subscriptions` |
+| UserAuthCredential | `user_auth_credentials` |
 
 ### Function → Edge Function/RPC Mapping
 
@@ -123,26 +125,46 @@
 | `sendOtp` | Edge Function `send-otp` |
 | `verifyOtp` | Edge Function `verify-otp` |
 | `verifyFirebaseToken` | Edge Function `verify-firebase-token` (or Supabase phone OTP) |
-| `inviteClientToPortal` | Edge Function `invite-client` |
+| `generateWebAuthnRegistrationChallenge` | Edge Function `generate-webauthn-registration-challenge` |
+| `verifyWebAuthnRegistration` | Edge Function `verify-webauthn-registration` |
+| `generateWebAuthnAssertionChallenge` | Edge Function `generate-webauthn-assertion-challenge` |
+| `verifyWebAuthnAssertion` | Edge Function `verify-webauthn-assertion` |
 | `getClientPortalData` | RPC `get_client_portal_data` |
+| `getClientPortalDataByAccess` | RPC `get_client_portal_data_by_access` |
+| `verifyClientPortalAccess` | Edge Function `verify-client-portal-access` |
+| `enableClientPortalAccess` | RPC `enable_client_portal_access` |
+| `updateClientPortalPassword` | RPC `update_client_portal_password` |
 | `getPortalData` | RPC `get_portal_data` |
 | `clientViewQuotation` | RPC `client_view_quotation` |
 | `signQuotation` | Edge Function `sign-quotation` |
 | `getPublicInvoice` | RPC `get_public_invoice` |
 | `getPublicJobSheet` | RPC `get_public_job_sheet` |
 | `getPublicEventData` | RPC `get_public_event_data` |
+| `getPublicProfile` | RPC `get_public_profile` |
 | `createInvoiceFromQuotation` | RPC `create_invoice_from_quotation` |
 | `syncQuotationAcceptance` | RPC `sync_quotation_acceptance` |
 | `recordInvoicePayment` | RPC `record_invoice_payment` |
 | `recordPayment` | RPC `record_team_or_service_payment` |
+| `editTransaction` | RPC `edit_transaction` |
+| `voidTransaction` | RPC `void_transaction` |
+| `deleteTransaction` | RPC `delete_transaction` |
 | `togglePublicLink` | RPC `toggle_public_link` |
 | `toggleInvoicePublicLink` | RPC `toggle_invoice_public_link` |
+| `getTeamPortalData` | RPC `get_team_portal_data` |
+| `getTeamPortalDataByAccess` | RPC `get_team_portal_data_by_access` |
+| `verifyTeamPortalAccess` | Edge Function `verify-team-portal-access` |
+| `enableTeamPortalAccess` | RPC `enable_team_portal_access` |
+| `updateTeamPortalPassword` | RPC `update_team_portal_password` |
 | `createEvent` | RPC `create_event` (with plan limit check) |
 | `createTeamMember` | RPC `create_team_member` (with plan limit + auto-color) |
 | `createService` | RPC `create_service` (with plan limit) |
 | `createTeamAssignment` | RPC `create_team_assignment` (with duplicate/SELF guard) |
+| `createLead` | RPC `create_lead` |
 | `agentChat` | Edge Function `agent-chat` |
 | `generateNotifications` | Edge Function `generate-notifications` (or scheduled cron) |
+| `getPushConfig` | Edge Function `get-push-config` |
+| `registerPushSubscription` | RPC `register_push_subscription` |
+| `dispatchPushNotification` | Edge Function `dispatch-push-notification` |
 | `initWorkspaceSubscription` | RPC `init_workspace_subscription` |
 | `assignProSubscription` | RPC `assign_pro_subscription` |
 | `downgradeToFree` | RPC `downgrade_to_free` |
@@ -180,6 +202,11 @@
 | `base44.integrations.Core.InvokeLLM({})` | Direct LLM API call from Edge Function |
 | `base44.integrations.Core.GenerateImage({})` | Direct image generation API call from Edge Function |
 | `base44.integrations.Core.CreateFileSignedUrl({})` | `supabase.storage.from('bucket').createSignedUrl(path, expiry)` |
+| `base44.auth.updateMe({ app_lock_enabled })` | `supabase.from('profiles').update({ app_lock_enabled }).eq('id', auth.uid())` |
+| WebAuthn registration (browser API + `verifyWebAuthnRegistration`) | Edge Function `verify-webauthn-registration` + insert into `user_auth_credentials` |
+| WebAuthn assertion (browser API + `verifyWebAuthnAssertion`) | Edge Function `verify-webauthn-assertion` + verify `user_auth_credentials.counter` |
+| `base44.functions.invoke("registerPushSubscription")` | `supabase.from('push_subscriptions').insert({...})` |
+| `base44.functions.invoke("dispatchPushNotification")` | Edge Function `dispatch-push-notification` (reads `push_subscriptions`, calls FCM/APNs/Web Push) |
 
 ---
 
@@ -205,11 +232,13 @@ supabase/migrations/
   0014_create_plans.sql
   0015_create_subscriptions.sql
   0016_create_support_tickets.sql
-  0017_create_rls_policies.sql
-  0018_create_triggers.sql
-  0019_create_indexes.sql
-  0020_create_rpc_functions.sql
-  0021_create_storage_buckets.sql
+  0017_create_push_subscriptions.sql
+  0018_create_user_auth_credentials.sql
+  0019_create_rls_policies.sql
+  0020_create_triggers.sql
+  0021_create_indexes.sql
+  0022_create_rpc_functions.sql
+  0023_create_storage_buckets.sql
 ```
 
 ### Example Migration: profiles table

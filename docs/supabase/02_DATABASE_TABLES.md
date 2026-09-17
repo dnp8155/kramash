@@ -848,6 +848,9 @@ erDiagram
     WorkspaceSubscription ||--o{ SubscriptionPayment : "subscription_id"
 
     JobSheet ||--o| JobSheetPortal : "event_id"
+
+    User ||--o{ PushSubscription : "user_id"
+    User ||--o{ UserAuthCredential : "user_id"
 ```
 
 ### Key Relationship Notes

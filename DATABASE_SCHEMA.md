@@ -912,14 +912,51 @@ Storage tracking per workspace.
 
 ---
 
+### 11.4 `PushSubscription`
+
+Per-device push notification credentials for web push (VAPID) and native push (FCM/APNs).
+
+| Column | Type | Default | Notes |
+|---|---|---|---|
+| `user_id` | UUID FK → `auth.users.id` | — | **Required.** |
+| `platform` | TEXT | — | **Required.** `web` \| `android` \| `ios` |
+| `endpoint` | TEXT | — | Push service endpoint URL (web push) |
+| `push_token` | TEXT | — | FCM/APNs device token (native push) |
+| `p256dh_key` | TEXT | — | ECDH P-256 public key (base64url, web push) |
+| `auth_key` | TEXT | — | Auth secret (base64url, web push) |
+
+**RLS:** Users manage only their own subscriptions (`user_id = auth.uid()`).
+
+---
+
+### 11.5 `UserAuthCredential`
+
+WebAuthn credential storage for app lock / biometric authentication.
+
+| Column | Type | Default | Notes |
+|---|---|---|---|
+| `user_id` | UUID FK → `auth.users.id` | — | **Required.** |
+| `credential_id` | TEXT | — | **Required.** Credential ID (base64url) |
+| `public_key` | TEXT | — | **Required.** Public key (JSON JWK string) |
+| `counter` | INTEGER | `0` | Signature counter (replay protection) |
+| `device_label` | TEXT | — | User-friendly device label |
+| `transports` | TEXT (JSON) | — | JSON array: `internal`, `hybrid`, `usb`, `nfc`, `ble` |
+
+**RLS:** Users manage only their own credentials (`user_id = auth.uid()`).
+
+---
+
 ## 12. Entity Relationship Diagram (Text)
 
 ```
 auth.users
   │
   ├── 1:1 ── User (profiles)
-  │             ├── role: admin | user | client
-  │             └── linked_client_id → Client.id
+  │             ├── role: admin | user | client | team_member
+  │             ├── linked_client_id → Client.id
+  │             ├── linked_team_member_id → TeamMember.id
+  │             ├── 1:N ── PushSubscription
+  │             └── 1:N ── UserAuthCredential
   │
   ├── 1:N ── Workspace (as owner_user_id)
   │             ├── 1:N ── WorkspaceMember
