@@ -22,7 +22,7 @@ export default function PrivacyPolicy() {
           <h1 className="text-2xl sm:text-3xl font-heading font-bold text-[#1A1A1A]">Privacy Policy</h1>
         </div>
         <p className="text-sm text-[#8A8580] mb-8">
-          Kramashah — Event &amp; Production Management Platform
+          Kramasha — Creative Business Management Platform
         </p>
 
         <article className="prose-legal">
@@ -36,7 +36,13 @@ export default function PrivacyPolicy() {
               ol: ({ children }) => <ol className="text-sm leading-relaxed text-[#5A5650] mb-4 ml-5 list-decimal space-y-1.5">{children}</ol>,
               li: ({ children }) => <li className="pl-1">{children}</li>,
               strong: ({ children }) => <strong className="font-semibold text-[#1A1A1A]">{children}</strong>,
+              em: ({ children }) => <em className="italic text-[#5A5650]">{children}</em>,
               hr: () => <hr className="border-[#E8E3DB] my-6" />,
+              blockquote: ({ children }) => (
+                <blockquote className="border-l-2 border-[#C8A95E] bg-[#FAF8F4] rounded-r-lg pl-4 pr-4 py-3 my-4 text-sm text-[#5A5650]">
+                  {children}
+                </blockquote>
+              ),
               a: ({ children, href }) => <a href={href} className="text-[#C8A95E] underline underline-offset-2 hover:opacity-80">{children}</a>,
               table: ({ children }) => <div className="overflow-x-auto mb-4"><table className="w-full text-sm border border-[#E8E3DB] rounded-lg">{children}</table></div>,
               thead: ({ children }) => <thead className="bg-[#FAF8F4]">{children}</thead>,

@@ -1,56 +1,48 @@
-export const aboutContent = `# About Kramasha
+export const aboutContent = `# About Us
 
-## Kramasha — क्रमशः. In order. One step at a time.
+## Kramasha: Creative Business Management Platform
 
-Kramasha means "in sequence" — and that's exactly how we think a business should run. Not scattered across five WhatsApp chats, three Excel sheets, and a notebook that's always in someone else's bag. One workspace. Every event, every payment, every team member, in order.
+* **Meaning:** Kramasha (क्रमशः) means "in sequence, one step at a time."
 
----
-
-## Why we built this
-
-If you run an event, a photography studio, an architecture practice, or any business built around jobs and a team — you already know the real work isn't the event itself. It's everything around it: who's confirmed for which day, who still owes what, whether the quotation went out, whether the advance came in, whether two team members got double-booked on the same wedding.
-
-Most small and growing businesses in this space run on Excel sheets and memory. It works — until it doesn't. A missed follow-up, a forgotten payment, a team member booked twice by accident. Kramasha exists to take that mental load off your plate.
+That's how a service business should actually run: not scattered across five WhatsApp chats and three Excel sheets, but in order, in one place.
 
 ---
 
-## Who Kramasha is for
+### Why We Built This
 
-- Event managers juggling vendors, coordinators, and a dozen moving parts per event
-- Photographers & videographers running crews across shoots, edits, and deliverables
-- Architects & interior teams managing projects, consultants, and contractors
-- Freelancers and small studios — makeup artists, decorators, editors, drone operators — who need to track jobs and payments without hiring an accountant
+**The real work isn't the event. It's everything around it.**
 
-If your business runs on events, a team, and money moving between clients and crew, Kramasha is built for you.
+If you run an event, a photography studio, an architecture practice, or any business built around jobs and a team, you already know this. The shoot is the easy part. The hard part is who's confirmed for which day, who still owes what, whether the quotation went out, whether the advance came in, whether two team members got double-booked on the same wedding.
 
----
+Most small and growing businesses in this space run on Excel sheets and memory. It works, until it doesn't. A missed follow-up, a forgotten payment, a team member booked twice by accident. The cost isn't just money; it's the mental load of holding it all in your head.
 
-## What you get
+Kramasha exists to take that load off your plate. One workspace. Every event, every payment, every team member, in order.
 
-- One place for every event — dates, venue, team, payments, and status, without digging through old chats
-- Team & payments tracking — who's assigned, what they're owed, what's paid
-- Quotations & job sheets — generate a client-ready quotation and a team job sheet from the same form
-- A rate estimator — build a quick cost estimate before you commit to a quotation
-- Financial-year reporting — know what you've earned, spent, and profited, with Excel export
-- Built for your business type — event management, photography, or architecture presets that set up the right roles and services from day one
+> *We're not building software to replace how you run your business. We're building it so you can finally stop running it from your memory.*
+
+**The Kramasha Team** (Built with real studios and event businesses, in the loop.)
 
 ---
 
-## How we think about your data
+### What We Believe
 
-Your business runs on trust — your clients trust you with their event, and you're trusting us with the numbers behind it. Every workspace is private and isolated; nobody else can see your events, your clients, or your payments. You can read more in our Privacy Policy.
+Principles we build against:
+
+* **Private by default:** Every workspace is isolated at the database level. Nobody else can see your events, clients, or payments, not other businesses, not us browsing for fun.
+* **Simple by default:** Setup in minutes with sensible presets for your industry. You're never starting from a blank screen, and you never need an accountant to use it.
+* **Works where you work:** Installable as a PWA on phone or desktop. Core flows keep working on a poor or lost connection and sync the moment you're back online.
+* **Built with real businesses:** We're building this in the loop with real studios and event teams. If something feels off or missing, we want to hear about it, because it shapes what we build next.
 
 ---
 
-## Where we are right now
+### Who It's For
 
-Kramasha is currently in active development and beta. That means the product is real and usable today, but still growing — and it also means the full app is free to use during this period (see our FAQ for the exact dates). We're building this with real studios and event businesses in the loop, so if something feels off or missing, we want to hear about it.
+If your business runs on events, a team, and money moving, it's built for you.
 
----
-
-## Get in touch
-
-Questions, feedback, or just want to say hello? Visit our Contact page — we read everything.
+* **Event managers:** Juggling vendors, coordinators, and a dozen moving parts per event.
+* **Photographers & videographers:** Running crews across shoots, edits, and deliverables.
+* **Architects & interior teams:** Managing projects, consultants, and contractors.
+* **Freelancers & small studios:** Makeup artists, decorators, editors, drone operators, tracking jobs and payments without an accountant.
 `;
 
 export const faqContent = [
@@ -138,13 +130,15 @@ export const faqContent = [
 
 export const privacyPolicyContent = `# Privacy Policy
 
-Kramasha — Event & Production Management Platform
-Effective Date: [DD Month YYYY]
-Last Updated: [DD Month YYYY]
+## Kramasha — Creative Business Management Platform
+
+* **Trial Period Effective Date:** 19 September 2026
+* **Public Launch Date:** 11 October 2026
+* **Last Updated:** 17 September 2026
 
 ---
 
-## 1. Introduction
+### 1. Introduction
 
 This Privacy Policy explains how Kramasha ("we", "us") collects, uses, stores, and protects information when you use our application ("Service").
 
@@ -152,138 +146,132 @@ This Policy applies to (a) information about you as a registered user of Kramash
 
 ---
 
-## 2. Information We Collect
+### 2. Information We Collect
 
-### 2.1. Account & workspace information (collected directly from you)
-- Name, email address, phone number
-- Business/company name, business address, business phone number
-- Profile photo / business logo, if uploaded
-- Currency, timezone, and workspace preferences
-- Login credentials (passwords are stored in encrypted/hashed form)
+#### 2.1. Account & workspace information (collected directly from you)
 
-### 2.2. Business data you create in your Workspace
-- Events/projects, dates, venues, and notes
-- Team member records (names, roles, rates)
-- Payment and financial records you enter
-- Quotations, agreements, and related documents
-- GST/business registration details, if you enable GST features
+* Name, email address, phone number
+* Business/company name, business address, business phone number
+* Profile photo / business logo, if uploaded
+* Currency, timezone, and workspace preferences
+* Login credentials (passwords are stored in encrypted/hashed form)
 
-### 2.3. Your clients' information (entered by you)
-- Client names, phone numbers, emails, and addresses that you add to events or quotations. See Section 8 for important detail on this category.
+#### 2.2. Business data you create in your Workspace
 
-### 2.4. Payment information
-- Subscription payments are processed by our payment gateway, [Razorpay]. We receive confirmation of payment and a transaction reference; we do not receive or store your full card number, CVV, or UPI PIN.
+* Events/projects, dates, venues, and notes
+* Team member records (names, roles, rates)
+* Payment and financial records you enter
+* Quotations, agreements, and related documents
+* GST/business registration details, if you enable GST features
 
-### 2.5. Automatically collected / device information
-- Device type, browser, operating system
-- App version, session/login timestamps
-- Basic usage data (e.g., feature usage) for reliability and improvement purposes
-- Local device storage used by the app (e.g., for offline functionality and preferences)
+#### 2.3. Your clients' information (entered by you)
 
-### 2.6. Notification data
-- If you enable push notifications (a Pro feature), we store a device token to deliver reminders. This token is used only for sending notifications you've opted into.
+* Client names, phone numbers, emails, and addresses that you add to events or quotations. See Section 8 for important detail on this category.
+
+#### 2.4. Payment information
+
+* Subscription payments are processed by our payment gateway, **Razorpay**. We receive confirmation of payment and a transaction reference; we do not receive or store your full card number, CVV, or UPI PIN.
+
+#### 2.5. Automatically collected / device information
+
+* Device type, browser, operating system
+* App version, session/login timestamps
+* Basic usage data (e.g., feature usage) for reliability and improvement purposes
+* Local device storage used by the app (e.g., for offline functionality and preferences)
+
+#### 2.6. Notification data
+
+* If you enable push notifications (a Pro feature), we store a device token to deliver reminders. This token is used only for sending notifications you've opted into.
 
 ---
 
-## 3. How We Use Information
+### 3. How We Use Information
 
 We use the information described above to:
-   - provide, operate, and maintain the Service, including your Workspace and all features within your plan;
-   - authenticate your account and enforce plan limits (Free/Pro);
-   - process subscription payments and send billing-related communication;
-   - send you service-related notifications (e.g., reminders, if enabled) and, where you've consented, product updates;
-   - respond to support requests;
-   - maintain the security and integrity of the Service, including detecting misuse;
-   - comply with applicable legal obligations.
 
-We do not sell your personal information or your clients' information to third parties.
+* Provide, operate, and maintain the Service, including your Workspace and all features within your plan;
+* Authenticate your account and enforce plan limits (Free/Pro);
+* Process subscription payments and send billing-related communication;
+* Send you service-related notifications (e.g., reminders, if enabled) and, where you've consented, product updates;
+* Respond to support requests;
+* Maintain the security and integrity of the Service, including detecting misuse;
+* Comply with applicable legal obligations.
 
----
-
-## 4. Where & How Data Is Stored
-
-4.1. Application data is stored using secure cloud database infrastructure hosted in India. Data is encrypted in transit (TLS/HTTPS) and at rest, in line with standard industry security practices.
-
-4.2. Access to your Workspace data is restricted to your authenticated account through database-level access controls, so that other Workspaces cannot access your data.
-
-### 4.3. Can Kramasha access my data? (Plain-language explanation)
-
-We believe this deserves a direct answer, not a vague one.
-
-Your data is encrypted in transit and at rest, as described above. However, it is not end-to-end encrypted — that is, it is not encrypted in a way that is unreadable to us. This is the case for the large majority of business software (accounting tools, CRMs, payment platforms) because server-side features — automatic profit calculations, search, PDF generation, reminders, and customer support — require the server to process your data in readable form. True end-to-end encryption is technically possible but would disable most of these core features, so we do not offer it today.
-
-Because of this, it is technically possible for authorized personnel to access data stored on our infrastructure. We limit this in practice as follows:
-   - Access to production data is restricted to a small number of authorized personnel who require it to operate the Service.
-   - We access specific account data only for defined purposes: responding to a support request you've raised, investigating a technical or security issue, or complying with a legal obligation.
-   - We do not access, view, or use your business, financial, or client data for marketing, profiling, sale to third parties, or any purpose unrelated to operating the Service.
-
-If your business requires a higher assurance level (e.g., contractual data-processing terms, an access log audit, or a signed confidentiality undertaking), contact us at [support/privacy email].
+> **We never sell your personal information or your clients' information to third parties.**
 
 ---
 
-## 5. Third-Party Service Providers (Sub-processors)
+### 4. Where & How Data Is Stored
 
-We share limited data with the following categories of service providers, solely to operate the Service:
+* **4.1.** Application data is stored using secure cloud database infrastructure hosted in India. Data is encrypted in transit (TLS/HTTPS) and at rest, in line with standard industry security practices.
+* **4.2.** Access to your Workspace data is restricted to your authenticated account through database-level access controls, so that other Workspaces cannot access your data.
 
-| Provider | Purpose | Data involved |
-|---|---|---|
-| Cloud Database Provider | Database & secure file storage | All Workspace data |
-| [Razorpay] | Payment processing | Billing/contact info, transaction data |
-| Hosting Provider | Application hosting | None beyond standard web request logs |
-| Notification Provider | Delivering reminders | Device token / email address |
+#### 4.3. Can Kramasha see my data?
 
-These providers are contractually and technically restricted to using data only to provide their service to us, and are not permitted to use it for their own purposes.
+Your data is encrypted safely while moving and sitting on our servers, but it is **not end-to-end encrypted**.
 
----
+Why? Because core features like search, automatic calculations, PDFs, and customer support need our system to be able to read the data to work properly.
 
-## 6. Data Retention
-
-6.1. We retain your account and Workspace data for as long as your account remains active.
-
-6.2. Downgrade/expiry does not result in data deletion. If a Pro subscription lapses, your data remains stored; only the ability to create new records or use certain features beyond Free-plan limits is restricted (see Terms of Service, Section 5.6).
-
-6.3. If you request account deletion, we will delete or anonymize your account and Workspace data within [X days], except where we are required to retain certain records (e.g., billing/transaction records) for legal or accounting purposes.
+While our team technically *can* access data if absolutely necessary (like helping you fix a bug or answering a support ticket), we strictly limit this. We **never** view, use, or sell your business or client data for marketing or any other unrelated purpose.
 
 ---
 
-## 7. Your Rights
+### 5. Third-Party Tools We Use
+
+To keep Kramasha running smoothly, we rely on a few trusted partners:
+
+* **Cloud Database & Hosting:** Safely stores your workspace data on secure servers in India.
+* **Razorpay:** Securely processes your Pro subscription payments (we never see your full card details!).
+* **Notification Providers:** Helps us deliver reminders and updates.
+
+*These partners are strictly bound by agreements to use your data **only** to help us run Kramasha, nothing else.*
+
+---
+
+### 6. Data Retention
+
+* **6.1.** We retain your account and Workspace data for as long as your account remains active.
+* **6.2.** Downgrade/expiry does not result in data deletion. If a Pro subscription lapses, your data remains stored; only the ability to create new records or use certain features beyond Free-plan limits is restricted (see Terms of Service, Section 5.6).
+* **6.3.** If you request account deletion, we will delete or anonymize your account and Workspace data within **30 days**, except where we are required to retain certain records (e.g., billing/transaction records) for legal or accounting purposes.
+
+---
+
+### 7. Your Rights
 
 Subject to applicable law (including India's Digital Personal Data Protection Act, 2023), you have the right to:
-   - access the personal data we hold about you;
-   - request correction of inaccurate data;
-   - request deletion of your account and associated data, subject to Section 6.3;
-   - withdraw consent for optional features (e.g., notifications) at any time;
-   - lodge a grievance with our Grievance Officer (below) or with the applicable data protection authority.
 
-To exercise these rights, contact us at [support/privacy email].
+* Access the personal data we hold about you;
+* Request correction of inaccurate data;
+* Request deletion of your account and associated data, subject to Section 6.3;
+* Withdraw consent for optional features (e.g., notifications) at any time;
+* Lodge a grievance with the applicable data protection authority.
 
----
-
-## 8. Important: Your Clients' Data
-
-The Service is designed to let you (an event manager, photographer, or similar business) store information about your own clients — their names, contact details, and payment history — as part of managing your events and quotations.
-
-In relation to this data:
-   - You are the data controller/fiduciary, and we are your data processor/service provider. You are responsible for ensuring you have a lawful basis and, where required, consent from your clients to store their personal information in Kramasha.
-   - We process this data only as instructed by you, to provide the Service, and do not independently use it for our own purposes (e.g., marketing).
-   - If one of your clients contacts us directly about their data, we will generally direct them to you as the data controller, unless legally required to act otherwise.
-   - You should ensure your own client-facing communications (e.g., your own privacy notice to your clients, if applicable) reflect your use of Kramasha to store their information.
+To exercise these rights, contact us at **kramashaofficial[at]gmail[dot]com**.
 
 ---
 
-## 9. Cookies & Local Storage
+### 8. Your Clients' Data
+
+You might store your own clients' details (like names, phone numbers, and payment history) in Kramasha as part of managing your events.
+
+* **You are in charge:** You control your clients' data, and you're responsible for getting their permission to store it, keeping it accurate, and following local privacy laws (like India's DPDP Act, 2023).
+* **Our role:** We simply store and process this data on your behalf to make the app work. We will never use your clients' info for marketing or contact them directly unless required by law.
+
+---
+
+### 9. Cookies & Local Storage
 
 The Service uses browser local storage and, where applicable, cookies to keep you signed in, remember preferences (such as theme), and support offline functionality as a Progressive Web App. We do not use third-party advertising cookies.
 
 ---
 
-## 10. Children's Privacy
+### 10. Children's Privacy
 
 The Service is intended for business use by individuals aged 18 and above. We do not knowingly collect personal information from children. If you believe a child's information has been provided to us, contact us so we can remove it.
 
 ---
 
-## 11. Data Security
+### 11. Data Security
 
 We implement reasonable technical and organizational measures to protect your data, including encryption in transit and at rest, access controls scoped to your Workspace, and secure authentication. No method of transmission or storage is 100% secure, and we cannot guarantee absolute security.
 
@@ -291,21 +279,18 @@ In the event of a data breach affecting your personal information, we will notif
 
 ---
 
-## 12. Changes to This Policy
+### 12. Changes to This Policy
 
 We may update this Privacy Policy from time to time. Material changes will be notified through the App or via email before they take effect.
 
 ---
 
-## 13. Grievance Officer / Contact
+### 13. Contact
 
-In accordance with applicable Indian law, you may contact our Grievance Officer for any privacy-related concerns:
+For questions about your privacy or this policy, contact us at:
 
-Grievance Officer: [Name]
-Email: [grievance/privacy email]
-Address: [registered address]
-
-For general privacy questions, contact [support email].
+* **Support Email:** kramashaofficial[at]gmail[dot]com
+* **Registered Business Address:** Lad Apartment, Vadodara, Gujarat
 `;
 
 export const termsOfServiceContent = `# Terms of Service
