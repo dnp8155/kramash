@@ -359,9 +359,9 @@ export default function EventDetails() {
   }
 
   const tabs = [
-    ...(prefs.showTeam ? ["Team"] : []),
+    "Team",
     "Financials",
-    ...(prefs.showServices ? ["Services"] : []),
+    "Services",
     "Payments",
     "Milestones",
     "Notes",

@@ -139,8 +139,8 @@ export default function PreferencesSections({
             <Card title="Event Display">
               <p className="text-xs text-muted-foreground mb-3">Control what appears on event detail pages, cards, and table rows.</p>
               <div className="space-y-3">
-                <ToggleRow label="Show team members" hint="Display assigned team on the event detail page tab and event cards" checked={toggles.showTeam} onChange={setT("showTeam")} />
-                <ToggleRow label="Show services" hint="Display assigned services on the event detail page tab and event cards" checked={toggles.showServices} onChange={setT("showServices")} />
+                <ToggleRow label="Show team members" hint="Display assigned team on event cards and table rows" checked={toggles.showTeam} onChange={setT("showTeam")} />
+                <ToggleRow label="Show services" hint="Display assigned services on event cards and table rows" checked={toggles.showServices} onChange={setT("showServices")} />
                 <div className="flex items-center gap-2 pt-1">
                   <span className="text-xs text-muted-foreground">Pro-only</span>
                   {!isPro && (

@@ -13,7 +13,7 @@ const DEFAULTS = {
   showMemberTypeColors: true,
   // Feature 3 — ALL status dots (event status dots + person status dots)
   showStatusDots: true,
-  // Feature 4 — team / services lists on event detail page (and event cards)
+  // Feature 4 — team / services lists on event cards & table rows (does NOT affect Event detail page tabs)
   showTeam: true,
   showServices: true,
   // Feature 5 — Pro-only: address/venue and services on compact cards & tables
