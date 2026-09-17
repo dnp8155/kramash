@@ -35,6 +35,15 @@ if ('serviceWorker' in navigator) {
   }
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(
-  <App />
-)
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+
+// Remove the branded splash screen from index.html once React has mounted.
+// React replaces #root content on render, but we also explicitly remove the
+// splash element as a safety net in case it persists due to timing.
+requestAnimationFrame(() => {
+  const splash = document.getElementById('app-splash');
+  if (splash && splash.parentNode) {
+    splash.parentNode.removeChild(splash);
+  }
+});

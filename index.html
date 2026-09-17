@@ -152,5 +152,13 @@
       </div>
     </div>
     <script type="module" src="/src/main.jsx"></script>
+    <!-- Fallback: remove splash screen after 6s even if React fails to mount
+         (e.g., build error, network issue) so the user sees the real error. -->
+    <script>
+      window.setTimeout(function () {
+        var s = document.getElementById('app-splash');
+        if (s && s.parentNode) s.parentNode.removeChild(s);
+      }, 6000);
+    </script>
   </body>
 </html>
