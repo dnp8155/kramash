@@ -35,7 +35,7 @@ import {
   loadExpenseCategories
 } from "@/lib/financeService";
 import {
-  ArrowLeft, Pencil, Wallet, FileText, MapPin, Calendar, Phone, Plus,
+  ArrowLeft, Pencil, Wallet, FileText, MapPin, Calendar, Phone, Plus, Users,
   CalendarPlus, Share2, Receipt, StickyNote, Trash2, ClipboardList, X, AlertTriangle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -646,46 +646,46 @@ export default function EventDetails() {
             event={event}
           />
 
+          {/* Team header with add button */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Users className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm font-semibold text-foreground">Team</span>
+              <span className="text-xs text-muted-foreground">({eventAssignments.length})</span>
+            </div>
+            <Button size="sm" onClick={() => setShowAssign(true)}>
+              <Plus className="w-3.5 h-3.5" /> Add Team Member
+            </Button>
+          </div>
+
           {/* Assignments */}
           {eventAssignments.length === 0 ? (
             <Card className="p-6">
               <EmptyState
                 title="No team assigned"
                 description={`Add team members to this ${term.workItemSingular.toLowerCase()} to track their payments.`}
-                action={
-                  <Button size="sm" onClick={() => setShowAssign(true)}>
-                    <Plus className="w-3.5 h-3.5" /> Add Team Member
-                  </Button>
-                }
               />
             </Card>
           ) : (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {eventAssignments.map((a) => (
-                  <EventAssignmentCard
-                    key={a.id}
-                    assignment={a}
-                    member={membersById[a.team_member_id]}
-                    event={event}
-                    currency={currency}
-                    contractValue={fin.contractValue}
-                    transactions={transactions}
-                    isSelf={!!membersById[a.team_member_id]?.is_self}
-                    onAddPayment={(asg) => setTeamPayAssignment(asg)}
-                    onRemove={removeAssignment}
-                    onShare={shareAssignment}
-                    onRefresh={load}
-                    onEdit={(asg) => setEditingAssignment(asg)}
-                  />
-                ))}
-              </div>
-              <div className="flex justify-center">
-                <Button onClick={() => setShowAssign(true)}>
-                  <Plus className="w-4 h-4" /> Add Team Member
-                </Button>
-              </div>
-            </>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {eventAssignments.map((a) => (
+                <EventAssignmentCard
+                  key={a.id}
+                  assignment={a}
+                  member={membersById[a.team_member_id]}
+                  event={event}
+                  currency={currency}
+                  contractValue={fin.contractValue}
+                  transactions={transactions}
+                  isSelf={!!membersById[a.team_member_id]?.is_self}
+                  onAddPayment={(asg) => setTeamPayAssignment(asg)}
+                  onRemove={removeAssignment}
+                  onShare={shareAssignment}
+                  onRefresh={load}
+                  onEdit={(asg) => setEditingAssignment(asg)}
+                />
+              ))}
+            </div>
           )}
         </div>
       )}
