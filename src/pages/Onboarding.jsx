@@ -32,6 +32,7 @@ export default function Onboarding() {
 
   const [step, setStep] = useState(1);
   const { saving, start, stop } = useSubmitGuard();
+  const [entering, setEntering] = useState(false);
   const [error, setError] = useState("");
 
   const [form, setForm] = useState({
@@ -127,7 +128,21 @@ export default function Onboarding() {
     }
   };
 
-  const enterApp = () => navigate("/events");
+  const enterApp = async () => {
+    setEntering(true);
+    try {
+      // Wait for the workspace membership to be queryable before redirecting,
+      // to avoid a race where WorkspaceProvider doesn't see it yet and
+      // redirects back to onboarding.
+      for (let i = 0; i < 5; i++) {
+        const memberships = await base44.entities.WorkspaceMember.filter({ user_id: user.id });
+        if (memberships && memberships.length > 0) break;
+        await new Promise((r) => setTimeout(r, 600));
+      }
+    } catch { /* ignore — redirect anyway */ }
+    // Hard redirect so the entire app re-initializes with the new workspace.
+    window.location.href = "/events";
+  };
 
   const canNext1 = !!form.business_category && (form.business_category !== BUSINESS_CATEGORIES.OTHER || form.custom_business_type.trim());
   const canNext2 = form.name.trim() && form.your_name.trim();
@@ -334,7 +349,9 @@ export default function Onboarding() {
               <p className="text-sm text-muted-foreground mt-1 mb-6">
                 {form.name} is ready. You're on the Free plan — welcome to Kramasha.
               </p>
-              <Button className="w-full h-12" onClick={enterApp}>Enter Kramasha</Button>
+              <Button className="w-full h-12" disabled={entering} onClick={enterApp}>
+                {entering ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />Loading your workspace…</>) : "Enter Kramasha"}
+              </Button>
             </div>
           )}
         </div>
