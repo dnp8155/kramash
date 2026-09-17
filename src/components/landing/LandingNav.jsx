@@ -51,7 +51,7 @@ export default function LandingNav() {
             Login
           </Link>
           <Link to="/register" className="h-9 px-5 inline-flex items-center justify-center text-sm font-semibold bg-[#1A1A1A] text-white hover:bg-[#C8A95E] rounded-full transition-all">
-            Start Free
+            SignUp
           </Link>
         </div>
 
@@ -69,7 +69,7 @@ export default function LandingNav() {
           ))}
           <div className="flex gap-3 pt-3 border-t border-[#E8E3DB]">
             <Link to="/login" className="flex-1 h-10 inline-flex items-center justify-center text-sm font-medium border border-[#E8E3DB] text-[#1A1A1A] rounded-full">Login</Link>
-            <Link to="/register" className="flex-1 h-10 inline-flex items-center justify-center text-sm font-semibold bg-[#1A1A1A] text-white rounded-full">Start Free</Link>
+            <Link to="/register" className="flex-1 h-10 inline-flex items-center justify-center text-sm font-semibold bg-[#1A1A1A] text-white rounded-full">SignUp</Link>
           </div>
         </div>
       )}
