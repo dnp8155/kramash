@@ -6,8 +6,9 @@ import Toggle from "@/components/common/Toggle";
 import { useToast } from "@/components/ui/use-toast";
 import { useDisplayPreferences } from "@/hooks/useDisplayPreferences";
 import PastelPalettePicker from "@/components/settings/PastelPalettePicker";
-import { getDefaultPalette, hexToHsl } from "@/lib/pastelTheme";
+import { hexToHsl } from "@/lib/pastelTheme";
 import { useFeatureGate } from "@/components/common/ProGate";
+import { DEFAULT_PASTEL_COLORS } from "@/lib/pastelTheme";
 import { Crown } from "lucide-react";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -31,9 +32,7 @@ export default function AppearanceSection() {
 
     // Pastel theme — apply the selected pastel color as primary/accent/ring tokens
     if (theme === "Pastel") {
-      const category = workspace?.business_category || "OTHER";
-      const defaultPalette = getDefaultPalette(category);
-      const palette = prefs.pastelPalette?.length > 0 ? prefs.pastelPalette : defaultPalette;
+      const palette = prefs.pastelPalette?.length > 0 ? prefs.pastelPalette : DEFAULT_PASTEL_COLORS;
       const idx = prefs.pastelThemeIndex ?? 0;
       const activeColor = palette[idx] || palette[0];
       if (activeColor) {
@@ -135,7 +134,7 @@ export default function AppearanceSection() {
           <ToggleRow label="Show member type colors" hint="Color-code team member type tags (Bride Side, Groom Side, etc.)" checked={prefs.showMemberTypeColors} onChange={gatedSetPref("showMemberTypeColors")} />
           <ToggleRow label="Show status dots" hint="Colored dots before event & team names — turn off to remove all dots" checked={prefs.showStatusDots} onChange={gatedSetPref("showStatusDots")} />
           <ToggleRow label="Group upcoming events" hint="Show events grouped by This Week / All, or as a flat list" checked={prefs.groupUpcoming} onChange={gatedSetPref("groupUpcoming")} />
-          <ToggleRow label="Show menubar labels" hint="Show text labels under icons in the mobile bottom navigation" checked={prefs.showMenubarLabels} onChange={setPref("showMenubarLabels")} />
+          <ToggleRow label="Show menubar labels" hint="Show text labels under icons in the mobile bottom navigation" checked={prefs.showMenubarLabels} onChange={gatedSetPref("showMenubarLabels")} />
         </div>
       </div>
       {FeatureGateDialog}

@@ -23,9 +23,9 @@ const DEFAULTS = {
   groupUpcoming: true,
   // Show text labels under icons in the mobile/PWA bottom navigation
   showMenubarLabels: true,
-  // Pastel theme — custom palette (array of 3–5 hex strings). null = use category default.
+  // Pastel theme — custom palette (array of hex strings). null = use default 5 colors.
   pastelPalette: null,
-  // Pastel theme — which palette color is the active theme color (0-indexed)
+  // Pastel theme — which of the 5 colors is the active accent color (0-indexed)
   pastelThemeIndex: 0,
   // Shared invoice
   showLogo: false,

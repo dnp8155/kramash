@@ -1,9 +1,9 @@
 // Reads the pastel theme state: whether the "Pastel" theme is active (from localStorage,
 // matching AppearanceSection's theme handling) and the workspace's saved palette
-// (from display_preferences, falling back to the category default).
+// (from display_preferences, falling back to the default 5 colors).
 import { useWorkspace } from "@/lib/WorkspaceContext";
 import { useDisplayPreferences } from "@/hooks/useDisplayPreferences";
-import { getDefaultPalette, resolveEventTypeColor } from "@/lib/pastelTheme";
+import { getDefaultPalette } from "@/lib/pastelTheme";
 
 export function usePastelTheme() {
   const { workspace } = useWorkspace();
@@ -11,14 +11,11 @@ export function usePastelTheme() {
   const theme = typeof window !== "undefined" ? localStorage.getItem("app-theme") : null;
   const isActive = theme === "Pastel";
 
-  const category = workspace?.business_category || "OTHER";
-  const defaultPalette = getDefaultPalette(category);
+  const defaultPalette = getDefaultPalette();
   const palette =
     prefs.pastelPalette && Array.isArray(prefs.pastelPalette) && prefs.pastelPalette.length > 0
       ? prefs.pastelPalette
       : defaultPalette;
 
-  const getColorForType = (type) => resolveEventTypeColor(type, palette);
-
-  return { isActive, palette, getColorForType, category, defaultPalette };
+  return { isActive, palette, defaultPalette };
 }
