@@ -1,4 +1,6 @@
 {
   "name": "handleStripeWebhook",
-  "entry": "entry.ts"
+  "entry": "entry.ts",
+  "public": true,
+  "description": "Public webhook endpoint for Stripe payment events. Verifies webhook signature internally using STRIPE_WEBHOOK_SECRET."
 }

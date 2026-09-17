@@ -1,4 +1,6 @@
 {
   "name": "handleRazorpayWebhook",
-  "entry": "entry.ts"
+  "entry": "entry.ts",
+  "public": true,
+  "description": "Public webhook endpoint for Razorpay payment events. Verifies webhook signature internally using RAZORPAY_WEBHOOK_SECRET."
 }
