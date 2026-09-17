@@ -11,6 +11,24 @@ export default function FiscalYearSelector({ size = "md", align = "right" }) {
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
   const ref = useRef(null);
+  const btnRef = useRef(null);
+  const [menuPos, setMenuPos] = useState(null);
+
+  // Compute fixed position from button rect when opening — escapes
+  // ancestor overflow containers (e.g. main's overflow-y-auto) that would
+  // otherwise clip the dropdown.
+  const updatePos = () => {
+    const r = btnRef.current?.getBoundingClientRect();
+    if (!r) return;
+    const menuW = 256; // w-64
+    const maxW = window.innerWidth - 32;
+    const w = Math.min(menuW, maxW);
+    let left = align === "left" ? r.left : Math.max(8, r.right - w);
+    // keep within viewport
+    left = Math.min(left, window.innerWidth - w - 8);
+    left = Math.max(8, left);
+    setMenuPos({ top: r.bottom + 6, left, width: w });
+  };
 
   useEffect(() => {
     const onClick = (e) => {
@@ -19,6 +37,18 @@ export default function FiscalYearSelector({ size = "md", align = "right" }) {
     document.addEventListener("mousedown", onClick);
     return () => document.removeEventListener("mousedown", onClick);
   }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    updatePos();
+    const onResize = () => updatePos();
+    window.addEventListener("resize", onResize);
+    window.addEventListener("scroll", onResize, true);
+    return () => {
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("scroll", onResize, true);
+    };
+  }, [open]);
 
   const presets = useMemo(
     () => buildDateRangePresets(fiscalYears, activeFY),
@@ -61,6 +91,7 @@ export default function FiscalYearSelector({ size = "md", align = "right" }) {
   return (
     <div className="relative" ref={ref}>
       <button
+        ref={btnRef}
         type="button"
         onClick={() => setOpen((o) => !o)}
         className={`flex items-center gap-2 ${sizeClasses[size]} rounded-lg border border-border bg-card font-semibold text-foreground hover:bg-muted transition-colors shadow-xs`}
@@ -70,18 +101,15 @@ export default function FiscalYearSelector({ size = "md", align = "right" }) {
         <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
       </button>
       <AnimatePresence>
-        {open && (
+        {open && menuPos && (
           <motion.div
             variants={scaleInVariants}
             initial="initial"
             animate="animate"
             exit="exit"
             transition={{ duration: DURATION_FAST, ease: EASE }}
-            className={`absolute mt-1.5 w-64 max-w-[calc(100vw-2rem)] rounded-xl border border-border bg-popover shadow-lg z-[200] overflow-hidden origin-top ${
-              align === "left"
-                ? "left-0"
-                : "left-0 lg:left-auto lg:right-0 lg:origin-top-right"
-            }`}
+            style={{ position: "fixed", top: menuPos.top, left: menuPos.left, width: menuPos.width }}
+            className="rounded-xl border border-border bg-popover shadow-lg z-[200] overflow-hidden origin-top"
           >
             <div className="max-h-72 overflow-y-auto scrollbar-thin">
               {presets.map((preset, idx) => {
