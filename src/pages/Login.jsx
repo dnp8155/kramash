@@ -366,16 +366,18 @@ export default function Login() {
                     Create account
                   </Link>
                 </p>
-                <button
-                  onClick={() => {
-                    setVerifyMode(true);
-                    setError("");
-                  }}
-                  className="inline-flex items-center justify-center gap-1.5 text-xs text-muted-foreground/70 hover:text-primary transition-colors mx-auto"
-                >
-                  <ShieldCheck className="w-3 h-3" />
-                  Didn't verify your email? Verify now
-                </button>
+                {email.trim() && (
+                  <button
+                    onClick={() => {
+                      setVerifyMode(true);
+                      setError("");
+                    }}
+                    className="inline-flex items-center justify-center gap-1.5 text-xs text-muted-foreground/70 hover:text-primary transition-colors mx-auto"
+                  >
+                    <ShieldCheck className="w-3 h-3" />
+                    Didn't verify your email? Verify now
+                  </button>
+                )}
               </div>
             </>
           )}
