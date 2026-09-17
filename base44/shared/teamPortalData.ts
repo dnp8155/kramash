@@ -59,6 +59,24 @@ export async function buildTeamPortalData(base44, teamMemberId, workspaceId, opt
   const eventsById = {};
   events.forEach((e) => { eventsById[e.id] = e; });
 
+  // Load job sheets for these events — only those with show_job_sheet enabled
+  // and a public link enabled expose a token for the team member portal.
+  const jobSheetTokens = {};
+  await Promise.all(
+    eventIds.map(async (eid) => {
+      try {
+        const sheets = await base44.asServiceRole.entities.JobSheet.filter(
+          { workspace_id: workspaceId, event_id: eid },
+          "-created_date", 5
+        );
+        const js = sheets?.[0];
+        if (js && js.show_job_sheet && js.public_link_enabled && js.public_token) {
+          jobSheetTokens[eid] = js.public_token;
+        }
+      } catch (e) { /* skip */ }
+    })
+  );
+
   // Active team assignments
   const activeTeamAsgns = (teamAssignments || []).filter((a) => a.assignment_status !== "removed");
   const activeSvcAsgns = (serviceAssignments || []).filter((a) => a.assignment_status !== "removed");
@@ -183,7 +201,8 @@ export async function buildTeamPortalData(base44, teamMemberId, workspaceId, opt
     })),
     projects: projects.map((p) => ({
       ...p,
-      total_earnings: round2(p.total_earnings)
+      total_earnings: round2(p.total_earnings),
+      job_sheet_token: jobSheetTokens[p.id] || null
     })),
     payments: (transactions || []).map((t) => ({
       id: t.id,

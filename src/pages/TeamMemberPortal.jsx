@@ -6,7 +6,7 @@ import { getTeamPortalSession, clearTeamPortalSession } from "@/lib/teamPortalSe
 import { Image } from "@/components/ui/image";
 import {
   Calendar, Wallet, Loader2, LogOut, MapPin, CheckCircle2,
-  AlertCircle, Phone, Mail, Briefcase, Clock, TrendingUp
+  AlertCircle, Phone, Mail, Briefcase, Clock, TrendingUp, ClipboardList
 } from "lucide-react";
 import { CURRENCY_SYMBOLS } from "@/constants/financeConfig";
 
@@ -207,10 +207,20 @@ export default function TeamMemberPortal() {
                         {p.roles?.length > 0 && <span className="flex items-center gap-1"><Briefcase className="w-3 h-3" /> {p.roles.join(", ")}</span>}
                       </div>
                     </div>
-                    <div className="text-right shrink-0">
+                    <div className="text-right shrink-0 flex flex-col items-end gap-1.5">
                       <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${meta.bg} ${meta.color}`}>{meta.label}</span>
                       {p.total_earnings > 0 && (
-                        <div className="text-xs text-muted-foreground mt-1">{money(p.total_earnings, currency)}</div>
+                        <div className="text-xs text-muted-foreground">{money(p.total_earnings, currency)}</div>
+                      )}
+                      {p.job_sheet_token && (
+                        <a
+                          href={`/job-sheet/${p.job_sheet_token}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors"
+                        >
+                          <ClipboardList className="w-3 h-3" /> Job Sheet
+                        </a>
                       )}
                     </div>
                   </div>

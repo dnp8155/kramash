@@ -29,6 +29,11 @@
       "title": "Include Equipment / Kit Checklist",
       "default": false
     },
+    "show_job_sheet": {
+      "type": "boolean",
+      "title": "Show Job Sheet to Team Members (in Team Portal)",
+      "default": false
+    },
     "equipment_list": {
       "type": "string",
       "title": "Equipment List (JSON array of strings)"

@@ -3,7 +3,7 @@ import Toggle from "@/components/common/Toggle";
 import Button from "@/components/common/Button";
 import Card from "@/components/common/Card";
 import { generatePublicToken } from "@/lib/jobSheetService";
-import { Save, Users, Phone, Wrench, Package, Clock, MapPin, FileText, Link, Copy } from "lucide-react";
+import { Save, Users, Phone, Wrench, Package, Clock, MapPin, FileText, Link, Copy, ClipboardList } from "lucide-react";
 
 export default function JobSheetSettings({ config, onChange, eventDates, onSave, saving }) {
   const [copied, setCopied] = useState(false);
@@ -61,6 +61,13 @@ export default function JobSheetSettings({ config, onChange, eventDates, onSave,
           description="ON: Show equipment checklist section. OFF: No equipment section."
           checked={config.include_equipment}
           onChange={v => onChange({ include_equipment: v })}
+        />
+        <ToggleRow
+          icon={ClipboardList}
+          label="Show Job Sheet"
+          description="ON: Team members can view the job sheet in their Team Portal. OFF: Job sheet is hidden from team members."
+          checked={config.show_job_sheet}
+          onChange={v => onChange({ show_job_sheet: v })}
         />
       </div>
 
