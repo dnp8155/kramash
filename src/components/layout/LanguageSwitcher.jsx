@@ -52,10 +52,11 @@ export default function LanguageSwitcher() {
       <button
         onClick={() => setOpen((o) => !o)}
         disabled={saving}
-        className="flex items-center gap-1.5 h-8 px-2 rounded-md hover:bg-muted transition-colors text-sm text-foreground"
+        className="flex items-center gap-1.5 h-9 px-2.5 rounded-full border border-border bg-card hover:bg-muted hover:border-primary/30 transition-all text-sm text-foreground disabled:opacity-60"
         aria-label="Language"
+        title="Change language"
       >
-        <Globe className="w-4 h-4" />
+        <Globe className="w-4 h-4 text-muted-foreground" />
         <span className="font-semibold text-xs">{currentLang.short}</span>
       </button>
       {open && (

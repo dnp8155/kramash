@@ -51,12 +51,13 @@ export default function NotificationBell() {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen((o) => !o)}
-        className="relative p-1.5 rounded-md hover:bg-muted transition-colors"
+        className="relative w-9 h-9 rounded-full border border-border bg-card hover:bg-muted hover:border-primary/30 transition-all flex items-center justify-center group"
         aria-label="Notifications"
+        title="Notifications"
       >
-        <Bell className="w-5 h-5 text-foreground" />
+        <Bell className="w-[18px] h-[18px] text-foreground group-hover:text-primary transition-colors" />
         {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 flex items-center justify-center text-[10px] font-bold text-white bg-destructive rounded-full">
+          <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center text-[10px] font-bold text-white bg-destructive rounded-full border-2 border-card">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}

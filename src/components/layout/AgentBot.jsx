@@ -75,11 +75,12 @@ export default function AgentBot() {
     <>
       <button
         onClick={openPanel}
-        className="relative p-1.5 rounded-md hover:bg-muted transition-colors"
+        className="relative w-9 h-9 rounded-full border border-border bg-card hover:bg-muted hover:border-primary/30 transition-all flex items-center justify-center group"
         aria-label="AI Assistant"
         title="AI Assistant"
       >
-        <Bot className="w-5 h-5 text-foreground" />
+        <Bot className="w-[18px] h-[18px] text-foreground group-hover:text-primary transition-colors" />
+        <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-success border-2 border-card" />
       </button>
 
       {open && createPortal(
