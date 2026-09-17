@@ -27,7 +27,6 @@ export default function EventAssignmentCard({
   onEdit,
 }) {
   const [showHistory, setShowHistory] = useState(false);
-  const [showFinancials, setShowFinancials] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
   const [editingTx, setEditingTx] = useState(null);
   const { toast } = useToast();
@@ -126,11 +125,8 @@ export default function EventAssignmentCard({
         <span className="font-medium text-foreground">{datesLabel}</span>
       </div>
 
-      {/* Details grid — hidden on mobile unless toggled */}
-      <div className={cn(
-        "grid grid-cols-2 gap-3 mb-3",
-        showFinancials ? "flex" : "hidden sm:grid"
-      )}>
+      {/* Details grid — always visible */}
+      <div className="grid grid-cols-2 gap-3 mb-3">
         <div>
           <div className="text-xs font-medium text-muted-foreground">Rate</div>
           <div className="text-sm font-semibold text-foreground tabular-nums">{formatMoney(rate, currency)}</div>
@@ -151,15 +147,6 @@ export default function EventAssignmentCard({
           )}>{formatMoney(remaining, currency)}</div>
         </div>
       </div>
-
-      {/* Mobile show/hide financials toggle */}
-      <button
-        onClick={() => setShowFinancials((s) => !s)}
-        className="sm:hidden flex items-center gap-1.5 text-xs font-medium text-primary hover:underline w-full mb-2"
-      >
-        {showFinancials ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-        {showFinancials ? "Hide Financials" : "Show Financials"}
-      </button>
 
       {/* Action buttons */}
       <div className="flex items-center gap-2 mb-1 flex-wrap">
