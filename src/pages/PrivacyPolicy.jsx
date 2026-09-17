@@ -2,14 +2,11 @@ import React from "react";
 import ReactMarkdown from "react-markdown";
 import { Link } from "react-router-dom";
 import { ArrowLeft, ShieldCheck } from "lucide-react";
-import LandingNav from "@/components/landing/LandingNav";
-import LandingFooter from "@/components/landing/LandingFooter";
 import { privacyPolicyContent } from "@/lib/legalContent";
 
 export default function PrivacyPolicy() {
   return (
     <div className="min-h-screen bg-[#F5F3EF]">
-      <LandingNav />
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
         <Link to="/" className="inline-flex items-center gap-2 text-sm text-[#8A8580] hover:text-[#1A1A1A] transition-colors mb-6">
           <span className="w-8 h-8 rounded-full border border-[#E8E3DB] bg-[#FAF8F4] flex items-center justify-center">
@@ -51,7 +48,6 @@ export default function PrivacyPolicy() {
           </ReactMarkdown>
         </article>
       </main>
-      <LandingFooter />
     </div>
   );
 }
