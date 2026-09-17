@@ -184,19 +184,19 @@ function Row({ event, clientName, teamMap, serviceMap, assignmentsByEvent, recei
                 <span className={cn("text-xs font-semibold", remaining > 0 ? "text-warning" : "text-success")}>{formatMoney(remaining, currency)}</span>
               </div>
             )}
-            {prefs?.showAddressOnCards && event.venue && (
+            {event.venue && (
               <div className="flex items-start gap-2 text-muted-foreground">
                 <MapPin className="w-3.5 h-3.5 mt-0.5 shrink-0" />
                 <span>{event.venue}{event.venue_address ? ` · ${event.venue_address}` : ""}</span>
               </div>
             )}
-            {event.description && (
+            {prefs?.showAddressOnCards && event.description && (
               <div className="flex items-start gap-2 text-muted-foreground">
                 <FileText className="w-3.5 h-3.5 mt-0.5 shrink-0" />
                 <span className="line-clamp-2">{event.description}</span>
               </div>
             )}
-            {event.notes && (
+            {prefs?.showAddressOnCards && event.notes && (
               <div className="flex items-start gap-2 text-muted-foreground">
                 <StickyNote className="w-3.5 h-3.5 mt-0.5 shrink-0" />
                 <span className="line-clamp-2">{event.notes}</span>

@@ -16,7 +16,7 @@ const DEFAULTS = {
   // Feature 4 — team / services lists on event cards & table rows (does NOT affect Event detail page tabs)
   showTeam: true,
   showServices: true,
-  // Feature 5 — Pro-only: address/venue and services on compact cards & tables
+  // Feature 5 — Pro-only: notes/description on compact cards & tables
   showAddressOnCards: false,
   showServicesOnCards: false,
   // Group upcoming events in the events list (This Week / All) vs flat list

@@ -148,8 +148,8 @@ export default function PreferencesSections({
                   )}
                 </div>
                 <ToggleRow
-                  label="Show address & venue on cards"
-                  hint="Display client address and venue on compact event cards"
+                  label="Show notes/description on cards"
+                  hint="Display notes and description on event cards and table rows"
                   checked={isPro && toggles.showAddressOnCards}
                   onChange={setT("showAddressOnCards")}
                   disabled={!isPro}
