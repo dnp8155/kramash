@@ -15,6 +15,8 @@ import LeadForm from "@/components/leads/LeadForm";
 import ConvertLeadDialog from "@/components/leads/ConvertLeadDialog";
 import { useToast } from "@/components/ui/use-toast";
 import { invalidateEntities } from "@/lib/queryInvalidation";
+import RetryState from "@/components/common/RetryState";
+import { usePartialErrorToast } from "@/hooks/usePartialErrorToast";
 import { formatEventDate } from "@/lib/dates";
 import { Plus, Pencil, Trash2, Phone, Mail, Calendar, TrendingUp, Flame, Users, Target, CalendarPlus, ArrowRight, CheckCircle2, FileSpreadsheet } from "lucide-react";
 import { exportLeadsXlsx } from "@/lib/exportUtils";
@@ -59,13 +61,18 @@ export default function Leads() {
   const [editingLead, setEditingLead] = useState(null);
   const [convertLead, setConvertLead] = useState(null);
 
-  const { data: leads = [], isLoading } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ["leads", workspaceId],
     queryFn: async () => {
       return await base44.entities.Lead.filter({ workspace_id: workspaceId }, "-created_date", 500);
     },
-    enabled: !!workspaceId
+    enabled: !!workspaceId,
+    staleTime: 60 * 1000,
+    placeholderData: (prev) => prev
   });
+
+  const leads = data || [];
+  usePartialErrorToast(false, error, !!data);
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ["leads", workspaceId] });
@@ -155,6 +162,8 @@ export default function Leads() {
       {/* List */}
       {isLoading ? (
         <LeadsPageSkeleton />
+      ) : error && !data ? (
+        <RetryState onRetry={() => queryClient.invalidateQueries({ queryKey: ["leads", workspaceId] })} />
       ) : filtered.length === 0 ? (
         <EmptyState
           title={query || statusFilter !== "all" || priorityFilter !== "all" ? "No leads match your filters" : "No leads yet"}

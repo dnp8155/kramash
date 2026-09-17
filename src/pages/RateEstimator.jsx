@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useWorkspace } from "@/lib/WorkspaceContext";
 import { useToast } from "@/components/ui/use-toast";
 import { formatMoney } from "@/utils/format";
@@ -9,6 +10,9 @@ import { loadRoles } from "@/lib/teamService";
 import Button from "@/components/common/Button";
 import Toggle from "@/components/common/Toggle";
 import LoadingState from "@/components/common/LoadingState";
+import RetryState from "@/components/common/RetryState";
+import { staggeredAllSettled } from "@/lib/staggeredLoader";
+import { usePartialErrorToast } from "@/hooks/usePartialErrorToast";
 import { RotateCcw, X, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -16,33 +20,38 @@ export default function RateEstimator() {
   const navigate = useNavigate();
   const { workspaceId, workspace } = useWorkspace();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const currency = workspace?.currency || "INR";
 
   const [showPrices, setShowPrices] = useState(true);
-  const [roles, setRoles] = useState([]);
-  const [services, setServices] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [items, setItems] = useState([]);
   const [markup, setMarkup] = useState(20);
 
-  const load = useCallback(async () => {
-    if (!workspaceId) return;
-    setLoading(true);
-    try {
-      const [sv, rl] = await Promise.all([
-        loadServices(workspaceId),
-        loadRoles(workspaceId)
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["rate-estimator", workspaceId],
+    queryFn: async () => {
+      const results = await staggeredAllSettled([
+        () => loadServices(workspaceId),
+        () => loadRoles(workspaceId)
       ]);
-      setServices(sv || []);
-      setRoles(rl || []);
-    } catch (e) {
-      toast({ title: "Failed to load rates", description: e?.message, variant: "destructive" });
-    } finally {
-      setLoading(false);
-    }
-  }, [workspaceId, toast]);
+      const [svR, rlR] = results;
+      const partialError = results.some((r) => r.status === "rejected");
+      return {
+        services: svR.status === "fulfilled" ? (svR.value || []) : [],
+        roles: rlR.status === "fulfilled" ? (rlR.value || []) : [],
+        partialError
+      };
+    },
+    enabled: !!workspaceId,
+    staleTime: 60 * 1000,
+    placeholderData: (prev) => prev
+  });
 
-  useEffect(() => { load(); }, [load]);
+  const roles = data?.roles || [];
+  const services = data?.services || [];
+  const partialError = data?.partialError;
+
+  usePartialErrorToast(partialError, error, !!data);
 
   const findItem = (type, refId) => items.find((it) => it.type === type && it.reference_id === refId);
 
@@ -151,7 +160,15 @@ export default function RateEstimator() {
     navigate("/quotation/new", { state: { estimateItems: carried } });
   };
 
-  if (loading) return <LoadingState label="Loading rates…" />;
+  if (isLoading) return <LoadingState label="Loading rates…" />;
+
+  if (error && !data) {
+    return (
+      <div className="p-4 sm:p-6 space-y-4">
+        <RetryState onRetry={() => queryClient.invalidateQueries({ queryKey: ["rate-estimator", workspaceId] })} />
+      </div>
+    );
+  }
 
   const RoleChip = ({ role }) => {
     const selected = !!findItem("role", role.id);

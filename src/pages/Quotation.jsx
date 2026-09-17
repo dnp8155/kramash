@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useWorkspace } from "@/lib/WorkspaceContext";
@@ -6,9 +6,11 @@ import { useToast } from "@/components/ui/use-toast";
 import Button from "@/components/common/Button";
 import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
-import LoadingState from "@/components/common/LoadingState";
 import EmptyState from "@/components/common/EmptyState";
 import QuotationPageSkeleton from "@/components/quotation/QuotationPageSkeleton";
+import RetryState from "@/components/common/RetryState";
+import { staggeredAllSettled } from "@/lib/staggeredLoader";
+import { usePartialErrorToast } from "@/hooks/usePartialErrorToast";
 import { formatMoney } from "@/utils/format";
 import { loadQuotations, deleteQuotation, loadQuotationItems, duplicateQuotation } from "@/lib/quotationService";
 import { createFromQuotation } from "@/lib/invoiceService";
@@ -46,39 +48,41 @@ export default function Quotation() {
   const queryClient = useQueryClient();
   const { checkFeature, FeatureGateDialog } = useFeatureGate();
 
-  const { data, isLoading, error, refetch } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ["quotations", workspaceId],
     queryFn: async () => {
-      const [qs, cl, ev] = await Promise.all([
-        loadQuotations(workspaceId),
-        base44.entities.Client.filter({ workspace_id: workspaceId }, "name", 500),
-        base44.entities.Event.filter({ workspace_id: workspaceId }, "-start_date", 500)
+      const results = await staggeredAllSettled([
+        () => loadQuotations(workspaceId),
+        () => base44.entities.Client.filter({ workspace_id: workspaceId }, "name", 500),
+        () => base44.entities.Event.filter({ workspace_id: workspaceId }, "-start_date", 500)
       ]);
-      return { quotations: qs || [], clients: cl || [], events: ev || [] };
+      const [qsR, clR, evR] = results;
+      const partialError = results.some((r) => r.status === "rejected");
+      return {
+        quotations: qsR.status === "fulfilled" ? (qsR.value || []) : [],
+        clients: clR.status === "fulfilled" ? (clR.value || []) : [],
+        events: evR.status === "fulfilled" ? (evR.value || []) : [],
+        partialError
+      };
     },
     enabled: !!workspaceId,
-    staleTime: 0,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true
+    staleTime: 30 * 1000,
+    placeholderData: (prev) => prev
   });
 
-  // Belt-and-suspenders: force refetch whenever workspaceId changes or page is navigated to.
-  useEffect(() => {
-    if (workspaceId) refetch();
-  }, [workspaceId, refetch]);
   const quotations = data?.quotations || [];
   const clients = data?.clients || [];
   const events = data?.events || [];
+  const partialError = data?.partialError;
+
+  usePartialErrorToast(partialError, error, !!data);
+
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ["quotations", workspaceId] });
     // Accepting/deleting a quotation can change an event's contract value, which
     // affects the dashboard, events list, event details, and financial totals.
     invalidateEntities(queryClient, ["Quotation", "QuotationItem", "Event", "FinancialTransaction"]);
   };
-
-  useEffect(() => {
-    if (error) toast({ title: "Failed to load quotations", description: error?.message, variant: "destructive" });
-  }, [error, toast]);
 
   const clientsById = useMemo(() => {
     const m = {};
@@ -178,6 +182,15 @@ export default function Quotation() {
   };
 
   if (isLoading) return <QuotationPageSkeleton />;
+
+  if (error && !data) {
+    return (
+      <div className="p-4 sm:p-6 space-y-5">
+        <PageHeader eyebrow="Sales" title="Quotations" subtitle="Create, track and finalize client quotations." />
+        <RetryState onRetry={() => queryClient.invalidateQueries({ queryKey: ["quotations", workspaceId] })} />
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 sm:p-6 space-y-5">

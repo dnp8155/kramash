@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useWorkspace } from "@/lib/WorkspaceContext";
@@ -6,9 +6,11 @@ import { useToast } from "@/components/ui/use-toast";
 import Button from "@/components/common/Button";
 import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
-import LoadingState from "@/components/common/LoadingState";
 import EmptyState from "@/components/common/EmptyState";
 import InvoicesPageSkeleton from "@/components/invoice/InvoicesPageSkeleton";
+import RetryState from "@/components/common/RetryState";
+import { staggeredAllSettled } from "@/lib/staggeredLoader";
+import { usePartialErrorToast } from "@/hooks/usePartialErrorToast";
 import { formatMoney } from "@/utils/format";
 import { loadInvoices, deleteInvoice, duplicateInvoice } from "@/lib/invoiceService";
 import { base44 } from "@/api/base44Client";
@@ -56,25 +58,31 @@ export default function Invoices() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["invoices", workspaceId],
     queryFn: async () => {
-      const [invs, cl, ev] = await Promise.all([
-        loadInvoices(workspaceId),
-        base44.entities.Client.filter({ workspace_id: workspaceId }, "name", 500),
-        base44.entities.Event.filter({ workspace_id: workspaceId }, "-start_date", 500)
+      const results = await staggeredAllSettled([
+        () => loadInvoices(workspaceId),
+        () => base44.entities.Client.filter({ workspace_id: workspaceId }, "name", 500),
+        () => base44.entities.Event.filter({ workspace_id: workspaceId }, "-start_date", 500)
       ]);
-      return { invoices: invs || [], clients: cl || [], events: ev || [] };
+      const [invsR, clR, evR] = results;
+      const partialError = results.some((r) => r.status === "rejected");
+      return {
+        invoices: invsR.status === "fulfilled" ? (invsR.value || []) : [],
+        clients: clR.status === "fulfilled" ? (clR.value || []) : [],
+        events: evR.status === "fulfilled" ? (evR.value || []) : [],
+        partialError
+      };
     },
     enabled: !!workspaceId,
-    staleTime: 0,
-    refetchOnMount: "always"
+    staleTime: 30 * 1000,
+    placeholderData: (prev) => prev
   });
 
   const invoices = data?.invoices || [];
   const clients = data?.clients || [];
   const events = data?.events || [];
+  const partialError = data?.partialError;
 
-  useEffect(() => {
-    if (error) toast({ title: "Failed to load invoices", description: error?.message, variant: "destructive" });
-  }, [error, toast]);
+  usePartialErrorToast(partialError, error, !!data);
 
   const clientsById = useMemo(() => {
     const m = {};
@@ -143,6 +151,15 @@ export default function Invoices() {
   };
 
   if (isLoading) return <InvoicesPageSkeleton />;
+
+  if (error && !data) {
+    return (
+      <div className="p-4 sm:p-6 space-y-5">
+        <PageHeader eyebrow="Sales" title="Invoices" subtitle="Create and track client invoices from approved quotations." />
+        <RetryState onRetry={() => queryClient.invalidateQueries({ queryKey: ["invoices", workspaceId] })} />
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 sm:p-6 space-y-5">
