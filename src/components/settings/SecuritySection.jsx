@@ -1,16 +1,13 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
 import Button from "@/components/common/Button";
 import Toggle from "@/components/common/Toggle";
 import Select from "@/components/common/Select";
-import {
-  isWebAuthnSupported,
-  isPlatformAuthenticatorAvailable,
-  createCredential,
-} from "@/lib/webauthnService";
-import { Shield, Fingerprint, Plus, Trash2, Loader2, Lock, Unlock, Smartphone, Monitor } from "lucide-react";
+import Input from "@/components/common/Input";
+import { hashPassword } from "@/lib/appLockPassword";
+import { Shield, Lock, Unlock, Loader2, Eye, EyeOff } from "lucide-react";
 
 function getUserField(user, field, defaultValue) {
   if (user && user[field] !== undefined && user[field] !== null) return user[field];
@@ -21,74 +18,39 @@ function getUserField(user, field, defaultValue) {
 export default function SecuritySection() {
   const { user, checkUserAuth } = useAuth();
   const { toast } = useToast();
-  const [supported] = useState(isWebAuthnSupported());
-  const [platformAvailable, setPlatformAvailable] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [credentials, setCredentials] = useState([]);
-  const [loadingCreds, setLoadingCreds] = useState(false);
+  const [showSetup, setShowSetup] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const appLockEnabled = getUserField(user, "app_lock_enabled", false);
+  const hasPassword = !!getUserField(user, "app_lock_password_hash", "");
   const relockAfter = Number(getUserField(user, "app_lock_relock_after", 0));
 
-  useEffect(() => {
-    isPlatformAuthenticatorAvailable().then(setPlatformAvailable);
-  }, []);
-
-  const loadCredentials = useCallback(async () => {
-    if (!user?.id) return;
-    setLoadingCreds(true);
-    try {
-      const creds = await base44.entities.UserAuthCredential.filter({ user_id: user.id });
-      setCredentials(creds || []);
-    } catch {
-      // ignore
-    } finally {
-      setLoadingCreds(false);
-    }
-  }, [user?.id]);
-
-  useEffect(() => {
-    loadCredentials();
-  }, [loadCredentials]);
-
   const handleEnable = async () => {
+    if (!newPassword || newPassword.length < 4) {
+      toast({ title: "Password too short", description: "Use at least 4 characters.", variant: "destructive" });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast({ title: "Passwords don't match", variant: "destructive" });
+      return;
+    }
     setLoading(true);
     try {
-      // 1. Get registration challenge
-      const challengeRes = await base44.functions.invoke("generateWebAuthnRegistrationChallenge", {});
-      const challengeData = challengeRes?.data || challengeRes;
-      if (!challengeData?.challenge) throw new Error("Failed to generate challenge");
-
-      // 2. Browser creates credential
-      const credential = await createCredential({
-        challenge: challengeData.challenge,
-        rp: challengeData.rp,
-        user: challengeData.user,
-        pubKeyCredParams: challengeData.pubKeyCredParams,
-        authenticatorSelection: challengeData.authenticatorSelection,
-        timeout: challengeData.timeout,
-        attestation: challengeData.attestation,
-        excludeCredentials: challengeData.excludeCredentials,
+      const hash = await hashPassword(newPassword);
+      await base44.auth.updateMe({
+        app_lock_enabled: true,
+        app_lock_password_hash: hash,
       });
-
-      // 3. Verify and store
-      const verifyRes = await base44.functions.invoke("verifyWebAuthnRegistration", {
-        credential,
-        challengeToken: challengeData.challengeToken,
-        deviceLabel: getDeviceLabel(),
-      });
-      const verifyData = verifyRes?.data || verifyRes;
-      if (!verifyData?.verified) throw new Error("Registration verification failed");
-
       await checkUserAuth();
-      loadCredentials();
-      toast({ title: "App Lock enabled", description: "Your passkey has been registered." });
+      setNewPassword("");
+      setConfirmPassword("");
+      setShowSetup(false);
+      toast({ title: "App Lock enabled", description: "Your password has been set." });
     } catch (e) {
-      toast({
-        title: "Setup failed",
-        description: e?.message || "Could not register passkey",
-        variant: "destructive",
-      });
+      toast({ title: "Setup failed", description: e?.message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -98,13 +60,11 @@ export default function SecuritySection() {
     if (!window.confirm("Disable App Lock? You can re-enable it anytime.")) return;
     setLoading(true);
     try {
-      // Remove all credentials
-      for (const cred of credentials) {
-        await base44.entities.UserAuthCredential.delete(cred.id);
-      }
-      await base44.auth.updateMe({ app_lock_enabled: false });
+      await base44.auth.updateMe({
+        app_lock_enabled: false,
+        app_lock_password_hash: "",
+      });
       await checkUserAuth();
-      setCredentials([]);
       toast({ title: "App Lock disabled" });
     } catch (e) {
       toast({ title: "Failed to disable", description: e?.message, variant: "destructive" });
@@ -113,19 +73,28 @@ export default function SecuritySection() {
     }
   };
 
-  const handleRemoveCredential = async (cred) => {
-    if (!window.confirm(`Remove "${cred.device_label || "this device"}"? You'll need to re-register to use App Lock on it.`)) return;
+  const handleChangePassword = async () => {
+    if (!newPassword || newPassword.length < 4) {
+      toast({ title: "Password too short", description: "Use at least 4 characters.", variant: "destructive" });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast({ title: "Passwords don't match", variant: "destructive" });
+      return;
+    }
+    setLoading(true);
     try {
-      await base44.entities.UserAuthCredential.delete(cred.id);
-      setCredentials((prev) => prev.filter((c) => c.id !== cred.id));
-      // If no credentials left, disable app lock
-      if (credentials.length <= 1) {
-        await base44.auth.updateMe({ app_lock_enabled: false });
-        await checkUserAuth();
-      }
-      toast({ title: "Device removed" });
+      const hash = await hashPassword(newPassword);
+      await base44.auth.updateMe({ app_lock_password_hash: hash });
+      await checkUserAuth();
+      setNewPassword("");
+      setConfirmPassword("");
+      setShowSetup(false);
+      toast({ title: "Password updated" });
     } catch (e) {
-      toast({ title: "Failed to remove", description: e?.message, variant: "destructive" });
+      toast({ title: "Failed to update", description: e?.message, variant: "destructive" });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -138,20 +107,6 @@ export default function SecuritySection() {
     }
   };
 
-  if (!supported) {
-    return (
-      <div className="bg-card border border-border rounded-lg p-5 max-w-lg">
-        <h3 className="text-sm font-semibold mb-2 flex items-center gap-1.5">
-          <Shield className="w-4 h-4 text-primary" /> App Lock
-        </h3>
-        <p className="text-sm text-muted-foreground">
-          WebAuthn is not supported in this browser. App Lock requires a modern browser with
-          passkey/biometric support (Chrome, Safari, Edge, or Firefox).
-        </p>
-      </div>
-    );
-  }
-
   return (
     <div className="bg-card border border-border rounded-lg p-5 max-w-lg space-y-5">
       <div className="flex items-center justify-between">
@@ -160,35 +115,25 @@ export default function SecuritySection() {
             <Shield className="w-4 h-4 text-primary" /> App Lock
           </h3>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Require passkey or biometric authentication to open the app.
+            Require a password to open the app.
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {appLockEnabled && (
+          {appLockEnabled && hasPassword && (
             <span className="text-[10px] font-bold uppercase tracking-wide bg-success/10 text-success px-1.5 py-0.5 rounded flex items-center gap-1">
               <Lock className="w-2.5 h-2.5" /> Active
             </span>
           )}
-          <Toggle checked={appLockEnabled} onChange={appLockEnabled ? handleDisable : handleEnable} label="App Lock" disabled={loading} />
+          <Toggle
+            checked={appLockEnabled && hasPassword}
+            onChange={appLockEnabled && hasPassword ? handleDisable : () => setShowSetup(true)}
+            label="App Lock"
+            disabled={loading}
+          />
         </div>
       </div>
 
-      {!appLockEnabled ? (
-        <div className="space-y-3">
-          {!platformAvailable && (
-            <div className="bg-warning/10 border border-warning/20 rounded-lg p-3 text-xs text-warning flex items-start gap-2">
-              <Monitor className="w-4 h-4 shrink-0 mt-0.5" />
-              <span>
-                No platform authenticator detected. You can still set up a passkey with a
-                hardware security key or a synced passkey from your phone.
-              </span>
-            </div>
-          )}
-          <Button variant="primary" size="md" disabled={loading} onClick={handleEnable} className="w-full">
-            {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Setting up…</> : <><Fingerprint className="w-4 h-4" /> Set up passkey</>}
-          </Button>
-        </div>
-      ) : (
+      {appLockEnabled && hasPassword ? (
         <div className="space-y-4">
           {/* Re-lock timeout */}
           <div>
@@ -207,54 +152,91 @@ export default function SecuritySection() {
             </p>
           </div>
 
-          {/* Registered devices */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-medium text-muted-foreground">Registered devices</span>
-              <Button variant="outline" size="sm" disabled={loading} onClick={handleEnable}>
-                <Plus className="w-3 h-3" /> Add device
-              </Button>
-            </div>
-            {loadingCreds ? (
-              <p className="text-sm text-muted-foreground py-2">Loading…</p>
-            ) : credentials.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-2">No devices registered.</p>
-            ) : (
-              <div className="space-y-1.5">
-                {credentials.map((cred) => (
-                  <div key={cred.id} className="flex items-center gap-2 px-2 py-2 rounded-md bg-muted/40">
-                    <Smartphone className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                    <span className="text-sm flex-1 min-w-0 truncate">
-                      {cred.device_label || "Unknown device"}
-                    </span>
-                    <button
-                      onClick={() => handleRemoveCredential(cred)}
-                      className="text-muted-foreground hover:text-destructive shrink-0"
-                      aria-label="Remove device"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                ))}
+          {/* Change password */}
+          {!showSetup ? (
+            <Button variant="outline" size="sm" onClick={() => setShowSetup(true)} className="w-full">
+              Change password
+            </Button>
+          ) : (
+            <div className="space-y-3 p-3 rounded-lg bg-muted/40">
+              <div className="relative">
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="New password"
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((s) => !s)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
-            )}
-          </div>
+              <Input
+                type={showPassword ? "text" : "password"}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Confirm new password"
+              />
+              <div className="flex gap-2">
+                <Button variant="primary" size="sm" disabled={loading} onClick={handleChangePassword} className="flex-1">
+                  {loading ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Saving…</> : "Save password"}
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => { setShowSetup(false); setNewPassword(""); setConfirmPassword(""); }}>
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          )}
 
           <Button variant="destructive" size="sm" disabled={loading} onClick={handleDisable} className="w-full">
             <Unlock className="w-3.5 h-3.5" /> Disable App Lock
           </Button>
         </div>
+      ) : showSetup ? (
+        <div className="space-y-3 p-3 rounded-lg bg-muted/40">
+          <div className="relative">
+            <Input
+              type={showPassword ? "text" : "password"}
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="Set password"
+              className="pr-10"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((s) => !s)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
+          <Input
+            type={showPassword ? "text" : "password"}
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            placeholder="Confirm password"
+          />
+          <p className="text-xs text-muted-foreground">
+            Use at least 4 characters. You'll need this password every time you open the app.
+          </p>
+          <div className="flex gap-2">
+            <Button variant="primary" size="sm" disabled={loading} onClick={handleEnable} className="flex-1">
+              {loading ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Enabling…</> : "Enable App Lock"}
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => { setShowSetup(false); setNewPassword(""); setConfirmPassword(""); }}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <p className="text-sm text-muted-foreground">
+          Enable App Lock to require a password when opening the app. This protects your data on shared devices.
+        </p>
       )}
     </div>
   );
-}
-
-function getDeviceLabel() {
-  const ua = navigator.userAgent;
-  if (/iPhone|iPad|iPod/.test(ua)) return "Apple Device";
-  if (/Android/.test(ua)) return "Android Device";
-  if (/Mac/.test(ua)) return "Mac";
-  if (/Windows/.test(ua)) return "Windows PC";
-  if (/Linux/.test(ua)) return "Linux PC";
-  return "This Device";
 }

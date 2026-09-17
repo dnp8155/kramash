@@ -1,57 +1,43 @@
-import { useState, useEffect, useCallback } from "react";
-import { base44 } from "@/api/base44Client";
-import { getCredential, isWebAuthnSupported } from "@/lib/webauthnService";
-import { Lock, Fingerprint, Loader2, ShieldCheck } from "lucide-react";
+import { useState } from "react";
 import { useAuth } from "@/lib/AuthContext";
+import { verifyPassword } from "@/lib/appLockPassword";
+import { Lock, Loader2, Eye, EyeOff } from "lucide-react";
 import Logo from "@/components/common/Logo";
+import Button from "@/components/common/Button";
+
+function getUserField(user, field, defaultValue) {
+  if (user && user[field] !== undefined && user[field] !== null) return user[field];
+  if (user?.data && user.data[field] !== undefined && user.data[field] !== null) return user.data[field];
+  return defaultValue;
+}
 
 export default function AppLockScreen({ onUnlock }) {
   const { user } = useAuth();
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [autoTriggered, setAutoTriggered] = useState(false);
 
-  const unlock = useCallback(async () => {
+  const storedHash = getUserField(user, "app_lock_password_hash", "");
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     setError("");
     setLoading(true);
     try {
-      // 1. Get assertion challenge
-      const challengeRes = await base44.functions.invoke("generateWebAuthnAssertionChallenge", {});
-      const challengeData = challengeRes?.data || challengeRes;
-      if (!challengeData?.challenge) throw new Error("Failed to generate challenge");
-
-      // 2. Browser authenticator
-      const credential = await getCredential({
-        challenge: challengeData.challenge,
-        rpId: challengeData.rpId,
-        allowCredentials: challengeData.allowCredentials,
-        userVerification: challengeData.userVerification || "required",
-        timeout: challengeData.timeout || 60000,
-      });
-
-      // 3. Verify assertion
-      const verifyRes = await base44.functions.invoke("verifyWebAuthnAssertion", {
-        credential,
-        challengeToken: challengeData.challengeToken,
-      });
-      const verifyData = verifyRes?.data || verifyRes;
-      if (!verifyData?.verified) throw new Error("Verification failed");
-
+      const ok = await verifyPassword(password, storedHash);
+      if (!ok) {
+        setError("Incorrect password. Please try again.");
+        setPassword("");
+        return;
+      }
       onUnlock();
-    } catch (e) {
-      setError(e?.message || "Unlock failed. Please try again.");
+    } catch (err) {
+      setError("Unlock failed. Please try again.");
     } finally {
       setLoading(false);
     }
-  }, [onUnlock]);
-
-  // Auto-trigger on mount
-  useEffect(() => {
-    if (!autoTriggered && isWebAuthnSupported()) {
-      setAutoTriggered(true);
-      unlock();
-    }
-  }, [autoTriggered, unlock]);
+  };
 
   return (
     <div className="fixed inset-0 z-[100] bg-background flex items-center justify-center p-4">
@@ -61,46 +47,47 @@ export default function AppLockScreen({ onUnlock }) {
         </div>
 
         <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-          {loading ? (
-            <Loader2 className="w-8 h-8 text-primary animate-spin" />
-          ) : (
-            <Lock className="w-8 h-8 text-primary" />
-          )}
+          <Lock className="w-8 h-8 text-primary" />
         </div>
 
         <div>
           <h1 className="text-xl font-bold text-foreground">App Locked</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Authenticate with your passkey or biometric to unlock.
+            Enter your password to unlock the app.
           </p>
         </div>
 
-        {error && (
-          <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 text-sm text-destructive">
-            {error}
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoFocus
+              autoComplete="off"
+              placeholder="Password"
+              className="w-full h-11 px-4 pr-11 rounded-lg border border-border bg-card text-foreground text-center text-base tracking-widest focus:outline-none focus:ring-2 focus:ring-primary/40"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((s) => !s)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              tabIndex={-1}
+            >
+              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
           </div>
-        )}
 
-        <button
-          onClick={unlock}
-          disabled={loading}
-          className="w-full h-11 bg-primary text-primary-foreground rounded-lg font-medium flex items-center justify-center gap-2 hover:bg-primary-hover transition-colors disabled:opacity-50"
-        >
-          {loading ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" /> Unlocking…
-            </>
-          ) : (
-            <>
-              <Fingerprint className="w-5 h-5" /> Unlock with passkey
-            </>
+          {error && (
+            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 text-sm text-destructive">
+              {error}
+            </div>
           )}
-        </button>
 
-        <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
-          <ShieldCheck className="w-3.5 h-3.5" />
-          <span>Protected by WebAuthn</span>
-        </div>
+          <Button type="submit" variant="primary" size="lg" disabled={loading || !password} className="w-full">
+            {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Unlocking…</> : "Unlock"}
+          </Button>
+        </form>
       </div>
     </div>
   );
