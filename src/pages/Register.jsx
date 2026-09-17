@@ -389,7 +389,12 @@ export default function Register() {
                     onChange={(e) => setAgreed(e.target.checked)}
                     className="mt-0.5 w-4 h-4 rounded border-border accent-primary shrink-0"
                   />
-                  <span>I agree to the Terms of Service and Privacy Policy.</span>
+                  <span>
+                    I agree to the{" "}
+                    <Link to="/terms" target="_blank" rel="noopener noreferrer" className="text-primary font-medium hover:underline">Terms of Service</Link>{" "}
+                    and{" "}
+                    <Link to="/privacy" target="_blank" rel="noopener noreferrer" className="text-primary font-medium hover:underline">Privacy Policy</Link>.
+                  </span>
                 </label>
 
                 <Button type="submit" className="w-full h-12 font-semibold" disabled={loading}>
