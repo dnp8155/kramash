@@ -583,8 +583,13 @@ export default function AvailabilityCalendar({
                     </div>
                     <div className="flex flex-wrap gap-1.5">
                       {dayInfo.available.map((m) => (
-                        <span key={m.id} className="text-xs px-2 py-1 rounded-full bg-[#27ae60]/10 text-[#27ae60] border border-[#27ae60]/20">
+                        <span key={m.id} className="text-xs px-2 py-1 rounded-full bg-[#27ae60]/10 text-[#27ae60] border border-[#27ae60]/20 inline-flex items-center gap-1">
                           {m.name}
+                          {m.is_self && (
+                            <span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide bg-primary text-primary-foreground">
+                              <Crown className="w-2 h-2" /> Self
+                            </span>
+                          )}
                         </span>
                       ))}
                     </div>
@@ -599,8 +604,13 @@ export default function AvailabilityCalendar({
                     <div className="space-y-1.5">
                       {dayInfo.blocked.map(({ member, block }) => (
                         <div key={member.id} className="flex items-center justify-between gap-2 text-sm px-3 py-1.5 rounded-lg bg-[#6b7280]/5 border border-[#6b7280]/15">
-                          <span className="min-w-0">
+                          <span className="min-w-0 flex items-center gap-1.5">
                             <span className="text-foreground font-medium">{member.name}</span>
+                            {member.is_self && (
+                              <span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide bg-primary text-primary-foreground shrink-0">
+                                <Crown className="w-2 h-2" /> Self
+                              </span>
+                            )}
                             {block?.reason ? <span className="text-muted-foreground"> — {block.reason}</span> : null}
                           </span>
                           {onUnblockDate && block?.id && (
@@ -774,7 +784,14 @@ export default function AvailabilityCalendar({
                 ) : (
                   <ul className="space-y-1 pl-3.5">
                     {selectedInfo.available.map((m) => (
-                      <li key={m.id} className="text-sm text-foreground">{m.name}{m.profession ? ` — ${m.profession}` : ""}</li>
+                      <li key={m.id} className="text-sm text-foreground flex items-center gap-1.5">
+                        {m.name}{m.profession ? ` — ${m.profession}` : ""}
+                        {m.is_self && (
+                          <span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide bg-primary text-primary-foreground">
+                            <Crown className="w-2 h-2" /> Self
+                          </span>
+                        )}
+                      </li>
                     ))}
                   </ul>
                 )}
@@ -788,8 +805,13 @@ export default function AvailabilityCalendar({
                   <ul className="space-y-1.5 pl-3.5">
                     {selectedInfo.blocked.map(({ member, block }) => (
                       <li key={member.id} className="text-sm flex items-center justify-between gap-2">
-                        <span className="min-w-0">
+                        <span className="min-w-0 flex items-center gap-1.5">
                           <span className="text-foreground font-medium">{member.name}</span>
+                          {member.is_self && (
+                            <span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide bg-primary text-primary-foreground shrink-0">
+                              <Crown className="w-2 h-2" /> Self
+                            </span>
+                          )}
                           {block?.reason ? <span className="text-muted-foreground"> — {block.reason}</span> : null}
                         </span>
                         {onUnblockDate && block?.id && (
@@ -828,7 +850,14 @@ export default function AvailabilityCalendar({
                 return (
                   <li key={block.id} className="text-sm flex items-center justify-between gap-2 p-1.5 rounded-md hover:bg-muted/50">
                     <div className="min-w-0">
-                      <div className="text-foreground font-medium truncate">{member.name}</div>
+                      <div className="text-foreground font-medium truncate flex items-center gap-1.5">
+                        {member.name}
+                        {member.is_self && (
+                          <span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide bg-primary text-primary-foreground shrink-0">
+                            <Crown className="w-2 h-2" /> Self
+                          </span>
+                        )}
+                      </div>
                       <div className="text-xs text-muted-foreground flex items-center gap-1">
                         <span>{label}</span>
                         {block.reason ? <span className="truncate">· {block.reason}</span> : null}

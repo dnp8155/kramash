@@ -71,7 +71,7 @@ export default function TeamMemberCard({ member, assignments = [], transactions 
         >
           <span className="truncate">{member.name}</span>
           {isSelf && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-primary text-primary-foreground shrink-0">
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-primary text-primary-foreground shrink-0">
               <Crown className="w-2.5 h-2.5" /> Self
             </span>
           )}
