@@ -139,7 +139,7 @@ export default function EditServiceAssignmentDialog({
         <AppDialogHeader>
           <AppDialogTitle>Edit Service</AppDialogTitle>
           <AppDialogDescription>
-            {event ? event.title : "Update this service assignment."}
+            Update this service assignment.
           </AppDialogDescription>
         </AppDialogHeader>
 

@@ -9,7 +9,7 @@ import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
 import { Label } from "@/components/ui/label";
 import { RATE_TYPES } from "@/constants/teamConfig";
-import { formatEventDate, parseISODate } from "@/lib/dates";
+import { parseISODate } from "@/lib/dates";
 import { formatMoney } from "@/utils/format";
 import { Info, Crown } from "lucide-react";
 import { isSelfMember } from "@/lib/teamService";
@@ -163,7 +163,7 @@ export default function EditTeamAssignmentDialog({
         <AppDialogHeader>
           <AppDialogTitle>Edit Team Assignment</AppDialogTitle>
           <AppDialogDescription>
-            {event ? `${event.title} · ${formatEventDate(event.start_date, event.end_date)}` : "Update this event assignment."}
+            Update this event assignment.
           </AppDialogDescription>
         </AppDialogHeader>
 

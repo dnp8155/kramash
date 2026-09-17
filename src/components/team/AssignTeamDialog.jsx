@@ -273,7 +273,7 @@ export default function AssignTeamDialog({
         <AppDialogHeader>
           <AppDialogTitle>Assign Team Member</AppDialogTitle>
           <AppDialogDescription>
-            {event ? `${event.title} · ${formatEventDate(event.start_date, event.end_date)}` : "Add a team member to this event."}
+            Add a team member to this event.
           </AppDialogDescription>
         </AppDialogHeader>
 

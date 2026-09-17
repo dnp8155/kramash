@@ -191,7 +191,7 @@ export default function AssignServiceDialog({
         <AppDialogHeader>
           <AppDialogTitle>Add Service</AppDialogTitle>
           <AppDialogDescription>
-            {event ? `${event.title}` : "Assign a service to this event."}
+            Assign a service to this event.
           </AppDialogDescription>
         </AppDialogHeader>
 
