@@ -156,7 +156,10 @@ export default async function(req) {
         amount_in_words: inv.amount_in_words || "",
         payment_terms: inv.payment_terms || "",
         terms_and_conditions: inv.terms_and_conditions || "",
-        authorized_signatory: inv.authorized_signatory || ""
+        authorized_signatory: inv.authorized_signatory || "",
+        signature_type: inv.signature_type || "none",
+        signature_image: inv.signature_image || "",
+        signature_color: inv.signature_color || "#000000"
       },
       items: publicItems,
       client,

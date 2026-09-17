@@ -401,9 +401,30 @@ export default function PublicInvoice() {
           </div>
         )}
 
+        {/* Authorized Signature */}
+        {invoice.signature_image && (invoice.signature_type === "text" || invoice.signature_type === "esign") && (
+          <div className="bg-card border border-border rounded-xl p-5 shadow-card">
+            <h2 className="text-sm font-semibold text-foreground mb-3">Authorized Signature</h2>
+            <div className="flex flex-col items-start gap-2">
+              <img
+                src={invoice.signature_image}
+                alt="Authorized signature"
+                className="max-h-24 w-auto"
+                style={{ color: invoice.signature_color }}
+              />
+              {invoice.authorized_signatory && (
+                <div className="text-xs text-muted-foreground mt-1">{invoice.authorized_signatory}</div>
+              )}
+              <div className="text-xs text-muted-foreground mt-2 pt-2 border-t border-border w-full">
+                Signed on {fmtDate(invoice.invoice_date)}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Footer */}
         <div className="text-center text-xs text-muted-foreground py-4">
-          {invoice.authorized_signatory && <div className="mb-2">Authorized by: {invoice.authorized_signatory}</div>}
+          {invoice.authorized_signatory && !invoice.signature_image && <div className="mb-2">Authorized by: {invoice.authorized_signatory}</div>}
           {business?.name && <div>© {new Date().getFullYear()} {business.name} &bull; Kramasha. All rights reserved.</div>}
         </div>
       </div>

@@ -203,6 +203,25 @@
       "type": "string",
       "title": "Authorized Signatory Name"
     },
+    "signature_type": {
+      "type": "string",
+      "title": "Signature Type (text or esign)",
+      "default": "none",
+      "enum": [
+        "none",
+        "text",
+        "esign"
+      ]
+    },
+    "signature_image": {
+      "type": "string",
+      "title": "Signature Image (data URL of rendered text or drawn signature)"
+    },
+    "signature_color": {
+      "type": "string",
+      "title": "Signature Ink Color (hex)",
+      "default": "#000000"
+    },
     "notes": {
       "type": "string",
       "title": "Internal Notes (never shown to client)"

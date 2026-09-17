@@ -147,6 +147,12 @@ export function renderInvoiceSimpleBw(data) {
   const notesHtml = textToBullets(invoice?.notes);
   const termsHtml = safeRichHtml(invoice?.terms_and_conditions || invoice?.payment_terms);
 
+  // Signature
+  const signatureType = invoice?.signature_type || "none";
+  const signatureImage = invoice?.signature_image || "";
+  const signatureColor = invoice?.signature_color || "#000000";
+  const hasSignature = (signatureType === "text" || signatureType === "esign") && signatureImage;
+
   // Item rows
   const itemRows = allItems.map((it, i) => {
     const lineTotal = invoiceLineTotal(it);
@@ -288,8 +294,12 @@ export function renderInvoiceSimpleBw(data) {
       ${termsHtml ? `<div class="section-title">TERMS &amp; CONDITIONS</div>${termsHtml}` : ""}
 
       <div class="signed-block">
-        <div class="section-title">ELECTRONICALLY SIGNED &amp; AUTHORIZED BY:</div>
-        <div class="detail-line">${escapeHtml(bizName)} on ${escapeHtml(invoiceDate)}</div>
+        <div class="section-title">AUTHORIZED SIGNATURE</div>
+        ${hasSignature
+          ? `<div style="margin-top:8px;"><img src="${escapeHtml(signatureImage)}" alt="Signature" style="max-height:80px;max-width:300px;object-fit:contain;" /></div>
+           <div class="detail-line" style="margin-top:8px;color:${escapeHtml(signatureColor)};">${escapeHtml(bizName)}</div>
+           <div class="detail-line" style="font-size:12px;color:#666;">Signed on ${escapeHtml(invoiceDate)}</div>`
+          : `<div class="detail-line">${escapeHtml(bizName)} on ${escapeHtml(invoiceDate)}</div>`}
       </div>
 
       <div class="footer">${escapeHtml(bizName)} &bull; Kramasha</div>

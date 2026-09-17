@@ -342,6 +342,9 @@ export async function createInvoice(workspaceId, data, items, opts = {}) {
     payment_terms: data.payment_terms || "",
     terms_and_conditions: data.terms_and_conditions || "",
     authorized_signatory: data.authorized_signatory || "",
+    signature_type: data.signature_type || "none",
+    signature_image: data.signature_image || "",
+    signature_color: data.signature_color || "#000000",
     client_snapshot: opts.client_snapshot || "",
     business_snapshot: opts.business_snapshot || "",
     event_snapshot: opts.event_snapshot || "",
@@ -381,7 +384,10 @@ export async function updateInvoice(workspaceId, invoiceId, data, items, opts = 
     notes: data.notes || "",
     payment_terms: data.payment_terms || "",
     terms_and_conditions: data.terms_and_conditions || "",
-    authorized_signatory: data.authorized_signatory || ""
+    authorized_signatory: data.authorized_signatory || "",
+    signature_type: data.signature_type || "none",
+    signature_image: data.signature_image || "",
+    signature_color: data.signature_color || "#000000"
   };
   if (opts.client_snapshot !== undefined) payload.client_snapshot = opts.client_snapshot;
   if (opts.business_snapshot !== undefined) payload.business_snapshot = opts.business_snapshot;

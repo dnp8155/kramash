@@ -30,6 +30,7 @@ import {
   computeInvoiceTotals, buildBankDetailsSnapshot, buildSocialLinksSnapshot, parseSnapshot
 } from "@/lib/invoiceService";
 import InvoiceBankDetailsSection from "@/components/invoice/InvoiceBankDetailsSection";
+import InvoiceSignatureSection from "@/components/invoice/InvoiceSignatureSection";
 import ClientForm from "@/components/clients/ClientForm";
 import { useSubmitGuard } from "@/hooks/useSubmitGuard";
 import { assertOnline } from "@/lib/offlineGuard";
@@ -79,6 +80,9 @@ export default function InvoiceEditor() {
   const [milestoneTag, setMilestoneTag] = useState("Full Payment");
   const [showItemizedRates, setShowItemizedRates] = useState(true);
   const [authorizedSignatory, setAuthorizedSignatory] = useState("");
+  const [signatureType, setSignatureType] = useState("none");
+  const [signatureImage, setSignatureImage] = useState("");
+  const [signatureColor, setSignatureColor] = useState("#000000");
   const [bankDetails, setBankDetails] = useState({});
   const [socialLinks, setSocialLinks] = useState({});
 
@@ -158,6 +162,9 @@ export default function InvoiceEditor() {
         setMilestoneTag(inv.milestone_tag || "Full Payment");
         setShowItemizedRates(inv.show_itemized_rates !== false);
         setAuthorizedSignatory(inv.authorized_signatory || "");
+        setSignatureType(inv.signature_type || "none");
+        setSignatureImage(inv.signature_image || "");
+        setSignatureColor(inv.signature_color || "#000000");
         setBankDetails(parseSnapshot(inv.bank_details_snapshot) || {});
         setSocialLinks(parseSnapshot(inv.social_links_snapshot) || {});
         setPublicLinkData({
@@ -246,7 +253,10 @@ export default function InvoiceEditor() {
     notes,
     payment_terms: paymentTerms,
     terms_and_conditions: paymentTerms,
-    authorized_signatory: authorizedSignatory
+    authorized_signatory: authorizedSignatory,
+    signature_type: signatureType,
+    signature_image: signatureImage,
+    signature_color: signatureColor
   });
 
   const validate = () => {
@@ -559,16 +569,16 @@ export default function InvoiceEditor() {
         />
       </div>
 
-      {/* Authorized Signatory */}
-      <div className="bg-card border border-border rounded-lg p-4">
-        <label className="block text-xs font-medium text-muted-foreground mb-1.5">Authorized Signatory</label>
-        <Input
-          value={authorizedSignatory}
-          onChange={(e) => setAuthorizedSignatory(e.target.value)}
-          disabled={readOnly}
-          placeholder="Name of authorized signatory"
-        />
-      </div>
+      {/* Authorized Signature (Text Sign / E-Sign) */}
+      <InvoiceSignatureSection
+        signatureType={signatureType}
+        setSignatureType={setSignatureType}
+        signatureImage={signatureImage}
+        setSignatureImage={setSignatureImage}
+        signatureColor={signatureColor}
+        setSignatureColor={setSignatureColor}
+        disabled={readOnly}
+      />
 
       {/* Bank & UPI + Social Links */}
       <InvoiceBankDetailsSection
@@ -654,6 +664,9 @@ export default function InvoiceEditor() {
             discount_value: Number(discountValue) || 0,
             gst_applicable: gstApplicable,
             notes,
+            signature_type: signatureType,
+            signature_image: signatureImage,
+            signature_color: signatureColor,
             client_snapshot: buildClientSnapshot(client),
             event_snapshot: buildEventSnapshot(event)
           }}
