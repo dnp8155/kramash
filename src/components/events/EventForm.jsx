@@ -25,6 +25,8 @@ import { invalidateEntity } from "@/lib/queryInvalidation";
 import { getDefaultMilestoneTemplate, generateMilestonesFromTemplate } from "@/lib/milestoneService";
 import { useSubmitGuard } from "@/hooks/useSubmitGuard";
 import { useWorkspace } from "@/lib/WorkspaceContext";
+import { getEventDates, datesChanged, shiftTeamAssignments } from "@/lib/dateShift";
+import DateShiftConfirmDialog from "@/components/events/DateShiftConfirmDialog";
 
 const empty = {
   client_id: "", title: "", event_type: "",
@@ -49,6 +51,9 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
   const { saving, start, stop } = useSubmitGuard();
   const [error, setError] = useState("");
   const [showClientForm, setShowClientForm] = useState(false);
+  const [originalDates, setOriginalDates] = useState([]);
+  const [showDateShiftDialog, setShowDateShiftDialog] = useState(false);
+  const [pendingShift, setPendingShift] = useState(null);
 
   useEffect(() => {
     if (open) {
@@ -59,6 +64,7 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
         base.event_dates = [base.start_date];
       }
       setForm(base);
+      setOriginalDates(event ? getEventDates(event) : []);
       loadClients();
       loadUsedEventTypes();
     }
@@ -112,6 +118,34 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
     e.preventDefault();
     const v = validate();
     if (v) { setError(v); return; }
+
+    // If editing and dates changed, check for existing team assignments
+    if (event?.id) {
+      const oldDates = originalDates;
+      const newDates = (form.event_dates || []).slice().sort();
+      if (datesChanged(oldDates, newDates)) {
+        try {
+          const existing = await base44.entities.EventTeamAssignment.filter({
+            workspace_id: workspaceId, event_id: event.id, assignment_status: "assigned",
+          });
+          if (existing && existing.length > 0) {
+            setPendingShift({ oldDates, newDates });
+            setShowDateShiftDialog(true);
+            return; // Wait for user decision
+          }
+        } catch { /* proceed with save */ }
+      }
+    }
+
+    await doSave(false);
+  };
+
+  const handleShiftChoice = async (shouldShift) => {
+    setShowDateShiftDialog(false);
+    await doSave(shouldShift);
+  };
+
+  const doSave = async (shiftDates) => {
     if (!start()) return;
     setError("");
     try {
@@ -171,6 +205,17 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
           }
         } catch { /* non-critical — event is already saved */ }
       }
+      // Shift team assignment working dates if user confirmed
+      if (shiftDates && pendingShift && event?.id) {
+        try {
+          const count = await shiftTeamAssignments(base44, workspaceId, saved.id, pendingShift.oldDates, pendingShift.newDates);
+          if (count > 0) {
+            invalidateEntity(queryClient, "EventTeamAssignment");
+          }
+        } catch { /* non-critical */ }
+      }
+      setPendingShift(null);
+
       // Optimistic update: inject the saved event into the Events list cache
       // immediately so it appears instantly when the user navigates back.
       // We do NOT invalidate ["events"] here — a refetch could return stale
@@ -362,6 +407,15 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
           await loadClients();
           set("client_id", savedClient.id);
         }}
+      />
+
+      <DateShiftConfirmDialog
+        open={showDateShiftDialog}
+        onClose={() => { setShowDateShiftDialog(false); setPendingShift(null); }}
+        onConfirm={handleShiftChoice}
+        oldDates={pendingShift?.oldDates || []}
+        newDates={pendingShift?.newDates || []}
+        workItemLabel={t.workItemSingular?.toLowerCase() || "event"}
       />
     </>
   );

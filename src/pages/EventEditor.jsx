@@ -24,6 +24,8 @@ import { getEventTypes, buildAllEventTypes, mergeEventTypes, normalizeEventType 
 import { fyForDate, todayISO } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { useSubmitGuard } from "@/hooks/useSubmitGuard";
+import { getEventDates, datesChanged, shiftTeamAssignments } from "@/lib/dateShift";
+import DateShiftConfirmDialog from "@/components/events/DateShiftConfirmDialog";
 import {
   ArrowLeft, Plus, Users, Briefcase, Save, Loader2, AlertCircle,
   FolderPlus, FolderOpen, HelpCircle, MapPin, CalendarDays, FileText,
@@ -72,6 +74,9 @@ export default function EventEditor() {
   const [showClientForm, setShowClientForm] = useState(false);
   const [showQuickClient, setShowQuickClient] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
+  const [originalDates, setOriginalDates] = useState([]);
+  const [showDateShiftDialog, setShowDateShiftDialog] = useState(false);
+  const [pendingShift, setPendingShift] = useState(null);
 
   const workTypes = buildAllEventTypes(workspace, tTerm.category, usedEventTypes);
   const { showConfirm, confirmBack, stayHere, requestBack, markLeaving } = useBackGuard(isDirty);
@@ -118,6 +123,7 @@ export default function EventEditor() {
         if (base.start_date) base.event_dates = [base.start_date];
       }
       setForm(base);
+      setOriginalDates(getEventDates(base));
       setIsDirty(false);
     } catch (e) {
       setError("Failed to load event.");
@@ -194,6 +200,34 @@ export default function EventEditor() {
     e.preventDefault();
     const v = validate();
     if (v) { setError(v); toast({ title: v, variant: "destructive" }); return; }
+
+    // If editing and dates changed, check for existing team assignments
+    if (isEdit) {
+      const oldDates = originalDates;
+      const newDates = (form.event_dates || []).slice().sort();
+      if (datesChanged(oldDates, newDates)) {
+        try {
+          const existing = await base44.entities.EventTeamAssignment.filter({
+            workspace_id: workspaceId, event_id: id, assignment_status: "assigned",
+          });
+          if (existing && existing.length > 0) {
+            setPendingShift({ oldDates, newDates });
+            setShowDateShiftDialog(true);
+            return;
+          }
+        } catch { /* proceed with save */ }
+      }
+    }
+
+    await doSave(false);
+  };
+
+  const handleShiftChoice = async (shouldShift) => {
+    setShowDateShiftDialog(false);
+    await doSave(shouldShift);
+  };
+
+  const doSave = async (shiftDates) => {
     if (!start()) return;
     setError("");
     try {
@@ -241,6 +275,16 @@ export default function EventEditor() {
       if (eventId) {
         try { await syncTeamAssignments(eventId, payload.team_member_ids); } catch { /* non-fatal */ }
       }
+      // Shift team assignment working dates if user confirmed
+      if (shiftDates && pendingShift) {
+        try {
+          const count = await shiftTeamAssignments(base44, workspaceId, eventId || id, pendingShift.oldDates, pendingShift.newDates);
+          if (count > 0) {
+            toast({ title: `${count} team assignment(s) shifted to new dates` });
+          }
+        } catch { /* non-critical */ }
+      }
+      setPendingShift(null);
       // Optimistic update: inject the saved event into the Events list cache
       // immediately so it appears instantly when the user navigates back —
       // no waiting for a refetch round-trip. We intentionally do NOT invalidate
@@ -529,6 +573,15 @@ export default function EventEditor() {
         open={showConfirm}
         onStay={stayHere}
         onLeave={confirmBack}
+      />
+
+      <DateShiftConfirmDialog
+        open={showDateShiftDialog}
+        onClose={() => { setShowDateShiftDialog(false); setPendingShift(null); }}
+        onConfirm={handleShiftChoice}
+        oldDates={pendingShift?.oldDates || []}
+        newDates={pendingShift?.newDates || []}
+        workItemLabel={tTerm.workItemSingular?.toLowerCase() || "event"}
       />
     </>
   );

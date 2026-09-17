@@ -202,6 +202,17 @@ export default function EventDetails() {
     return { combined, contractValue, overrun: combined - contractValue };
   }, [event, eventAssignments, serviceAssignments]);
 
+  // Detect if any team assignment has working_dates that don't match current event dates
+  const hasDateMismatch = useMemo(() => {
+    if (!eventAssignments || eventAssignments.length === 0) return false;
+    const allDates = (event?.event_dates?.length ? event.event_dates : [event?.start_date]).filter(Boolean);
+    if (allDates.length === 0) return false;
+    return eventAssignments.some((a) => {
+      const wd = Array.isArray(a.working_dates) ? a.working_dates : [];
+      return wd.length > 0 && wd.some((d) => !allDates.includes(d));
+    });
+  }, [eventAssignments, event]);
+
   const removeAssignment = async (a) => {
     // Check for associated payments — don't silently delete financial history
     const hasPayments = transactions.some(
@@ -559,22 +570,30 @@ export default function EventDetails() {
       )}
 
       {tab === "Services" && (
-        <EventServicesTab
-          event={event}
-          services={services}
-          serviceAssignments={serviceAssignments}
-          currency={currency}
-          contractValue={fin.contractValue}
-          transactions={transactions}
-          membersById={membersById}
-          costOverrun={costOverrun}
-          onAddService={() => setShowServiceAssign(true)}
-          onRemoveService={(a) => removeServiceAssignment(a)}
-          onEditService={(a) => setEditingServiceAssignment(a)}
-          onAddPayment={(a) => setServicePayAssignment(a)}
-          onShareService={(a) => shareServiceAssignment(a)}
-          onRefresh={load}
-        />
+        <div className="space-y-4">
+          {hasDateMismatch && (
+            <div className="flex items-start gap-2 bg-warning/5 border border-warning/30 rounded-lg p-3 text-sm text-warning">
+              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>{term.workItemSingular} dates changed. Please review service assignments and confirm with providers if needed.</span>
+            </div>
+          )}
+          <EventServicesTab
+            event={event}
+            services={services}
+            serviceAssignments={serviceAssignments}
+            currency={currency}
+            contractValue={fin.contractValue}
+            transactions={transactions}
+            membersById={membersById}
+            costOverrun={costOverrun}
+            onAddService={() => setShowServiceAssign(true)}
+            onRemoveService={(a) => removeServiceAssignment(a)}
+            onEditService={(a) => setEditingServiceAssignment(a)}
+            onAddPayment={(a) => setServicePayAssignment(a)}
+            onShareService={(a) => shareServiceAssignment(a)}
+            onRefresh={load}
+          />
+        </div>
       )}
 
       {tab === "Progress" && (
@@ -596,6 +615,14 @@ export default function EventDetails() {
 
       {tab === "Team" && (
         <div className="space-y-4">
+          {/* Date mismatch warning */}
+          {hasDateMismatch && (
+            <div className="flex items-start gap-2 bg-warning/5 border border-warning/30 rounded-lg p-3 text-sm text-warning">
+              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>Team working dates don't match the current {term.workItemSingular.toLowerCase()} dates. Please update each member's working dates or edit the {term.workItemSingular.toLowerCase()} to shift them automatically.</span>
+            </div>
+          )}
+
           {/* Cost overrun alert */}
           {costOverrun && (
             <div className="flex items-start gap-2 bg-destructive/5 border border-destructive/30 rounded-lg p-3 text-sm text-destructive">
