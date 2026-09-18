@@ -4,7 +4,7 @@
 
 const RETRYABLE_STATUS = new Set([429, 503]);
 const MAX_RETRIES = 3;
-const BASE_DELAY_MS = 1000;
+const BASE_DELAY_MS = 500;
 
 function extractStatus(err) {
   return (

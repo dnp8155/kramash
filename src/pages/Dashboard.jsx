@@ -50,7 +50,7 @@ export default function Dashboard() {
           () => base44.entities.Client.filter({ workspace_id: workspaceId }, "name", 500),
           () => loadBlockDates(workspaceId)
         ],
-        { waveSize: 2, waveDelay: 300 }
+        { waveSize: 3, waveDelay: 200 }
       );
       const [evR, txR, memR, asgR, clR, bdR] = results;
       return {

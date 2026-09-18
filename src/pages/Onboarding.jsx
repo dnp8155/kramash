@@ -137,7 +137,7 @@ export default function Onboarding() {
       for (let i = 0; i < 5; i++) {
         const memberships = await base44.entities.WorkspaceMember.filter({ user_id: user.id });
         if (memberships && memberships.length > 0) break;
-        await new Promise((r) => setTimeout(r, 600));
+        await new Promise((r) => setTimeout(r, 400));
       }
     } catch { /* ignore — redirect anyway */ }
     // Hard redirect so the entire app re-initializes with the new workspace.

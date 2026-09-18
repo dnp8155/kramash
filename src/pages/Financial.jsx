@@ -93,7 +93,7 @@ export default function Financial() {
           () => base44.entities.EventTeamAssignment.filter({ workspace_id: workspaceId }, "-created_date", 1000),
           () => loadExpenseCategories(workspaceId)
         ],
-        { waveSize: 2, waveDelay: 300 }
+        { waveSize: 3, waveDelay: 200 }
       );
       const [txR, evsR, clsR, membsR, asgnsR, catsR] = results;
       const partialError = results.some((r) => r.status === "rejected");

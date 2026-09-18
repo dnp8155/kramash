@@ -87,7 +87,7 @@ export default function Events() {
           () => base44.entities.EventServiceAssignment.filter({ workspace_id: workspaceId }, "-created_date", 1000),
           () => base44.entities.FinancialTransaction.filter({ workspace_id: workspaceId, transaction_type: "CLIENT_RECEIPT", status: "ACTIVE" }, "-transaction_date", 2000)
         ],
-        { waveSize: 2, waveDelay: 400 }
+        { waveSize: 3, waveDelay: 200 }
       );
       const [evR, clR, tmR, svR, asgR, svcAsgR, txR] = results;
       const evList = evR.status === "fulfilled" ? evR.value : [];
