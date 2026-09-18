@@ -86,6 +86,12 @@ export default function Onboarding() {
         role: "owner",
         status: "active"
       });
+      // Persist active workspace on the user record immediately so RLS-scoped
+      // queries (Client, Event, etc.) return correct results as soon as the
+      // app loads — don't wait for WorkspaceContext to do it post-redirect.
+      try {
+        await base44.auth.updateMe({ active_workspace_id: workspace.id });
+      } catch (e) { /* non-fatal */ }
       // Seed industry-specific team roles for the new workspace.
       try {
         const presets = getIndustryPresets(category);
@@ -139,9 +145,11 @@ export default function Onboarding() {
         if (memberships && memberships.length > 0) break;
         await new Promise((r) => setTimeout(r, 400));
       }
-    } catch { /* ignore — redirect anyway */ }
-    // Hard redirect so the entire app re-initializes with the new workspace.
-    window.location.href = "/events";
+    } catch { /* ignore — navigate anyway */ }
+    // Use React Router navigation instead of a hard redirect — AuthContext is
+    // already initialised; WorkspaceProvider will mount fresh and fetch the
+    // new membership/workspace. This avoids a full page reload (saves 2-4s).
+    navigate("/events", { replace: true });
   };
 
   const canNext1 = !!form.business_category && (form.business_category !== BUSINESS_CATEGORIES.OTHER || form.custom_business_type.trim());
