@@ -14,7 +14,7 @@ import SearchInput from "@/components/common/SearchInput";
 import Select from "@/components/common/Select";
 import Button from "@/components/common/Button";
 import PageHeader from "@/components/common/PageHeader";
-import { Users, Plus, Download, CalendarCheck, Clock, CheckCircle2, CalendarDays, IndianRupee, AlertCircle } from "lucide-react";
+import { Users, UserCheck, Plus, Download, CalendarCheck, Clock, CheckCircle2, CalendarDays, IndianRupee, AlertCircle } from "lucide-react";
 import StatCard from "@/components/common/StatCard";
 import { StaggerList, StaggerItem } from "@/components/common/StaggerList";
 import { isToday, isThisWeek, isUpcomingDate, isPastDate, isWithinFY } from "@/lib/dates";
@@ -120,12 +120,17 @@ export default function Events() {
       });
       // Add-on service totals grouped by event — added to contract value display.
       const addonsByEvent = {};
+      const serviceAssignmentsByEvent = {};
       (svcAsgList || []).forEach((a) => {
-        if (a.assignment_status === "removed" || !a.is_addon) return;
-        if (!addonsByEvent[a.event_id]) addonsByEvent[a.event_id] = 0;
-        addonsByEvent[a.event_id] += Number(a.agreed_rate) || 0;
+        if (a.assignment_status === "removed") return;
+        if (a.is_addon) {
+          if (!addonsByEvent[a.event_id]) addonsByEvent[a.event_id] = 0;
+          addonsByEvent[a.event_id] += Number(a.agreed_rate) || 0;
+        }
+        if (!serviceAssignmentsByEvent[a.event_id]) serviceAssignmentsByEvent[a.event_id] = [];
+        serviceAssignmentsByEvent[a.event_id].push(a);
       });
-      return { events: evList || [], clients: map, teamMap, serviceMap, assignmentsByEvent, receiptsByEvent, addonsByEvent, partialError };
+      return { events: evList || [], clients: map, teamMap, serviceMap, assignmentsByEvent, receiptsByEvent, addonsByEvent, serviceAssignmentsByEvent, partialError };
     },
     enabled: !!workspaceId,
     placeholderData: (prev) => prev
@@ -137,6 +142,7 @@ export default function Events() {
   const assignmentsByEvent = data?.assignmentsByEvent || {};
   const receiptsByEvent = data?.receiptsByEvent || {};
   const addonsByEvent = data?.addonsByEvent || {};
+  const serviceAssignmentsByEvent = data?.serviceAssignmentsByEvent || {};
   const partialError = data?.partialError;
   const currency = workspace?.currency || "INR";
   const invalidate = () => {
@@ -221,12 +227,12 @@ export default function Events() {
     <div className="p-4 sm:p-6 space-y-4">
       <PageHeader eyebrow="Schedule" title={term.workItemPlural} subtitle={`Manage your bookings, schedule, and ${term.workItemSingular.toLowerCase()} details.`}>
         <Button variant="outline" size="sm" onClick={() => navigate("/team")}>
-          <Users className="w-4 h-4" />
-          <span className="hidden sm:inline">{term.teamLabel}</span>
+          <UserCheck className="w-4 h-4" />
+          <span>{term.teamLabel}</span>
         </Button>
         <Button onClick={openNew}>
           <Plus className="w-4 h-4" />
-          <span className="hidden sm:inline">{term.addWorkItemLabel}</span>
+          <span>{term.addWorkItemLabel}</span>
         </Button>
       </PageHeader>
 
@@ -315,6 +321,7 @@ export default function Events() {
           assignmentsByEvent={assignmentsByEvent}
           receiptsByEvent={receiptsByEvent}
           addonsByEvent={addonsByEvent}
+          serviceAssignmentsByEvent={serviceAssignmentsByEvent}
           currency={currency}
           loading={isLoading}
           onEventClick={openEvent}

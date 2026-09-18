@@ -13,7 +13,7 @@ import MemberTypeTag from "@/components/common/MemberTypeTag";
 import EventTypeBadge from "@/components/common/EventTypeBadge";
 import { cn } from "@/lib/utils";
 
-export default function EventsTable({ events, clients, teamMap = {}, serviceMap = {}, assignmentsByEvent = {}, receiptsByEvent = {}, addonsByEvent = {}, currency = "INR", loading, onEventClick, onEditEvent, onDeleteEvent, onAdd, canAdd, term }) {
+export default function EventsTable({ events, clients, teamMap = {}, serviceMap = {}, assignmentsByEvent = {}, receiptsByEvent = {}, addonsByEvent = {}, serviceAssignmentsByEvent = {}, currency = "INR", loading, onEventClick, onEditEvent, onDeleteEvent, onAdd, canAdd, term }) {
   const t = term || {};
   const prefs = useDisplayPreferences();
   if (loading) {
@@ -57,7 +57,7 @@ export default function EventsTable({ events, clients, teamMap = {}, serviceMap 
                 {weekEvents.length} {t.workItemSingular || "Event"}{weekEvents.length > 1 ? "s" : ""} This Week
               </div>
               {weekEvents.map((e) => (
-                <Row key={e.id} event={e} term={t} prefs={prefs} clientName={clientName(e.client_id)} teamMap={teamMap} serviceMap={serviceMap} assignmentsByEvent={assignmentsByEvent} receiptsByEvent={receiptsByEvent} addonsByEvent={addonsByEvent} currency={currency} onClick={() => onEventClick(e)} onEdit={() => onEditEvent(e)} onDelete={() => onDeleteEvent(e)} />
+                <Row key={e.id} event={e} term={t} prefs={prefs} clientName={clientName(e.client_id)} teamMap={teamMap} serviceMap={serviceMap} assignmentsByEvent={assignmentsByEvent} serviceAssignmentsByEvent={serviceAssignmentsByEvent} receiptsByEvent={receiptsByEvent} addonsByEvent={addonsByEvent} currency={currency} onClick={() => onEventClick(e)} onEdit={() => onEditEvent(e)} onDelete={() => onDeleteEvent(e)} />
               ))}
             </>
           )}
@@ -68,24 +68,25 @@ export default function EventsTable({ events, clients, teamMap = {}, serviceMap 
                 All {t.workItemPlural || "Events"}
               </div>
               {laterEvents.map((e) => (
-                <Row key={e.id} event={e} term={t} prefs={prefs} clientName={clientName(e.client_id)} teamMap={teamMap} serviceMap={serviceMap} assignmentsByEvent={assignmentsByEvent} receiptsByEvent={receiptsByEvent} addonsByEvent={addonsByEvent} currency={currency} onClick={() => onEventClick(e)} onEdit={() => onEditEvent(e)} onDelete={() => onDeleteEvent(e)} />
+                <Row key={e.id} event={e} term={t} prefs={prefs} clientName={clientName(e.client_id)} teamMap={teamMap} serviceMap={serviceMap} assignmentsByEvent={assignmentsByEvent} serviceAssignmentsByEvent={serviceAssignmentsByEvent} receiptsByEvent={receiptsByEvent} addonsByEvent={addonsByEvent} currency={currency} onClick={() => onEventClick(e)} onEdit={() => onEditEvent(e)} onDelete={() => onDeleteEvent(e)} />
               ))}
             </>
           )}
         </>
       ) : (
         events.map((e) => (
-          <Row key={e.id} event={e} term={t} prefs={prefs} clientName={clientName(e.client_id)} teamMap={teamMap} serviceMap={serviceMap} assignmentsByEvent={assignmentsByEvent} receiptsByEvent={receiptsByEvent} addonsByEvent={addonsByEvent} currency={currency} onClick={() => onEventClick(e)} onEdit={() => onEditEvent(e)} onDelete={() => onDeleteEvent(e)} />
+          <Row key={e.id} event={e} term={t} prefs={prefs} clientName={clientName(e.client_id)} teamMap={teamMap} serviceMap={serviceMap} assignmentsByEvent={assignmentsByEvent} serviceAssignmentsByEvent={serviceAssignmentsByEvent} receiptsByEvent={receiptsByEvent} addonsByEvent={addonsByEvent} currency={currency} onClick={() => onEventClick(e)} onEdit={() => onEditEvent(e)} onDelete={() => onDeleteEvent(e)} />
         ))
       )}
     </div>
   );
 }
 
-function Row({ event, clientName, teamMap, serviceMap, assignmentsByEvent, receiptsByEvent, addonsByEvent, currency, onClick, onEdit, onDelete, term, prefs }) {
+function Row({ event, clientName, teamMap, serviceMap, assignmentsByEvent, serviceAssignmentsByEvent, receiptsByEvent, addonsByEvent, currency, onClick, onEdit, onDelete, term, prefs }) {
   const teamNames = (event.team_member_ids || []).map((id) => teamMap[id]?.name).filter(Boolean);
   const serviceNames = (event.service_ids || []).map((id) => serviceMap[id]?.name).filter(Boolean);
   const eventAssignments = assignmentsByEvent?.[event.id] || [];
+  const serviceAssignments = serviceAssignmentsByEvent?.[event.id] || [];
   const [open, setOpen] = useState(false);
   const shortId = `#${event.id.slice(-4)}`;
   const totalReceived = receiptsByEvent?.[event.id] || 0;
@@ -111,13 +112,6 @@ function Row({ event, clientName, teamMap, serviceMap, assignmentsByEvent, recei
             <EventTypeBadge eventType={event.event_type} />
             <span className="truncate">· {formatEventDates(event)}</span>
           </div>
-          {prefs?.showServices && serviceNames.length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-1">
-              {serviceNames.map((n) => (
-                <span key={n} className="rounded-full bg-muted text-foreground border border-border px-2 py-0.5 text-[10px] font-medium">{n}</span>
-              ))}
-            </div>
-          )}
         </div>
 
         {/* Desktop columns */}
@@ -127,13 +121,6 @@ function Row({ event, clientName, teamMap, serviceMap, assignmentsByEvent, recei
           <div className="min-w-0">
             <div className="text-sm font-medium text-foreground truncate">{event.title}</div>
             <div className="text-xs text-muted-foreground">{clientName}</div>
-            {prefs?.showServices && serviceNames.length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-1">
-                {serviceNames.map((n) => (
-                  <span key={n} className="rounded-full bg-muted text-foreground border border-border px-2 py-0.5 text-[10px] font-medium">{n}</span>
-                ))}
-              </div>
-            )}
           </div>
         </div>
         <span className="hidden sm:block text-sm text-foreground">
@@ -144,7 +131,14 @@ function Row({ event, clientName, teamMap, serviceMap, assignmentsByEvent, recei
           <StatusBadge status={event.status} cardView />
         </div>
         <button
-          className="text-muted-foreground hover:text-foreground justify-self-end"
+          className="sm:hidden flex items-center justify-center w-9 h-9 rounded-lg border border-border bg-card text-muted-foreground hover:text-foreground hover:bg-muted transition-colors justify-self-end touch-min"
+          onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}
+          aria-label={open ? "Collapse" : "Expand"}
+        >
+          {open ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+        </button>
+        <button
+          className="hidden sm:block text-muted-foreground hover:text-foreground justify-self-end"
           onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}
           aria-label={open ? "Collapse" : "Expand"}
         >
@@ -155,12 +149,9 @@ function Row({ event, clientName, teamMap, serviceMap, assignmentsByEvent, recei
       {open && (
         <div className="px-4 pb-4 sm:pl-[130px] animate-fade-in" onClick={(e) => e.stopPropagation()}>
           <div className="flex items-center justify-between mb-3">
-            <button
-              onClick={() => setOpen(false)}
-              className="text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-1"
-            >
-              Hide details <ChevronUp className="w-3 h-3" />
-            </button>
+            <Button variant="outline" size="sm" onClick={() => setOpen(false)}>
+              <ChevronUp className="w-3 h-3" /> Hide details
+            </Button>
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" onClick={onEdit}>
                 <Pencil className="w-3 h-3" /> Edit
@@ -234,7 +225,23 @@ function Row({ event, clientName, teamMap, serviceMap, assignmentsByEvent, recei
                 </div>
               </div>
             )}
-            {prefs?.showServices && serviceNames.length > 0 && (
+            {prefs?.showServices && serviceAssignments.length > 0 ? (
+              <div className="flex items-start gap-2 text-muted-foreground">
+                <Briefcase className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                <ul className="space-y-1 min-w-0">
+                  {serviceAssignments.map((a) => {
+                    const svcName = a.service_name_snapshot || serviceMap[a.service_id]?.name || "Unknown";
+                    const provider = a.provider_name_snapshot || (a.provider_id ? teamMap[a.provider_id]?.name : "") || "";
+                    return (
+                      <li key={a.id} className="text-xs break-anywhere flex items-center gap-1.5 flex-wrap">
+                        <span className="font-medium text-foreground">{svcName}</span>
+                        {provider && <span className="text-muted-foreground">— {provider}</span>}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ) : prefs?.showServices && serviceNames.length > 0 && (
               <div className="flex items-start gap-2 text-muted-foreground">
                 <Briefcase className="w-3.5 h-3.5 mt-0.5 shrink-0" />
                 <div className="flex flex-wrap gap-1.5">
@@ -244,7 +251,7 @@ function Row({ event, clientName, teamMap, serviceMap, assignmentsByEvent, recei
                 </div>
               </div>
             )}
-            {!event.venue && !event.description && !event.notes && teamNames.length === 0 && serviceNames.length === 0 && (
+            {!event.venue && !event.description && !event.notes && teamNames.length === 0 && serviceNames.length === 0 && serviceAssignments.length === 0 && (
               <p className="text-xs text-muted-foreground">No additional details. Click "View Details" for the full {(term?.workItemSingular || "event").toLowerCase()} page.</p>
             )}
           </div>

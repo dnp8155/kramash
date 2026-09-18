@@ -372,6 +372,8 @@ export default function Financial() {
             <SummaryCard label={t("Profit")} value={summary.profit} tone={summary.profit >= 0 ? "success" : "destructive"} currency={currency} icon={TrendingUp} />
           </div>
 
+          <div className="h-3" />
+
           {/* Breakdown */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="bg-card border border-border rounded-[15px] p-4">
@@ -472,6 +474,8 @@ export default function Financial() {
             </div>
           </div>
 
+          <div className="h-3" />
+
           <PaymentTable
             transactions={fyTx}
             display={{ eventsById, clientsById, membersById }}
@@ -480,6 +484,8 @@ export default function Financial() {
             onVoid={(t) => setVoiding(t)}
             onDelete={(t) => setDeleting(t)}
           />
+
+          <div className="h-3" />
 
           {/* Outstanding receivables — scoped to the selected financial year */}
           <OutstandingReceivables
