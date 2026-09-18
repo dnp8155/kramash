@@ -1,13 +1,14 @@
 {
-  "name": "Kramasha",
+  "name": "Kramasha — Creative Business Management Platform",
   "short_name": "Kramasha",
-  "description": "Kramasha - Creative Business Management Platform",
+  "description": "All-in-one business management platform for photographers, event managers, studios and creative businesses.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "orientation": "portrait-primary",
   "background_color": "#F5F3EF",
   "theme_color": "#0A0A0A",
+  "orientation": "portrait-primary",
+  "categories": ["business", "productivity", "finance"],
   "icons": [
     {
       "src": "https://media.base44.com/images/public/6aa198140e2903037c880386/a30538e70_c64751af-b785-4550-9bf7-8fa28ceec0e0.png",
@@ -23,28 +24,9 @@
     },
     {
       "src": "https://media.base44.com/images/public/6aa198140e2903037c880386/a30538e70_c64751af-b785-4550-9bf7-8fa28ceec0e0.png",
-      "sizes": "180x180",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "https://media.base44.com/images/public/6aa198140e2903037c880386/a30538e70_c64751af-b785-4550-9bf7-8fa28ceec0e0.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "https://media.base44.com/images/public/6aa198140e2903037c880386/a30538e70_c64751af-b785-4550-9bf7-8fa28ceec0e0.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
     }
-  ],
-  "categories": [
-    "business",
-    "productivity",
-    "finance"
-  ],
-  "lang": "en",
-  "dir": "ltr"
+  ]
 }
