@@ -23,7 +23,7 @@ export default function Industries() {
             Built for Your Industry. Adaptable to Your Workflow.
           </h2>
           <p className="text-[#8A8580] text-base sm:text-lg leading-relaxed">
-            Kramashah automatically adapts its terminology — photographers see Events, architects see Projects. Configure your own roles and services for anything else.
+            Kramasha automatically adapts its terminology — photographers see Events, architects see Projects. Configure your own roles and services for anything else.
           </p>
         </Reveal>
 
