@@ -7,7 +7,7 @@ import { useToast } from "@/components/ui/use-toast";
 import MemberTypeTag from "@/components/common/MemberTypeTag";
 import EditTransactionDialog from "@/components/financial/EditTransactionDialog";
 import { voidTransaction } from "@/lib/financeService";
-import PaymentDot, { paymentDotInfo } from "@/components/common/PaymentDot";
+import { paymentDotInfo } from "@/components/common/PaymentDot";
 import { useQueryClient } from "@tanstack/react-query";
 import { invalidateEntity } from "@/lib/queryInvalidation";
 import { cn } from "@/lib/utils";
@@ -85,30 +85,13 @@ export default function EventAssignmentCard({
       {/* Header */}
       <div className="flex items-center justify-between mb-3 pl-1">
         <h4 className="text-sm font-semibold text-foreground truncate flex items-center gap-1.5">
-          <PaymentDot paid={paid} agreed={rate} />
           <span className="truncate">{member?.name || "Unknown member"}</span>
           {isSelf && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-primary text-primary-foreground shrink-0">
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-primary text-primary-foreground shrink-0">
               <Crown className="w-2.5 h-2.5" /> Self
             </span>
           )}
         </h4>
-        <span className="flex items-center gap-1.5">
-          {isSelf ? (
-            <span
-              title={clientFullyPaid ? "Client fully paid" : "Client payment pending"}
-              className={cn("status-dot inline-block w-2 h-2 rounded-full shrink-0", clientFullyPaid ? "bg-[#10b981]" : "bg-muted-foreground/30")}
-            />
-          ) : (
-            <PaymentDot paid={paid} agreed={rate} />
-          )}
-          <span className={cn(
-            "text-xs font-medium px-2 py-0.5 rounded",
-            isSelf ? (clientFullyPaid ? "bg-success/10 text-success" : "bg-muted/20 text-muted-foreground") : isDue ? "bg-warning/10 text-warning" : "bg-success/10 text-success"
-          )}>
-            {isSelf ? (clientFullyPaid ? "Settled" : "Unsettled") : isDue ? "Due" : "Paid"}
-          </span>
-        </span>
       </div>
 
       <div className="flex items-center gap-2 mb-3 flex-wrap">
@@ -152,28 +135,28 @@ export default function EventAssignmentCard({
       <div className="flex items-center gap-2 mb-1 flex-wrap">
         <button
           onClick={() => onEdit?.(assignment)}
-          className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card border border-foreground text-foreground text-xs font-medium hover:bg-muted transition-colors"
         >
-          <Pencil className="w-3 h-3" /> Edit
+          <Pencil className="w-3.5 h-3.5" /> Edit
         </button>
         {!isSelf && (
           <button
             onClick={() => onAddPayment?.(assignment)}
-            className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-md bg-success/10 text-success hover:bg-success/20 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-success text-success-foreground text-xs font-medium hover:opacity-90 transition-opacity"
           >
-            <Plus className="w-3 h-3" /> Add Payment
+            <Plus className="w-3.5 h-3.5" /> Add Payment
           </button>
         )}
         <button
           onClick={() => onShare?.(assignment)}
-          className="p-2 rounded-md hover:bg-muted text-muted-foreground transition-colors"
+          className="w-8 h-8 rounded-full flex items-center justify-center bg-card border border-foreground/30 text-foreground hover:bg-muted transition-colors"
           aria-label="Share"
         >
           <Share2 className="w-3.5 h-3.5" />
         </button>
         <button
           onClick={() => onRemove?.(assignment)}
-          className="p-2 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+          className="w-8 h-8 rounded-full flex items-center justify-center bg-destructive text-destructive-foreground hover:opacity-90 transition-opacity"
           aria-label="Remove"
         >
           <Trash2 className="w-3.5 h-3.5" />

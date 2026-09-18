@@ -43,7 +43,6 @@ import { cn } from "@/lib/utils";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
 import { useDisplayPreferences } from "@/hooks/useDisplayPreferences";
 import { invalidateEntities } from "@/lib/queryInvalidation";
-import PaymentDot from "@/components/common/PaymentDot";
 import EventTypeBadge from "@/components/common/EventTypeBadge";
 import { motion } from "framer-motion";
 import TabTransition from "@/components/common/TabTransition";
@@ -529,7 +528,6 @@ export default function EventDetails() {
             <button onClick={() => navigate("/events")} className="hidden lg:flex w-8 h-8 rounded-full border border-border bg-card items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-colors shrink-0">
               <ArrowLeft className="w-4 h-4" />
             </button>
-            <PaymentDot paid={fin.received} agreed={fin.contractValue} />
             <h1 className="text-2xl font-bold text-foreground tracking-tight truncate">{event.title}</h1>
           </div>
           <p className="text-sm text-muted-foreground ml-6 flex items-center gap-1.5 flex-wrap">
@@ -619,22 +617,22 @@ export default function EventDetails() {
       </div>
 
       {/* Contextual actions */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <Button size="sm" variant="outline" onClick={addToCalendar}>
+      <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
+        <Button size="sm" variant="outline" onClick={addToCalendar} className="justify-center sm:justify-start">
           <CalendarPlus className="w-3.5 h-3.5" /> Add to Calendar
         </Button>
-        <Button size="sm" variant="primary" onClick={() => setShowShare(true)}>
+        <Button size="sm" variant="primary" onClick={() => setShowShare(true)} className="justify-center sm:justify-start">
           <Share2 className="w-3.5 h-3.5" /> Share Link
         </Button>
         {fin.pending > 0 && (
-          <Button size="sm" variant="primary" onClick={remindClient}>
+          <Button size="sm" variant="primary" onClick={remindClient} className="justify-center sm:justify-start">
             <Share2 className="w-3.5 h-3.5" /> Remind {formatMoney(fin.pending, currency)} due
           </Button>
         )}
-        <Button size="sm" variant="outline" onClick={() => navigate(`/events/${event.id}/job-sheet`)}>
+        <Button size="sm" variant="outline" onClick={() => navigate(`/events/${event.id}/job-sheet`)} className="justify-center sm:justify-start">
           <ClipboardList className="w-3.5 h-3.5" /> Job Sheet
         </Button>
-        <Button size="sm" variant="primary" onClick={() => navigate(`/quotation/new?event_id=${event.id}`)}>
+        <Button size="sm" variant="primary" onClick={() => navigate(`/quotation/new?event_id=${event.id}`)} className="justify-center sm:justify-start">
           <FileText className="w-3.5 h-3.5" /> Create Quotation
         </Button>
       </div>

@@ -28,7 +28,7 @@ export default function MemberTypeTag({ label, typeId, className, cardView = fal
 
   return (
     <span
-      className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold", className)}
+      className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold", className)}
       style={{ backgroundColor: color + "20", color: color }}
     >
       <span className="type-dot w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
