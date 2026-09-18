@@ -43,8 +43,10 @@ root.render(<App />);
 // frame). The logo image is preloaded via <link rel="preload"> in index.html
 // so it renders instantly in the splash during that brief frame.
 requestAnimationFrame(() => {
-  const splash = document.getElementById('app-splash');
-  if (splash && splash.parentNode) {
-    splash.parentNode.removeChild(splash);
-  }
+  setTimeout(() => {
+    const splash = document.getElementById('app-splash');
+    if (splash && splash.parentNode) {
+      splash.parentNode.removeChild(splash);
+    }
+  }, 2000);
 });

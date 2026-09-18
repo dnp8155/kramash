@@ -45,7 +45,7 @@ const getAppParams = () => {
 	}
 	return {
 		appId: getAppParamValue("app_id", { defaultValue: import.meta.env.BASE44_APP_ID || import.meta.env.VITE_BASE44_APP_ID || import.meta.env.BASE44_API_KEY }),
-		token: getAppParamValue("access_token", { removeFromUrl: true }),
+		token: getAppParamValue("access_token", { removeFromUrl: true }) || import.meta.env.VITE_BASE44_ACCESS_TOKEN || import.meta.env.BASE44_ACCESS_TOKEN,
 		fromUrl: getAppParamValue("from_url", { defaultValue: window.location.href }),
 		functionsVersion: getAppParamValue("functions_version", { defaultValue: import.meta.env.BASE44_FUNCTIONS_VERSION || import.meta.env.VITE_BASE44_FUNCTIONS_VERSION }),
 		appBaseUrl: getAppParamValue("app_base_url", { defaultValue: (!isNode && window?.location?.origin) ? window.location.origin : (import.meta.env.BASE44_APP_BASE_URL || import.meta.env.VITE_BASE44_APP_BASE_URL || '') }),
