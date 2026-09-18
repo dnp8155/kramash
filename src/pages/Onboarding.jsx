@@ -37,7 +37,7 @@ export default function Onboarding() {
 
   const [form, setForm] = useState({
     your_name: user?.full_name || "",
-    name: "",
+    name: user?.full_name || "",
     business_category: "",
     custom_business_type: "",
     business_type: "",
