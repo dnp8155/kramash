@@ -30,8 +30,11 @@ export default function ConvertLeadDialog({ open, onClose, lead, onConverted }) 
   const leadDates = (lead.event_dates && lead.event_dates.length > 0)
     ? lead.event_dates
     : (lead.event_date ? [lead.event_date] : []);
-  const startDate = lead.event_date || (leadDates[0] || todayISO());
-  const endDate = lead.event_end_date || lead.event_date || (leadDates[leadDates.length - 1] || "");
+  // Derive start/end from ALL known dates (event_dates + event_date + event_end_date)
+  // so the converted event's span always covers every selected tentative date.
+  const allDates = [...new Set([...leadDates, lead.event_date, lead.event_end_date].filter(Boolean))].sort();
+  const startDate = allDates[0] || todayISO();
+  const endDate = allDates.length > 1 ? allDates[allDates.length - 1] : (allDates[0] || "");
   const contractValue = lead.budget || 0;
 
   const handleConfirm = async () => {

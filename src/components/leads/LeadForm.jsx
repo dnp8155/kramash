@@ -66,13 +66,24 @@ export default function LeadForm({ open, onClose, editingLead, onSaved }) {
     if (open) {
       setErrors({});
       if (editingLead) {
+        const evDates = editingLead.event_dates || (editingLead.event_date ? [editingLead.event_date] : []);
+        // Active date fields: if event_dates has entries but the start/end
+        // range fields are empty, derive them from the min/max of the selected
+        // dates so the DateRangeChips range is populated and chips are visible.
+        let evDate = editingLead.event_date || "";
+        let evEndDate = editingLead.event_end_date || "";
+        if (evDates.length > 0) {
+          const sorted = [...evDates].sort();
+          if (!evDate) evDate = sorted[0];
+          if (!evEndDate) evEndDate = sorted[sorted.length - 1];
+        }
         setForm({
           ...empty,
           ...editingLead,
           budget: editingLead.budget || "",
-          event_date: editingLead.event_date || "",
-          event_end_date: editingLead.event_end_date || "",
-          event_dates: editingLead.event_dates || (editingLead.event_date ? [editingLead.event_date] : []),
+          event_date: evDate,
+          event_end_date: evEndDate,
+          event_dates: evDates,
           next_followup_date: editingLead.next_followup_date || ""
         });
       } else {
