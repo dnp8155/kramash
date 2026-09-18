@@ -3,6 +3,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import { MotionConfig } from 'framer-motion';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import { Analytics } from '@vercel/analytics/react';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
@@ -199,6 +200,7 @@ function App() {
           </Router>
         </MotionConfig>
         <Toaster />
+        <Analytics />
       </QueryClientProvider>
     </AuthProvider>
   )
