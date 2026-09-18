@@ -1,19 +1,20 @@
 import React from "react";
 import ReactMarkdown from "react-markdown";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { ArrowLeft, FileText } from "lucide-react";
 import { termsOfServiceContent } from "@/lib/legalContent";
 
 export default function TermsOfService() {
+  const navigate = useNavigate();
   return (
     <div className="min-h-screen bg-[#F5F3EF]">
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
-        <Link to="/" className="inline-flex items-center gap-2 text-sm text-[#8A8580] hover:text-[#1A1A1A] transition-colors mb-6">
+        <button onClick={() => navigate(-1)} className="inline-flex items-center gap-2 text-sm text-[#8A8580] hover:text-[#1A1A1A] transition-colors mb-6">
           <span className="w-8 h-8 rounded-full border border-[#E8E3DB] bg-[#FAF8F4] flex items-center justify-center">
             <ArrowLeft className="w-3.5 h-3.5" />
           </span>
-          Back to home
-        </Link>
+          Back
+        </button>
 
         <div className="flex items-center gap-3 mb-2">
           <div className="w-10 h-10 rounded-xl bg-[#1A1A1A]/5 text-[#1A1A1A] flex items-center justify-center">
@@ -22,7 +23,7 @@ export default function TermsOfService() {
           <h1 className="text-2xl sm:text-3xl font-heading font-bold text-[#1A1A1A]">Terms of Service</h1>
         </div>
         <p className="text-sm text-[#8A8580] mb-8">
-          Kramashah — Event &amp; Production Management Platform
+          Kramasha — Creative Business Management Platform
         </p>
 
         <article className="prose-legal">

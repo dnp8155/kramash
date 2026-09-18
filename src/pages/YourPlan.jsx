@@ -203,7 +203,7 @@ export default function YourPlan() {
         <div className="bg-card border border-border rounded-lg p-5">
           <h3 className="text-sm font-semibold mb-3">Features</h3>
           <ul className="space-y-2">
-            <FeatureRow label="Reminders" enabled={!!plan?.limits?.reminders_enabled} />
+            <FeatureRow label="Reminders" enabled={true} />
             <FeatureRow label="Quotations & Invoices" enabled={true} />
             <FeatureRow label="Public Profile URL" enabled={true} />
             <FeatureRow label="App Lock" enabled={true} />

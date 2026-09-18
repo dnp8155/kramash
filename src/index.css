@@ -124,6 +124,18 @@
 
   body {
     @apply bg-background text-foreground font-body antialiased overflow-x-hidden;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+
+  /* Re-enable text selection for form fields and editable areas */
+  input, textarea, [contenteditable="true"], [contenteditable=""], select {
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
   }
 
   /* Native date/datetime/time inputs — normalize so they never overflow

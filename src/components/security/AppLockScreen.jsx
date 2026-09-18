@@ -81,9 +81,9 @@ export default function AppLockScreen({ onUnlock }) {
   return (
     <div className="fixed inset-0 z-[100] bg-background overflow-y-auto">
       <div className="min-h-dvh flex items-center justify-center p-4">
-      <div className="w-full max-w-sm text-center space-y-4 py-6">
+      <div className="w-full max-w-sm text-center space-y-3 sm:space-y-4 py-4 sm:py-6">
         <div className="flex justify-center">
-          <Logo size="md" />
+          <Logo size={64} />
         </div>
 
         <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
