@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { ChevronDown, ChevronUp, Pencil, MapPin, FileText, StickyNote, ArrowRight, Users, Briefcase, Trash2, IndianRupee } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ChevronDown, ChevronUp, Pencil, MapPin, FileText, StickyNote, ArrowRight, Users, Briefcase, Trash2, IndianRupee, Loader2 } from "lucide-react";
 import StatusBadge from "@/components/common/StatusBadge";
 import EmptyState from "@/components/common/EmptyState";
 import Button from "@/components/common/Button";
@@ -13,9 +13,53 @@ import MemberTypeTag from "@/components/common/MemberTypeTag";
 import EventTypeBadge from "@/components/common/EventTypeBadge";
 import { cn } from "@/lib/utils";
 
+// Compact date chip formatter — "26 Aug" or "26 Aug 2026" if not current year.
+const fmtChip = (d) => {
+  try {
+    const dt = new Date(d + "T00:00:00");
+    const now = new Date();
+    const sameYear = dt.getFullYear() === now.getFullYear();
+    return dt.toLocaleDateString("en-IN", { day: "2-digit", month: "short", ...(sameYear ? {} : { year: "numeric" }) });
+  } catch {
+    return d;
+  }
+};
+
+// Read-only date chips (no "x" buttons) with "+N more" overflow indicator.
+// Falls back to text format for legacy events without an event_dates array.
+function DateChips({ event, maxChips = 3 }) {
+  const dates = event?.event_dates;
+  if (!Array.isArray(dates) || dates.length === 0) {
+    return <span className="text-sm text-muted-foreground">{formatEventDates(event)}</span>;
+  }
+  const sorted = [...dates].sort();
+  const visible = sorted.slice(0, maxChips);
+  const remaining = sorted.length - maxChips;
+  return (
+    <div className="flex flex-wrap gap-1">
+      {visible.map((d) => (
+        <span key={d} className="inline-flex items-center rounded-full bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 text-[11px] font-medium whitespace-nowrap">
+          {fmtChip(d)}
+        </span>
+      ))}
+      {remaining > 0 && (
+        <span className="inline-flex items-center rounded-full bg-muted text-muted-foreground px-2 py-0.5 text-[11px] font-medium whitespace-nowrap">
+          +{remaining} more
+        </span>
+      )}
+    </div>
+  );
+}
+
 export default function EventsTable({ events, clients, teamMap = {}, serviceMap = {}, assignmentsByEvent = {}, receiptsByEvent = {}, addonsByEvent = {}, serviceAssignmentsByEvent = {}, currency = "INR", loading, onEventClick, onEditEvent, onDeleteEvent, onAdd, canAdd, term }) {
   const t = term || {};
   const prefs = useDisplayPreferences();
+
+  // Lazy loading — show events in increments of PAGE_SIZE with a "Load More" button.
+  const PAGE_SIZE = 20;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  useEffect(() => { setVisibleCount(PAGE_SIZE); }, [events.length]);
+
   if (loading) {
     return <EventsTableSkeleton />;
   }
@@ -38,6 +82,14 @@ export default function EventsTable({ events, clients, teamMap = {}, serviceMap 
   const laterEvents = events.filter((e) => !isThisWeek(e.start_date));
   const groupEvents = prefs.groupUpcoming !== false;
 
+  const orderedEvents = groupEvents ? [...weekEvents, ...laterEvents] : events;
+  const visibleEvents = orderedEvents.slice(0, visibleCount);
+  const hasMore = orderedEvents.length > visibleCount;
+
+  // Re-split visible events into groups for the grouped layout.
+  const visibleWeekEvents = groupEvents ? visibleEvents.filter((e) => isThisWeek(e.start_date)) : [];
+  const visibleLaterEvents = groupEvents ? visibleEvents.filter((e) => !isThisWeek(e.start_date)) : [];
+
   return (
     <div className="bg-card border border-border rounded-[15px] shadow-card overflow-hidden">
       <div className="hidden sm:grid grid-cols-[110px_1.4fr_1fr_1.2fr_120px_auto] gap-4 items-center px-4 py-2.5 border-b border-border text-xs font-medium text-muted-foreground uppercase tracking-wide">
@@ -51,32 +103,40 @@ export default function EventsTable({ events, clients, teamMap = {}, serviceMap 
 
       {groupEvents ? (
         <>
-          {weekEvents.length > 0 && (
+          {visibleWeekEvents.length > 0 && (
             <>
               <div className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide bg-muted/30">
-                {weekEvents.length} {t.workItemSingular || "Event"}{weekEvents.length > 1 ? "s" : ""} This Week
+                {visibleWeekEvents.length} {t.workItemSingular || "Event"}{visibleWeekEvents.length > 1 ? "s" : ""} This Week
               </div>
-              {weekEvents.map((e) => (
+              {visibleWeekEvents.map((e) => (
                 <Row key={e.id} event={e} term={t} prefs={prefs} clientName={clientName(e.client_id)} teamMap={teamMap} serviceMap={serviceMap} assignmentsByEvent={assignmentsByEvent} serviceAssignmentsByEvent={serviceAssignmentsByEvent} receiptsByEvent={receiptsByEvent} addonsByEvent={addonsByEvent} currency={currency} onClick={() => onEventClick(e)} onEdit={() => onEditEvent(e)} onDelete={() => onDeleteEvent(e)} />
               ))}
             </>
           )}
 
-          {laterEvents.length > 0 && (
+          {visibleLaterEvents.length > 0 && (
             <>
-              <div className={cn("px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide bg-muted/30", weekEvents.length > 0 && "border-t border-border")}>
+              <div className={cn("px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide bg-muted/30", visibleWeekEvents.length > 0 && "border-t border-border")}>
                 All {t.workItemPlural || "Events"}
               </div>
-              {laterEvents.map((e) => (
+              {visibleLaterEvents.map((e) => (
                 <Row key={e.id} event={e} term={t} prefs={prefs} clientName={clientName(e.client_id)} teamMap={teamMap} serviceMap={serviceMap} assignmentsByEvent={assignmentsByEvent} serviceAssignmentsByEvent={serviceAssignmentsByEvent} receiptsByEvent={receiptsByEvent} addonsByEvent={addonsByEvent} currency={currency} onClick={() => onEventClick(e)} onEdit={() => onEditEvent(e)} onDelete={() => onDeleteEvent(e)} />
               ))}
             </>
           )}
         </>
       ) : (
-        events.map((e) => (
+        visibleEvents.map((e) => (
           <Row key={e.id} event={e} term={t} prefs={prefs} clientName={clientName(e.client_id)} teamMap={teamMap} serviceMap={serviceMap} assignmentsByEvent={assignmentsByEvent} serviceAssignmentsByEvent={serviceAssignmentsByEvent} receiptsByEvent={receiptsByEvent} addonsByEvent={addonsByEvent} currency={currency} onClick={() => onEventClick(e)} onEdit={() => onEditEvent(e)} onDelete={() => onDeleteEvent(e)} />
         ))
+      )}
+
+      {hasMore && (
+        <div className="px-4 py-3 border-t border-border flex items-center justify-center">
+          <Button variant="outline" size="sm" onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}>
+            <Loader2 className="w-3.5 h-3.5" /> Load More ({orderedEvents.length - visibleCount} remaining)
+          </Button>
+        </div>
       )}
     </div>
   );
@@ -110,7 +170,9 @@ function Row({ event, clientName, teamMap, serviceMap, assignmentsByEvent, servi
           </div>
           <div className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1.5 min-w-0">
             <EventTypeBadge eventType={event.event_type} />
-            <span className="truncate">· {formatEventDates(event)}</span>
+          </div>
+          <div className="mt-1">
+            <DateChips event={event} maxChips={2} />
           </div>
           <div className="mt-1.5">
             <StatusBadge status={event.status} cardView />
@@ -129,7 +191,9 @@ function Row({ event, clientName, teamMap, serviceMap, assignmentsByEvent, servi
         <span className="hidden sm:block text-sm text-foreground">
           <EventTypeBadge eventType={event.event_type} />
         </span>
-        <span className="text-sm text-muted-foreground hidden sm:block">{formatEventDates(event)}</span>
+        <div className="hidden sm:block">
+          <DateChips event={event} maxChips={3} />
+        </div>
         <div className="hidden sm:flex items-center gap-2">
           <StatusBadge status={event.status} cardView />
         </div>
