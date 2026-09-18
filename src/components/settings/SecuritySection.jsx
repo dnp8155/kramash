@@ -7,6 +7,7 @@ import Toggle from "@/components/common/Toggle";
 import Select from "@/components/common/Select";
 import Input from "@/components/common/Input";
 import { hashPassword } from "@/lib/appLockPassword";
+import PasskeySection from "@/components/settings/PasskeySection";
 import { Shield, Lock, Unlock, Loader2, Eye, EyeOff } from "lucide-react";
 
 function getUserField(user, field, defaultValue) {
@@ -108,7 +109,8 @@ export default function SecuritySection() {
   };
 
   return (
-    <div className="bg-card border border-border rounded-lg p-5 max-w-lg space-y-5">
+    <div className="space-y-4 max-w-lg">
+    <div className="bg-card border border-border rounded-lg p-5 space-y-5">
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-sm font-semibold flex items-center gap-1.5">
@@ -237,6 +239,8 @@ export default function SecuritySection() {
           Enable App Lock to require a password when opening the app. This protects your data on shared devices.
         </p>
       )}
+    </div>
+    <PasskeySection />
     </div>
   );
 }

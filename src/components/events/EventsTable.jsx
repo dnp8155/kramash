@@ -112,6 +112,9 @@ function Row({ event, clientName, teamMap, serviceMap, assignmentsByEvent, servi
             <EventTypeBadge eventType={event.event_type} />
             <span className="truncate">· {formatEventDates(event)}</span>
           </div>
+          <div className="mt-1.5">
+            <StatusBadge status={event.status} cardView />
+          </div>
         </div>
 
         {/* Desktop columns */}

@@ -17,7 +17,6 @@ export default function AppLockGate({ children }) {
   const relockTimerRef = useRef(null);
 
   const appLockEnabled = getUserField(user, "app_lock_enabled", false);
-  const hasPassword = !!getUserField(user, "app_lock_password_hash", "");
   const relockAfter = Number(getUserField(user, "app_lock_relock_after", 0));
 
   useEffect(() => {
@@ -25,7 +24,7 @@ export default function AppLockGate({ children }) {
       setLocked(false);
       return;
     }
-    if (!appLockEnabled || !hasPassword) {
+    if (!appLockEnabled) {
       setLocked(false);
       return;
     }
@@ -47,11 +46,11 @@ export default function AppLockGate({ children }) {
     } else {
       setLocked(true);
     }
-  }, [user, appLockEnabled, hasPassword, relockAfter]);
+  }, [user, appLockEnabled, relockAfter]);
 
   // Set up re-lock timer
   useEffect(() => {
-    if (locked || !appLockEnabled || !hasPassword || relockAfter <= 0) {
+    if (locked || !appLockEnabled || relockAfter <= 0) {
       if (relockTimerRef.current) {
         clearTimeout(relockTimerRef.current);
         relockTimerRef.current = null;
@@ -74,7 +73,7 @@ export default function AppLockGate({ children }) {
       events.forEach((e) => window.removeEventListener(e, resetTimer));
       if (relockTimerRef.current) clearTimeout(relockTimerRef.current);
     };
-  }, [locked, appLockEnabled, hasPassword, relockAfter]);
+  }, [locked, appLockEnabled, relockAfter]);
 
   const handleUnlock = () => {
     sessionStorage.setItem(UNLOCK_KEY, "true");
@@ -82,7 +81,7 @@ export default function AppLockGate({ children }) {
     setLocked(false);
   };
 
-  if (locked && user && appLockEnabled && hasPassword) {
+  if (locked && user && appLockEnabled) {
     return <AppLockScreen onUnlock={handleUnlock} />;
   }
   return children;
