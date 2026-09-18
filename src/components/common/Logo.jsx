@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 export const LOGO_URL =
-  "https://media.base44.com/images/public/6a8c4677eeb41482e947f9c6/99658306b_ChatGPTImageAug29202608_10_43PM.png";
+  "https://media.base44.com/images/public/6aa198140e2903037c880386/929610b3d_generated_image.png";
 
 export default function Logo({ size = 36, className = "" }) {
   const [imgSrc, setImgSrc] = useState(LOGO_URL);
