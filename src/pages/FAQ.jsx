@@ -3,9 +3,17 @@ import { Link } from "react-router-dom";
 import { ArrowLeft, HelpCircle, ChevronDown } from "lucide-react";
 import Button from "@/components/common/Button";
 import { faqContent } from "@/lib/legalContent";
+import useSEO from "@/hooks/useSEO";
 
 export default function FAQ() {
   const [open, setOpen] = useState(0);
+
+  useSEO({
+    title: "FAQ — Kramasha Photography & Event Business Management Software",
+    description: "Frequently asked questions about Kramasha — the all-in-one business management platform for photographers, event managers and creative businesses in India. Learn about pricing, features, GST billing, team management, client portals and more.",
+    keywords: "Kramasha FAQ, photography business software FAQ, event management software India, photography CRM pricing, GST billing software, client portal FAQ, team management software, milestone payment tracking, creative business platform India",
+    path: "/faq",
+  });
 
   return (
     <div className="min-h-screen bg-background">

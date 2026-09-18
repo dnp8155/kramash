@@ -3,9 +3,17 @@ import ReactMarkdown from "react-markdown";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, FileText } from "lucide-react";
 import { termsOfServiceContent } from "@/lib/legalContent";
+import useSEO from "@/hooks/useSEO";
 
 export default function TermsOfService() {
   const navigate = useNavigate();
+
+  useSEO({
+    title: "Terms of Service — Kramasha Business Management Platform",
+    description: "Read the terms of service for Kramasha, the all-in-one business management platform for photographers, event managers and creative businesses in India.",
+    keywords: "Kramasha terms of service, business management software terms, photography software terms India, event management platform terms, SaaS terms India",
+    path: "/terms",
+  });
   return (
     <div className="min-h-screen bg-[#F5F3EF]">
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-10 sm:py-14">

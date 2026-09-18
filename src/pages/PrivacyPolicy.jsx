@@ -3,9 +3,17 @@ import ReactMarkdown from "react-markdown";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, ShieldCheck } from "lucide-react";
 import { privacyPolicyContent } from "@/lib/legalContent";
+import useSEO from "@/hooks/useSEO";
 
 export default function PrivacyPolicy() {
   const navigate = useNavigate();
+
+  useSEO({
+    title: "Privacy Policy — Kramasha Business Management Platform",
+    description: "Read the privacy policy for Kramasha, the all-in-one business management platform for photographers, event managers and creative businesses in India. Learn how we protect your data.",
+    keywords: "Kramasha privacy policy, business management software privacy, photography software privacy India, event management platform privacy, SaaS privacy policy India, data protection",
+    path: "/privacy",
+  });
   return (
     <div className="min-h-screen bg-[#F5F3EF]">
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-10 sm:py-14">

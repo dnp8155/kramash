@@ -4,6 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Image } from "@/components/ui/image";
 import { MapPin, Phone, Mail, Globe, Sparkles, Instagram, Youtube, Link as LinkIcon } from "lucide-react";
 import { getPublicProfileHero } from "@/constants/publicProfileHeroes";
+import useSEO from "@/hooks/useSEO";
 
 export default function PublicProfile() {
   const { slug } = useParams();
@@ -28,6 +29,19 @@ export default function PublicProfile() {
     };
     if (slug) load();
   }, [slug]);
+
+  // Dynamic SEO based on business profile data
+  useSEO({
+    title: data?.workspace ? `${data.workspace.name} — ${data.workspace.tagline || "Creative Business on Kramasha"}` : "Business Profile — Kramasha",
+    description: data?.workspace
+      ? `${data.workspace.name}${data.workspace.tagline ? ` — ${data.workspace.tagline}` : ""}. ${data.workspace.about ? data.workspace.about.substring(0, 120) : "Creative business on Kramasha, the all-in-one business management platform for photographers, event managers and studios in India."}${data.workspace.city ? ` Located in ${data.workspace.city}.` : ""}`
+      : "Discover creative businesses on Kramasha — the all-in-one business management platform for photographers, event managers, studios and creative businesses in India.",
+    keywords: data?.workspace
+      ? `${data.workspace.name}, ${data.workspace.business_category || "creative business"}, ${data.workspace.city || ""} business, photography studio, event management, creative business India, Kramasha profile`
+      : "creative business profile India, photography studio profile, event management company profile, creative business directory India",
+    image: data?.workspace?.logo,
+    path: `/p/${slug || ""}`,
+  });
 
   if (loading) {
     return (

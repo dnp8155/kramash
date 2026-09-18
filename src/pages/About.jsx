@@ -3,9 +3,17 @@ import ReactMarkdown from "react-markdown";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Info } from "lucide-react";
 import { aboutContent } from "@/lib/legalContent";
+import useSEO from "@/hooks/useSEO";
 
 export default function About() {
   const navigate = useNavigate();
+
+  useSEO({
+    title: "About Kramasha — Creative Business Management Platform for India",
+    description: "Learn about Kramasha, the all-in-one business management platform built for photographers, event managers, studios and creative businesses in India. Manage clients, projects, teams, quotations, invoices and finances from one dashboard.",
+    keywords: "about Kramasha, creative business management platform India, photography business software India, event management software Gujarat, studio management platform, photographer CRM, business management app for photographers, wedding photography software India",
+    path: "/about",
+  });
   return (
     <div className="min-h-screen bg-[#F5F3EF]">
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
