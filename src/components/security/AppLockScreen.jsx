@@ -79,14 +79,15 @@ export default function AppLockScreen({ onUnlock }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-sm text-center space-y-6">
+    <div className="fixed inset-0 z-[100] bg-background overflow-y-auto">
+      <div className="min-h-dvh flex items-center justify-center p-4">
+      <div className="w-full max-w-sm text-center space-y-4 py-6">
         <div className="flex justify-center">
           <Logo size="md" />
         </div>
 
-        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-          <Lock className="w-8 h-8 text-primary" />
+        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+          <Lock className="w-6 h-6 text-primary" />
         </div>
 
         <div>
@@ -124,7 +125,7 @@ export default function AppLockScreen({ onUnlock }) {
               </div>
             )}
 
-            <Button type="submit" variant="primary" size="lg" disabled={loading || !password} className="w-full">
+            <Button type="submit" variant="primary" size="md" disabled={loading || !password} className="w-full">
               {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Unlocking…</> : "Unlock"}
             </Button>
           </form>
@@ -147,7 +148,7 @@ export default function AppLockScreen({ onUnlock }) {
             <Button
               type="button"
               variant="outline"
-              size="lg"
+              size="md"
               disabled={passkeyLoading}
               onClick={handlePasskeyUnlock}
               className="w-full"
@@ -158,6 +159,7 @@ export default function AppLockScreen({ onUnlock }) {
             </Button>
           </>
         )}
+      </div>
       </div>
     </div>
   );
