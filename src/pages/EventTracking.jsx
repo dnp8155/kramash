@@ -7,6 +7,7 @@ import {
   FileText, Phone, Mail, ArrowRight, Loader2, Sparkles, PartyPopper
 } from "lucide-react";
 import { CURRENCY_SYMBOLS } from "@/constants/financeConfig";
+import useSEO from "@/hooks/useSEO";
 
 function money(n, currency) {
   const sym = CURRENCY_SYMBOLS[currency] || currency || "₹";
@@ -34,6 +35,7 @@ const STATUS_META = {
 
 export default function EventTracking() {
   const { id } = useParams();
+  useSEO({ noIndex: true, path: `/track/${id || ""}` });
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");

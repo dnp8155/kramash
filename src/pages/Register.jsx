@@ -13,6 +13,7 @@ import PasswordStrength from "@/components/common/PasswordStrength";
 import { toast } from "@/components/ui/use-toast";
 import { safeReturnTo } from "@/lib/authReturnTo";
 import { useAuth } from "@/lib/AuthContext";
+import useSEO from "@/hooks/useSEO";
 
 function sanitizeRegisterError(err) {
   if (!err) return "Unable to create your account right now. Please try again.";
@@ -33,6 +34,7 @@ function sanitizeRegisterError(err) {
 }
 
 export default function Register() {
+  useSEO({ noIndex: true, path: "/register" });
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

@@ -9,6 +9,7 @@ import { Download, Printer, Lock, FileText, CheckCircle2, Clock, AlertCircle } f
 import Button from "@/components/common/Button";
 import { renderInvoiceSimpleBw } from "@/components/invoice/templates/invoiceSimpleBwTemplate";
 import { generateTemplatePdf } from "@/lib/quotationTemplatePdf";
+import useSEO from "@/hooks/useSEO";
 
 const fmtDate = (iso) => {
   if (!iso) return "—";
@@ -24,6 +25,7 @@ const PAYMENT_STATUS_META = {
 
 export default function PublicInvoice() {
   const { token } = useParams();
+  useSEO({ noIndex: true, path: `/invoice/${token || ""}` });
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");

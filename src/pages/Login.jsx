@@ -12,6 +12,7 @@ import LoginProductVisual from "@/components/LoginProductVisual";
 import { safeReturnTo } from "@/lib/authReturnTo";
 import { useAuth } from "@/lib/AuthContext";
 import { toast } from "@/components/ui/use-toast";
+import useSEO from "@/hooks/useSEO";
 
 function isUnverifiedError(err) {
   if (!err) return false;
@@ -39,6 +40,7 @@ function sanitizeLoginError(err) {
 }
 
 export default function Login() {
+  useSEO({ noIndex: true, path: "/login" });
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");

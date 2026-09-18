@@ -9,6 +9,7 @@ import PortalTeamSection from "@/components/portal/PortalTeamSection";
 import PortalServiceSection from "@/components/portal/PortalServiceSection";
 import { generateQuotationPdf } from "@/lib/quotationPdf";
 import { CURRENCY_SYMBOLS } from "@/constants/financeConfig";
+import useSEO from "@/hooks/useSEO";
 
 function formatDate(iso) {
   if (!iso) return "—";
@@ -58,6 +59,7 @@ function contextLabel(ctx) {
 
 export default function ClientProjectPortal() {
   const { token } = useParams();
+  useSEO({ noIndex: true, path: `/portal/${token || ""}` });
   const navigate = useNavigate();
   const isPreview = new URLSearchParams(window.location.search).has("preview");
   const [data, setData] = useState(null);

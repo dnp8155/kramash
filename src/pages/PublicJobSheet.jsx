@@ -2,9 +2,11 @@ import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Navigation, MapPin, Calendar, Phone, Clock, Users, Package, FileText, Wrench, CheckSquare, AlertCircle, ShieldCheck, ClipboardList } from "lucide-react";
+import useSEO from "@/hooks/useSEO";
 
 export default function PublicJobSheet() {
   const { token } = useParams();
+  useSEO({ noIndex: true, path: `/job-sheet/${token || ""}` });
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);

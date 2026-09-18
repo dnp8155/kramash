@@ -15,6 +15,7 @@ import QuotationBankDetails from "@/components/quotation/public/QuotationBankDet
 import QuotationSocialLinks from "@/components/quotation/public/QuotationSocialLinks";
 import QuotationTerms from "@/components/quotation/public/QuotationTerms";
 import QuotationSignSection from "@/components/quotation/public/QuotationSignSection";
+import useSEO from "@/hooks/useSEO";
 
 function money(n, currency) {
   const sym = CURRENCY_SYMBOLS[currency] || currency || "₹";
@@ -48,6 +49,7 @@ function typedNameToDataUrl(name) {
 
 export default function ClientQuotationView() {
   const { token } = useParams();
+  useSEO({ noIndex: true, path: `/q/${token || ""}` });
   const { toast } = useToast();
   const signRef = useRef(null);
   const isPreview = new URLSearchParams(window.location.search).has("preview");
