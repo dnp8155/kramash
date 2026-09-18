@@ -154,17 +154,17 @@ export default function Login() {
   }
 
   return (
-    <div className="h-dvh flex flex-col lg:flex-row bg-background overflow-hidden">
+    <div className="h-dvh flex flex-col lg:flex-row bg-background overflow-hidden select-none">
       {/* Left: Content column */}
-      <div className="flex-1 flex flex-col px-6 py-6 sm:px-10 lg:px-12 xl:px-16 lg:py-8 overflow-y-auto">
+      <div className="flex-1 flex flex-col justify-between px-6 py-5 sm:px-10 lg:px-12 xl:px-16 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-2.5 self-start relative z-50 cursor-pointer hover:opacity-80 transition-opacity">
-          <Logo size={36} className="shadow-md" />
+        <Link to="/" className="flex items-center gap-2.5 self-start relative z-50 cursor-pointer hover:opacity-80 transition-opacity shrink-0">
+          <Logo size={34} className="shadow-md" />
           <span className="font-heading text-lg font-bold tracking-tight text-foreground">Kramasha</span>
         </Link>
 
-        {/* Form area — vertically centered, slightly above center */}
-        <div className="flex-1 flex flex-col justify-center max-w-[420px] w-full mx-auto lg:mx-0 py-12 lg:pb-20">
+        {/* Form area — vertically centered */}
+        <div className="flex-1 flex flex-col justify-center max-w-[420px] w-full mx-auto lg:mx-0 py-4 lg:py-6 my-auto">
           {verifyMode ? (
             <>
               <h1 className="font-heading text-2xl sm:text-[1.75rem] font-bold tracking-tight text-foreground leading-tight">
@@ -262,8 +262,8 @@ export default function Login() {
                 </div>
               )}
 
-              <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-                <div className="space-y-2">
+              <form onSubmit={handleSubmit} className="mt-5 space-y-3.5">
+                <div className="space-y-1.5">
                   <Label htmlFor="email" className="text-sm font-medium">
                     Email address
                   </Label>
@@ -280,12 +280,12 @@ export default function Login() {
                       placeholder="you@example.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="pl-10 h-12"
+                      className="pl-10 h-11"
                       required
                     />
                   </div>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="password" className="text-sm font-medium">
                       Password
@@ -309,7 +309,7 @@ export default function Login() {
                       placeholder="••••••••"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="pl-10 pr-10 h-12"
+                      className="pl-10 pr-10 h-11"
                       required
                     />
                     <button
@@ -322,7 +322,7 @@ export default function Login() {
                     </button>
                   </div>
                 </div>
-                <Button type="submit" className="w-full h-12 font-semibold" disabled={loading}>
+                <Button type="submit" className="w-full h-11 font-semibold" disabled={loading}>
                   {loading ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -337,7 +337,7 @@ export default function Login() {
                 </Button>
               </form>
 
-              <div className="relative my-5">
+              <div className="relative my-4">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-border" />
                 </div>
@@ -348,14 +348,14 @@ export default function Login() {
 
               <Button
                 variant="outline"
-                className="w-full h-12 text-sm font-medium"
+                className="w-full h-11 text-sm font-medium"
                 onClick={handleGoogle}
               >
                 <GoogleIcon className="w-5 h-5 mr-2" />
                 Continue with Google
               </Button>
 
-              <div className="mt-5 flex flex-col gap-2.5">
+              <div className="mt-4 flex flex-col gap-2">
                 <p className="text-sm text-muted-foreground text-center">
                   New to Kramasha?{" "}
                   <Link
