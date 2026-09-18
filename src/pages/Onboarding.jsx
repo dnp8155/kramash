@@ -153,8 +153,8 @@ export default function Onboarding() {
   };
 
   const canNext1 = !!form.business_category && (form.business_category !== BUSINESS_CATEGORIES.OTHER || form.custom_business_type.trim());
-  const canNext2 = form.name.trim() && form.your_name.trim();
-  const canNext3 = form.city.trim() && form.country;
+  const canNext2 = form.name.trim();
+  const canNext3 = form.country;
 
   return (
     <div className="min-h-dvh flex items-center justify-center bg-background px-4 py-8">
@@ -235,7 +235,7 @@ export default function Onboarding() {
 
           {step === 2 && (
             <StepShell icon={Building2} title="Business Details" subtitle="Tell us about your business.">
-              <Field label="Your Name *">
+              <Field label="Your Name">
                 <Input value={form.your_name} onChange={(e) => set("your_name", e.target.value)} placeholder="Krishna Shah" autoFocus />
               </Field>
               <Field label="Business / Workspace Name *">
@@ -259,7 +259,7 @@ export default function Onboarding() {
           {step === 3 && (
             <StepShell icon={MapPin} title="Location & Preferences" subtitle="Where is your business based?">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Field label="City *">
+                <Field label="City">
                   <Input value={form.city} onChange={(e) => set("city", e.target.value)} placeholder="Mumbai" autoFocus />
                 </Field>
                 <Field label="State">
