@@ -538,7 +538,7 @@ export default function EventDetails() {
           </div>
           <p className="text-sm text-muted-foreground ml-6 flex items-center gap-1.5 flex-wrap">
             {event.event_type && <EventTypeBadge eventType={event.event_type} />}
-            {datesLabel && datesLabel !== "—" && <span>· {datesLabel}</span>}
+            {datesLabel && datesLabel !== "—" && <span>{event.event_type ? "· " : ""}{datesLabel}</span>}
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">

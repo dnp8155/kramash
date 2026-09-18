@@ -112,6 +112,9 @@ export default function ServiceAssignmentCard({
             "text-sm font-semibold tabular-nums",
             assignment.is_addon ? "text-warning" : "text-foreground"
           )}>{formatMoney(rate, currency)}</div>
+          {assignment.rate_type && (
+            <div className="text-[11px] text-muted-foreground mt-0.5">{assignment.rate_type}</div>
+          )}
         </div>
         <div className="flex items-center justify-between sm:block">
           <div className="text-xs font-medium text-muted-foreground">Total Payment</div>
