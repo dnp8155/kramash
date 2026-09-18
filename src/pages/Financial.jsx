@@ -372,7 +372,7 @@ export default function Financial() {
             <SummaryCard label={t("Profit")} value={summary.profit} tone={summary.profit >= 0 ? "success" : "destructive"} currency={currency} icon={TrendingUp} />
           </div>
 
-          <div className="h-6" />
+          <div className="h-8" />
 
           {/* Breakdown */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -426,20 +426,20 @@ export default function Financial() {
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide w-16">{t("Method")}</span>
-              <div className="flex gap-1 bg-muted p-0.5 rounded-md">
+              <div className="flex gap-1 bg-muted p-1 rounded-full">
                 {PAYMENT_METHODS.map((m) => (
                   <button
                     key={m}
                     onClick={() => setMethod(m)}
                     className={cn(
-                      "relative px-3 py-1 text-xs font-medium rounded transition-colors",
+                      "relative px-3.5 py-1 text-xs font-medium rounded-full transition-colors",
                       method === m ? "text-foreground" : "text-muted-foreground"
                     )}
                   >
                     {method === m && (
                       <motion.div
                         layoutId="financial-method-indicator"
-                        className="absolute inset-0 bg-card shadow-sm rounded"
+                        className="absolute inset-0 bg-card shadow-sm rounded-full"
                         transition={{ duration: DURATION_FAST, ease: EASE }}
                       />
                     )}
@@ -450,20 +450,20 @@ export default function Financial() {
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide w-16">{t("Type")}</span>
-              <div className="flex gap-1 bg-muted p-0.5 rounded-md">
+              <div className="flex gap-1 bg-muted p-1 rounded-full">
                 {PAYMENT_TYPES.map((pt) => (
                   <button
                     key={pt}
                     onClick={() => setType(pt)}
                     className={cn(
-                      "relative px-3 py-1 text-xs font-medium rounded transition-colors",
+                      "relative px-3.5 py-1 text-xs font-medium rounded-full transition-colors",
                       type === pt ? "text-foreground" : "text-muted-foreground"
                     )}
                   >
                     {type === pt && (
                       <motion.div
                         layoutId="financial-type-indicator"
-                        className="absolute inset-0 bg-card shadow-sm rounded"
+                        className="absolute inset-0 bg-card shadow-sm rounded-full"
                         transition={{ duration: DURATION_FAST, ease: EASE }}
                       />
                     )}
@@ -474,7 +474,7 @@ export default function Financial() {
             </div>
           </div>
 
-          <div className="h-6" />
+          <div className="h-8" />
 
           <PaymentTable
             transactions={fyTx}
@@ -485,7 +485,7 @@ export default function Financial() {
             onDelete={(t) => setDeleting(t)}
           />
 
-          <div className="h-6" />
+          <div className="h-8" />
 
           {/* Outstanding receivables — scoped to the selected financial year */}
           <OutstandingReceivables

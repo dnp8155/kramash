@@ -18,6 +18,8 @@ import { cn } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { invalidateRelated, upsertOptimistic } from "@/lib/queryInvalidation";
 import { useSubmitGuard } from "@/hooks/useSubmitGuard";
+import { useWorkspace } from "@/lib/WorkspaceContext";
+import { CURRENCY_SYMBOLS } from "@/constants/financeConfig";
 
 // Master Team Member form — identity + role + contact + status + notes only.
 // Rate and Member Type are NOT collected here:
@@ -35,6 +37,8 @@ const empty = {
 
 export default function TeamMemberForm({ open, onClose, onSaved, member = null, workspaceId }) {
   const { user } = useAuth();
+  const { workspace } = useWorkspace();
+  const currencySymbol = CURRENCY_SYMBOLS[workspace?.currency || "INR"] || "₹";
   const queryClient = useQueryClient();
   const [form, setForm] = useState(empty);
   const [roles, setRoles] = useState([]);
@@ -204,7 +208,7 @@ export default function TeamMemberForm({ open, onClose, onSaved, member = null, 
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label>Default Rate (₹)</Label>
+              <Label>Default Rate ({currencySymbol})</Label>
               <Input
                 type="number"
                 min="0"

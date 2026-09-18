@@ -14,7 +14,8 @@ import {
   Headphones,
   Info,
   ShieldCheck,
-  LogOut
+  LogOut,
+  Crown
 } from "lucide-react";
 
 export const workspaceNav = [
@@ -38,6 +39,7 @@ export const toolsNav = [
 
 export const settingsNav = [
   { label: "Preferences", path: "/preferences", icon: SlidersHorizontal },
+  { label: "Plans", path: "/plan", icon: Crown },
   { label: "App & Updates", path: "/app-updates", icon: Smartphone },
   { label: "Help & Support", path: "/help", icon: Headphones }
 ];

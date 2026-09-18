@@ -140,7 +140,7 @@ export default function ServiceAssignmentCard({
       <div className="flex items-center gap-2 mb-1 flex-wrap">
         <button
           onClick={() => onEdit?.(assignment)}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card border border-foreground text-foreground text-xs font-medium hover:bg-muted transition-colors"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card border border-border text-foreground text-xs font-medium hover:bg-muted transition-colors"
         >
           <Pencil className="w-3.5 h-3.5" /> Edit
         </button>
@@ -154,7 +154,7 @@ export default function ServiceAssignmentCard({
         )}
         <button
           onClick={() => onShare?.(assignment)}
-          className="w-8 h-8 rounded-full flex items-center justify-center bg-card border border-foreground/30 text-foreground hover:bg-muted transition-colors"
+          className="w-8 h-8 rounded-full flex items-center justify-center bg-card border border-border text-foreground hover:bg-muted transition-colors"
           aria-label="Share"
         >
           <Share2 className="w-3.5 h-3.5" />

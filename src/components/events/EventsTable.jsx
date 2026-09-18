@@ -177,6 +177,14 @@ function Row({ event, clientName, teamMap, serviceMap, assignmentsByEvent, servi
           <div className="mt-1.5">
             <StatusBadge status={event.status} cardView />
           </div>
+          {serviceAssignments.length > 0 && (
+            <div className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground min-w-0">
+              <Briefcase className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">
+                {serviceAssignments.map((a) => a.provider_name_snapshot || (a.provider_id ? teamMap[a.provider_id]?.name : "") || a.service_name_snapshot || serviceMap[a.service_id]?.name || "Service").join(", ")}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Desktop columns */}

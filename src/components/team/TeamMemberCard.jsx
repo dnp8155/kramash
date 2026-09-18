@@ -76,7 +76,7 @@ export default function TeamMemberCard({ member, assignments = [], transactions 
             </span>
           )}
         </button>
-        <span className="text-xs text-muted-foreground ml-auto truncate hidden sm:block">
+        <span className="text-xs text-muted-foreground ml-auto truncate">
           {member.profession || "—"}
         </span>
         <button onClick={() => onEdit?.(member)} className="text-muted-foreground hover:text-foreground shrink-0 p-1.5 rounded-full hover:bg-muted transition-colors" aria-label="Edit">

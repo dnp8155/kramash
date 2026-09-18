@@ -77,6 +77,9 @@ export default function Sidebar({ mobile = false, onClose, collapsed = false, on
           <Link to="/preferences" className="rounded-lg hover:bg-muted/50 transition-colors p-1 -m-1" title="Profile">
             <WorkspaceLogo size={36} />
           </Link>
+          <Link to="/plan" className="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" title={t("Plans")}>
+            <Crown className="w-3.5 h-3.5" />
+          </Link>
           <button
             onClick={() => setShowLogout(true)}
             className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-colors"
@@ -156,10 +159,7 @@ export default function Sidebar({ mobile = false, onClose, collapsed = false, on
           </div>
         </Link>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" asChild className="flex-1">
-            <Link to="/plan"><Crown className="w-3.5 h-3.5" />{t("Plans")}</Link>
-          </Button>
-          <Button variant="reset" size="sm" onClick={() => setShowLogout(true)} className="flex-1">
+          <Button variant="reset" size="sm" onClick={() => setShowLogout(true)} className="w-full">
             <LogOut className="w-3.5 h-3.5" />{t("Log out")}
           </Button>
         </div>

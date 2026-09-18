@@ -14,7 +14,7 @@ import SearchInput from "@/components/common/SearchInput";
 import Select from "@/components/common/Select";
 import Button from "@/components/common/Button";
 import PageHeader from "@/components/common/PageHeader";
-import { Users, UserCheck, Plus, Download, CalendarCheck, Clock, CheckCircle2, CalendarDays, IndianRupee, AlertCircle } from "lucide-react";
+import { Users, Plus, Download, CalendarCheck, Clock, CheckCircle2, CalendarDays, IndianRupee, AlertCircle } from "lucide-react";
 import StatCard from "@/components/common/StatCard";
 import { StaggerList, StaggerItem } from "@/components/common/StaggerList";
 import { isToday, isThisWeek, isUpcomingDate, isPastDate, isWithinFY } from "@/lib/dates";
@@ -227,7 +227,7 @@ export default function Events() {
     <div className="p-4 sm:p-6 space-y-4">
       <PageHeader eyebrow="Schedule" title={term.workItemPlural} subtitle={`Manage your bookings, schedule, and ${term.workItemSingular.toLowerCase()} details.`}>
         <Button variant="outline" onClick={() => navigate("/team")}>
-          <UserCheck className="w-4 h-4" />
+          <Users className="w-4 h-4" />
           <span>{term.teamLabel}</span>
         </Button>
         <Button onClick={openNew}>

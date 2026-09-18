@@ -12,6 +12,7 @@ import DateRangeChips from "@/components/common/DateRangeChips";
 import { useQueryClient } from "@tanstack/react-query";
 import { invalidateRelated, upsertOptimistic } from "@/lib/queryInvalidation";
 import { useSubmitGuard } from "@/hooks/useSubmitGuard";
+import { CURRENCY_SYMBOLS } from "@/constants/financeConfig";
 
 const SOURCES = [
   { value: "referral", label: "Referral" },
@@ -56,6 +57,7 @@ const empty = {
 export default function LeadForm({ open, onClose, editingLead, onSaved }) {
   const { workspaceId, workspace } = useWorkspace();
   const term = getBusinessTerminology(workspace);
+  const currencySymbol = CURRENCY_SYMBOLS[workspace?.currency || "INR"] || "₹";
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [form, setForm] = useState(empty);
@@ -220,7 +222,7 @@ export default function LeadForm({ open, onClose, editingLead, onSaved }) {
               </Select>
             </div>
             <div>
-              <label className="text-sm font-medium mb-1.5 block">Budget (₹)</label>
+              <label className="text-sm font-medium mb-1.5 block">Budget ({currencySymbol})</label>
               <Input
                 type="number"
                 min="0"
