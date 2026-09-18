@@ -1,5 +1,4 @@
 import { cn } from "@/lib/utils";
-import { Calendar } from "lucide-react";
 import { EVENT_STATUS } from "@/constants/statusConfig";
 import { useDisplayPreferences } from "@/hooks/useDisplayPreferences";
 
@@ -23,12 +22,11 @@ export default function StatusBadge({ status, className, cardView = false }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium",
+        "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium",
         styles[cfg.badge],
         className
       )}
     >
-      <Calendar className="w-3 h-3 shrink-0" />
       {cfg.label}
     </span>
   );
