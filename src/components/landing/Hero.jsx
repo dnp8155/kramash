@@ -22,13 +22,13 @@ export default function Hero() {
 
             <Reveal delay={50}>
               <h1 className="font-heading text-4xl sm:text-5xl lg:text-[3.5rem] font-semibold tracking-tight text-[#1A1A1A] leading-[1.05] mb-5">
-                Built for Creative Businesses.
+                Kramasha — Built for Creative Businesses in Gujarat & India.
               </h1>
             </Reveal>
 
             <Reveal delay={100}>
               <p className="text-base sm:text-lg text-[#8A8580] leading-relaxed mb-7 max-w-xl">
-                Manage clients, events, teams, services, quotations, invoices, payments and finances — all in one place.
+                The all-in-one CRM & management software for photographers, event managers, and creative studios across Ahmedabad, Surat, Vadodara, Rajkot, and all of Gujarat. Manage clients, events, teams, quotations, GST invoices, and payments in one place.
               </p>
             </Reveal>
 
