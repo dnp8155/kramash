@@ -13,6 +13,18 @@ export default function TermsOfService() {
     description: "Read the terms of service for Kramasha, the all-in-one business management platform for photographers, event managers and creative businesses in India.",
     keywords: "Kramasha terms of service, business management software terms, photography software terms India, event management platform terms, SaaS terms India",
     path: "/terms",
+    jsonLd: {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      name: "Terms of Service — Kramasha",
+      description: "Terms of service for Kramasha business management platform.",
+      url: "https://kramasha.com/terms",
+      publisher: { "@type": "Organization", name: "Kramasha", url: "https://kramasha.com" },
+    },
+    breadcrumbs: [
+      { name: "Home", url: "/" },
+      { name: "Terms of Service", url: "/terms" },
+    ],
   });
   return (
     <div className="min-h-screen bg-[#F5F3EF]">

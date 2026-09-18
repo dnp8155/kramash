@@ -1,0 +1,21 @@
+# robots.txt — Kramasha SEO
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /events
+Disallow: /clients
+Disallow: /leads
+Disallow: /team
+Disallow: /financial
+Disallow: /quotation
+Disallow: /invoices
+Disallow: /preferences
+Disallow: /admin
+Disallow: /client-portal
+Disallow: /team-portal
+Disallow: /onboarding
+
+# Public pages — allow indexing
+# / (landing), /about, /faq, /terms, /privacy, /p/:slug
+
+Sitemap: https://kramasha.com/sitemap.xml

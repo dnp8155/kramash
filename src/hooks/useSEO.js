@@ -29,11 +29,41 @@ function setLink(rel, href) {
   el.setAttribute("href", href);
 }
 
+function setJsonLd(id, data) {
+  if (!data) return;
+  let el = document.getElementById(id);
+  if (el) {
+    el.textContent = JSON.stringify(data);
+  } else {
+    el = document.createElement("script");
+    el.type = "application/ld+json";
+    el.id = id;
+    el.textContent = JSON.stringify(data);
+    document.head.appendChild(el);
+  }
+}
+
+function removeJsonLd(id) {
+  const el = document.getElementById(id);
+  if (el) el.remove();
+}
+
 /**
- * useSEO — updates document head (title, meta description, keywords, OG, Twitter, canonical)
- * for per-page SEO. Restores defaults on cleanup.
+ * useSEO — comprehensive on-page SEO: title, meta description, keywords, OG,
+ * Twitter, canonical URL, robots, and JSON-LD structured data.
+ * Restores defaults on cleanup.
  */
-export function useSEO({ title, description, keywords, image, path, noIndex = false }) {
+export function useSEO({
+  title,
+  description,
+  keywords,
+  image,
+  path,
+  noIndex = false,
+  jsonLd,
+  breadcrumbs,
+  ogType = "website",
+}) {
   useEffect(() => {
     const fullTitle = title || DEFAULT_TITLE;
     const desc = description || DEFAULT_DESC;
@@ -48,18 +78,43 @@ export function useSEO({ title, description, keywords, image, path, noIndex = fa
     setMeta({ name: "robots" }, 'meta[name="robots"]', noIndex ? "noindex, nofollow" : "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1");
 
     // Open Graph
+    setMeta({ property: "og:type" }, 'meta[property="og:type"]', ogType);
     setMeta({ property: "og:title" }, 'meta[property="og:title"]', fullTitle);
     setMeta({ property: "og:description" }, 'meta[property="og:description"]', desc);
     setMeta({ property: "og:url" }, 'meta[property="og:url"]', url);
     setMeta({ property: "og:image" }, 'meta[property="og:image"]', img);
+    setMeta({ property: "og:image:alt" }, 'meta[property="og:image:alt"]', fullTitle);
+    setMeta({ property: "og:locale" }, 'meta[property="og:locale"]', "en_IN");
+    setMeta({ property: "og:site_name" }, 'meta[property="og:site_name"]', "Kramasha");
 
     // Twitter
+    setMeta({ name: "twitter:card" }, 'meta[name="twitter:card"]', "summary_large_image");
     setMeta({ name: "twitter:title" }, 'meta[name="twitter:title"]', fullTitle);
     setMeta({ name: "twitter:description" }, 'meta[name="twitter:description"]', desc);
     setMeta({ name: "twitter:image" }, 'meta[name="twitter:image"]', img);
+    setMeta({ name: "twitter:image:alt" }, 'meta[name="twitter:image:alt"]', fullTitle);
 
     // Canonical
     setLink("canonical", url);
+
+    // JSON-LD structured data
+    if (jsonLd) {
+      setJsonLd("page-jsonld", jsonLd);
+    }
+
+    // Breadcrumb structured data
+    if (breadcrumbs && breadcrumbs.length > 0) {
+      setJsonLd("breadcrumb-jsonld", {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: breadcrumbs.map((b, i) => ({
+          "@type": "ListItem",
+          position: i + 1,
+          name: b.name,
+          item: b.url ? `${BASE_URL}${b.url}` : undefined,
+        })),
+      });
+    }
 
     return () => {
       // Restore defaults on unmount
@@ -67,6 +122,7 @@ export function useSEO({ title, description, keywords, image, path, noIndex = fa
       setMeta({ name: "description" }, 'meta[name="description"]', DEFAULT_DESC);
       setMeta({ name: "keywords" }, 'meta[name="keywords"]', DEFAULT_KEYWORDS);
       setMeta({ name: "robots" }, 'meta[name="robots"]', "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1");
+      setMeta({ property: "og:type" }, 'meta[property="og:type"]', "website");
       setMeta({ property: "og:title" }, 'meta[property="og:title"]', DEFAULT_TITLE);
       setMeta({ property: "og:description" }, 'meta[property="og:description"]', DEFAULT_DESC);
       setMeta({ property: "og:url" }, 'meta[property="og:url"]', BASE_URL);
@@ -75,8 +131,10 @@ export function useSEO({ title, description, keywords, image, path, noIndex = fa
       setMeta({ name: "twitter:description" }, 'meta[name="twitter:description"]', DEFAULT_DESC);
       setMeta({ name: "twitter:image" }, 'meta[name="twitter:image"]', DEFAULT_IMAGE);
       setLink("canonical", BASE_URL);
+      removeJsonLd("page-jsonld");
+      removeJsonLd("breadcrumb-jsonld");
     };
-  }, [title, description, keywords, image, path, noIndex]);
+  }, [title, description, keywords, image, path, noIndex, jsonLd, breadcrumbs, ogType]);
 }
 
 export default useSEO;

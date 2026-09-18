@@ -30,6 +30,22 @@ export default function Landing() {
     description: "Kramasha is the all-in-one business management platform for photographers, event managers, studios and creative businesses in India. Manage leads, clients, projects, teams, quotations, invoices, payments and finances — all in one place. Free plan available, built for Gujarat and India.",
     keywords: "photography business management software India, photography CRM Gujarat, event management software India, studio management software, photographer invoicing, photography quotation software, wedding photography business management, event planner software Gujarat, creative business management platform India, photography client portal, team management software photographers, payment tracking software, milestone billing software, GST invoicing software India, freelance business management, architecture project management, interior design business software, business management app for photographers",
     path: "/",
+    jsonLd: {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      name: "Kramasha — Photography, Event & Creative Business Management Software",
+      description: "All-in-one business management platform for photographers, event managers, studios and creative businesses in India.",
+      url: "https://kramasha.com",
+      isPartOf: { "@type": "WebSite", name: "Kramasha", url: "https://kramasha.com" },
+      about: {
+        "@type": "SoftwareApplication",
+        name: "Kramasha",
+        applicationCategory: "BusinessApplication",
+        operatingSystem: "Web",
+        offers: { "@type": "Offer", price: "0", priceCurrency: "INR" },
+      },
+    },
+    breadcrumbs: [{ name: "Home", url: "/" }],
   });
 
   useEffect(() => {

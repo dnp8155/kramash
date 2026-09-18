@@ -13,6 +13,18 @@ export default function PrivacyPolicy() {
     description: "Read the privacy policy for Kramasha, the all-in-one business management platform for photographers, event managers and creative businesses in India. Learn how we protect your data.",
     keywords: "Kramasha privacy policy, business management software privacy, photography software privacy India, event management platform privacy, SaaS privacy policy India, data protection",
     path: "/privacy",
+    jsonLd: {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      name: "Privacy Policy — Kramasha",
+      description: "Privacy policy for Kramasha business management platform.",
+      url: "https://kramasha.com/privacy",
+      publisher: { "@type": "Organization", name: "Kramasha", url: "https://kramasha.com" },
+    },
+    breadcrumbs: [
+      { name: "Home", url: "/" },
+      { name: "Privacy Policy", url: "/privacy" },
+    ],
   });
   return (
     <div className="min-h-screen bg-[#F5F3EF]">

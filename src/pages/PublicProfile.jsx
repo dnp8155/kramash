@@ -31,16 +31,40 @@ export default function PublicProfile() {
   }, [slug]);
 
   // Dynamic SEO based on business profile data
+  const wsData = data?.workspace;
   useSEO({
-    title: data?.workspace ? `${data.workspace.name} — ${data.workspace.tagline || "Creative Business on Kramasha"}` : "Business Profile — Kramasha",
-    description: data?.workspace
-      ? `${data.workspace.name}${data.workspace.tagline ? ` — ${data.workspace.tagline}` : ""}. ${data.workspace.about ? data.workspace.about.substring(0, 120) : "Creative business on Kramasha, the all-in-one business management platform for photographers, event managers and studios in India."}${data.workspace.city ? ` Located in ${data.workspace.city}.` : ""}`
+    title: wsData ? `${wsData.name} — ${wsData.tagline || "Creative Business on Kramasha"}` : "Business Profile — Kramasha",
+    description: wsData
+      ? `${wsData.name}${wsData.tagline ? ` — ${wsData.tagline}` : ""}. ${wsData.about ? wsData.about.substring(0, 120) : "Creative business on Kramasha, the all-in-one business management platform for photographers, event managers and studios in India."}${wsData.city ? ` Located in ${wsData.city}.` : ""}`
       : "Discover creative businesses on Kramasha — the all-in-one business management platform for photographers, event managers, studios and creative businesses in India.",
-    keywords: data?.workspace
-      ? `${data.workspace.name}, ${data.workspace.business_category || "creative business"}, ${data.workspace.city || ""} business, photography studio, event management, creative business India, Kramasha profile`
+    keywords: wsData
+      ? `${wsData.name}, ${wsData.business_category || "creative business"}, ${wsData.city || ""} business, photography studio, event management, creative business India, Kramasha profile`
       : "creative business profile India, photography studio profile, event management company profile, creative business directory India",
-    image: data?.workspace?.logo,
+    image: wsData?.logo,
     path: `/p/${slug || ""}`,
+    ogType: "profile",
+    jsonLd: wsData ? {
+      "@context": "https://schema.org",
+      "@type": "LocalBusiness",
+      name: wsData.name,
+      description: wsData.about || wsData.tagline || "Creative business on Kramasha",
+      url: `https://kramasha.com/p/${slug}`,
+      image: wsData.logo,
+      email: wsData.email,
+      telephone: wsData.phone,
+      address: wsData.address || wsData.city ? {
+        "@type": "PostalAddress",
+        streetAddress: wsData.address,
+        addressLocality: wsData.city,
+        addressRegion: wsData.state,
+        addressCountry: wsData.country || "IN",
+      } : undefined,
+      sameAs: [wsData.social_links?.instagram, wsData.social_links?.youtube, wsData.social_links?.website].filter(Boolean),
+    } : undefined,
+    breadcrumbs: [
+      { name: "Home", url: "/" },
+      { name: wsData?.name || "Business Profile", url: `/p/${slug || ""}` },
+    ],
   });
 
   if (loading) {

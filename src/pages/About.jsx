@@ -13,6 +13,18 @@ export default function About() {
     description: "Learn about Kramasha, the all-in-one business management platform built for photographers, event managers, studios and creative businesses in India. Manage clients, projects, teams, quotations, invoices and finances from one dashboard.",
     keywords: "about Kramasha, creative business management platform India, photography business software India, event management software Gujarat, studio management platform, photographer CRM, business management app for photographers, wedding photography software India",
     path: "/about",
+    jsonLd: {
+      "@context": "https://schema.org",
+      "@type": "AboutPage",
+      name: "About Kramasha",
+      description: "Kramasha is a creative business management platform built for photographers, event managers, studios and creative businesses in India.",
+      url: "https://kramasha.com/about",
+      publisher: { "@type": "Organization", name: "Kramasha", url: "https://kramasha.com" },
+    },
+    breadcrumbs: [
+      { name: "Home", url: "/" },
+      { name: "About", url: "/about" },
+    ],
   });
   return (
     <div className="min-h-screen bg-[#F5F3EF]">
