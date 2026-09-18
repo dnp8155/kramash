@@ -3,13 +3,14 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, Check, Calendar } from "lucide-react";
 import { useFinancialYear } from "@/hooks/useFinancialYear";
 import { buildDateRangePresets } from "@/lib/dateRangePresets";
+import { todayISO } from "@/lib/dates";
 import { scaleInVariants, EASE, DURATION_FAST } from "@/lib/motionVariants";
 
 export default function FiscalYearSelector({ size = "md", align = "right" }) {
   const { fiscalYears, activeFY, dateRange, selectDateRange, loading } = useFinancialYear();
   const [open, setOpen] = useState(false);
-  const [customFrom, setCustomFrom] = useState("");
-  const [customTo, setCustomTo] = useState("");
+  const [customFrom, setCustomFrom] = useState(todayISO());
+  const [customTo, setCustomTo] = useState(todayISO());
   const ref = useRef(null);
   const btnRef = useRef(null);
   const [menuPos, setMenuPos] = useState(null);

@@ -13,6 +13,7 @@ import Input from "@/components/common/Input";
 import { useToast } from "@/components/ui/use-toast";
 import { useT } from "@/hooks/useT";
 import { validateFYRange } from "@/lib/financialYearService";
+import { todayISO } from "@/lib/dates";
 import { useSubmitGuard } from "@/hooks/useSubmitGuard";
 
 export default function FinancialYearForm({
@@ -30,8 +31,8 @@ export default function FinancialYearForm({
 
   useEffect(() => {
     if (open) {
-      setStartDate(editing?.start_date || "");
-      setEndDate(editing?.end_date || "");
+      setStartDate(editing?.start_date || todayISO());
+      setEndDate(editing?.end_date || todayISO());
     }
   }, [open, editing]);
 

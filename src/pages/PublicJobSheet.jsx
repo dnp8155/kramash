@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { Navigation, MapPin, Calendar, Phone, Clock, Users, Package, FileText, Wrench, CheckSquare, AlertCircle } from "lucide-react";
+import { Navigation, MapPin, Calendar, Phone, Clock, Users, Package, FileText, Wrench, CheckSquare, AlertCircle, ShieldCheck, ClipboardList } from "lucide-react";
 
 export default function PublicJobSheet() {
   const { token } = useParams();
@@ -33,7 +33,7 @@ export default function PublicJobSheet() {
 
   if (loading) {
     return (
-      <div className="min-h-dvh flex items-center justify-center bg-background">
+      <div className="min-h-dvh flex items-center justify-center bg-muted/30">
         <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
       </div>
     );
@@ -41,13 +41,13 @@ export default function PublicJobSheet() {
 
   if (unavailable) {
     return (
-      <div className="min-h-dvh flex items-center justify-center bg-background p-6">
-        <div className="max-w-sm text-center">
-          <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
-            <AlertCircle className="w-7 h-7 text-muted-foreground" />
+      <div className="min-h-dvh flex items-center justify-center bg-muted/30 p-4">
+        <div className="max-w-md w-full bg-card border border-border rounded-xl p-8 text-center">
+          <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
+            <AlertCircle className="w-6 h-6 text-muted-foreground" />
           </div>
-          <h1 className="text-lg font-bold text-foreground mb-2">Link Unavailable</h1>
-          <p className="text-sm text-muted-foreground">{data?.message || "This Job Sheet link is no longer available."}</p>
+          <h1 className="text-lg font-semibold text-foreground">Link Unavailable</h1>
+          <p className="text-sm text-muted-foreground mt-1">{data?.message || "This Job Sheet link is no longer available."}</p>
         </div>
       </div>
     );
@@ -55,13 +55,13 @@ export default function PublicJobSheet() {
 
   if (error) {
     return (
-      <div className="min-h-dvh flex items-center justify-center bg-background p-6">
-        <div className="max-w-sm text-center">
-          <div className="w-14 h-14 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-4">
-            <AlertCircle className="w-7 h-7 text-destructive" />
+      <div className="min-h-dvh flex items-center justify-center bg-muted/30 p-4">
+        <div className="max-w-md w-full bg-card border border-border rounded-xl p-8 text-center">
+          <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-3">
+            <AlertCircle className="w-6 h-6 text-destructive" />
           </div>
-          <h1 className="text-lg font-bold text-foreground mb-2">Unable to Load</h1>
-          <p className="text-sm text-muted-foreground">{error}</p>
+          <h1 className="text-lg font-semibold text-foreground">Unable to Load</h1>
+          <p className="text-sm text-muted-foreground mt-1">{error}</p>
         </div>
       </div>
     );
@@ -78,51 +78,80 @@ export default function PublicJobSheet() {
   const includeEquipment = data.config?.include_equipment;
 
   return (
-    <div className="min-h-dvh bg-muted/30 safe-area-top safe-area-bottom">
-      {/* Header */}
-      <div className="bg-primary text-primary-foreground px-4 py-5 sticky top-0 z-10 safe-area-top">
-        <div className="flex items-center gap-2 mb-1">
-          <FileText className="w-4 h-4 opacity-80" />
-          <span className="text-xs font-medium uppercase tracking-wide opacity-80">Operational Job Sheet</span>
+    <div className="min-h-dvh bg-muted/30 pb-12">
+      {/* Top bar — consistent with Client Portal */}
+      <div className="bg-card border-b border-border safe-area-top">
+        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
+              <ClipboardList className="w-4 h-4 text-primary-foreground" />
+            </div>
+            <span className="text-sm font-semibold text-foreground">Job Sheet</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <ShieldCheck className="w-3.5 h-3.5" />
+            Crew Job Sheet
+          </div>
         </div>
-        <h1 className="text-xl font-bold">{data.event?.title}</h1>
-        {data.event?.event_type && (
-          <p className="text-sm opacity-80 mt-0.5">{data.event.event_type}</p>
-        )}
       </div>
 
-      <div className="p-4 space-y-4 max-w-md mx-auto">
-        {/* Client + Venue info card */}
-        <div className="bg-card border border-border rounded-xl p-4 space-y-3">
-          {data.client?.name && (
-            <InfoItem icon={Users} label="Client" value={data.client.name} />
-          )}
-          {data.client?.phone && (
-            <a href={`tel:${data.client.phone}`} className="flex items-center gap-3 no-underline">
-              <Phone className="w-4 h-4 text-muted-foreground shrink-0" />
-              <span className="text-xs text-muted-foreground">Contact:</span>
-              <span className="text-sm font-medium text-primary">{data.client.phone}</span>
-            </a>
-          )}
-          {data.event?.venue && (
-            <InfoItem icon={MapPin} label="Venue" value={data.event.venue} />
-          )}
-          {data.event?.venue_address && (
-            <InfoItem icon={MapPin} label="Address" value={data.event.venue_address} />
-          )}
-          {data.event?.start_date && (
-            <InfoItem icon={Calendar} label="Dates" value={formatDateRange(data.event.start_date, data.event.end_date)} />
-          )}
-          {data.event?.directions_url && (
-            <a
-              href={data.event.directions_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary/10 text-primary text-sm font-medium w-full justify-center mt-1"
-            >
-              <Navigation className="w-4 h-4" /> Get Directions
-            </a>
-          )}
+      <div className="max-w-3xl mx-auto px-4 py-6 space-y-5">
+        {/* Event Header — clean card matching portal style */}
+        <div className="bg-card border border-border rounded-xl p-5 sm:p-6">
+          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+            {data.event?.event_type || "Job Sheet"}
+          </div>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground break-anywhere">
+            {data.event?.title || "Untitled Event"}
+          </h1>
+          <div className="flex flex-wrap gap-x-5 gap-y-2 mt-3 text-sm text-muted-foreground">
+            {data.event?.start_date && (
+              <span className="inline-flex items-center gap-1.5">
+                <Calendar className="w-4 h-4 shrink-0" />
+                {formatDateRange(data.event.start_date, data.event.end_date)}
+              </span>
+            )}
+            {data.event?.venue && (
+              <span className="inline-flex items-center gap-1.5">
+                <MapPin className="w-4 h-4 shrink-0" />
+                {data.event.venue}
+              </span>
+            )}
+          </div>
+          {/* Contact + address info */}
+          <div className="mt-4 pt-4 border-t border-border/60 space-y-2">
+            {data.client?.name && (
+              <div className="flex items-center gap-2 text-sm">
+                <Users className="w-4 h-4 text-muted-foreground shrink-0" />
+                <span className="text-muted-foreground">Client:</span>
+                <span className="font-medium text-foreground">{data.client.name}</span>
+              </div>
+            )}
+            {data.client?.phone && (
+              <a href={`tel:${data.client.phone}`} className="flex items-center gap-2 text-sm no-underline">
+                <Phone className="w-4 h-4 text-muted-foreground shrink-0" />
+                <span className="text-muted-foreground">Contact:</span>
+                <span className="font-medium text-primary">{data.client.phone}</span>
+              </a>
+            )}
+            {data.event?.venue_address && (
+              <div className="flex items-center gap-2 text-sm">
+                <MapPin className="w-4 h-4 text-muted-foreground shrink-0" />
+                <span className="text-muted-foreground">Address:</span>
+                <span className="font-medium text-foreground">{data.event.venue_address}</span>
+              </div>
+            )}
+            {data.event?.directions_url && (
+              <a
+                href={data.event.directions_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary/10 text-primary text-sm font-medium w-fit"
+              >
+                <Navigation className="w-4 h-4" /> Get Directions
+              </a>
+            )}
+          </div>
         </div>
 
         {/* Today section */}
@@ -145,7 +174,7 @@ export default function PublicJobSheet() {
           </div>
         )}
 
-        {/* Past dates (collapsed) */}
+        {/* Past dates */}
         {pastItinerary.length > 0 && (
           <div>
             <SectionLabel icon={Calendar} label="Past Dates" />
@@ -216,27 +245,18 @@ export default function PublicJobSheet() {
         )}
 
         {/* Footer */}
-        <div className="text-center pt-2 pb-4">
-          <p className="text-xs text-muted-foreground">This document contains no financial information.</p>
+        <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground pt-2">
+          <ShieldCheck className="w-3.5 h-3.5" />
+          Operational job sheet · No financial information
         </div>
       </div>
     </div>
   );
 }
 
-function InfoItem({ icon: Icon, label, value }) {
-  return (
-    <div className="flex items-start gap-3">
-      <Icon className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
-      <span className="text-xs text-muted-foreground shrink-0">{label}:</span>
-      <span className="text-sm font-medium text-foreground break-anywhere">{value}</span>
-    </div>
-  );
-}
-
 function SectionLabel({ icon: Icon, label, tone }) {
   return (
-    <div className={`flex items-center gap-2 mb-2 mt-1 ${tone === "primary" ? "" : ""}`}>
+    <div className="flex items-center gap-2 mb-2 mt-1">
       <Icon className={`w-4 h-4 ${tone === "primary" ? "text-primary" : "text-muted-foreground"}`} />
       <span className={`text-sm font-semibold ${tone === "primary" ? "text-primary" : "text-foreground"}`}>{label}</span>
     </div>
