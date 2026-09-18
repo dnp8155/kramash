@@ -236,7 +236,22 @@ export default function InvoiceEditor() {
     }
   };
 
-  const buildData = () => ({
+  // Convert a base64 data URL to a public file URL via UploadPublicFile.
+  // Signature images are too large to store inline in the entity field.
+  async function uploadSignatureIfNeeded(img) {
+    if (!img || !img.startsWith("data:")) return img;
+    try {
+      const res = await fetch(img);
+      const blob = await res.blob();
+      const file = new File([blob], "signature.png", { type: blob.type || "image/png" });
+      const { file_url } = await base44.integrations.Core.UploadPublicFile({ file });
+      return file_url;
+    } catch {
+      return img;
+    }
+  }
+
+  const buildData = (sigUrl) => ({
     invoice_number: invoiceNumber,
     client_id: clientId,
     event_id: eventId,
@@ -255,7 +270,7 @@ export default function InvoiceEditor() {
     terms_and_conditions: paymentTerms,
     authorized_signatory: authorizedSignatory,
     signature_type: signatureType,
-    signature_image: signatureImage,
+    signature_image: sigUrl,
     signature_color: signatureColor
   });
 
@@ -279,7 +294,9 @@ export default function InvoiceEditor() {
     try {
       const refCheck = await verifyInvoiceRefs(workspaceId, clientId, eventId);
       if (!refCheck.ok) { setError(refCheck.error); return; }
-      const data = { ...buildData(), status: "draft" };
+      const sigUrl = await uploadSignatureIfNeeded(signatureImage);
+      if (sigUrl !== signatureImage) setSignatureImage(sigUrl);
+      const data = { ...buildData(sigUrl), status: "draft" };
       if (isNew) {
         const inv = await createInvoice(workspaceId, data, items, {
           client_snapshot: buildClientSnapshot(refCheck.client || client),
