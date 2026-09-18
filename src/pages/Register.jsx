@@ -30,7 +30,7 @@ function sanitizeRegisterError(err) {
   if (msg.includes("disabled") || msg.includes("deactivated") || msg.includes("suspended")) {
     return "This account has been disabled. Please contact support.";
   }
-  return "Unable to create your account right now. Please try again.";
+  return "Unable to create your account right now. Details: " + (err.message || JSON.stringify(err.data) || String(err));
 }
 
 export default function Register() {
