@@ -595,7 +595,7 @@ export default function EventDetails() {
             <div className="mt-4">
               <div className="text-xs font-medium text-muted-foreground mb-2.5">{term.workItemSingular} Date(s)</div>
               <div className="flex flex-wrap gap-2">
-                {allDates.map((d) => <DateChip key={d} date={d} onDelete={() => handleDeleteDate(d)} />)}
+                {allDates.map((d) => <DateChip key={d} date={d} />)}
               </div>
             </div>
           )}
@@ -638,7 +638,7 @@ export default function EventDetails() {
         <Button size="sm" variant="outline" onClick={() => navigate(`/events/${event.id}/job-sheet`)} className="justify-center sm:justify-start">
           <ClipboardList className="w-3.5 h-3.5" /> Job Sheet
         </Button>
-        <Button size="sm" variant="primary" onClick={() => navigate(`/quotation/new?event_id=${event.id}`)} className="justify-center sm:justify-start">
+        <Button size="sm" variant="primary" onClick={() => navigate(`/quotation/new?event_id=${event.id}`)} className="justify-center sm:justify-start col-span-2 sm:col-span-1">
           <FileText className="w-3.5 h-3.5" /> Create Quotation
         </Button>
       </div>
@@ -989,25 +989,15 @@ function FinancialMiniCard({ label, value, tone = "default" }) {
   );
 }
 
-function DateChip({ date, onDelete }) {
+function DateChip({ date }) {
   if (!date) return null;
   const d = new Date(date + "T00:00:00");
   const day = d.getDate();
   const month = d.toLocaleString("en-IN", { month: "short" });
+  const sameYear = d.getFullYear() === new Date().getFullYear();
   return (
-    <span className="inline-flex items-center gap-1.5 pl-2.5 pr-1 py-1 rounded-md bg-primary/8 text-primary text-xs font-semibold border border-primary/15">
-      <Calendar className="w-3 h-3" />
-      {day} {month}
-      {onDelete && (
-        <button
-          onClick={onDelete}
-          className="ml-0.5 w-4 h-4 rounded-full hover:bg-destructive/15 flex items-center justify-center text-primary/60 hover:text-destructive transition-colors"
-          aria-label="Remove date"
-          title="Remove date"
-        >
-          <X className="w-3 h-3" />
-        </button>
-      )}
+    <span className="inline-flex items-center rounded-full bg-primary/10 text-primary border border-primary/20 px-3 py-1 text-xs font-medium whitespace-nowrap">
+      {day} {month}{sameYear ? "" : ` ${d.getFullYear()}`}
     </span>
   );
 }

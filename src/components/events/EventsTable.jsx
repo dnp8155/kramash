@@ -198,11 +198,11 @@ function Row({ event, clientName, teamMap, serviceMap, assignmentsByEvent, servi
           <StatusBadge status={event.status} cardView />
         </div>
         <button
-          className="sm:hidden flex items-center justify-center w-9 h-9 rounded-lg border border-border bg-card text-muted-foreground hover:text-foreground hover:bg-muted transition-colors justify-self-end touch-min"
+          className="sm:hidden flex items-center justify-center w-11 h-11 rounded-xl border-2 border-border bg-card text-foreground hover:bg-muted transition-colors justify-self-end touch-min"
           onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}
           aria-label={open ? "Collapse" : "Expand"}
         >
-          {open ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+          {open ? <ChevronUp className="w-6 h-6" /> : <ChevronDown className="w-6 h-6" />}
         </button>
         <button
           className="hidden sm:block text-muted-foreground hover:text-foreground justify-self-end"
@@ -215,11 +215,12 @@ function Row({ event, clientName, teamMap, serviceMap, assignmentsByEvent, servi
 
       {open && (
         <div className="px-4 pb-4 sm:pl-[130px] animate-fade-in" onClick={(e) => e.stopPropagation()}>
-          <div className="flex items-center justify-between mb-3">
-            <Button variant="outline" size="sm" onClick={() => setOpen(false)}>
-              <ChevronUp className="w-3 h-3" /> Hide details
-            </Button>
-            <div className="flex items-center gap-2">
+          <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
+            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Details</div>
+            <div className="flex items-center gap-2 flex-wrap justify-end">
+              <Button variant="outline" size="sm" onClick={() => setOpen(false)}>
+                <ChevronUp className="w-3 h-3" /> Hide
+              </Button>
               <Button variant="outline" size="sm" onClick={onEdit}>
                 <Pencil className="w-3 h-3" /> Edit
               </Button>
@@ -292,30 +293,23 @@ function Row({ event, clientName, teamMap, serviceMap, assignmentsByEvent, servi
                 </div>
               </div>
             )}
-            {prefs?.showServices && serviceAssignments.length > 0 ? (
+            {prefs?.showServices && serviceAssignments.length > 0 && (
               <div className="flex items-start gap-2 text-muted-foreground">
                 <Briefcase className="w-3.5 h-3.5 mt-0.5 shrink-0" />
                 <ul className="space-y-1 min-w-0">
                   {serviceAssignments.map((a) => {
                     const svcName = a.service_name_snapshot || serviceMap[a.service_id]?.name || "Unknown";
                     const provider = a.provider_name_snapshot || (a.provider_id ? teamMap[a.provider_id]?.name : "") || "";
+                    const dates = formatAssignedDates(a, event);
                     return (
                       <li key={a.id} className="text-xs break-anywhere flex items-center gap-1.5 flex-wrap">
                         <span className="font-medium text-foreground">{svcName}</span>
                         {provider && <span className="text-muted-foreground">— {provider}</span>}
+                        <span className="text-muted-foreground">— {dates}</span>
                       </li>
                     );
                   })}
                 </ul>
-              </div>
-            ) : prefs?.showServices && serviceNames.length > 0 && (
-              <div className="flex items-start gap-2 text-muted-foreground">
-                <Briefcase className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-                <div className="flex flex-wrap gap-1.5">
-                  {serviceNames.map((n) => (
-                    <span key={n} className="rounded-full bg-muted text-foreground border border-border px-2.5 py-0.5 text-xs font-medium">{n}</span>
-                  ))}
-                </div>
               </div>
             )}
             {!event.venue && !event.description && !event.notes && teamNames.length === 0 && serviceNames.length === 0 && serviceAssignments.length === 0 && (
