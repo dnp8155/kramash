@@ -27,8 +27,11 @@ export default function ConvertLeadDialog({ open, onClose, lead, onConverted }) 
   const eventTitle = lead.event_type
     ? `${lead.event_type} — ${lead.name}`
     : `${lead.name} — ${workItem}`;
-  const startDate = lead.event_date || todayISO();
-  const endDate = lead.event_date || "";
+  const leadDates = (lead.event_dates && lead.event_dates.length > 0)
+    ? lead.event_dates
+    : (lead.event_date ? [lead.event_date] : []);
+  const startDate = lead.event_date || (leadDates[0] || todayISO());
+  const endDate = lead.event_end_date || lead.event_date || (leadDates[leadDates.length - 1] || "");
   const contractValue = lead.budget || 0;
 
   const handleConfirm = async () => {
@@ -49,7 +52,7 @@ export default function ConvertLeadDialog({ open, onClose, lead, onConverted }) 
         event_type: lead.event_type || "",
         start_date: startDate,
         end_date: endDate,
-        event_dates: lead.event_date ? [lead.event_date] : [],
+        event_dates: leadDates,
         venue: "",
         status: "upcoming",
         contract_value: contractValue,
@@ -116,9 +119,12 @@ export default function ConvertLeadDialog({ open, onClose, lead, onConverted }) 
               {lead.event_type && (
                 <span>{term.workItemTypeLabel || `${workItem} Type`}: {lead.event_type}</span>
               )}
-              {lead.event_date && (
+              {leadDates.length > 0 && (
                 <span className="flex items-center gap-1">
-                  <Calendar className="w-3 h-3" /> {formatEventDate(lead.event_date, lead.event_date)}
+                  <Calendar className="w-3 h-3" />
+                  {leadDates.length === 1
+                    ? formatEventDate(leadDates[0], leadDates[0])
+                    : `${leadDates.length} dates · ${formatEventDate(leadDates[0], leadDates[0])}`}
                 </span>
               )}
             </div>

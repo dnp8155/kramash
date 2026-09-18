@@ -179,7 +179,7 @@ export default function Leads() {
             const pr = PRIORITY_STYLES[lead.priority] || PRIORITY_STYLES.warm;
             const PrIcon = pr.icon;
             return (
-              <div key={lead.id} className="bg-card border border-border rounded-[15px] p-4 shadow-card hover:shadow-card-hover hover-lift transition-all">
+              <div key={lead.id} className="bg-card border border-border rounded-[15px] p-4 shadow-card">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1 min-w-0">
                     <h3 className="font-heading font-semibold text-foreground truncate">{lead.name}</h3>
@@ -215,12 +215,22 @@ export default function Leads() {
                       <span className="truncate">{lead.email}</span>
                     </div>
                   )}
-                  {lead.event_date && (
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
-                      <span>{formatEventDate(lead.event_date, lead.event_date)}</span>
-                    </div>
-                  )}
+                  {(() => {
+                    const dates = (lead.event_dates && lead.event_dates.length > 0)
+                      ? lead.event_dates
+                      : (lead.event_date ? [lead.event_date] : []);
+                    if (dates.length === 0) return null;
+                    return (
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
+                        <span>
+                          {dates.length === 1
+                            ? formatEventDate(dates[0], dates[0])
+                            : `${dates.length} dates · ${formatEventDate(dates[0], dates[0])}`}
+                        </span>
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {lead.budget > 0 && (
@@ -238,7 +248,7 @@ export default function Leads() {
                     <ArrowRight className="w-3.5 h-3.5" /> Go to {term.workItemSingular}
                   </Button>
                 ) : lead.status !== "won" ? (
-                  <Button variant="outline" size="sm" className="w-full mb-3" onClick={() => setConvertLead(lead)}>
+                  <Button variant="primary" size="sm" className="w-full mb-3" onClick={() => setConvertLead(lead)}>
                     <CalendarPlus className="w-3.5 h-3.5" /> Convert to {term.workItemSingular}
                   </Button>
                 ) : (

@@ -36,8 +36,12 @@ export default function TopHeader() {
     <header className="flex items-center gap-2 sm:gap-3 px-3 sm:px-6 h-14 border-b border-border bg-card/80 backdrop-blur-md sticky top-0 z-20 shadow-sm safe-area-top">
       {/* Mobile: logo on main pages, back arrow on subpages */}
       {isMainPage ? (
-        <div className="lg:hidden shrink-0 w-8 h-8 flex items-center justify-center -ml-1">
-          <Logo size={28} />
+        <div className="lg:hidden flex items-center gap-2 shrink-0 -ml-1">
+          <Logo size={32} />
+          <div className="min-w-0">
+            <div className="font-bold text-sm leading-tight tracking-wide uppercase text-foreground truncate">Kramasha</div>
+            <div className="text-[10px] text-muted-foreground truncate leading-tight">Built for creative business</div>
+          </div>
         </div>
       ) : (
         <button

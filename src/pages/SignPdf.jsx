@@ -381,19 +381,19 @@ export default function SignPdf() {
               )}
 
               <div className="flex flex-col sm:flex-row gap-2">
-                <Button onClick={addToPdf} className="flex-1">
-                  <Plus className="w-4 h-4" /> Add to PDF
+                <Button onClick={addToPdf} className="w-full sm:flex-1 whitespace-normal">
+                  <Plus className="w-4 h-4 shrink-0" /> Add to PDF
                 </Button>
                 <Button
                   variant="primary"
                   onClick={previewAndShare}
                   disabled={!pendingQueue.length || exporting}
-                  className="flex-1"
+                  className="w-full sm:flex-1 whitespace-normal"
                 >
                   {exporting ? (
-                    <><Loader2 className="w-4 h-4 animate-spin" /> Generating…</>
+                    <><Loader2 className="w-4 h-4 shrink-0 animate-spin" /> Generating…</>
                   ) : (
-                    <><Eye className="w-4 h-4" /> Preview & Share PDF</>
+                    <><Eye className="w-4 h-4 shrink-0" /> Preview & Share PDF</>
                   )}
                 </Button>
               </div>
@@ -405,12 +405,12 @@ export default function SignPdf() {
                   variant="primary"
                   onClick={previewAndShare}
                   disabled={exporting}
-                  className="flex-1"
+                  className="w-full sm:flex-1 whitespace-normal"
                 >
                   {exporting ? (
-                    <><Loader2 className="w-4 h-4 animate-spin" /> Generating…</>
+                    <><Loader2 className="w-4 h-4 shrink-0 animate-spin" /> Generating…</>
                   ) : (
-                    <><Eye className="w-4 h-4" /> Preview & Share PDF ({pendingQueue.length})</>
+                    <><Eye className="w-4 h-4 shrink-0" /> Preview & Share PDF ({pendingQueue.length})</>
                   )}
                 </Button>
               </div>

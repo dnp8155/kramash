@@ -39,7 +39,19 @@
     "event_date": {
       "type": "string",
       "format": "date",
-      "title": "Tentative Event Date"
+      "title": "Tentative Start Date"
+    },
+    "event_end_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Tentative End Date"
+    },
+    "event_dates": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "Tentative Dates (selected shoot days)"
     },
     "budget": {
       "type": "number",

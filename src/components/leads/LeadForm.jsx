@@ -8,6 +8,7 @@ import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
 import { AppDialog, AppDialogContent, AppDialogHeader, AppDialogTitle, AppDialogBody, AppDialogFooter } from "@/components/ui/AppDialog";
 import { Loader2 } from "lucide-react";
+import DateRangeChips from "@/components/common/DateRangeChips";
 import { useQueryClient } from "@tanstack/react-query";
 import { invalidateRelated, upsertOptimistic } from "@/lib/queryInvalidation";
 import { useSubmitGuard } from "@/hooks/useSubmitGuard";
@@ -43,6 +44,8 @@ const empty = {
   source: "other",
   event_type: "",
   event_date: "",
+  event_end_date: "",
+  event_dates: [],
   budget: "",
   status: "new",
   priority: "warm",
@@ -68,6 +71,8 @@ export default function LeadForm({ open, onClose, editingLead, onSaved }) {
           ...editingLead,
           budget: editingLead.budget || "",
           event_date: editingLead.event_date || "",
+          event_end_date: editingLead.event_end_date || "",
+          event_dates: editingLead.event_dates || (editingLead.event_date ? [editingLead.event_date] : []),
           next_followup_date: editingLead.next_followup_date || ""
         });
       } else {
@@ -102,6 +107,8 @@ export default function LeadForm({ open, onClose, editingLead, onSaved }) {
         source: form.source,
         event_type: form.event_type?.trim() || "",
         event_date: form.event_date || "",
+        event_end_date: form.event_end_date || "",
+        event_dates: form.event_dates || [],
         budget: Number(form.budget) || 0,
         status: form.status,
         priority: form.priority,
@@ -223,23 +230,25 @@ export default function LeadForm({ open, onClose, editingLead, onSaved }) {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-sm font-medium mb-1.5 block">Tentative {term.workItemSingular} Date</label>
-              <Input
-                type="date"
-                value={form.event_date}
-                onChange={(e) => set("event_date", e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-1.5 block">Next Follow-up</label>
-              <Input
-                type="date"
-                value={form.next_followup_date}
-                onChange={(e) => set("next_followup_date", e.target.value)}
-              />
-            </div>
+          <div>
+            <label className="text-sm font-medium mb-1.5 block">Tentative {term.workItemSingular} Dates</label>
+            <DateRangeChips
+              startDate={form.event_date}
+              endDate={form.event_end_date}
+              value={form.event_dates || []}
+              onChange={(dates) => set("event_dates", dates)}
+              onStartChange={(v) => set("event_date", v)}
+              onEndChange={(v) => set("event_end_date", v)}
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium mb-1.5 block">Next Follow-up</label>
+            <Input
+              type="date"
+              value={form.next_followup_date}
+              onChange={(e) => set("next_followup_date", e.target.value)}
+            />
           </div>
 
           <div>
