@@ -186,6 +186,11 @@
     "public_profile_social_links": {
       "type": "string",
       "title": "Public Profile Social Links (JSON: {instagram, facebook, youtube, website})"
+    },
+    "description": {
+      "type": "string",
+      "title": "Description",
+      "maxLength": 1000
     }
   },
   "required": [
