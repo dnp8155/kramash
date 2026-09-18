@@ -165,17 +165,17 @@ export default function Register() {
   }
 
   return (
-    <div className="h-dvh flex flex-col lg:flex-row bg-background overflow-hidden">
+    <div className="h-dvh flex flex-col lg:flex-row bg-background overflow-hidden select-none">
       {/* Left: Content column */}
-      <div className="flex-1 flex flex-col px-6 py-6 sm:px-10 lg:px-12 xl:px-16 lg:py-8 overflow-y-auto">
+      <div className="flex-1 flex flex-col justify-between px-6 py-5 sm:px-10 lg:px-12 xl:px-16 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-2.5 self-start relative z-50 cursor-pointer hover:opacity-80 transition-opacity">
-          <Logo size={36} className="shadow-md" />
+        <Link to="/" className="flex items-center gap-2.5 self-start relative z-50 cursor-pointer hover:opacity-80 transition-opacity shrink-0">
+          <Logo size={34} className="shadow-md" />
           <span className="font-heading text-lg font-bold tracking-tight text-foreground">Kramasha</span>
         </Link>
 
-        {/* Form area — vertically centered, slightly above center */}
-        <div className="flex-1 flex flex-col justify-center max-w-[420px] w-full mx-auto lg:mx-0 py-10 lg:pb-16">
+        {/* Form area — vertically centered */}
+        <div className="flex-1 flex flex-col justify-center max-w-[420px] w-full mx-auto lg:mx-0 py-3 lg:py-4 my-auto">
           {showOtp ? (
             <>
               <h1 className="font-heading text-2xl sm:text-[1.75rem] font-bold tracking-tight text-foreground leading-tight">
@@ -283,8 +283,8 @@ export default function Register() {
                 </div>
               )}
 
-              <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-                <div className="space-y-2">
+              <form onSubmit={handleSubmit} className="mt-4 space-y-3">
+                <div className="space-y-1">
                   <Label htmlFor="name" className="text-sm font-medium">
                     Full name
                   </Label>
@@ -295,10 +295,10 @@ export default function Register() {
                     placeholder="Enter your full name"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    className="h-12"
+                    className="h-10"
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <Label htmlFor="email" className="text-sm font-medium">
                     Email address
                   </Label>
@@ -315,12 +315,12 @@ export default function Register() {
                       placeholder="you@example.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="pl-10 h-12"
+                      className="pl-10 h-10"
                       required
                     />
                   </div>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <Label htmlFor="password" className="text-sm font-medium">
                     Password
                   </Label>
@@ -336,7 +336,7 @@ export default function Register() {
                       placeholder="••••••••"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="pl-10 pr-10 h-12"
+                      className="pl-10 pr-10 h-10"
                       required
                     />
                     <button
@@ -349,9 +349,9 @@ export default function Register() {
                     </button>
                   </div>
                   <PasswordStrength password={password} />
-                  <p className="text-xs text-muted-foreground">Use at least 6 characters.</p>
+                  <p className="text-[11px] text-muted-foreground">Use at least 6 characters.</p>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <Label htmlFor="confirm" className="text-sm font-medium">
                     Confirm password
                   </Label>
@@ -367,7 +367,7 @@ export default function Register() {
                       placeholder="••••••••"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="pl-10 pr-10 h-12"
+                      className="pl-10 pr-10 h-10"
                       required
                     />
                     <button
@@ -384,12 +384,12 @@ export default function Register() {
                   )}
                 </div>
 
-                <label className="flex items-start gap-2.5 text-sm text-muted-foreground cursor-pointer select-none pt-1">
+                <label className="flex items-start gap-2 text-xs text-muted-foreground cursor-pointer select-none pt-0.5">
                   <input
                     type="checkbox"
                     checked={agreed}
                     onChange={(e) => setAgreed(e.target.checked)}
-                    className="mt-0.5 w-4 h-4 rounded border-border accent-primary shrink-0"
+                    className="mt-0.5 w-3.5 h-3.5 rounded border-border accent-primary shrink-0"
                   />
                   <span>
                     I agree to the{" "}
@@ -399,7 +399,7 @@ export default function Register() {
                   </span>
                 </label>
 
-                <Button type="submit" className="w-full h-12 font-semibold" disabled={loading}>
+                <Button type="submit" className="w-full h-11 font-semibold" disabled={loading}>
                   {loading ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -409,10 +409,10 @@ export default function Register() {
                     "Create Workspace"
                   )}
                 </Button>
-                <p className="text-center text-xs text-muted-foreground/50">No credit card required</p>
+                <p className="text-center text-[11px] text-muted-foreground/50">No credit card required</p>
               </form>
 
-              <div className="relative my-5">
+              <div className="relative my-3">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-border" />
                 </div>
@@ -421,12 +421,12 @@ export default function Register() {
                 </div>
               </div>
 
-              <Button variant="outline" className="w-full h-12 text-sm font-medium" onClick={handleGoogle}>
-                <GoogleIcon className="w-5 h-5 mr-2" />
+              <Button variant="outline" className="w-full h-10 text-sm font-medium" onClick={handleGoogle}>
+                <GoogleIcon className="w-4 h-4 mr-2" />
                 Continue with Google
               </Button>
 
-              <p className="text-sm text-muted-foreground text-center mt-5">
+              <p className="text-xs text-muted-foreground text-center mt-3">
                 Already have an account?{" "}
                 <Link
                   to={"/login" + (safeReturnTo() !== "/" ? "?returnTo=" + encodeURIComponent(safeReturnTo()) : "")}
