@@ -33,6 +33,11 @@
       "type": "string",
       "format": "date-time",
       "description": "Timestamp of the most recent valid portal view"
+    },
+    "description": {
+      "type": "string",
+      "title": "Description",
+      "maxLength": 1000
     }
   },
   "required": [

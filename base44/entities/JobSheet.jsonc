@@ -82,6 +82,11 @@
       "type": "string",
       "format": "date-time",
       "title": "Portal Latest Viewed At"
+    },
+    "description": {
+      "type": "string",
+      "title": "Description",
+      "maxLength": 1000
     }
   },
   "required": [

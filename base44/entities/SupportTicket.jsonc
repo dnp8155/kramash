@@ -68,6 +68,11 @@
       "type": "string",
       "format": "date-time",
       "title": "Resolved At"
+    },
+    "description": {
+      "type": "string",
+      "title": "Description",
+      "maxLength": 1000
     }
   },
   "required": [

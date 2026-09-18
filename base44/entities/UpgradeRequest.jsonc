@@ -42,6 +42,11 @@
     "note": {
       "type": "string",
       "title": "Note"
+    },
+    "description": {
+      "type": "string",
+      "title": "Description",
+      "maxLength": 1000
     }
   },
   "required": [

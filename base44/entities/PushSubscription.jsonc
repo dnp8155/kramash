@@ -30,6 +30,11 @@
     "auth_key": {
       "type": "string",
       "title": "Auth Secret (base64url, web push)"
+    },
+    "description": {
+      "type": "string",
+      "title": "Description",
+      "maxLength": 1000
     }
   },
   "required": [
