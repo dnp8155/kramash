@@ -8,7 +8,7 @@ export default function CalendarPreview() {
   const events = { 5: 2, 12: 1, 15: 3, 17: 1, 22: 2, 25: 1, 28: 2 };
 
   return (
-    <BrowserFrame url="app.kramashah.com/calendar">
+    <BrowserFrame url="kramasha.com/calendar">
       <MockSidebar active="Events" />
       <div className="flex-1 p-6 overflow-hidden bg-[#F5F3EF]">
         <div className="flex items-center justify-between mb-5">

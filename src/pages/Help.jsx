@@ -204,8 +204,8 @@ export default function Help() {
           <div>
             <h3 className="text-sm font-semibold text-foreground">Email Us</h3>
             <p className="text-xs text-muted-foreground mt-1">For urgent issues, email directly.</p>
-            <a href="mailto:support@kramas.app" className="text-xs text-primary font-medium mt-3 inline-block hover:underline">
-              support@kramas.app
+            <a href="mailto:kramashaofficial@gmail.com" className="text-xs text-primary font-medium mt-3 inline-block hover:underline">
+              kramashaofficial@gmail.com
             </a>
           </div>
         </Card>
@@ -216,8 +216,7 @@ export default function Help() {
           </div>
           <div>
             <h3 className="text-sm font-semibold text-foreground">Response Time</h3>
-            <p className="text-xs text-muted-foreground mt-1">We respond within 24-48 business hours.</p>
-            <p className="text-xs text-muted-foreground mt-3">Mon–Fri, 10 AM – 7 PM IST</p>
+            <p className="text-xs text-muted-foreground mt-1">24-48 hours</p>
           </div>
         </Card>
       </div>
@@ -346,7 +345,7 @@ export default function Help() {
               const priority = priorityConfig[ticket.priority] || priorityConfig.medium;
               const CatIcon = cat.icon;
               return (
-                <Card key={ticket.id} className="p-4 hover:shadow-card-hover transition-shadow">
+                <Card key={ticket.id} className="p-4">
                   <div className="flex items-start gap-3">
                     <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
                       <CatIcon className={`w-4 h-4 ${cat.color}`} />
@@ -416,7 +415,7 @@ export default function Help() {
           <AlertCircle className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
           <p className="text-xs text-muted-foreground">
             For account or billing issues that need immediate attention, email us directly at{" "}
-            <a href="mailto:support@kramas.app" className="text-primary font-medium hover:underline">support@kramas.app</a>.
+            <a href="mailto:kramashaofficial@gmail.com" className="text-primary font-medium hover:underline">kramashaofficial@gmail.com</a>.
             Include your workspace name and registered email for faster resolution.
           </p>
         </div>

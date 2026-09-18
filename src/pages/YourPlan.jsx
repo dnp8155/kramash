@@ -278,12 +278,7 @@ export default function YourPlan() {
               Online payment is not yet available. Your upgrade request will be reviewed and Pro activated by our team.
             </p>
           )}
-          {gatewayAvailable === true && (
-            <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1.5">
-              <AlertCircle className="w-3.5 h-3.5" />
-              Payment gateway transaction charges are borne separately by the client.
-            </p>
-          )}
+
         </div>
       )}
 

@@ -18,14 +18,14 @@ export default function ClientPortalPreview() {
           <div className="w-2.5 h-2.5 rounded-full bg-[#3FC85E]" />
         </div>
         <div className="flex-1 mx-3 h-6 rounded-md bg-white border border-[#E8E3DB] flex items-center px-2.5">
-          <span className="text-[10px] text-[#8A8580] font-mono">portal.kramashah.com/p/QT2026001</span>
+          <span className="text-[10px] text-[#8A8580] font-mono">kramasha.com/p/QT2026001</span>
         </div>
       </div>
       <div className="bg-[#F5F3EF] p-6 min-h-[420px]">
         <div className="flex items-center gap-2.5 mb-5">
           <Logo size={28} />
           <div>
-            <div className="text-sm font-bold text-[#1A1A1A]">Kramasha Studio</div>
+            <div className="text-sm font-bold text-[#1A1A1A]">Kramasha</div>
             <div className="text-[10px] text-[#8A8580]">Client Portal</div>
           </div>
         </div>

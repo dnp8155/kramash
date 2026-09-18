@@ -11,7 +11,7 @@ export default function LeadsCRMPreview() {
   ];
 
   return (
-    <BrowserFrame url="app.kramashah.com/leads">
+    <BrowserFrame url="kramasha.com/leads">
       <MockSidebar active="Leads" />
       <div className="flex-1 p-6 overflow-hidden bg-[#F5F3EF]">
         <div className="flex items-center justify-between mb-5">

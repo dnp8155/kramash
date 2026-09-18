@@ -4,26 +4,33 @@ import { Check, ArrowRight, Sparkles, Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import Reveal from "@/components/landing/Reveal";
 
-const BOOLEAN_KEYS = new Set(["pdf_export_enabled", "reminders_enabled"]);
+const FREE_FEATURES = [
+  "Up to 3 Projects / Events",
+  "Up to 5 Team Members",
+  "Up to 3 Services",
+  "Up to 10 Leads",
+  "Quotations & Invoices",
+  "Reminders",
+  "Public Profile URL",
+  "App Lock",
+  "Data Export",
+];
 
-function formatLimitValue(key, value) {
-  if (value === undefined || value === null) return null;
-  if (BOOLEAN_KEYS.has(key)) return value === true || value === "true" ? "Included" : null;
-  const num = parseInt(String(value), 10);
-  if (num >= 999999) return "Unlimited";
-  return String(num);
-}
-
-function limitLabel(key) {
-  const map = {
-    max_events: "Projects / Events",
-    max_team_members: "Team Members",
-    max_services: "Services",
-    pdf_export_enabled: "PDF Export",
-    reminders_enabled: "Reminders",
-  };
-  return map[key] || key;
-}
+const PRO_FEATURES = [
+  "Unlimited Projects / Events",
+  "Up to 50 Team Members",
+  "Unlimited Services",
+  "Unlimited Leads",
+  "Everything in Free, plus:",
+  "Excel / CSV Export",
+  "Notifications",
+  "Link Sharing",
+  "Client Portal",
+  "Team Portal",
+  "Night & Pastel Themes",
+  "Event Display Customization",
+  "Quotation Logo",
+];
 
 export default function Pricing() {
   const [planData, setPlanData] = useState([]);
@@ -32,10 +39,9 @@ export default function Pricing() {
   useEffect(() => {
     (async () => {
       try {
-        const [plans, pricings, allLimits] = await Promise.all([
+        const [plans, pricings] = await Promise.all([
           base44.entities.Plan.list(),
           base44.entities.PlanPricing.list(),
-          base44.entities.PlanLimit.list(),
         ]);
 
         const activePlans = (plans || [])
@@ -48,16 +54,7 @@ export default function Pricing() {
             .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
           const monthly = planPricings.find((p) => p.billing_cycle === "MONTHLY") || planPricings[0] || null;
 
-          const limits = {};
-          (allLimits || [])
-            .filter((l) => l.plan_id === plan.id && l.enabled)
-            .forEach((l) => {
-              limits[l.limit_key] = BOOLEAN_KEYS.has(l.limit_key)
-                ? String(l.limit_value) === "true"
-                : parseInt(String(l.limit_value), 10);
-            });
-
-          return { plan, pricings: planPricings, monthly, limits };
+          return { plan, pricings: planPricings, monthly };
         });
 
         setPlanData(data);
@@ -97,19 +94,13 @@ export default function Pricing() {
         </Reveal>
 
         <div className={`grid gap-6 ${planData.length === 3 ? "lg:grid-cols-3" : "sm:grid-cols-2 max-w-3xl mx-auto"}`}>
-          {planData.map(({ plan, pricings, monthly, limits }, i) => {
+          {planData.map(({ plan, pricings, monthly }, i) => {
             const isPopular = i === popularIndex;
+            const isFree = (plan.name || "").toLowerCase().includes("free");
             const price = monthly?.price || 0;
             const currency = monthly?.currency || "INR";
             const cycleLabel = monthly?.billing_cycle === "ANNUAL" ? "/ year" : monthly?.billing_cycle === "SIX_MONTHS" ? "/ 6 months" : "/ month";
-
-            const limitEntries = Object.entries(limits)
-              .map(([key, val]) => {
-                const formatted = formatLimitValue(key, val);
-                if (formatted === null) return null;
-                return { label: limitLabel(key), value: formatted };
-              })
-              .filter(Boolean);
+            const features = isFree ? FREE_FEATURES : PRO_FEATURES;
 
             return (
               <Reveal key={plan.id} delay={i * 80}>
@@ -150,11 +141,10 @@ export default function Pricing() {
                   </Link>
 
                   <ul className="space-y-3 border-t border-[#E8E3DB] pt-6">
-                    {limitEntries.map((entry, j) => (
-                      <li key={j} className="flex items-center gap-2.5 text-sm text-[#1A1A1A]">
-                        <Check className="w-4 h-4 text-[#C8A95E] shrink-0" strokeWidth={2.5} />
-                        <span className="font-medium">{entry.value}</span>
-                        <span className="text-[#8A8580]">{entry.label}</span>
+                    {features.map((f, j) => (
+                      <li key={j} className="flex items-start gap-2.5 text-sm text-[#1A1A1A]">
+                        <Check className="w-4 h-4 text-[#C8A95E] shrink-0 mt-0.5" strokeWidth={2.5} />
+                        <span>{f}</span>
                       </li>
                     ))}
                   </ul>

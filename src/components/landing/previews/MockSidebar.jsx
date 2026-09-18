@@ -2,7 +2,7 @@ import React from "react";
 import { LayoutDashboard, Users, FolderKanban, CalendarCheck, FileText, Wallet, Settings, LifeBuoy, LogOut } from "lucide-react";
 import Logo from "@/components/common/Logo";
 
-export default function MockSidebar({ active = "Dashboard", workspaceName = "Kramasha Studio" }) {
+export default function MockSidebar({ active = "Dashboard", workspaceName = "Kramasha" }) {
   const items = [
     { icon: LayoutDashboard, label: "Dashboard" },
     { icon: Users, label: "Leads" },

@@ -14,7 +14,7 @@ export default function QuotationPreview() {
   const grandTotal = 74340;
 
   return (
-    <BrowserFrame url="app.kramashah.com/quotation">
+    <BrowserFrame url="kramasha.com/quotation">
       <MockSidebar active="Quotations" />
       <div className="flex-1 p-6 overflow-hidden bg-[#F5F3EF]">
         <div className="flex items-center justify-between mb-5">
@@ -31,7 +31,7 @@ export default function QuotationPreview() {
           <div className="grid grid-cols-2 gap-4 mb-5 pb-4 border-b border-[#E8E3DB]">
             <div>
               <div className="text-[9px] font-semibold text-[#8A8580] uppercase mb-1">From</div>
-              <div className="text-xs font-semibold text-[#1A1A1A]">Kramasha Studio</div>
+              <div className="text-xs font-semibold text-[#1A1A1A]">Kramasha</div>
               <div className="text-[10px] text-[#8A8580]">Mumbai, Maharashtra</div>
             </div>
             <div>

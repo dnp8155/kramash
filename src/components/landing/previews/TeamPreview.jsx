@@ -13,7 +13,7 @@ export default function TeamPreview() {
   ];
 
   return (
-    <BrowserFrame url="app.kramashah.com/team">
+    <BrowserFrame url="kramasha.com/team">
       <MockSidebar active="Events" />
       <div className="flex-1 p-6 overflow-hidden bg-[#F5F3EF]">
         <div className="flex items-center justify-between mb-5">

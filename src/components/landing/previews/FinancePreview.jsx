@@ -18,7 +18,7 @@ export default function FinancePreview() {
   ];
 
   return (
-    <BrowserFrame url="app.kramashah.com/financial">
+    <BrowserFrame url="kramasha.com/financial">
       <MockSidebar active="Finance" />
       <div className="flex-1 p-6 overflow-hidden bg-[#F5F3EF]">
         <div className="mb-5">

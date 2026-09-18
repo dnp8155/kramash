@@ -1,6 +1,5 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Instagram, Youtube, Linkedin, MessageCircle } from "lucide-react";
 import Logo from "@/components/common/Logo";
 
 const SECTIONS = [
@@ -30,13 +29,6 @@ const SECTIONS = [
   },
 ];
 
-const SOCIAL = [
-  { icon: Instagram, label: "Instagram" },
-  { icon: Youtube, label: "YouTube" },
-  { icon: Linkedin, label: "LinkedIn" },
-  { icon: MessageCircle, label: "WhatsApp" },
-];
-
 export default function LandingFooter() {
   return (
     <footer className="bg-[#0A0A0A] border-t border-[#1C1C1C]">
@@ -53,18 +45,6 @@ export default function LandingFooter() {
             <p className="text-sm text-[#888] leading-relaxed max-w-xs">
               The connected business management platform for photographers, event planners, studios and creative businesses.
             </p>
-            <div className="flex gap-3 mt-5">
-              {SOCIAL.map((s) => (
-                <a
-                  key={s.label}
-                  href="#"
-                  aria-label={s.label}
-                  className="w-9 h-9 rounded-lg border border-[#2A2A2A] flex items-center justify-center text-[#888] hover:text-[#C8A95E] hover:border-[#C8A95E]/30 transition-colors"
-                >
-                  <s.icon className="w-4 h-4" />
-                </a>
-              ))}
-            </div>
           </div>
 
           {SECTIONS.map((section) => (

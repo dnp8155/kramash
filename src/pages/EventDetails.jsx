@@ -240,7 +240,10 @@ export default function EventDetails() {
 
   const shareAssignment = async (a) => {
     const m = membersById[a.team_member_id];
-    const text = `${m?.name || "Team member"} ${term.bookedLabel} ${event?.title || term.workItemSingular.toLowerCase()} — Rate: ${formatMoney(a.agreed_rate, currency)}`;
+    const memberStart = a.booking_start_date || event?.start_date;
+    const memberEnd = a.booking_end_date || event?.end_date || memberStart;
+    const datesLabel = memberStart ? formatEventDate(memberStart, memberEnd) : "—";
+    const text = `Hi ${m?.name || "Team member"}, you are booked for ${datesLabel} for the amount of ${formatMoney(a.agreed_rate, currency)}. ${term.workItemSingular}: ${event?.title || ""}`;
     if (navigator.share) {
       try { await navigator.share({ text }); } catch (e) { /* cancelled */ }
     } else {
@@ -496,8 +499,11 @@ export default function EventDetails() {
   };
 
   const shareServiceAssignment = async (a) => {
-    const providerName = a.provider_name_snapshot || "No provider";
-    const text = `${a.service_name_snapshot || "Service"} — Provider: ${providerName} · Rate: ${formatMoney(a.agreed_rate, currency)}${a.is_addon ? " (Add-on)" : ""}`;
+    const serviceName = a.service_name_snapshot || "Service";
+    const memberStart = a.booking_start_date || event?.start_date;
+    const memberEnd = a.booking_end_date || event?.end_date || memberStart;
+    const datesLabel = memberStart ? formatEventDate(memberStart, memberEnd) : "—";
+    const text = `Hi ${serviceName}, you are assigned for ${datesLabel} for the amount of ${formatMoney(a.agreed_rate, currency)}. ${term.workItemSingular}: ${event?.title || ""}`;
     if (navigator.share) {
       try { await navigator.share({ text }); } catch (e) { /* cancelled */ }
     } else {

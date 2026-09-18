@@ -72,6 +72,15 @@ export default function EventMilestonesTab({ event, workspaceId, currency, trans
 
   const handleAdd = async () => {
     if (!addForm.name.trim()) { toast({ title: "Name is required" }); return; }
+    if (addForm.type === "percent") {
+      const totalPercent = milestones
+        .filter((m) => m.milestone_type === "percent")
+        .reduce((s, m) => s + (Number(m.milestone_value) || 0), 0) + (Number(addForm.value) || 0);
+      if (totalPercent > 100) {
+        toast({ title: "Total percentage cannot exceed 100%", variant: "destructive" });
+        return;
+      }
+    }
     try {
       const dueAmount = calcDueAmount(addForm.type, addForm.value);
       await base44.entities.PaymentMilestone.create({
@@ -101,6 +110,15 @@ export default function EventMilestonesTab({ event, workspaceId, currency, trans
 
   const handleEdit = async (milestone) => {
     if (!editForm.name.trim()) { toast({ title: "Name is required" }); return; }
+    if (editForm.type === "percent") {
+      const totalPercent = milestones
+        .filter((m) => m.id !== milestone.id && m.milestone_type === "percent")
+        .reduce((s, m) => s + (Number(m.milestone_value) || 0), 0) + (Number(editForm.value) || 0);
+      if (totalPercent > 100) {
+        toast({ title: "Total percentage cannot exceed 100%", variant: "destructive" });
+        return;
+      }
+    }
     try {
       const dueAmount = calcDueAmount(editForm.type, editForm.value);
       await base44.entities.PaymentMilestone.update(milestone.id, {
@@ -162,7 +180,7 @@ export default function EventMilestonesTab({ event, workspaceId, currency, trans
         </div>
       </div>
 
-      {/* Contract value breakdown — milestones use full contract value (base + add-ons) */}
+      {/* Contract value breakdown — always shown; milestones use full contract value (base + add-ons) */}
       {(() => {
         const baseValue = Number(event?.contract_value) || 0;
         const addonTotal = (serviceAssignments || [])
@@ -171,7 +189,6 @@ export default function EventMilestonesTab({ event, workspaceId, currency, trans
         const miscItems = parseMiscExpenses(event?.misc_expenses_json);
         const miscTotal = miscExpensesTotal(miscItems);
         const addons = addonTotal + miscTotal;
-        if (addons <= 0) return null;
         return (
           <div className="text-[11px] text-muted-foreground bg-muted/30 border border-border rounded-lg px-3 py-2">
             <span className="font-medium">Contract breakdown:</span> Base {formatMoney(baseValue, currency)} · Add-ons {formatMoney(addons, currency)} · Total {formatMoney(fullContractValue, currency)}

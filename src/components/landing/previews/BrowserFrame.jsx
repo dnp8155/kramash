@@ -1,6 +1,6 @@
 import React from "react";
 
-export default function BrowserFrame({ url = "app.kramashah.com", children, className = "" }) {
+export default function BrowserFrame({ url = "kramasha.com", children, className = "" }) {
   return (
     <div className={`rounded-xl border border-[#E8E3DB] bg-white shadow-2xl overflow-hidden ${className}`}>
       <div className="flex items-center gap-2 px-4 py-2.5 border-b border-[#E8E3DB] bg-[#F5F3EF]">
