@@ -1,7 +1,7 @@
 {
   "name": "Kramasha",
   "short_name": "Kramasha",
-  "description": "Creative Business Management Platform",
+  "description": "Kramasha - Creative Business Management Platform",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
