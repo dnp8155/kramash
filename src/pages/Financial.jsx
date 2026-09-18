@@ -328,18 +328,18 @@ export default function Financial() {
           ))}
         </div>
         {tab === "Payment Activity" && (
-          <div className="flex items-center gap-2 flex-wrap">
-            <Button variant="outline" size="sm" onClick={() => setShowExpense(true)}>
-              <Receipt className="w-3.5 h-3.5" /> {t("Record Expense")}
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
+            <Button variant="outline" size="sm" onClick={() => setShowExpense(true)} className="justify-center sm:justify-start">
+              <Receipt className="w-3.5 h-3.5" /> <span className="truncate">{t("Record Expense")}</span>
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setShowMiscExpense(true)}>
-              <Receipt className="w-3.5 h-3.5" /> {t("Misc Expense")}
+            <Button variant="outline" size="sm" onClick={() => setShowMiscExpense(true)} className="justify-center sm:justify-start">
+              <Receipt className="w-3.5 h-3.5" /> <span className="truncate">{t("Misc Expense")}</span>
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setShowTeamPayment(true)}>
-              <Wallet className="w-3.5 h-3.5" /> {t("Team Payment")}
+            <Button variant="outline" size="sm" onClick={() => setShowTeamPayment(true)} className="justify-center sm:justify-start">
+              <Wallet className="w-3.5 h-3.5" /> <span className="truncate">{t("Team Payment")}</span>
             </Button>
-            <Button size="sm" onClick={() => setShowClientPayment(true)}>
-              <Plus className="w-3.5 h-3.5" /> {t("Record Payment")}
+            <Button size="sm" onClick={() => setShowClientPayment(true)} className="justify-center sm:justify-start">
+              <Plus className="w-3.5 h-3.5" /> <span className="truncate">{t("Record Payment")}</span>
             </Button>
           </div>
         )}

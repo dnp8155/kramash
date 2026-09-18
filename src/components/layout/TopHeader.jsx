@@ -3,7 +3,6 @@ import { useLocation, useNavigate } from "react-router-dom";
 import NotificationBell from "@/components/common/NotificationBell";
 import GlobalSearch from "@/components/layout/GlobalSearch";
 import AgentBot from "@/components/layout/AgentBot";
-import LanguageSwitcher from "@/components/layout/LanguageSwitcher";
 import Logo from "@/components/common/Logo";
 import { useWorkspace } from "@/lib/WorkspaceContext";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
@@ -63,7 +62,6 @@ export default function TopHeader() {
 
       {/* Right corner */}
       <div className="flex items-center justify-end gap-1 sm:gap-2 shrink-0">
-        <LanguageSwitcher />
         <AgentBot />
         <NotificationBell />
       </div>

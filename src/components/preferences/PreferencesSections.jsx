@@ -15,6 +15,7 @@ import DataDeletionSection from "@/components/settings/DataDeletionSection";
 import TeamMemberTypeManager from "@/components/preferences/TeamMemberTypeManager";
 import EventTypeManager from "@/components/preferences/EventTypeManager";
 import MilestoneTemplateManager from "@/components/preferences/MilestoneTemplateManager";
+import LanguageSection from "@/components/settings/LanguageSection";
 import PackageSection from "@/components/preferences/PackageSection";
 import { useToast } from "@/components/ui/use-toast";
 import { loadAllTransactions } from "@/lib/financeService";
@@ -135,6 +136,9 @@ export default function PreferencesSections({
             </Card>
             <Card title="Event / Work Types">
               <EventTypeManager workspace={workspace} />
+            </Card>
+            <Card title="Language">
+              <LanguageSection />
             </Card>
             <Card title="Event Display">
               <p className="text-xs text-muted-foreground mb-3">Control what appears on event detail pages, cards, and table rows.</p>

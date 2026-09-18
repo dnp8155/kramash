@@ -351,11 +351,11 @@ export default function EventEditor() {
       <div className="min-h-full bg-muted/30">
         {/* Header */}
         <div className="border-b border-border bg-card">
-          <div ref={topRef} className="max-w-2xl mx-auto px-4 sm:px-6 py-5 flex items-start justify-between gap-4">
+          <div ref={topRef} className="max-w-3xl mx-auto px-4 sm:px-6 py-5 flex items-start justify-between gap-4">
             <div className="flex items-start gap-3">
               <button
                 onClick={requestBack}
-                className="w-10 h-10 rounded-full border border-border bg-card flex items-center justify-center text-foreground hover:bg-muted hover:text-foreground shrink-0 transition-colors"
+                className="hidden lg:flex w-10 h-10 rounded-full border border-border bg-card items-center justify-center text-foreground hover:bg-muted hover:text-foreground shrink-0 transition-colors"
                 title="Back"
               >
                 <ArrowLeft className="w-5 h-5" />
@@ -380,7 +380,7 @@ export default function EventEditor() {
 
         {/* Error */}
         {error && (
-          <div className="max-w-2xl mx-auto px-4 sm:px-6 pt-5">
+          <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-5">
             <div className="flex items-start gap-2 p-3 rounded-lg bg-destructive/8 text-destructive text-sm border border-destructive/15">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
               <span>{error}</span>
@@ -389,7 +389,7 @@ export default function EventEditor() {
         )}
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="w-full max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <form onSubmit={handleSubmit} className="w-full max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden">
             <div className="p-6 space-y-7">
                 {/* Project Details */}
@@ -428,7 +428,7 @@ export default function EventEditor() {
                       ) : (
                         <div className="relative">
                           <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                          <Select value={form.client_id} onChange={(e) => set("client_id", e.target.value)} className="w-full pl-9">
+                          <Select value={form.client_id} onChange={(e) => set("client_id", e.target.value)} className="w-full pl-10">
                             <option value="">{loadingClients ? "Loading clients…" : "Select a client"}</option>
                             {clients.map((c) => (
                               <option key={c.id} value={c.id}>{c.name}</option>
