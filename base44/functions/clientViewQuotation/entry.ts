@@ -11,22 +11,17 @@ export default async function(req) {
     const base44 = createClientFromRequest(req);
     const body = await req.json().catch(() => ({}));
     const token = body.public_token || body.token;
-    const quotationId = body.quotation_id || body.id;
     const skipTracking = !!body.skip_tracking;
 
-    let q = null;
-
-    // Prefer token-based lookup (does not expose internal IDs)
-    if (token) {
-      const list = await base44.asServiceRole.entities.Quotation.filter(
-        { public_token: token }, "-created_date", 5
-      );
-      if (list && list.length > 0) q = list[0];
-    } else if (quotationId) {
-      try { q = await base44.asServiceRole.entities.Quotation.get(quotationId); } catch (e) { /* not found */ }
-    } else {
-      return Response.json({ error: "Quotation token or id required" }, { status: 400 });
+    if (!token) {
+      return Response.json({ error: "Quotation token required" }, { status: 400 });
     }
+
+    // Token-based lookup only — prevents internal ID enumeration
+    const list = await base44.asServiceRole.entities.Quotation.filter(
+      { public_token: token }, "-created_date", 5
+    );
+    const q = (list && list.length > 0) ? list[0] : null;
 
     if (!q) return Response.json({ error: "Quotation not found" }, { status: 404 });
 

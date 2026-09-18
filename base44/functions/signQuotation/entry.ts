@@ -11,7 +11,10 @@ export default async function(req) {
     const body = await req.json().catch(() => ({}));
     const { signature, signed_by_name, consent } = body;
     const token = body.public_token || body.token;
-    const quotationId = body.quotation_id;
+
+    if (!token) {
+      return Response.json({ error: "Quotation token required" }, { status: 400 });
+    }
 
     if (!signature || typeof signature !== "string" || !signature.startsWith("data:image")) {
       return Response.json({ error: "A valid signature is required" }, { status: 400 });
@@ -23,17 +26,10 @@ export default async function(req) {
       return Response.json({ error: "You must agree to the terms before signing" }, { status: 400 });
     }
 
-    let q = null;
-    if (token) {
-      const list = await base44.asServiceRole.entities.Quotation.filter(
-        { public_token: token }, "-created_date", 5
-      );
-      if (list && list.length > 0) q = list[0];
-    } else if (quotationId) {
-      try { q = await base44.asServiceRole.entities.Quotation.get(quotationId); } catch (e) { /* not found */ }
-    } else {
-      return Response.json({ error: "Quotation token or id required" }, { status: 400 });
-    }
+    const list = await base44.asServiceRole.entities.Quotation.filter(
+      { public_token: token }, "-created_date", 5
+    );
+    const q = (list && list.length > 0) ? list[0] : null;
 
     if (!q) return Response.json({ error: "Quotation not found" }, { status: 404 });
 
