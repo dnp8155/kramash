@@ -32,8 +32,11 @@ export default function Register() {
     }
     setLoading(true);
     try {
-      const resp = await base44.functions.invoke("sendRegistrationOtp", { email, password });
-      if (resp?.data?.error) throw new Error(resp.data.error);
+      const data = await base44.auth.register({ email, password });
+      // If user is already confirmed, they should log in instead
+      if (data?.user?.email_confirmed_at && !data?.session) {
+        throw new Error("An account with this email already exists. Try logging in instead.");
+      }
       setShowOtp(true);
     } catch (err) {
       setError(err.message || "Failed to send verification code");
@@ -46,12 +49,7 @@ export default function Register() {
     setError("");
     setLoading(true);
     try {
-      const resp = await base44.functions.invoke("verifyRegistrationOtp", { email, code: otpCode, password });
-      if (resp?.data?.error) throw new Error(resp.data.error);
-      const data = resp.data;
-      if (data?.access_token) {
-        await base44.auth.setSession(data);
-      }
+      await base44.auth.verifyOtp({ email, otpCode });
       window.location.href = safeReturnTo();
     } catch (err) {
       setError(err.message || "Invalid verification code");
@@ -64,8 +62,7 @@ export default function Register() {
     setError("");
     setLoading(true);
     try {
-      const resp = await base44.functions.invoke("sendRegistrationOtp", { email, password });
-      if (resp?.data?.error) throw new Error(resp.data.error);
+      await base44.auth.register({ email, password });
       toast({
         title: "Code sent",
         description: "Check your email for the new code.",
