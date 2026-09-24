@@ -1,0 +1,395 @@
+import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
+import { useWorkspace } from "@/lib/WorkspaceContext";
+import { useAuth } from "@/lib/AuthContext";
+import TeamMemberCard from "@/components/team/TeamMemberCard";
+import TeamMemberForm from "@/components/team/TeamMemberForm";
+import AvailabilityCalendar from "@/components/team/AvailabilityCalendar";
+import UpcomingBookingsList from "@/components/team/UpcomingBookingsList";
+import SearchInput from "@/components/common/SearchInput";
+import Select from "@/components/common/Select";
+import Button from "@/components/common/Button";
+import LoadingState from "@/components/common/LoadingState";
+import EmptyState from "@/components/common/EmptyState";
+import TeamPageSkeleton from "@/components/team/TeamPageSkeleton";
+import Card from "@/components/common/Card";
+import { Crown, Plus, AlertTriangle, Download, Users, UserCheck, UserX, CalendarClock, Ban, Unlock } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { loadTeamMembers, loadRoles, loadAssignments, loadBlockDates, ensureDefaultRoles } from "@/lib/teamService";
+import BlockDateDialog from "@/components/team/BlockDateDialog";
+import UnblockDatesDialog from "@/components/team/UnblockDatesDialog";
+import { useToast } from "@/components/ui/use-toast";
+import { exportTeamXlsx } from "@/lib/exportUtils";
+import { useFeatureGate } from "@/components/common/ProGate";
+import StatCard from "@/components/common/StatCard";
+import PageHeader from "@/components/common/PageHeader";
+import { usePlan } from "@/hooks/usePlan";
+import { invalidateEntities } from "@/lib/queryInvalidation";
+import { loadServiceProviders } from "@/lib/serviceProviderService";
+import PlanLimitDialog from "@/components/common/PlanLimitDialog";
+
+export default function Team() {
+  const { workspaceId, workspace } = useWorkspace();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { plan, usage, canCreate } = usePlan();
+  const currency = workspace?.currency || "INR";
+  const { checkFeature, FeatureGateDialog } = useFeatureGate();
+
+  const [tab, setTab] = useState("Roster");
+  const [query, setQuery] = useState("");
+  const [roleFilter, setRoleFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(null);
+  const [showBlock, setShowBlock] = useState(false);
+  const [showUnblock, setShowUnblock] = useState(false);
+  const [blockPreselect, setBlockPreselect] = useState({ memberId: null, date: null });
+  const [showPlanLimit, setShowPlanLimit] = useState(false);
+  const queryClient = useQueryClient();
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["team", workspaceId],
+    queryFn: async () => {
+      await ensureDefaultRoles(workspaceId);
+      const [membs, rles, asgns, txns, blocks, svcAsgns, svcProviders, expenseTxns, dayAsgns, svcs] = await Promise.all([
+        loadTeamMembers(workspaceId),
+        loadRoles(workspaceId),
+        loadAssignments(workspaceId),
+        base44.entities.FinancialTransaction.filter({ workspace_id: workspaceId, transaction_type: "TEAM_PAYMENT", status: "ACTIVE" }, "-transaction_date", 1000),
+        loadBlockDates(workspaceId),
+        base44.entities.EventServiceAssignment.filter({ workspace_id: workspaceId }, "-created_date", 1000),
+        loadServiceProviders(workspaceId),
+        base44.entities.FinancialTransaction.filter({ workspace_id: workspaceId, transaction_type: "BUSINESS_EXPENSE", status: "ACTIVE" }, "-transaction_date", 1000),
+        base44.entities.EventDayAssignment.filter({ workspace_id: workspaceId }, "date", 1000),
+        base44.entities.Service.filter({ workspace_id: workspaceId }, "name", 500)
+      ]);
+      // Single bulk fetch instead of N+1 individual Event.get() calls.
+      const evIds = [...new Set([
+        ...((asgns || []).map((a) => a.event_id)),
+        ...((svcAsgns || []).map((a) => a.event_id))
+      ])];
+      const evMap = {};
+      if (evIds.length > 0) {
+        const allEvents = await base44.entities.Event.filter({ workspace_id: workspaceId }, "-created_date", 1000);
+        (allEvents || []).forEach((ev) => {
+          if (evIds.includes(ev.id)) evMap[ev.id] = ev;
+        });
+      }
+      return {
+        members: membs || [],
+        roles: rles || [],
+        assignments: asgns || [],
+        transactions: txns || [],
+        blockDates: blocks || [],
+        eventsById: evMap,
+        serviceAssignments: svcAsgns || [],
+        serviceProviders: svcProviders || [],
+        expenseTransactions: expenseTxns || [],
+        dayAssignments: dayAsgns || [],
+        services: svcs || []
+      };
+    },
+    enabled: !!workspaceId
+  });
+  const members = data?.members || [];
+  const roles = data?.roles || [];
+  const assignments = data?.assignments || [];
+  const transactions = data?.transactions || [];
+  const blockDates = data?.blockDates || [];
+  const eventsById = data?.eventsById || {};
+  const serviceAssignments = data?.serviceAssignments || [];
+  const expenseTransactions = data?.expenseTransactions || [];
+  const dayAssignments = data?.dayAssignments || [];
+  const services = data?.services || [];
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ["team", workspaceId] });
+    invalidateEntities(queryClient, ["TeamMember", "TeamBlockDate", "EventTeamAssignment", "EventServiceAssignment", "FinancialTransaction"]);
+  };
+
+  const rolesById = useMemo(() => {
+    const m = {}; roles.forEach((r) => { m[r.id] = r; }); return m;
+  }, [roles]);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return members.filter((m) => {
+      if (roleFilter !== "all") {
+        if (roleFilter === "none") {
+          if (m.role_id) return false;
+        } else if (m.role_id !== roleFilter) return false;
+      }
+      if (statusFilter !== "all" && m.status !== statusFilter) return false;
+      if (q) {
+        const hay = `${m.name} ${m.phone || ""} ${m.profession || ""} ${m.email || ""}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [members, query, roleFilter, statusFilter]);
+
+  const unblockDate = async (blockId) => {
+    try {
+      await base44.entities.TeamBlockDate.update(blockId, { status: "cancelled" });
+      toast({ title: "Dates unblocked", description: "Team member is available again." });
+      invalidate();
+    } catch (e) {
+      toast({ title: "Failed to unblock", description: e?.message, variant: "destructive" });
+    }
+  };
+
+  const openNew = () => {
+    const check = canCreate("max_team_members");
+    if (!check.allowed) {
+      setShowPlanLimit(true);
+      return;
+    }
+    setEditing(null);
+    setShowForm(true);
+  };
+  const openEdit = (m) => { setEditing(m); setShowForm(true); };
+  const openMember = (m) => navigate(`/team/${m.id}`);
+
+  const toggleArchive = async (m) => {
+    const next = m.status === "active" ? "inactive" : "active";
+    try {
+      await base44.entities.TeamMember.update(m.id, { status: next });
+      toast({ title: next === "inactive" ? "Member set inactive" : "Member reactivated" });
+      invalidate();
+    } catch (e) {
+      toast({ title: "Failed to update member", description: e?.message, variant: "destructive" });
+    }
+  };
+
+  const doDelete = async (m) => {
+    try {
+      const count = assignments.filter(
+        (a) => a.team_member_id === m.id && a.assignment_status !== "removed"
+      ).length;
+      if (count > 0) {
+        // Soft-archive instead of hard delete to preserve history.
+        await base44.entities.TeamMember.update(m.id, { status: "inactive" });
+        toast({ title: "Member archived", description: "Has existing assignments — set inactive to preserve history." });
+      } else {
+        await base44.entities.TeamMember.delete(m.id);
+        toast({ title: "Member deleted" });
+      }
+      setConfirmDelete(null);
+      invalidate();
+    } catch (e) {
+      toast({ title: "Failed to delete member", description: e?.message, variant: "destructive" });
+    }
+  };
+
+  const activeCount = members.filter((m) => m.status === "active").length;
+  const activeBlockCount = blockDates.filter((b) => b.status !== "cancelled").length;
+
+  return (
+    <div className="p-4 sm:p-6 space-y-5">
+      <PageHeader eyebrow="People" title="Team" subtitle="Manage your roster, roles, and availability.">
+        <Button variant="outline" size="sm" onClick={() => { if (!checkFeature("excel_export_enabled", "Excel Export")) return; exportTeamXlsx(filtered, rolesById); }} disabled={filtered.length === 0}>
+          <Download className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">Export</span>
+        </Button>
+        <Button onClick={openNew}>
+          <Plus className="w-4 h-4" /> Add Team Member
+        </Button>
+      </PageHeader>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <StatCard label="Total Members" value={members.length} icon={Users} tone="primary" />
+        <StatCard label="Active" value={activeCount} icon={UserCheck} tone="success" />
+        <StatCard label="Roles" value={roles.filter((r) => r.status === "active").length} icon={Crown} tone="info" />
+      </div>
+
+      <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-lg w-full sm:w-auto">
+        {["Roster", "Availability Calendar"].map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={cn(
+              "px-4 py-1.5 text-sm font-medium rounded-md transition-all whitespace-nowrap flex-1 sm:flex-initial",
+              tab === t
+                ? "bg-card text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            {t}
+          </button>
+        ))}
+      </div>
+
+      {tab === "Roster" ? (
+        <>
+          {/* Filters */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+            <SearchInput
+              placeholder="Search name, phone, role"
+              className="sm:max-w-xs"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+            <div className="flex items-center gap-2 sm:ml-auto">
+              <Select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)} className="flex-1 min-w-[110px] sm:flex-none">
+                <option value="all">All Roles</option>
+                <option value="none">No Role</option>
+                {roles.filter((r) => r.status === "active").map((r) => (
+                  <option key={r.id} value={r.id}>{r.name}</option>
+                ))}
+              </Select>
+              <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="flex-1 min-w-[110px] sm:flex-none">
+                <option value="all">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </Select>
+            </div>
+          </div>
+
+          {isLoading ? (
+            <TeamPageSkeleton />
+          ) : filtered.length === 0 ? (
+            <Card className="p-0">
+              <EmptyState
+                title={members.length === 0 ? "No team members yet" : "No members match your filters"}
+                description={members.length === 0 ? "Add your first team member to begin scheduling." : "Try adjusting your search or filters."}
+                action={members.length === 0 ? <Button onClick={openNew}><Plus className="w-4 h-4" /> Add Team Member</Button> : null}
+              />
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {filtered.map((m) => (
+                <div key={m.id} className="space-y-2">
+                  <TeamMemberCard
+                    member={m}
+                    assignments={assignments}
+                    transactions={transactions}
+                    eventsById={eventsById}
+                    currentUser={user}
+                    currency={currency}
+                    onEdit={openEdit}
+                    onArchive={toggleArchive}
+                    onDelete={(mem) => setConfirmDelete(mem)}
+                    onOpen={openMember}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {(() => {
+            const limit = plan?.limits?.max_team_members;
+            const hasLimit = limit != null && limit < 999999;
+            if (!hasLimit) return null;
+            return (
+              <div className="flex items-center gap-2 text-sm text-foreground bg-warning/10 border border-warning/20 rounded-lg px-4 py-3">
+                <Crown className="w-4 h-4 text-warning" />
+                Your plan: up to {limit} active team members — {activeCount}/{limit} used. Upgrade for unlimited.
+              </div>
+            );
+          })()}
+
+        </>
+      ) : (
+        isLoading ? (
+          <TeamPageSkeleton />
+        ) : (
+          <div className="space-y-4">
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" size="sm" onClick={() => { setBlockPreselect({ memberId: null, date: null }); setShowBlock(true); }}>
+                <Ban className="w-3.5 h-3.5" /> Block Dates
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setShowUnblock(true)}>
+                <Unlock className="w-3.5 h-3.5" /> Unblock{activeBlockCount > 0 ? ` (${activeBlockCount})` : ""}
+              </Button>
+            </div>
+            <AvailabilityCalendar
+              members={members}
+              assignments={assignments}
+              eventsById={eventsById}
+              blockDates={blockDates}
+              serviceAssignments={serviceAssignments}
+              dayAssignments={dayAssignments}
+              services={services}
+              currency={currency}
+              onEventClick={(ev) => navigate(`/events/${ev.id}`)}
+              onBlockDate={(date) => { setBlockPreselect({ memberId: null, date }); setShowBlock(true); }}
+              onUnblockDate={unblockDate}
+            />
+            <UpcomingBookingsList
+              members={members}
+              assignments={assignments}
+              eventsById={eventsById}
+              serviceAssignments={serviceAssignments}
+              dayAssignments={dayAssignments}
+              services={services}
+              onEventClick={(ev) => navigate(`/events/${ev.id}`)}
+            />
+          </div>
+        )
+      )}
+
+      <TeamMemberForm
+        open={showForm}
+        onClose={() => setShowForm(false)}
+        onSaved={() => {}}
+        member={editing}
+        workspaceId={workspaceId}
+      />
+
+      <BlockDateDialog
+        open={showBlock}
+        onClose={() => setShowBlock(false)}
+        onSaved={invalidate}
+        workspaceId={workspaceId}
+        members={members}
+        preselectedMemberId={blockPreselect.memberId}
+        preselectedDate={blockPreselect.date}
+      />
+
+      <UnblockDatesDialog
+        open={showUnblock}
+        onClose={() => setShowUnblock(false)}
+        blockDates={blockDates}
+        members={members}
+        onUnblock={unblockDate}
+      />
+
+      <PlanLimitDialog
+        open={showPlanLimit}
+        onClose={() => setShowPlanLimit(false)}
+        resource="team members"
+        currentUsage={usage?.team_members || 0}
+        limit={plan?.limits?.max_team_members || 0}
+      />
+
+      {/* Delete confirmation */}
+      {confirmDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setConfirmDelete(null)}>
+          <Card className="max-w-sm w-full p-5" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="w-5 h-5 text-destructive mt-0.5 shrink-0" />
+              <div>
+                <h3 className="text-sm font-semibold">Delete {confirmDelete.name}?</h3>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {assignments.filter((a) => a.team_member_id === confirmDelete.id && a.assignment_status !== "removed").length > 0
+                    ? "This member has existing work assignments and will be set to Inactive to preserve history."
+                    : "This will permanently remove the team member. This cannot be undone."}
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-4">
+              <Button variant="outline" size="sm" onClick={() => setConfirmDelete(null)}>Cancel</Button>
+              <Button variant="destructive" size="sm" onClick={() => doDelete(confirmDelete)}>Confirm</Button>
+            </div>
+          </Card>
+        </div>
+      )}
+      {FeatureGateDialog}
+    </div>
+  );
+}
