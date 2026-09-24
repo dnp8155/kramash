@@ -353,17 +353,70 @@ export const entities = {
 // ============================================================
 // Auth helper — mimics base44.auth API
 // ============================================================
+
+// Manually persist Supabase session to localStorage.
+// The Supabase client's auto-persist may not work with the publishable
+// key format in all environments, so we do it explicitly.
+function persistSession(data) {
+  if (!data?.session?.access_token) return;
+  try {
+    const projectRef = (supabaseUrl || '').replace('https://', '').split('.')[0];
+    const storageKey = `sb-${projectRef}-auth-token`;
+    const sessionObj = {
+      access_token: data.session.access_token,
+      refresh_token: data.session.refresh_token,
+      token_type: data.session.token_type || 'bearer',
+      expires_in: data.session.expires_in,
+      expires_at: data.session.expires_at || Math.floor(Date.now() / 1000) + (data.session.expires_in || 3600),
+      user: data.user || data.session.user,
+    };
+    localStorage.setItem(storageKey, JSON.stringify(sessionObj));
+  } catch { /* noop */ }
+}
+
+// Read the manually persisted session from localStorage.
+function getStoredSession() {
+  try {
+    const projectRef = (supabaseUrl || '').replace('https://', '').split('.')[0];
+    const stored = localStorage.getItem(`sb-${projectRef}-auth-token`);
+    if (!stored) return null;
+    const parsed = JSON.parse(stored);
+    if (parsed.access_token && (!parsed.expires_at || parsed.expires_at > Date.now() / 1000)) {
+      return parsed;
+    }
+  } catch { /* noop */ }
+  return null;
+}
+
+// Get the access token from either the Supabase client or localStorage.
+function getAccessToken() {
+  return getStoredSession()?.access_token || null;
+}
+
 export const auth = {
   async me() {
-    const { data: { user }, error } = await supabase.auth.getUser();
-    if (error || !user) throw new Error('Not authenticated');
+    let { data: { user }, error } = await supabase.auth.getUser();
+    if (error || !user) {
+      const stored = getStoredSession();
+      if (stored?.user) user = stored.user;
+    }
+    if (!user) throw new Error('Not authenticated');
+    const token = getAccessToken();
+    if (token) {
+      const resp = await fetch(`${supabaseUrl}/rest/v1/profiles?id=eq.${user.id}&select=*`, {
+        headers: { 'apikey': supabaseAnonKey, 'Authorization': `Bearer ${token}` },
+      });
+      const arr = await resp.json();
+      if (arr && arr.length > 0) return arr[0];
+    }
     const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
     return profile;
   },
 
   async isAuthenticated() {
     const { data: { session } } = await supabase.auth.getSession();
-    return !!session;
+    if (session) return true;
+    return !!getStoredSession();
   },
 
   async register({ email, password }) {
@@ -373,12 +426,14 @@ export const auth = {
       options: { data: { role: 'user' } },
     });
     if (error) throw error;
+    persistSession(data);
     return data;
   },
 
   async loginViaEmailPassword(email, password) {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
+    persistSession(data);
     return data;
   },
 
@@ -393,6 +448,11 @@ export const auth = {
 
   async logout(redirectUrl) {
     await supabase.auth.signOut();
+    // Also clear manually persisted session
+    try {
+      const projectRef = (supabaseUrl || '').replace('https://', '').split('.')[0];
+      localStorage.removeItem(`sb-${projectRef}-auth-token`);
+    } catch { /* noop */ }
     if (redirectUrl) window.location.href = redirectUrl;
     else window.location.reload();
   },
@@ -422,6 +482,7 @@ export const auth = {
   async verifyOtp({ email, otpCode }) {
     const { data, error } = await supabase.auth.verifyEmailOtp({ email, token: otpCode, type: 'signup' });
     if (error) throw error;
+    persistSession(data);
     return data;
   },
 
