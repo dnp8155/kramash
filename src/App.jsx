@@ -1,16 +1,68 @@
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Route, Routes, Outlet } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ScrollToTop from './components/ScrollToTop';
+import AppLayout from '@/components/layout/AppLayout';
+import ProtectedRoute from '@/components/ProtectedRoute';
+import WorkspaceRoute from '@/components/auth/WorkspaceRoute';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
 import OAuthConsent from '@/pages/OAuthConsent';
+import PhoneLogin from '@/pages/PhoneLogin';
+import Onboarding from '@/pages/Onboarding';
+import Landing from '@/pages/Landing';
+import Dashboard from '@/pages/Dashboard';
+import Events from '@/pages/Events';
+import EventDetails from '@/pages/EventDetails';
+import EventEditor from '@/pages/EventEditor';
+import Clients from '@/pages/Clients';
+import ClientDetails from '@/pages/ClientDetails';
+import Leads from '@/pages/Leads';
+import Team from '@/pages/Team';
+import TeamMemberDetails from '@/pages/TeamMemberDetails';
+import Financial from '@/pages/Financial';
+import RateEstimator from '@/pages/RateEstimator';
+import Quotation from '@/pages/Quotation';
+import QuotationEditor from '@/pages/QuotationEditor';
+import Invoices from '@/pages/Invoices';
+import InvoiceEditor from '@/pages/InvoiceEditor';
+import SignPdf from '@/pages/SignPdf';
+import Preferences from '@/pages/Preferences';
+import AppUpdates from '@/pages/AppUpdates';
+import YourPlan from '@/pages/YourPlan';
+import Help from '@/pages/Help';
+import More from '@/pages/More';
+import DataTools from '@/pages/DataTools';
+import Calendar from '@/pages/Calendar';
+import TermsOfService from '@/pages/TermsOfService';
+import PrivacyPolicy from '@/pages/PrivacyPolicy';
+import FAQ from '@/pages/FAQ';
+import About from '@/pages/About';
+import AdminRoute from '@/components/admin/AdminRoute';
+import AdminLayout from '@/components/admin/AdminLayout';
+import AdminDashboard from '@/pages/admin/AdminDashboard';
+import AdminWorkspaces from '@/pages/admin/AdminWorkspaces';
+import AdminWorkspaceDetails from '@/pages/admin/AdminWorkspaceDetails';
+import AdminPlans from '@/pages/admin/AdminPlans';
+import ClientQuotationView from '@/pages/ClientQuotationView';
+import ClientProjectPortal from '@/pages/ClientProjectPortal';
+import EventTracking from '@/pages/EventTracking';
+import JobSheet from '@/pages/JobSheet';
+import PublicJobSheet from '@/pages/PublicJobSheet';
+import PublicInvoice from '@/pages/PublicInvoice';
+import ClientPasswordLogin from '@/pages/ClientPasswordLogin';
+import ClientPortal from '@/pages/ClientPortal';
+import ClientRoute from '@/components/auth/ClientRoute';
+import TeamMemberRoute from '@/components/auth/TeamMemberRoute';
+import PublicProfile from '@/pages/PublicProfile';
+import TeamMemberPasswordLogin from '@/pages/TeamMemberPasswordLogin';
+import TeamMemberPortal from '@/pages/TeamMemberPortal';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -28,15 +80,113 @@ const AuthenticatedApp = () => {
   if (authError) {
     if (authError.type === 'user_not_registered') {
       return <UserNotRegisteredError />;
-    } else if (authError.type === 'auth_required') {
-      // Redirect to login automatically
-      navigateToLogin();
-      return null;
     }
+    // For 'auth_required' — don't auto-redirect; let public routes (landing, login, etc.)
+    // render normally. ProtectedRoute/WorkspaceRoute will redirect to /login when needed.
   }
 
-  // Render authenticated child routes
-  return <Outlet />;
+  // Render the main app
+  return (
+    <Routes>
+      {/* Public auth routes */}
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/oauth-consent" element={<OAuthConsent />} />
+      <Route path="/phone-login" element={<PhoneLogin />} />
+
+      {/* Public landing page */}
+      <Route path="/" element={<Landing />} />
+
+      {/* Public client-facing quotation view + online signing (URL 2) */}
+      <Route path="/q/:token" element={<ClientQuotationView />} />
+
+      {/* Public client-facing project portal (URL 1) */}
+      <Route path="/portal/:token" element={<ClientProjectPortal />} />
+
+      {/* Public client-facing event tracking page */}
+      <Route path="/track/:token" element={<EventTracking />} />
+
+      {/* Public crew-facing job sheet */}
+      <Route path="/job-sheet/:token" element={<PublicJobSheet />} />
+
+      {/* Public client-facing invoice */}
+      <Route path="/invoice/:token" element={<PublicInvoice />} />
+
+      {/* Client Portal — password-only login + authenticated dashboard for client-role users */}
+      <Route path="/client-login" element={<ClientPasswordLogin />} />
+      <Route path="/client-login/:token" element={<ClientPasswordLogin />} />
+      <Route element={<ClientRoute />}>
+        <Route path="/client-portal" element={<ClientPortal />} />
+      </Route>
+
+      {/* Team Member Portal — password-only login + authenticated dashboard for team_member-role users */}
+      <Route path="/team-login/:token" element={<TeamMemberPasswordLogin />} />
+      <Route element={<TeamMemberRoute />}>
+        <Route path="/team-portal" element={<TeamMemberPortal />} />
+      </Route>
+
+      {/* Public business profile page */}
+      <Route path="/p/:slug" element={<PublicProfile />} />
+
+      {/* Public legal pages */}
+      <Route path="/terms" element={<TermsOfService />} />
+      <Route path="/privacy" element={<PrivacyPolicy />} />
+      <Route path="/faq" element={<FAQ />} />
+      <Route path="/about" element={<About />} />
+
+      {/* Authenticated but no workspace yet → onboarding */}
+      <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
+        <Route path="/onboarding" element={<Onboarding />} />
+      </Route>
+
+      {/* Authenticated + workspace → application */}
+      <Route element={<WorkspaceRoute unauthenticatedElement={<Navigate to="/login" replace />} noWorkspaceElement={<Navigate to="/onboarding" replace />} />}>
+        <Route element={<AppLayout />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/events" element={<Events />} />
+          <Route path="/events/new" element={<EventEditor />} />
+          <Route path="/events/:id" element={<EventDetails />} />
+          <Route path="/events/:id/edit" element={<EventEditor />} />
+          <Route path="/events/:id/job-sheet" element={<JobSheet />} />
+          <Route path="/calendar" element={<Calendar />} />
+          <Route path="/clients" element={<Clients />} />
+          <Route path="/clients/:id" element={<ClientDetails />} />
+          <Route path="/leads" element={<Leads />} />
+          <Route path="/team" element={<Team />} />
+          <Route path="/team/:id" element={<TeamMemberDetails />} />
+          <Route path="/financial" element={<Financial />} />
+          <Route path="/rate-estimator" element={<RateEstimator />} />
+          <Route path="/quotation" element={<Quotation />} />
+          <Route path="/quotation/new" element={<QuotationEditor />} />
+          <Route path="/quotation/:id" element={<QuotationEditor />} />
+          <Route path="/invoices" element={<Invoices />} />
+          <Route path="/invoices/new" element={<InvoiceEditor />} />
+          <Route path="/invoices/:id" element={<InvoiceEditor />} />
+          <Route path="/sign-pdf" element={<SignPdf />} />
+          <Route path="/preferences" element={<Preferences />} />
+          <Route path="/app-updates" element={<AppUpdates />} />
+          <Route path="/plan" element={<YourPlan />} />
+          <Route path="/help" element={<Help />} />
+          <Route path="/more" element={<More />} />
+          <Route path="/data-tools" element={<DataTools />} />
+        </Route>
+      </Route>
+
+      {/* SaaS Admin — platform-level, separate from workspace app */}
+      <Route element={<AdminRoute />}>
+        <Route element={<AdminLayout />}>
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/workspaces" element={<AdminWorkspaces />} />
+          <Route path="/admin/workspaces/:id" element={<AdminWorkspaceDetails />} />
+          <Route path="/admin/plans" element={<AdminPlans />} />
+        </Route>
+      </Route>
+
+      <Route path="*" element={<PageNotFound />} />
+    </Routes>
+  );
 };
 
 
@@ -47,22 +197,7 @@ function App() {
       <QueryClientProvider client={queryClientInstance}>
         <Router>
           <ScrollToTop />
-          <Routes>
-            {/* Public auth routes — accessible without authentication */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/oauth-consent" element={<OAuthConsent />} />
-
-            {/* Authenticated app — gated by AuthenticatedApp's auth check */}
-            <Route element={<AuthenticatedApp />}>
-              {/* Add authenticated page routes here */}
-            </Route>
-
-            {/* Catch-all */}
-            <Route path="*" element={<PageNotFound />} />
-          </Routes>
+          <AuthenticatedApp />
         </Router>
         <Toaster />
       </QueryClientProvider>
