@@ -1,3 +1,208 @@
+import { useState, useEffect } from "react";
+import { Crown, Check, Loader2, Lock, CreditCard, AlertCircle } from "lucide-react";
+import Button from "@/components/common/Button";
+import { useWorkspace } from "@/lib/WorkspaceContext";
+import { usePlan } from "@/hooks/usePlan";
+import { base44 } from "@/api/base44Client";
+import { useToast } from "@/components/ui/use-toast";
+import { cn } from "@/lib/utils";
+import { PLAN_UNLIMITED } from "@/lib/planService";
+import { createPaymentOrder, verifyPayment, openRazorpayCheckout } from "@/lib/paymentService";
+import { submitUpgradeRequest as submitUpgradeRequestFn } from "@/lib/clientEdgeFunctions";
+import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
+
+const BILLING_LABELS = { MONTHLY: "Monthly", SIX_MONTHS: "6 Months", ANNUAL: "Annual" };
+const BILLING_PERIOD = { MONTHLY: "/month", SIX_MONTHS: "/6 months", ANNUAL: "/year" };
+
+const LIMIT_LABELS = {
+  max_events: "Work Items", max_team_members: "Team Members", max_services: "Services", max_leads: "Leads",
+  pdf_export_enabled: "PDF Export", reminders_enabled: "Reminders", excel_csv_export_enabled: "Excel/CSV Export",
+  notifications_enabled: "Notifications", link_sharing_enabled: "Link Sharing", client_portal_enabled: "Client Portal",
+  team_portal_enabled: "Team Portal", event_display_customization_enabled: "Event Display Customization",
+  quotation_logo_enabled: "Quotation Logo", advanced_theme_enabled: "Night & Pastel Themes"
+};
+
 export default function YourPlan() {
-  return <div className="p-8 text-muted-foreground">YourPlan — migration pending</div>;
+  const { workspace } = useWorkspace();
+  const { plan, usage, loading, reload } = usePlan();
+  const { toast } = useToast();
+  const term = useBusinessTerminology();
+  const [requesting, setRequesting] = useState(null);
+  const [paying, setPaying] = useState(null);
+  const [gatewayAvailable, setGatewayAvailable] = useState(null);
+
+  const isPro = plan?.planCode === "PRO" && !plan?.isExpired;
+  const isExpired = plan?.isExpired;
+  const isSuspended = plan?.planStatus === "suspended";
+  const proPricings = (plan?.pricings || []).filter((p) => p.is_active && p.billing_cycle);
+
+  useEffect(() => {
+    if (gatewayAvailable !== null || !workspace?.id || proPricings.length === 0) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await createPaymentOrder(workspace.id, proPricings[0].id, true);
+        if (!cancelled) setGatewayAvailable(res?.configured ? true : false);
+      } catch (e) {
+        if (!cancelled) setGatewayAvailable(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [isPro, workspace?.id, gatewayAvailable, proPricings.length]);
+
+  const submitUpgradeRequest = async (pricingId) => {
+    setRequesting(pricingId);
+    try {
+      await submitUpgradeRequestFn({ workspace_id: workspace?.id, requested_pricing_id: pricingId });
+      toast({ title: "Upgrade request submitted", description: "Our team will activate your Pro plan shortly." });
+    } catch (e) {
+      toast({ title: "Failed to submit request", description: e?.message, variant: "destructive" });
+    } finally {
+      setRequesting(null);
+    }
+  };
+
+  const handlePayOnline = async (pricingId) => {
+    setPaying(pricingId);
+    try {
+      const res = await createPaymentOrder(workspace.id, pricingId);
+      if (!res?.order_id) { setGatewayAvailable(false); toast({ title: "Online payment unavailable", description: "Please use Request Upgrade instead.", variant: "destructive" }); return; }
+      const paymentResponse = await openRazorpayCheckout({ orderId: res.order_id, keyId: res.key_id, amount: res.amount, currency: res.currency, name: workspace?.name || "Kramasha", prefill: { name: workspace?.name || "", email: workspace?.email || "", contact: workspace?.phone || "" } });
+      const verifyRes = await verifyPayment(paymentResponse.razorpay_order_id, paymentResponse.razorpay_payment_id, paymentResponse.razorpay_signature);
+      if (verifyRes?.ok) { toast({ title: "Pro activated!", description: "Your subscription is now active." }); reload(); }
+      else { toast({ title: "Payment verification failed", description: verifyRes?.error || "Please contact support.", variant: "destructive" }); }
+    } catch (e) {
+      const msg = e?.message || "";
+      if (msg === "Payment cancelled") { toast({ title: "Payment cancelled", description: "Your plan remains unchanged." }); }
+      else { setGatewayAvailable(false); toast({ title: "Online payment unavailable", description: "Please use Request Upgrade instead.", variant: "destructive" }); }
+    } finally {
+      setPaying(null);
+    }
+  };
+
+  if (loading) {
+    return (<div className="p-6 max-w-[900px] mx-auto flex items-center justify-center gap-2"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /><span className="text-sm text-muted-foreground">Loading…</span></div>);
+  }
+
+  const usageRows = [
+    { key: "max_events", label: term.workItemPlural, current: usage?.events || 0 },
+    { key: "max_team_members", label: "Team Members", current: usage?.team_members || 0 },
+    { key: "max_services", label: "Services", current: usage?.services || 0 },
+    { key: "max_leads", label: "Leads", current: usage?.leads || 0 }
+  ];
+
+  return (
+    <div className="p-4 sm:p-6 max-w-[900px] mx-auto space-y-6">
+      <div className="flex items-center gap-3">
+        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center"><Crown className="w-6 h-6 text-amber-600" /></div>
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Your Plan</h1>
+          <p className="text-sm text-muted-foreground">You're currently on the <span className="font-medium text-foreground">{isPro ? "Pro" : "Free"}</span> plan{plan?.planStatus && plan.planStatus !== "free" && ` · ${plan.planStatus}`}{isExpired && " · Pro expired, Free limits apply"}{isSuspended && " · Workspace suspended"}</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-card border border-border rounded-lg p-5">
+          <h3 className="text-sm font-semibold mb-3">Current Plan</h3>
+          <div className="flex items-baseline gap-1">
+            <span className="text-2xl font-bold">{isPro ? "Pro" : "Free"}</span>
+            {isPro && plan?.expiresAt && <span className="text-sm text-muted-foreground ml-2">expires {new Date(plan.expiresAt).toLocaleDateString()}</span>}
+          </div>
+          {isPro && <p className="text-xs text-muted-foreground mt-1">Renew manually before expiry</p>}
+          <div className="mt-3 space-y-1">
+            {usageRows.map((u) => {
+              const limit = plan?.limits?.[u.key];
+              const display = limit >= PLAN_UNLIMITED ? "Unlimited" : limit;
+              return (<div key={u.key} className="flex justify-between text-sm"><span className="text-muted-foreground">{u.label}</span><span className={cn("font-medium", limit < PLAN_UNLIMITED && u.current >= limit && "text-destructive")}>{u.current} / {display}</span></div>);
+            })}
+          </div>
+        </div>
+        <div className="bg-card border border-border rounded-lg p-5">
+          <h3 className="text-sm font-semibold mb-3">Features</h3>
+          <ul className="space-y-2">
+            <FeatureRow label="Reminders" enabled={true} />
+            <FeatureRow label="Quotations & Invoices" enabled={true} />
+            <FeatureRow label="Public Profile URL" enabled={true} />
+            <FeatureRow label="App Lock" enabled={true} />
+            <FeatureRow label="Data Export" enabled={true} />
+            <FeatureRow label="Excel/CSV Export" enabled={!!plan?.limits?.excel_csv_export_enabled} />
+            <FeatureRow label="Notifications" enabled={!!plan?.limits?.notifications_enabled} />
+            <FeatureRow label="Link Sharing" enabled={!!plan?.limits?.link_sharing_enabled} />
+            <FeatureRow label="Client Portal" enabled={!!plan?.limits?.client_portal_enabled} />
+            <FeatureRow label="Team Portal" enabled={!!plan?.limits?.team_portal_enabled} />
+            <FeatureRow label="Night & Pastel Themes" enabled={!!plan?.limits?.advanced_theme_enabled} />
+            <FeatureRow label="Event Display Customization" enabled={!!plan?.limits?.event_display_customization_enabled} />
+            <FeatureRow label="Quotation Logo" enabled={!!plan?.limits?.quotation_logo_enabled} />
+          </ul>
+        </div>
+      </div>
+
+      <div>
+        <h3 className="text-sm font-semibold mb-3">{isPro ? "Renew / Extend Pro" : "Upgrade to Pro"}</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {proPricings.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Pro pricing not configured yet. Please contact support.</p>
+          ) : (
+            proPricings.map((p, i) => (
+              <div key={p.id} className={cn("bg-card border rounded-xl p-5 flex flex-col relative overflow-hidden", i === 1 ? "border-primary shadow-md" : "border-border")}>
+                {i === 1 && <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-[10px] font-semibold px-2.5 py-1 rounded-bl-lg uppercase tracking-wide">Popular</div>}
+                <div className="text-sm font-semibold text-foreground">{BILLING_LABELS[p.billing_cycle]}</div>
+                <div className="flex items-baseline gap-1 mt-2"><span className="text-3xl font-bold text-foreground">₹{p.price}</span><span className="text-sm text-muted-foreground">{BILLING_PERIOD[p.billing_cycle]}</span></div>
+                <div className="text-xs text-muted-foreground mt-1">{p.duration_months} month{p.duration_months > 1 ? "s" : ""} of Pro access</div>
+                {gatewayAvailable === true ? (
+                  <Button variant={i === 1 ? "primary" : "outline"} size="sm" className="mt-4" disabled={paying === p.id} onClick={() => handlePayOnline(p.id)}>
+                    {paying === p.id ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Preparing…</> : <><CreditCard className="w-3.5 h-3.5" /> {isPro ? "Renew" : "Pay Online"}</>}
+                  </Button>
+                ) : gatewayAvailable === false ? (
+                  <Button variant={i === 1 ? "primary" : "outline"} size="sm" className="mt-4" disabled={requesting === p.id} onClick={() => submitUpgradeRequest(p.id)}>
+                    {requesting === p.id ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Requesting…</> : isPro ? "Request Renewal" : "Request Upgrade"}
+                  </Button>
+                ) : (
+                  <Button variant="outline" size="sm" className="mt-4" disabled><Loader2 className="w-3.5 h-3.5 animate-spin" /> Checking…</Button>
+                )}
+              </div>
+            ))
+          )}
+        </div>
+        {gatewayAvailable === false && <p className="text-xs text-muted-foreground mt-3">Online payment is not yet available. Your {isPro ? "renewal" : "upgrade"} request will be reviewed and Pro activated by our team.</p>}
+      </div>
+
+      <div className="bg-card border border-border rounded-lg p-5">
+        <h3 className="text-sm font-semibold mb-3">Plan Comparison</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead><tr className="text-left text-muted-foreground"><th className="py-1.5 font-medium">Feature</th><th className="py-1.5 font-medium text-center">Free</th><th className="py-1.5 font-medium text-center">Pro</th></tr></thead>
+            <tbody>
+              <CompareRow label={term.workItemPlural} free={plan?.limits?.max_events} pro="Unlimited" />
+              <CompareRow label="Team Members" free={plan?.limits?.max_team_members} pro="Up to 50" />
+              <CompareRow label="Services" free={plan?.limits?.max_services} pro="Unlimited" />
+              <CompareRow label="Leads" free={plan?.limits?.max_leads} pro="Unlimited" />
+              <CompareRow label="Quotations & Invoices" free={true} pro={true} />
+              <CompareRow label="Reminders" free={true} pro={true} />
+              <CompareRow label="Public Profile URL" free={true} pro={true} />
+              <CompareRow label="App Lock" free={true} pro={true} />
+              <CompareRow label="Data Export" free={true} pro={true} />
+              <CompareRow label="Excel/CSV Export" free={false} pro={true} />
+              <CompareRow label="Notifications" free={false} pro={true} />
+              <CompareRow label="Link Sharing" free={false} pro={true} />
+              <CompareRow label="Client Portal" free={false} pro={true} />
+              <CompareRow label="Team Portal" free={false} pro={true} />
+              <CompareRow label="Night & Pastel Themes" free={false} pro={true} />
+              <CompareRow label="Event Display Customization" free={false} pro={true} />
+              <CompareRow label="Quotation Logo" free={false} pro={true} />
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FeatureRow({ label, enabled }) {
+  return (<li className="flex items-center gap-2 text-sm">{enabled ? <Check className="w-4 h-4 text-success" /> : <Lock className="w-4 h-4 text-muted-foreground" />}<span className={enabled ? "text-foreground" : "text-muted-foreground"}>{label}</span></li>);
+}
+
+function CompareRow({ label, free, pro }) {
+  const fmt = (v) => { if (v === true) return <Check className="w-4 h-4 text-success mx-auto" />; if (v === false) return <span className="text-muted-foreground">—</span>; if (typeof v === "number") return v >= PLAN_UNLIMITED ? "Unlimited" : v; return v; };
+  return (<tr className="border-t border-border"><td className="py-1.5">{label}</td><td className="py-1.5 text-center">{fmt(free)}</td><td className="py-1.5 text-center font-medium">{fmt(pro)}</td></tr>);
 }
