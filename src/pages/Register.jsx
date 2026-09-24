@@ -78,9 +78,9 @@ export default function Register() {
   const loginLink = "/login" + (returnTo !== "/" ? "?returnTo=" + encodeURIComponent(returnTo) : "");
 
   return (
-    <div className="min-h-screen flex bg-[#FDFBF8]">
+    <div className="h-screen flex bg-[#FDFBF8] overflow-hidden">
       {/* Left — form area */}
-      <div className="flex-1 flex flex-col px-6 sm:px-10 lg:px-16 xl:px-20 py-8">
+      <div className="flex-1 flex flex-col px-6 sm:px-10 lg:px-16 xl:px-20 py-6 overflow-hidden">
         {/* Logo */}
         <div className="flex items-center gap-2.5">
           <Logo size={40} className="rounded-xl" />
@@ -279,7 +279,7 @@ export default function Register() {
       </div>
 
       {/* Right — dashboard preview */}
-      <div className="hidden lg:block w-[480px] xl:w-[560px] border-l border-[#E5E3DF]">
+      <div className="hidden lg:flex flex-1 max-w-[640px] border-l border-[#E5E3DF] overflow-hidden">
         <LoginPreview />
       </div>
     </div>
