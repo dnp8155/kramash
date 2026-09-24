@@ -1,4 +1,4 @@
-// Shared payment engine — Razorpay/Stripe verification + Pro activation.
+// Shared payment engine — Razorpay verification + Pro activation.
 // Ported from supabase/functions/_shared/paymentEngine.ts.
 import { getSupabaseAdmin } from "./supabaseAdmin.js";
 import { computeExpiry, PLAN_CODES, SUB_STATUS } from "./planEngine.js";

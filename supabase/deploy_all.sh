@@ -49,7 +49,6 @@ FUNCTIONS=(
   getTeamPortalData
   getTeamPortalDataByAccess
   handleRazorpayWebhook
-  handleStripeWebhook
   initWorkspaceSubscription
   recordInvoicePayment
   recordPayment

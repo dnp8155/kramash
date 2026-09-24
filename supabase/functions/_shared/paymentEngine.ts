@@ -1,47 +1,8 @@
-// Shared payment engine — Stripe/Razorpay verification + Pro activation.
+// Shared payment engine — Razorpay verification + Pro activation.
 // Uses Deno's built-in crypto and supabaseAdmin.
 
 import { supabaseAdmin } from "./supabaseClient.ts";
 import { computeExpiry, PLAN_CODES, SUB_STATUS } from "./planEngine.ts";
-
-// Verify a Stripe webhook signature (HMAC-SHA256).
-export async function verifyStripeSignature(rawBody: string, signatureHeader: string, webhookSecret: string, toleranceSeconds = 300) {
-  if (!signatureHeader || !webhookSecret) {
-    throw new Error("Missing Stripe signature or webhook secret");
-  }
-
-  const parts: Record<string, string> = {};
-  for (const item of signatureHeader.split(",")) {
-    const [key, ...rest] = item.split("=");
-    parts[key] = rest.join("=");
-  }
-
-  if (!parts.t || !parts.v1) {
-    throw new Error("Invalid Stripe-Signature header format");
-  }
-
-  const timestamp = parseInt(parts.t, 10);
-  if (isNaN(timestamp)) {
-    throw new Error("Invalid timestamp in Stripe signature");
-  }
-
-  const now = Math.floor(Date.now() / 1000);
-  if (now - timestamp > toleranceSeconds) {
-    throw new Error("Stripe signature timestamp outside tolerance window");
-  }
-
-  const signedPayload = `${timestamp}.${rawBody}`;
-  const enc = new TextEncoder();
-  const key = await crypto.subtle.importKey("raw", enc.encode(webhookSecret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
-  const sigBuf = await crypto.subtle.sign("HMAC", key, enc.encode(signedPayload));
-  const expectedSignature = [...new Uint8Array(sigBuf)].map((b) => b.toString(16).padStart(2, "0")).join("");
-
-  if (expectedSignature !== parts.v1) {
-    throw new Error("Stripe signature verification failed");
-  }
-
-  return JSON.parse(rawBody);
-}
 
 // Activate Pro subscription after verified payment.
 export async function activateProFromPayment(payment: any, pricing: any, proPlan: any) {
@@ -108,34 +69,8 @@ export async function activateProFromPayment(payment: any, pricing: any, proPlan
 export async function markPaymentFailed(paymentId: string, reason: string) {
   await supabaseAdmin
     .from("subscription_payments")
-    .update({
-      status: "FAILED",
-      failure_reason: reason,
-      verified_at: new Date().toISOString()
-    })
+    .update({ status: "FAILED", failure_reason: reason, verified_at: new Date().toISOString() })
     .eq("id", paymentId);
-}
-
-export async function verifyStripeSession(sessionId: string, secretKey: string) {
-  const res = await fetch(`https://api.stripe.com/v1/checkout/sessions/${sessionId}`, {
-    headers: { Authorization: `Bearer ${secretKey}` }
-  });
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`Stripe API error: ${err}`);
-  }
-  return await res.json();
-}
-
-export async function verifyStripePaymentIntent(paymentIntentId: string, secretKey: string) {
-  const res = await fetch(`https://api.stripe.com/v1/payment_intents/${paymentIntentId}`, {
-    headers: { Authorization: `Bearer ${secretKey}` }
-  });
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`Stripe API error: ${err}`);
-  }
-  return await res.json();
 }
 
 // Verify a Razorpay payment signature: HMAC-SHA256(order_id + "|" + payment_id, key_secret)
