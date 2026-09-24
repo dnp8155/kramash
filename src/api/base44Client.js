@@ -63,7 +63,6 @@ export const base44 = {
   // User management & analytics — Base44 SDK (if needed later)
   users: base44Sdk.users,
   analytics: base44Sdk.analytics,
-  asServiceRole: base44Sdk.asServiceRole,
 };
 
 export default base44;
