@@ -1,12 +1,19 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.49';
 import { secrets } from 'base44:runtime';
 
+const ANON_KEY = "sb_publishable_BKGx06R_bgjb7WT2f7K0OQ_5tPeO7CF";
+
 export default async function(req: Request): Promise<Response> {
   try {
     const body = await req.json();
     const email = body?.email?.toLowerCase().trim();
+    const password = body?.password;
+
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return Response.json({ error: 'Valid email is required' }, { status: 400 });
+    }
+    if (!password || password.length < 6) {
+      return Response.json({ error: 'Password must be at least 6 characters' }, { status: 400 });
     }
 
     const supabaseUrl = secrets.get('SUPABASE_URL');
@@ -15,49 +22,74 @@ export default async function(req: Request): Promise<Response> {
       return Response.json({ error: 'Server not configured' }, { status: 500 });
     }
 
-    // Generate 6-digit OTP
-    const code = String(Math.floor(100000 + Math.random() * 900000));
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+    const adminHeaders = {
+      'apikey': serviceRoleKey,
+      'Authorization': `Bearer ${serviceRoleKey}`,
+      'Content-Type': 'application/json',
+    };
+    const anonHeaders = {
+      'apikey': ANON_KEY,
+      'Content-Type': 'application/json',
+    };
 
-    // Delete old OTPs for this email
-    await fetch(`${supabaseUrl}/rest/v1/email_otps?email=eq.${encodeURIComponent(email)}`, {
-      method: 'DELETE',
-      headers: {
-        'apikey': serviceRoleKey,
-        'Authorization': `Bearer ${serviceRoleKey}`,
-      },
-    });
-
-    // Insert new OTP
-    const insertResp = await fetch(`${supabaseUrl}/rest/v1/email_otps`, {
+    // Step 1: Create user via admin API (email_confirm: true since autoconfirm is on)
+    const createResp = await fetch(`${supabaseUrl}/auth/v1/admin/users`, {
       method: 'POST',
-      headers: {
-        'apikey': serviceRoleKey,
-        'Authorization': `Bearer ${serviceRoleKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ email, code, expires_at: expiresAt }),
+      headers: adminHeaders,
+      body: JSON.stringify({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: { role: 'user' },
+      }),
     });
-    if (!insertResp.ok) {
-      return Response.json({ error: 'Failed to generate code' }, { status: 500 });
+
+    let userExists = false;
+    if (!createResp.ok) {
+      const errData = await createResp.json().catch(() => ({}));
+      // If user already exists, we can still send OTP (resend flow)
+      if (errData?.code === 'user_already_exists' || errData?.msg?.includes('already') || createResp.status === 400) {
+        userExists = true;
+      } else {
+        return Response.json({ error: errData?.message || errData?.msg || 'Failed to create account' }, { status: 400 });
+      }
     }
 
-    // Send OTP email via SendEmail integration
-    const base44 = createClientFromRequest(req);
-    await base44.asServiceRole.integrations.Core.SendEmail({
-      to: email,
-      subject: 'Your Kramasha verification code',
-      html: `<div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
-        <h2 style="margin: 0 0 16px 0;">Verify your email</h2>
-        <p style="color: #4a4a4a; margin: 0 0 24px 0;">Use the 6-digit code below to verify your email and finish creating your Kramasha account.</p>
-        <div style="text-align: center; margin: 32px 0;">
-          <span style="display: inline-block; font-size: 32px; font-weight: bold; letter-spacing: 8px; padding: 16px 32px; background: #f3f4f6; border-radius: 12px; color: #1a1d21;">${code}</span>
-        </div>
-        <p style="color: #6b7280; font-size: 14px; margin: 0;">This code expires in 5 minutes. If you didn't create an account, you can safely ignore this email.</p>
-      </div>`,
+    // Step 2: Sign in as the user to get an access_token
+    const signInResp = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=password`, {
+      method: 'POST',
+      headers: anonHeaders,
+      body: JSON.stringify({ email, password }),
+    });
+    const signInData = await signInResp.json();
+
+    if (!signInResp.ok) {
+      // If user exists but password doesn't match, they need to log in instead
+      if (userExists) {
+        return Response.json({ error: 'An account with this email already exists. Try logging in instead.' }, { status: 400 });
+      }
+      return Response.json({ error: signInData?.message || 'Failed to sign in' }, { status: 400 });
+    }
+
+    const accessToken = signInData.access_token;
+
+    // Step 3: Trigger reauthenticate — sends OTP email with {{ .Token }}
+    const reauthResp = await fetch(`${supabaseUrl}/auth/v1/reauthenticate`, {
+      method: 'GET',
+      headers: {
+        ...anonHeaders,
+        'Authorization': `Bearer ${accessToken}`,
+      },
     });
 
-    return Response.json({ ok: true });
+    const reauthText = await reauthResp.text().catch(() => '');
+    if (!reauthResp.ok) {
+      let reauthData;
+      try { reauthData = JSON.parse(reauthText); } catch { reauthData = { raw: reauthText }; }
+      return Response.json({ error: reauthData?.message || reauthData?.msg || reauthData?.raw || 'Failed to send verification code', reauthStatus: reauthResp.status, reauthData }, { status: 500 });
+    }
+
+    return Response.json({ ok: true, userExists });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
