@@ -12,18 +12,37 @@ export default defineConfig({
     dedupe: ['react', 'react-dom']
   },
   optimizeDeps: {
-    include: ['@supabase/supabase-js']
+    include: ['@supabase/supabase-js'],
+    entries: ['index.html', 'src/**/*.js', 'src/**/*.jsx', 'src/**/*.ts', 'src/**/*.tsx']
+  },
+  server: {
+    watch: {
+      ignored: ['**/supabase/functions/**', '**/supabase/.bundled/**', '**/supabase/.temp/**']
+    }
   },
   plugins: [
+    {
+      // Vite scans all .ts files in the project, including supabase/functions/ (Deno
+      // Edge Functions). These use Deno-specific npm: specifiers and Deno.env that Vite
+      // can't resolve. Intercept the load hook and return an empty module for any file
+      // in supabase/functions/ so Vite never parses their imports.
+      name: 'stub-supabase-edge-functions',
+      enforce: 'pre',
+      load(id) {
+        // id is an absolute path like /app/supabase/functions/_shared/supabaseClient.ts
+        if (id.includes('/supabase/functions/') && (id.endsWith('.ts') || id.endsWith('.js'))) {
+          return 'export default {};';
+        }
+        return null;
+      }
+    },
     base44({
-      // Support for legacy code that imports the base44 SDK with @/integrations, @/entities, etc.
-      // can be removed if the code has been updated to use the new SDK imports from @base44/sdk
       legacySDKImports: process.env.BASE44_LEGACY_SDK_IMPORTS === 'true',
       hmrNotifier: true,
       navigationNotifier: true,
       analyticsTracker: true,
       visualEditAgent: true
     }),
-    react(),
+    react()
   ]
 });
