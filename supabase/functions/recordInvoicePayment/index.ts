@@ -1,10 +1,11 @@
+import { withCors } from "../_shared/cors.ts";
 // recordInvoicePayment — Client payment against an invoice with overpayment prevention.
 import { supabaseAdmin, getUserFromRequest } from "../_shared/supabaseClient.ts";
 import { verifyWorkspaceMembership } from "../_shared/planEngine.ts";
 import { round2, deriveInvoiceStatus } from "../_shared/helpers.ts";
 import { computeMilestoneStatus } from "../_shared/transactionReconcile.ts";
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   try {
     const user = await getUserFromRequest(req);
     if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
@@ -108,4 +109,4 @@ Deno.serve(async (req) => {
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
-});
+}));

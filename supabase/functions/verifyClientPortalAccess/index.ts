@@ -1,10 +1,11 @@
+import { withCors } from "../_shared/cors.ts";
 // verifyClientPortalAccess — Public endpoint: a client opens their unique link
 // (/client-login/<token>), enters only a password, and this validates it.
 // On success returns a session token (= the access token) + client identity.
 import { supabaseAdmin } from "../_shared/supabaseClient.ts";
 import { verifyPassword } from "../_shared/portalCrypto.ts";
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   try {
     const body = await req.json().catch(() => ({}));
     const { token, password } = body;
@@ -41,4 +42,4 @@ Deno.serve(async (req) => {
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
-});
+}));

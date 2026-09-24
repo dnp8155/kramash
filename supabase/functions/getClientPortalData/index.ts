@@ -1,10 +1,11 @@
+import { withCors } from "../_shared/cors.ts";
 // getClientPortalData — Authenticated endpoint for client-role users (invited
 // via email). Returns all events, quotations, invoices, and payment history
 // for the logged-in client. Auto-links by email if not yet linked.
 import { supabaseAdmin, getUserFromRequest } from "../_shared/supabaseClient.ts";
 import { buildClientPortalData } from "../_shared/clientPortalData.ts";
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   try {
     const user = await getUserFromRequest(req);
     if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
@@ -65,4 +66,4 @@ Deno.serve(async (req) => {
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
-});
+}));

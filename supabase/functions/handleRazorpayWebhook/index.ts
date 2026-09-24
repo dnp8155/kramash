@@ -1,8 +1,9 @@
+import { withCors } from "../_shared/cors.ts";
 // handleRazorpayWebhook — Razorpay webhook handler for payment.captured.
 import { supabaseAdmin } from "../_shared/supabaseClient.ts";
 import { verifyRazorpayWebhookSignature, activateProFromPayment } from "../_shared/paymentEngine.ts";
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   try {
     const webhookSecret = Deno.env.get("RAZORPAY_WEBHOOK_SECRET");
     if (!webhookSecret) return Response.json({ error: "Webhook not configured" }, { status: 503 });
@@ -39,4 +40,4 @@ Deno.serve(async (req) => {
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
-});
+}));

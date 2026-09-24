@@ -1,9 +1,10 @@
+import { withCors } from "../_shared/cors.ts";
 // generateNotifications — Scan workspace data + generate in-app + email notifications.
 import { supabaseAdmin, getUserFromRequest } from "../_shared/supabaseClient.ts";
 import { resolvePlanContext } from "../_shared/planEngine.ts";
 import { formatDatesList } from "../_shared/helpers.ts";
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   try {
     const user = await getUserFromRequest(req);
     if (!user) return Response.json({ error: "Authentication required" }, { status: 401 });
@@ -104,4 +105,4 @@ Deno.serve(async (req) => {
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
-});
+}));

@@ -1,7 +1,8 @@
+import { withCors } from "../_shared/cors.ts";
 // getPublicEventData — Public event tracking page by token.
 import { supabaseAdmin } from "../_shared/supabaseClient.ts";
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   try {
     const body = await req.json().catch(() => ({}));
     const token = body.token;
@@ -125,4 +126,4 @@ Deno.serve(async (req) => {
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
-});
+}));

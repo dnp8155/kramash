@@ -1,8 +1,9 @@
+import { withCors } from "../_shared/cors.ts";
 // verifyTeamPortalAccess — Public: team member validates password by token.
 import { supabaseAdmin } from "../_shared/supabaseClient.ts";
 import { verifyPassword } from "../_shared/portalCrypto.ts";
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   try {
     const body = await req.json().catch(() => ({}));
     const { token, password } = body;
@@ -31,4 +32,4 @@ Deno.serve(async (req) => {
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
-});
+}));

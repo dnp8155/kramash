@@ -1,3 +1,4 @@
+import { withCors } from "../_shared/cors.ts";
 // agentChat — AI assistant with real workspace data context.
 import { supabaseAdmin, getUserFromRequest } from "../_shared/supabaseClient.ts";
 
@@ -12,7 +13,7 @@ function money(n: number, currency = "INR"): string {
   return `${sym}${Number(n || 0).toLocaleString("en-IN")}`;
 }
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   try {
     const user = await getUserFromRequest(req);
     if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
@@ -170,4 +171,4 @@ Assistant:`;
   } catch (error) {
     return Response.json({ error: error.message || "Failed to generate response" }, { status: 500 });
   }
-});
+}));

@@ -1,9 +1,10 @@
+import { withCors } from "../_shared/cors.ts";
 // voidTransaction — Soft-delete (status=VOID) + reconcile invoice/milestone.
 import { supabaseAdmin, getUserFromRequest } from "../_shared/supabaseClient.ts";
 import { verifyWorkspaceMembership } from "../_shared/planEngine.ts";
 import { reconcileAfterTransactionChange } from "../_shared/transactionReconcile.ts";
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   try {
     const user = await getUserFromRequest(req);
     if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
@@ -36,4 +37,4 @@ Deno.serve(async (req) => {
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
-});
+}));

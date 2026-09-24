@@ -1,8 +1,9 @@
+import { withCors } from "../_shared/cors.ts";
 // getTeamPortalDataByAccess — Password-only team portal session data.
 import { supabaseAdmin } from "../_shared/supabaseClient.ts";
 import { buildTeamPortalData } from "../_shared/teamPortalData.ts";
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   try {
     const body = await req.json().catch(() => ({}));
     const { session_token, team_member_id } = body;
@@ -30,4 +31,4 @@ Deno.serve(async (req) => {
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
-});
+}));

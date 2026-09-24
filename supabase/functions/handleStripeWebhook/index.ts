@@ -1,8 +1,9 @@
+import { withCors } from "../_shared/cors.ts";
 // handleStripeWebhook — Stripe webhook handler for checkout.session.completed.
 import { supabaseAdmin } from "../_shared/supabaseClient.ts";
 import { verifyStripeSignature, activateProFromPayment } from "../_shared/paymentEngine.ts";
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   try {
     const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
     if (!webhookSecret) return Response.json({ error: "Webhook not configured" }, { status: 503 });
@@ -37,4 +38,4 @@ Deno.serve(async (req) => {
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
-});
+}));

@@ -1,8 +1,9 @@
+import { withCors } from "../_shared/cors.ts";
 // clientViewQuotation — Public client-facing quotation view with view tracking.
 import { supabaseAdmin } from "../_shared/supabaseClient.ts";
 import { safeJson } from "../_shared/helpers.ts";
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   try {
     const body = await req.json().catch(() => ({}));
     const token = body.public_token || body.token;
@@ -98,4 +99,4 @@ Deno.serve(async (req) => {
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
-});
+}));

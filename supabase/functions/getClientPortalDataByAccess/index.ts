@@ -1,10 +1,11 @@
+import { withCors } from "../_shared/cors.ts";
 // getClientPortalDataByAccess — Powers the password-only portal path. Validates
 // the session token (issued by verifyClientPortalAccess) against the stored
 // access token + enabled flag, then returns the same portal payload shape.
 import { supabaseAdmin } from "../_shared/supabaseClient.ts";
 import { buildClientPortalData } from "../_shared/clientPortalData.ts";
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   try {
     const body = await req.json().catch(() => ({}));
     const { session_token, client_id } = body;
@@ -35,4 +36,4 @@ Deno.serve(async (req) => {
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
-});
+}));

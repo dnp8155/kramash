@@ -1,7 +1,8 @@
+import { withCors } from "../_shared/cors.ts";
 // sendOtp — Generate + send OTP via SMS provider (in-memory store).
 import { otpStore, generateOtp, SEND_COOLDOWN_MS, OTP_TTL_MS, cleanupExpiredOtps } from "../_shared/otpStore.ts";
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   try {
     const body = await req.json();
     const phone = body?.phone;
@@ -30,4 +31,4 @@ Deno.serve(async (req) => {
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
-});
+}));

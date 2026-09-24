@@ -1,7 +1,8 @@
+import { withCors } from "../_shared/cors.ts";
 // adminDashboardStats — Platform-level dashboard statistics (admin only).
 import { supabaseAdmin, getUserFromRequest } from "../_shared/supabaseClient.ts";
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   try {
     const user = await getUserFromRequest(req);
     if (!user) return Response.json({ error: "Admin only" }, { status: 403 });
@@ -114,4 +115,4 @@ Deno.serve(async (req) => {
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
-});
+}));

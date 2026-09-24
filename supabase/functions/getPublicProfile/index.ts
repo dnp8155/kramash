@@ -1,8 +1,9 @@
+import { withCors } from "../_shared/cors.ts";
 // getPublicProfile — Public workspace profile by slug.
 import { supabaseAdmin } from "../_shared/supabaseClient.ts";
 import { safeJson } from "../_shared/helpers.ts";
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   try {
     let slug = null;
     try {
@@ -58,4 +59,4 @@ Deno.serve(async (req) => {
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
-});
+}));

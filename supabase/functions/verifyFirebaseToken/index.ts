@@ -1,7 +1,8 @@
+import { withCors } from "../_shared/cors.ts";
 // verifyFirebaseToken — Verify Firebase ID token + look up user by phone.
 import { supabaseAdmin } from "../_shared/supabaseClient.ts";
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   try {
     const body = await req.json();
     const { token, phone, uid } = body;
@@ -36,4 +37,4 @@ Deno.serve(async (req) => {
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
-});
+}));

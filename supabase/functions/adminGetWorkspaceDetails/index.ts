@@ -1,8 +1,9 @@
+import { withCors } from "../_shared/cors.ts";
 // adminGetWorkspaceDetails — Admin: detailed workspace info + plan + usage.
 import { supabaseAdmin, getUserFromRequest } from "../_shared/supabaseClient.ts";
 import { resolvePlanContext, countUsage } from "../_shared/planEngine.ts";
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   try {
     const user = await getUserFromRequest(req);
     if (!user) return Response.json({ error: "Admin only" }, { status: 403 });
@@ -54,4 +55,4 @@ Deno.serve(async (req) => {
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
-});
+}));

@@ -1,8 +1,9 @@
+import { withCors } from "../_shared/cors.ts";
 // dispatchPushNotification — Web push + native push dispatch.
 import { supabaseAdmin, getUserFromRequest } from "../_shared/supabaseClient.ts";
 import { createVapidJwt, encryptPushPayload } from "../_shared/webPushCrypto.ts";
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   try {
     const user = await getUserFromRequest(req);
     if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
@@ -52,4 +53,4 @@ Deno.serve(async (req) => {
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
-});
+}));

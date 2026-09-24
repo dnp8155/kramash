@@ -1,8 +1,9 @@
+import { withCors } from "../_shared/cors.ts";
 // assignProSubscription — Admin assigns Pro subscription to a workspace.
 import { supabaseAdmin, getUserFromRequest } from "../_shared/supabaseClient.ts";
 import { computeExpiry, PLAN_CODES } from "../_shared/planEngine.ts";
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   try {
     const user = await getUserFromRequest(req);
     if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
@@ -40,4 +41,4 @@ Deno.serve(async (req) => {
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
-});
+}));

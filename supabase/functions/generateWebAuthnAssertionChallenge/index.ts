@@ -1,9 +1,10 @@
+import { withCors } from "../_shared/cors.ts";
 // generateWebAuthnAssertionChallenge — Create challenge for passkey login.
 import { supabaseAdmin, getUserFromRequest } from "../_shared/supabaseClient.ts";
 import { base64urlEncode, generateChallenge, createChallengeToken, getRpId } from "../_shared/webauthnCore.ts";
 import { safeJson } from "../_shared/helpers.ts";
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   try {
     const user = await getUserFromRequest(req);
     if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
@@ -27,4 +28,4 @@ Deno.serve(async (req) => {
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
-});
+}));

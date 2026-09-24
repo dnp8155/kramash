@@ -1,8 +1,9 @@
+import { withCors } from "../_shared/cors.ts";
 // signQuotation — Public endpoint: client signs (accepts) a finalized quotation.
 import { supabaseAdmin } from "../_shared/supabaseClient.ts";
 import { safeJson } from "../_shared/helpers.ts";
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   try {
     const body = await req.json().catch(() => ({}));
     const { signature, signed_by_name, consent } = body;
@@ -68,4 +69,4 @@ Deno.serve(async (req) => {
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
-});
+}));

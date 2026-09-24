@@ -1,7 +1,8 @@
+import { withCors } from "../_shared/cors.ts";
 // verifyOtp — Validate OTP from in-memory store (max 5 attempts, 5min TTL).
 import { otpStore, MAX_ATTEMPTS, cleanupExpiredOtps } from "../_shared/otpStore.ts";
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   try {
     const body = await req.json();
     const phone = body?.phone;
@@ -34,4 +35,4 @@ Deno.serve(async (req) => {
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
-});
+}));

@@ -1,3 +1,4 @@
+import { withCors } from "../_shared/cors.ts";
 // enableClientPortalAccess — Workspace admin enables (or disables) the
 // password-only portal gate for a client. On enable: generates a random
 // access token + random password, stores the hashed password + token +
@@ -6,7 +7,7 @@ import { supabaseAdmin, getUserFromRequest } from "../_shared/supabaseClient.ts"
 import { verifyWorkspaceMembership } from "../_shared/clientPortalData.ts";
 import { generateAccessToken, generatePassword, hashPassword } from "../_shared/portalCrypto.ts";
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   try {
     const user = await getUserFromRequest(req);
     if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
@@ -71,4 +72,4 @@ Deno.serve(async (req) => {
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
-});
+}));

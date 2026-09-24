@@ -1,9 +1,10 @@
+import { withCors } from "../_shared/cors.ts";
 // verifyPayment — Verify Razorpay payment signature + activate Pro.
 import { supabaseAdmin, getUserFromRequest } from "../_shared/supabaseClient.ts";
 import { verifyWorkspaceMembership } from "../_shared/planEngine.ts";
 import { verifyRazorpaySignature, verifyRazorpayPayment, activateProFromPayment, markPaymentFailed } from "../_shared/paymentEngine.ts";
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   try {
     const user = await getUserFromRequest(req);
     if (!user) return Response.json({ error: "Authentication required" }, { status: 401 });
@@ -53,4 +54,4 @@ Deno.serve(async (req) => {
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
-});
+}));

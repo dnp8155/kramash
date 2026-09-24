@@ -1,8 +1,9 @@
+import { withCors } from "../_shared/cors.ts";
 // getTeamPortalData — Authenticated team member portal data (invited-user path).
 import { supabaseAdmin, getUserFromRequest } from "../_shared/supabaseClient.ts";
 import { buildTeamPortalData } from "../_shared/teamPortalData.ts";
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   try {
     const user = await getUserFromRequest(req);
     if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
@@ -44,4 +45,4 @@ Deno.serve(async (req) => {
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
-});
+}));
