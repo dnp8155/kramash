@@ -43,7 +43,7 @@ import { Section, Field } from "@/components/quotation/QuotationParts";
 import { QUOTATION_TEMPLATES, renderTemplate } from "@/constants/quotationTemplates";
 import QuotationTemplatePreview from "@/components/quotation/QuotationTemplatePreview";
 import QuotationTemplateSettings from "@/components/quotation/QuotationTemplateSettings";
-import PublicLinkPanel from "@/components/quotation/PublicLinkPanel";
+import QuotationPublicLinkPanel from "@/components/quotation/QuotationPublicLinkPanel";
 import SectionVisibilityToggles from "@/components/quotation/SectionVisibilityToggles";
 import RichTextEditor from "@/components/common/RichTextEditor";
 import WordCounterTextarea from "@/components/common/WordCounterTextarea";
@@ -839,7 +839,7 @@ export default function QuotationEditor() {
       />
 
       {existingQuotation && (
-        <PublicLinkPanel quotation={existingQuotation} onUpdated={(updated) => { setExistingQuotation((q) => ({ ...q, ...updated })); }} />
+        <QuotationPublicLinkPanel quotation={existingQuotation} onUpdated={(updated) => { setExistingQuotation((q) => ({ ...q, ...updated })); }} />
       )}
 
       <PdfPreviewModal url={preview.url} filename={preview.filename} open={preview.open} loading={preview.loading} onClose={() => setPreview((p) => ({ ...p, open: false }))} />

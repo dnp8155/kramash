@@ -6,7 +6,7 @@ import { useWorkspace } from "@/lib/WorkspaceContext";
 import { cn } from "@/lib/utils";
 import { togglePublicLink } from "@/lib/clientEdgeFunctions";
 
-export default function PublicLinkPanel({ quotation, onUpdated }) {
+export default function QuotationPublicLinkPanel({ quotation, onUpdated }) {
   const { toast } = useToast();
   const { workspace } = useWorkspace();
   const isPro = workspace?.plan_type === "pro";
