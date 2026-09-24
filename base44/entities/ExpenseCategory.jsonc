@@ -1,0 +1,46 @@
+{
+  "name": "ExpenseCategory",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "title": "Workspace ID"
+    },
+    "name": {
+      "type": "string",
+      "title": "Category Name"
+    },
+    "description": {
+      "type": "string",
+      "title": "Description",
+      "maxLength": 1000
+    },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "default": "active",
+      "enum": [
+        "active",
+        "inactive"
+      ]
+    }
+  },
+  "required": [
+    "workspace_id",
+    "name"
+  ],
+  "rls": {
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

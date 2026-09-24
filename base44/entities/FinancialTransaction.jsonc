@@ -1,0 +1,119 @@
+{
+  "name": "FinancialTransaction",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "title": "Workspace ID"
+    },
+    "financial_year_id": {
+      "type": "string",
+      "title": "Financial Year ID"
+    },
+    "event_id": {
+      "type": "string",
+      "title": "Event ID"
+    },
+    "transaction_type": {
+      "type": "string",
+      "title": "Transaction Type",
+      "enum": [
+        "CLIENT_RECEIPT",
+        "TEAM_PAYMENT",
+        "BUSINESS_EXPENSE"
+      ]
+    },
+    "client_id": {
+      "type": "string",
+      "title": "Client ID"
+    },
+    "team_member_id": {
+      "type": "string",
+      "title": "Team Member ID"
+    },
+    "team_assignment_id": {
+      "type": "string",
+      "title": "Team Assignment ID"
+    },
+    "service_assignment_id": {
+      "type": "string",
+      "title": "Service Assignment ID"
+    },
+    "milestone_id": {
+      "type": "string",
+      "title": "Payment Milestone ID (for CLIENT_RECEIPT linked to a specific milestone due)"
+    },
+    "invoice_id": {
+      "type": "string",
+      "title": "Invoice ID (for CLIENT_RECEIPT linked to a specific invoice)"
+    },
+    "expense_category_id": {
+      "type": "string",
+      "title": "Expense Category ID"
+    },
+    "expense_category_name_snapshot": {
+      "type": "string",
+      "title": "Expense Category Snapshot"
+    },
+    "amount": {
+      "type": "number",
+      "title": "Amount",
+      "default": 0
+    },
+    "payment_method": {
+      "type": "string",
+      "title": "Payment Method",
+      "default": "Cash",
+      "enum": [
+        "Cash",
+        "UPI",
+        "Bank Transfer",
+        "Card",
+        "Cheque",
+        "Other"
+      ]
+    },
+    "transaction_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Transaction Date"
+    },
+    "reference_number": {
+      "type": "string",
+      "title": "Reference Number"
+    },
+    "notes": {
+      "type": "string",
+      "title": "Notes"
+    },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "default": "ACTIVE",
+      "enum": [
+        "ACTIVE",
+        "VOID"
+      ]
+    }
+  },
+  "required": [
+    "workspace_id",
+    "transaction_type",
+    "amount",
+    "transaction_date"
+  ],
+  "rls": {
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

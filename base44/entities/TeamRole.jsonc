@@ -1,0 +1,61 @@
+{
+  "name": "TeamRole",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "title": "Workspace ID"
+    },
+    "name": {
+      "type": "string",
+      "title": "Role Name"
+    },
+    "default_rate": {
+      "type": "number",
+      "title": "Default Rate",
+      "default": 0
+    },
+    "rate_type": {
+      "type": "string",
+      "title": "Rate Type",
+      "default": "Per Event",
+      "enum": [
+        "Per Event",
+        "Per Day",
+        "Fixed"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "default": "active",
+      "enum": [
+        "active",
+        "inactive"
+      ]
+    },
+    "description": {
+      "type": "string",
+      "title": "Description",
+      "maxLength": 1000
+    }
+  },
+  "required": [
+    "workspace_id",
+    "name"
+  ],
+  "rls": {
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

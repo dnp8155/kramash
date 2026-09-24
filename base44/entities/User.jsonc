@@ -5,8 +5,53 @@
       "description": "The role of the user in the app",
       "enum": [
         "admin",
-        "user"
+        "user",
+        "client",
+        "team_member"
       ]
+    },
+    "phone": {
+      "type": "string",
+      "title": "Phone Number",
+      "description": "Phone number for OTP login (E.164 format, e.g. +91...)"
+    },
+    "language": {
+      "type": "string",
+      "title": "App Language",
+      "description": "Preferred UI language code (en, hi, gu)",
+      "default": "en",
+      "enum": [
+        "en",
+        "hi",
+        "gu"
+      ]
+    },
+    "linked_client_id": {
+      "type": "string",
+      "title": "Linked Client ID",
+      "description": "For client-role users: the Client record this user is linked to"
+    },
+    "linked_team_member_id": {
+      "type": "string",
+      "title": "Linked Team Member ID",
+      "description": "For team_member-role users: the TeamMember record this user is linked to"
+    },
+    "linked_workspace_id": {
+      "type": "string",
+      "title": "Linked Workspace ID",
+      "description": "For client/team_member-role users: the workspace this record belongs to"
+    },
+    "app_lock_enabled": {
+      "type": "boolean",
+      "title": "App Lock Enabled",
+      "description": "Whether WebAuthn app lock is enabled for this user",
+      "default": false
+    },
+    "app_lock_relock_after": {
+      "type": "number",
+      "title": "Re-lock After (minutes)",
+      "description": "Re-lock the app after this many minutes of inactivity (0 = re-lock on tab close only)",
+      "default": 0
     }
   },
   "required": [

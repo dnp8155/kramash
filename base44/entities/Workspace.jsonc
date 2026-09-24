@@ -1,0 +1,214 @@
+{
+  "name": "Workspace",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "title": "Business / Workspace Name"
+    },
+    "business_type": {
+      "type": "string",
+      "title": "Business Type"
+    },
+    "business_category": {
+      "type": "string",
+      "title": "Business Category",
+      "default": "OTHER",
+      "enum": [
+        "PHOTOGRAPHY",
+        "EVENT_MANAGEMENT",
+        "ARCHITECTURE",
+        "INTERIOR",
+        "SALON_BEAUTY",
+        "CONSULTING",
+        "AGENCY",
+        "CATERING",
+        "CONTRACTING",
+        "OTHER"
+      ]
+    },
+    "custom_business_type": {
+      "type": "string",
+      "title": "Custom Business Type (for OTHER category)"
+    },
+    "custom_work_item_singular": {
+      "type": "string",
+      "title": "Custom Work Item Label (Singular)"
+    },
+    "custom_work_item_plural": {
+      "type": "string",
+      "title": "Custom Work Item Label (Plural)"
+    },
+    "tagline": {
+      "type": "string",
+      "title": "Business Tagline"
+    },
+    "website": {
+      "type": "string",
+      "title": "Website URL"
+    },
+    "owner_user_id": {
+      "type": "string",
+      "title": "Owner User ID"
+    },
+    "email": {
+      "type": "string",
+      "title": "Business Email"
+    },
+    "phone": {
+      "type": "string",
+      "title": "Business Phone"
+    },
+    "logo": {
+      "type": "string",
+      "title": "Workspace Logo URL"
+    },
+    "address": {
+      "type": "string",
+      "title": "Business Address"
+    },
+    "city": {
+      "type": "string",
+      "title": "City"
+    },
+    "state": {
+      "type": "string",
+      "title": "State"
+    },
+    "country": {
+      "type": "string",
+      "title": "Country"
+    },
+    "currency": {
+      "type": "string",
+      "title": "Currency",
+      "default": "INR"
+    },
+    "timezone": {
+      "type": "string",
+      "title": "Timezone",
+      "default": "Asia/Kolkata"
+    },
+    "date_format": {
+      "type": "string",
+      "title": "Date Format",
+      "default": "DD/MM/YYYY",
+      "enum": [
+        "DD/MM/YYYY",
+        "MM/DD/YYYY",
+        "YYYY-MM-DD"
+      ]
+    },
+    "number_format": {
+      "type": "string",
+      "title": "Number Format",
+      "default": "indian",
+      "enum": [
+        "indian",
+        "western"
+      ]
+    },
+    "fy_start_month": {
+      "type": "number",
+      "title": "Financial Year Start Month (1-12)",
+      "default": 4
+    },
+    "plan_type": {
+      "type": "string",
+      "title": "Plan Type",
+      "default": "free",
+      "enum": [
+        "free",
+        "pro"
+      ]
+    },
+    "plan_status": {
+      "type": "string",
+      "title": "Plan Status",
+      "default": "active",
+      "enum": [
+        "active",
+        "suspended",
+        "cancelled"
+      ]
+    },
+    "gst_enabled": {
+      "type": "boolean",
+      "title": "GST Enabled",
+      "default": false
+    },
+    "gstin": {
+      "type": "string",
+      "title": "GSTIN"
+    },
+    "gst_business_name": {
+      "type": "string",
+      "title": "GST Registered Business Name"
+    },
+    "gst_billing_address": {
+      "type": "string",
+      "title": "GST Billing Address"
+    },
+    "gst_state": {
+      "type": "string",
+      "title": "GST State"
+    },
+    "default_gst_rate": {
+      "type": "number",
+      "title": "Default GST Rate (%)",
+      "default": 18
+    },
+    "team_member_types": {
+      "type": "string",
+      "title": "Team Member Types (JSON)"
+    },
+    "event_types": {
+      "type": "string",
+      "title": "Event / Work Types (JSON array of strings)"
+    },
+    "display_preferences": {
+      "type": "string",
+      "title": "Display Preferences (JSON)"
+    },
+    "public_profile_enabled": {
+      "type": "boolean",
+      "title": "Public Profile Enabled",
+      "default": false
+    },
+    "public_profile_slug": {
+      "type": "string",
+      "title": "Public Profile Slug (URL identifier)"
+    },
+    "public_profile_about": {
+      "type": "string",
+      "title": "Public Profile About Text"
+    },
+    "public_profile_social_links": {
+      "type": "string",
+      "title": "Public Profile Social Links (JSON: {instagram, facebook, youtube, website})"
+    },
+    "description": {
+      "type": "string",
+      "title": "Description",
+      "maxLength": 1000
+    }
+  },
+  "required": [
+    "name",
+    "owner_user_id"
+  ],
+  "rls": {
+    "read": {
+      "data.owner_user_id": "{{user.id}}"
+    },
+    "create": {
+      "data.owner_user_id": "{{user.id}}"
+    },
+    "update": {
+      "data.owner_user_id": "{{user.id}}"
+    },
+    "delete": {
+      "data.owner_user_id": "{{user.id}}"
+    }
+  }
+}

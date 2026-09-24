@@ -1,0 +1,288 @@
+{
+  "name": "Quotation",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "title": "Workspace ID"
+    },
+    "quotation_number": {
+      "type": "string",
+      "title": "Quotation Number"
+    },
+    "client_id": {
+      "type": "string",
+      "title": "Client ID"
+    },
+    "event_id": {
+      "type": "string",
+      "title": "Event ID"
+    },
+    "quotation_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Quotation Date"
+    },
+    "valid_until": {
+      "type": "string",
+      "format": "date",
+      "title": "Valid Until"
+    },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "default": "draft",
+      "enum": [
+        "draft",
+        "finalized",
+        "accepted",
+        "rejected",
+        "expired",
+        "cancelled"
+      ]
+    },
+    "category": {
+      "type": "string",
+      "title": "Quotation Category",
+      "default": "PHOTOGRAPHY",
+      "enum": [
+        "PHOTOGRAPHY",
+        "EVENT_MANAGEMENT",
+        "ARCHITECTURE",
+        "OTHER"
+      ]
+    },
+    "context_type": {
+      "type": "string",
+      "title": "Context Type (e.g. bride_side, groom_side, common, residential, commercial)"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Project/Event Start Date"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Project/Event End Date"
+    },
+    "excluded_dates": {
+      "type": "array",
+      "title": "Excluded Dates (not part of quotation scope)",
+      "items": {
+        "type": "string",
+        "format": "date"
+      },
+      "default": []
+    },
+    "show_pricing": {
+      "type": "boolean",
+      "title": "Show Qty, Rate & Amount to Client",
+      "default": true
+    },
+    "template_id": {
+      "type": "string",
+      "title": "PDF Template ID",
+      "default": "black_premium"
+    },
+    "template_config": {
+      "type": "string",
+      "title": "Template Custom Config (JSON)"
+    },
+    "project_title": {
+      "type": "string",
+      "title": "Project / Scope Title"
+    },
+    "project_summary": {
+      "type": "string",
+      "title": "Project Summary"
+    },
+    "subtotal": {
+      "type": "number",
+      "title": "Subtotal",
+      "default": 0
+    },
+    "discount_type": {
+      "type": "string",
+      "title": "Discount Type",
+      "default": "percent",
+      "enum": [
+        "percent",
+        "fixed"
+      ]
+    },
+    "discount_value": {
+      "type": "number",
+      "title": "Discount Value",
+      "default": 0
+    },
+    "discount_amount": {
+      "type": "number",
+      "title": "Discount Amount",
+      "default": 0
+    },
+    "taxable_amount": {
+      "type": "number",
+      "title": "Taxable Amount",
+      "default": 0
+    },
+    "gst_applicable": {
+      "type": "boolean",
+      "title": "GST Applicable",
+      "default": false
+    },
+    "gst_mode": {
+      "type": "string",
+      "title": "GST Mode",
+      "default": "cgst_sgst",
+      "enum": [
+        "cgst_sgst",
+        "igst"
+      ]
+    },
+    "cgst_amount": {
+      "type": "number",
+      "title": "CGST Amount",
+      "default": 0
+    },
+    "sgst_amount": {
+      "type": "number",
+      "title": "SGST Amount",
+      "default": 0
+    },
+    "igst_amount": {
+      "type": "number",
+      "title": "IGST Amount",
+      "default": 0
+    },
+    "gst_total": {
+      "type": "number",
+      "title": "GST Total",
+      "default": 0
+    },
+    "grand_total": {
+      "type": "number",
+      "title": "Grand Total",
+      "default": 0
+    },
+    "payment_schedule_json": {
+      "type": "string",
+      "title": "Payment Milestones (JSON)"
+    },
+    "terms_and_conditions": {
+      "type": "string",
+      "title": "Terms & Conditions"
+    },
+    "special_notes": {
+      "type": "string",
+      "title": "Special Notes (scope-specific: travel, accommodation, revisions, etc.)"
+    },
+    "payment_conditions": {
+      "type": "string",
+      "title": "Payment Conditions (shown on quotation PDF)"
+    },
+    "notes": {
+      "type": "string",
+      "title": "Notes (internal)"
+    },
+    "bank_details_snapshot": {
+      "type": "string",
+      "title": "Bank & UPI Details Snapshot (JSON)"
+    },
+    "social_links_snapshot": {
+      "type": "string",
+      "title": "Social Links Snapshot (JSON)"
+    },
+    "footer_message": {
+      "type": "string",
+      "title": "Footer / Thank You Message"
+    },
+    "client_snapshot": {
+      "type": "string",
+      "title": "Client Snapshot (JSON)"
+    },
+    "business_snapshot": {
+      "type": "string",
+      "title": "Business Snapshot (JSON)"
+    },
+    "event_snapshot": {
+      "type": "string",
+      "title": "Event Snapshot (JSON)"
+    },
+    "client_signature": {
+      "type": "string",
+      "title": "Client Signature (data URL)"
+    },
+    "signed_by_name": {
+      "type": "string",
+      "title": "Signed By (client name)"
+    },
+    "signed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Signed At"
+    },
+    "client_access_password": {
+      "type": "string",
+      "title": "Client Access Password (optional gate for online quotation link)"
+    },
+    "public_token": {
+      "type": "string",
+      "title": "Public Portal Token (secure random token for client project portal URL)"
+    },
+    "public_link_enabled": {
+      "type": "boolean",
+      "title": "Public Link Enabled (admin master control)",
+      "default": false
+    },
+    "hide_team_names": {
+      "type": "boolean",
+      "title": "Hide Team Names on Public Portal",
+      "default": false
+    },
+    "portal_first_viewed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Portal First Viewed At"
+    },
+    "portal_latest_viewed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Portal Latest Viewed At"
+    },
+    "portal_view_count": {
+      "type": "number",
+      "title": "Portal View Count",
+      "default": 0
+    },
+    "sync_pending": {
+      "type": "boolean",
+      "title": "Sync Pending (accepted quotation needs Event+Financial sync)",
+      "default": false
+    },
+    "sync_completed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Sync Completed At"
+    }
+  },
+  "required": [
+    "workspace_id",
+    "quotation_number",
+    "quotation_date"
+  ],
+  "rls": {
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

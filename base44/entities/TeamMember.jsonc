@@ -1,0 +1,104 @@
+{
+  "name": "TeamMember",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "title": "Workspace ID"
+    },
+    "name": {
+      "type": "string",
+      "title": "Name"
+    },
+    "phone": {
+      "type": "string",
+      "title": "Phone"
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "title": "Email"
+    },
+    "role_id": {
+      "type": "string",
+      "title": "Role ID"
+    },
+    "profession": {
+      "type": "string",
+      "title": "Profession"
+    },
+    "is_self": {
+      "type": "boolean",
+      "title": "Is Self (workspace owner's own roster entry)",
+      "default": false
+    },
+    "member_type_id": {
+      "type": "string",
+      "title": "Team Member Type ID (legacy \u2014 event-specific, use assignments)"
+    },
+    "color": {
+      "type": "string",
+      "title": "Color (hex code for visual identification across calendar/cards)",
+      "default": "#0d9488"
+    },
+    "default_rate": {
+      "type": "number",
+      "title": "Default Rate (legacy \u2014 rate comes from Role in Preferences)",
+      "default": 0
+    },
+    "rate_type": {
+      "type": "string",
+      "title": "Rate Type (legacy \u2014 rate comes from Role in Preferences)",
+      "default": "Per Event",
+      "enum": [
+        "Per Event",
+        "Per Day",
+        "Fixed"
+      ]
+    },
+    "notes": {
+      "type": "string",
+      "title": "Notes"
+    },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "default": "active",
+      "enum": [
+        "active",
+        "inactive"
+      ]
+    },
+    "portal_access_token": {
+      "type": "string",
+      "title": "Portal Access Token (unique random token for password-only portal link)"
+    },
+    "portal_password_hash": {
+      "type": "string",
+      "title": "Portal Password Hash (salt:hash, never store plaintext)"
+    },
+    "portal_access_enabled": {
+      "type": "boolean",
+      "title": "Portal Access Enabled (admin master control for password-only portal)",
+      "default": false
+    }
+  },
+  "required": [
+    "workspace_id",
+    "name"
+  ],
+  "rls": {
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

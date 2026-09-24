@@ -1,0 +1,78 @@
+{
+  "name": "Client",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "title": "Workspace ID"
+    },
+    "name": {
+      "type": "string",
+      "title": "Client Name"
+    },
+    "phone": {
+      "type": "string",
+      "title": "Phone"
+    },
+    "alternate_phone": {
+      "type": "string",
+      "title": "Alternate Phone"
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "title": "Email"
+    },
+    "address": {
+      "type": "string",
+      "title": "Address"
+    },
+    "city": {
+      "type": "string",
+      "title": "City"
+    },
+    "state": {
+      "type": "string",
+      "title": "State"
+    },
+    "country": {
+      "type": "string",
+      "title": "Country"
+    },
+    "notes": {
+      "type": "string",
+      "title": "Notes"
+    },
+    "portal_access_token": {
+      "type": "string",
+      "title": "Portal Access Token (unique random token for password-only portal link)"
+    },
+    "portal_password_hash": {
+      "type": "string",
+      "title": "Portal Password Hash (salt:hash, never store plaintext)"
+    },
+    "portal_access_enabled": {
+      "type": "boolean",
+      "title": "Portal Access Enabled (admin master control for password-only portal)",
+      "default": false
+    }
+  },
+  "required": [
+    "workspace_id",
+    "name"
+  ],
+  "rls": {
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

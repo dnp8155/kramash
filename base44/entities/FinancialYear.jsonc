@@ -1,0 +1,68 @@
+{
+  "name": "FinancialYear",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "title": "Workspace ID"
+    },
+    "fy_id": {
+      "type": "string",
+      "title": "Financial Year ID (e.g. FY2026-27)"
+    },
+    "label": {
+      "type": "string",
+      "title": "Label (e.g. April 2026 - March 2027)"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Start Date"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date",
+      "title": "End Date"
+    },
+    "is_active": {
+      "type": "boolean",
+      "title": "Is Active (workspace default FY)",
+      "default": false
+    },
+    "status": {
+      "type": "string",
+      "title": "Period Status",
+      "default": "open",
+      "enum": [
+        "open",
+        "closed"
+      ]
+    },
+    "description": {
+      "type": "string",
+      "title": "Description",
+      "maxLength": 1000
+    }
+  },
+  "required": [
+    "workspace_id",
+    "fy_id",
+    "label",
+    "start_date",
+    "end_date"
+  ],
+  "rls": {
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

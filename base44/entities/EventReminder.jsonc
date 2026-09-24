@@ -1,0 +1,67 @@
+{
+  "name": "EventReminder",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "title": "Workspace ID"
+    },
+    "event_id": {
+      "type": "string",
+      "title": "Event ID"
+    },
+    "reminder_type": {
+      "type": "string",
+      "title": "Reminder Type",
+      "default": "24_hours",
+      "enum": [
+        "24_hours",
+        "48_hours",
+        "custom"
+      ]
+    },
+    "custom_hours": {
+      "type": "number",
+      "title": "Custom Hours Before",
+      "default": 0
+    },
+    "scheduled_for": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Scheduled For"
+    },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "default": "pending",
+      "enum": [
+        "pending",
+        "sent",
+        "cancelled"
+      ]
+    },
+    "description": {
+      "type": "string",
+      "title": "Description",
+      "maxLength": 1000
+    }
+  },
+  "required": [
+    "workspace_id",
+    "event_id"
+  ],
+  "rls": {
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

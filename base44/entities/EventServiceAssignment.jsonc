@@ -1,0 +1,82 @@
+{
+  "name": "EventServiceAssignment",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "title": "Workspace ID"
+    },
+    "event_id": {
+      "type": "string",
+      "title": "Event ID"
+    },
+    "service_id": {
+      "type": "string",
+      "title": "Service ID"
+    },
+    "service_name_snapshot": {
+      "type": "string",
+      "title": "Service Name Snapshot"
+    },
+    "provider_id": {
+      "type": "string",
+      "title": "Provider Team Member ID (optional)"
+    },
+    "provider_name_snapshot": {
+      "type": "string",
+      "title": "Provider Name Snapshot"
+    },
+    "agreed_rate": {
+      "type": "number",
+      "title": "Agreed Rate (event-specific)",
+      "default": 0
+    },
+    "rate_type": {
+      "type": "string",
+      "title": "Rate Type",
+      "default": "Fixed",
+      "enum": [
+        "Fixed",
+        "Per Day",
+        "Per Unit"
+      ]
+    },
+    "is_addon": {
+      "type": "boolean",
+      "title": "Is Add-on (last-minute, adds to contract value)",
+      "default": false
+    },
+    "assignment_status": {
+      "type": "string",
+      "title": "Assignment Status",
+      "default": "assigned",
+      "enum": [
+        "assigned",
+        "removed"
+      ]
+    },
+    "notes": {
+      "type": "string",
+      "title": "Notes"
+    }
+  },
+  "required": [
+    "workspace_id",
+    "event_id",
+    "service_id"
+  ],
+  "rls": {
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}
