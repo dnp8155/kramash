@@ -82,11 +82,9 @@ export default async function(req: Request): Promise<Response> {
       },
     });
 
-    const reauthText = await reauthResp.text().catch(() => '');
     if (!reauthResp.ok) {
-      let reauthData;
-      try { reauthData = JSON.parse(reauthText); } catch { reauthData = { raw: reauthText }; }
-      return Response.json({ error: reauthData?.message || reauthData?.msg || reauthData?.raw || 'Failed to send verification code', reauthStatus: reauthResp.status, reauthData }, { status: 500 });
+      const reauthData = await reauthResp.json().catch(() => ({}));
+      return Response.json({ error: reauthData?.message || reauthData?.msg || 'Failed to send verification code' }, { status: 500 });
     }
 
     return Response.json({ ok: true, userExists });

@@ -505,6 +505,17 @@ export const auth = {
     return true;
   },
 
+  async setSession(session) {
+    if (!session?.access_token) throw new Error('No access token');
+    const { data, error } = await supabase.auth.setSession({
+      access_token: session.access_token,
+      refresh_token: session.refresh_token,
+    });
+    if (error) throw error;
+    persistSession(data);
+    return data;
+  },
+
   async redirectToLogin(nextUrl) {
     const currentUrl = nextUrl || window.location.pathname;
     window.location.href = `/login?returnTo=${encodeURIComponent(currentUrl)}`;

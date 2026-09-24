@@ -32,10 +32,11 @@ export default function Register() {
     }
     setLoading(true);
     try {
-      await base44.auth.register({ email, password });
+      const resp = await base44.functions.invoke("sendRegistrationOtp", { email, password });
+      if (resp?.data?.error) throw new Error(resp.data.error);
       setShowOtp(true);
     } catch (err) {
-      setError(err.message || "Registration failed");
+      setError(err.message || "Failed to send verification code");
     } finally {
       setLoading(false);
     }
@@ -45,9 +46,11 @@ export default function Register() {
     setError("");
     setLoading(true);
     try {
-      const result = await base44.auth.verifyOtp({ email, otpCode });
-      if (result?.access_token) {
-        base44.auth.setToken(result.access_token);
+      const resp = await base44.functions.invoke("verifyRegistrationOtp", { email, code: otpCode, password });
+      if (resp?.data?.error) throw new Error(resp.data.error);
+      const data = resp.data;
+      if (data?.access_token) {
+        await base44.auth.setSession(data);
       }
       window.location.href = safeReturnTo();
     } catch (err) {
@@ -59,14 +62,18 @@ export default function Register() {
 
   const handleResend = async () => {
     setError("");
+    setLoading(true);
     try {
-      await base44.auth.resendOtp(email);
+      const resp = await base44.functions.invoke("sendRegistrationOtp", { email, password });
+      if (resp?.data?.error) throw new Error(resp.data.error);
       toast({
         title: "Code sent",
         description: "Check your email for the new code.",
       });
     } catch (err) {
       setError(err.message || "Failed to resend code");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -88,11 +95,11 @@ export default function Register() {
         </div>
 
         {/* Form area */}
-        <div className="flex-1 flex flex-col justify-center max-w-md w-full mx-auto lg:mx-0 py-8">
+        <div className="flex-1 flex flex-col justify-center max-w-md w-full mx-auto lg:mx-0 py-8 overflow-y-auto">
           {showOtp ? (
             <>
               <h1 className="text-3xl font-bold tracking-tight text-[#1A1D21]">Verify your email</h1>
-              <p className="text-[#8F9296] mt-2 mb-8">We sent a code to {email}</p>
+              <p className="text-[#8F9296] mt-2 mb-8">We sent a 6-digit code to {email}</p>
 
               {error && (
                 <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-600 text-sm border border-red-100">
@@ -232,7 +239,7 @@ export default function Register() {
                   {loading ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      Creating account...
+                      Sending code...
                     </>
                   ) : (
                     <>
