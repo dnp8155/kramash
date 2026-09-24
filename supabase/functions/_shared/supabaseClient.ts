@@ -1,6 +1,9 @@
 // Shared Supabase admin client for Edge Functions.
 // Uses the service role key to bypass RLS (equivalent to base44.asServiceRole).
-import { createClient } from "npm:@supabase/supabase-js@2";
+// Variable specifier so Vite can't statically analyze/resolve Deno's "npm:" import.
+// Deno resolves it at runtime; esbuild preserves dynamic imports with variable specifiers.
+const supabaseMod = "npm:@supabase/supabase-js@2";
+const { createClient } = await import(supabaseMod);
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL") || Deno.env.get("VITE_SUPABASE_URL") || "";
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
