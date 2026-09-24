@@ -2,13 +2,379 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="https://base44.com/logo_v2.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="https://media.base44.com/images/public/6aa198140e2903037c880386/062f47836_kramasha_logo_192x192.png" />
+    <link rel="apple-touch-icon" href="https://media.base44.com/images/public/6aa198140e2903037c880386/678c1e4d3_kramasha_logo_180x180jpg.jpeg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#0A0A0A" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Kramasha" />
     <link rel="manifest" href="/manifest.json" />
-    <title>Base44 APP</title>
+    <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+
+    <!-- Performance: preconnect to CDN and fonts -->
+    <link rel="preconnect" href="https://media.base44.com" crossorigin />
+    <link rel="dns-prefetch" href="https://media.base44.com" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
+
+    <link rel="preload" as="image" href="https://media.base44.com/images/public/6aa198140e2903037c880386/c25982792_kramasha_logo_512x512.png" />
+    <link rel="canonical" href="https://www.kramasha.com" />
+
+    <title>Kramasha — Photography, Event & Creative Business Management Software</title>
+    <meta
+      name="description"
+      content="Kramasha is an all-in-one business management platform for photographers, event managers, studios and creative businesses. Manage leads, clients, projects, teams, quotations, invoices, payments and finances — all in one place. Free plan available."
+    />
+    <meta name="keywords" content="photography business management software India, photography CRM, event management software India, photography invoicing, photography quotation software, creative business management platform, studio management software, photographer CRM India, event planner software Gujarat, client portal, team management software, payment tracking software, milestone billing software, job sheet software, GST invoicing software India, freelance business management, architecture project management, interior design business software, wedding photography CRM, event planner CRM, quotation builder software, invoice generator India, digital signature quotation, client project portal, team scheduling software, availability calendar software, financial year management, expense tracking software, lead management CRM, best photography business software India, free business management app India, business management software Ahmedabad, event management software Surat, Kramasha, Kramasha app, Kramasha platform, Kramasha CRM, Kramasha pricing, Kramasha free plan, all in one business management software, creative business CRM India, service business management software India" />
+    <meta name="author" content="Kramasha" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <meta name="language" content="English" />
+    <meta name="revisit-after" content="7 days" />
+
+    <!-- Geo-targeting (GEO) -->
+    <meta name="geo.region" content="IN-GJ" />
+    <meta name="geo.placename" content="Gujarat, India" />
+    <meta name="geo.position" content="23.0225;72.5714" />
+    <meta name="ICBM" content="23.0225, 72.5714" />
+    <meta name="content-language" content="en-IN" />
+    <meta name="distribution" content="global" />
+    <meta name="rating" content="general" />
+    <meta name="target" content="all" />
+    <meta name="audience" content="creative businesses, photographers, event managers, studios, freelancers in India" />
+
+    <!-- AEO / Answer Engine hints -->
+    <meta name="article:author" content="Kramasha" />
+    <meta name="article:section" content="Business Management Software" />
+    <meta name="article:tag" content="photography business management, event management, CRM, invoicing, quotations, client portal, team management, GST billing" />
+
+    <!-- Additional SEO -->
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="apple-mobile-web-app-title" content="Kramasha" />
+    <meta name="application-name" content="Kramasha" />
+    <meta name="theme-color" content="#0A0A0A" />
+    <meta name="color-scheme" content="light dark" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://www.kramasha.com" />
+    <meta property="og:title" content="Kramasha — Photography, Event & Creative Business Management Software" />
+    <meta
+      property="og:description"
+      content="All-in-one business management platform for photographers, event managers, studios and creative businesses. Manage leads, clients, projects, teams, quotations, invoices, payments and finances — all in one place."
+    />
+    <meta property="og:site_name" content="Kramasha" />
+    <meta property="og:image" content="https://media.base44.com/images/public/6aa198140e2903037c880386/6965bcea4_generated_image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Kramasha — Creative Business Management Platform" />
+    <meta property="og:locale" content="en_IN" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://www.kramasha.com" />
+    <meta name="twitter:title" content="Kramasha — Photography, Event & Creative Business Management Software" />
+    <meta
+      name="twitter:description"
+      content="All-in-one business management platform for photographers, event managers, studios and creative businesses. Manage leads, clients, projects, teams, quotations, invoices, payments and finances — all in one place."
+    />
+    <meta name="twitter:image" content="https://media.base44.com/images/public/6aa198140e2903037c880386/6965bcea4_generated_image.png" />
+    <meta name="twitter:image:alt" content="Kramasha — Creative Business Management Platform" />
+
+    <!-- Structured Data: Organization -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Kramasha",
+      "url": "https://www.kramasha.com",
+      "logo": "https://media.base44.com/images/public/6aa198140e2903037c880386/a30538e70_c64751af-b785-4550-9bf7-8fa28ceec0e0.png",
+      "description": "All-in-one business management platform for photographers, event managers, studios and creative businesses.",
+      "sameAs": []
+    }
+    </script>
+
+    <!-- Structured Data: WebSite -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Kramasha",
+      "url": "https://www.kramasha.com",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Kramasha"
+      }
+    }
+    </script>
+
+    <!-- Structured Data: SoftwareApplication -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Kramasha",
+      "applicationCategory": "BusinessApplication",
+      "operatingSystem": "Web, iOS, Android",
+      "url": "https://www.kramasha.com",
+      "description": "All-in-one business management platform for photographers, event managers, studios and creative businesses. Manage leads, clients, projects, teams, quotations, invoices, payments and finances.",
+      "screenshot": "https://media.base44.com/images/public/6aa198140e2903037c880386/6965bcea4_generated_image.png",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "INR"
+      },
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "5",
+        "ratingCount": "1"
+      },
+      "featureList": [
+        "Lead and Client Management (CRM)",
+        "Event and Project Management",
+        "Quotation Builder with Digital Signing",
+        "GST Invoicing",
+        "Milestone Payment Tracking",
+        "Team Management and Scheduling",
+        "Availability Calendar",
+        "Client Portal",
+        "Team Member Portal",
+        "Job Sheets",
+        "Financial Year Management",
+        "Expense Tracking",
+        "Public Business Profile"
+      ],
+      "audience": {
+        "@type": "Audience",
+        "audienceType": "Photographers, Event Managers, Architects, Interior Designers, Studios, Freelancers, Creative Agencies, Caterers, Contractors in India"
+      },
+      "areaServed": {
+        "@type": "Country",
+        "name": "India"
+      }
+    }
+    </script>
+
+    <!-- Structured Data: Service -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Service",
+      "name": "Kramasha Business Management Platform",
+      "serviceType": "Business Management Software",
+      "provider": {
+        "@type": "Organization",
+        "name": "Kramasha",
+        "url": "https://www.kramasha.com"
+      },
+      "areaServed": {
+        "@type": "Country",
+        "name": "India"
+      },
+      "audience": {
+        "@type": "Audience",
+        "audienceType": "Photographers, Event Managers, Architects, Interior Designers, Studios, Freelancers, Creative Agencies"
+      },
+      "description": "All-in-one business management platform for creative and service-based businesses in India. Manage leads, clients, projects, teams, quotations, invoices, payments, finances and client portals.",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "INR",
+        "description": "Free plan available. Pro plan with advanced features."
+      },
+      "hasOfferCatalog": {
+        "@type": "OfferCatalog",
+        "name": "Kramasha Plans",
+        "itemListElement": [
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Service",
+              "name": "Free Plan"
+            },
+            "price": "0",
+            "priceCurrency": "INR"
+          },
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Service",
+              "name": "Pro Plan"
+            },
+            "price": "299",
+            "priceCurrency": "INR"
+          }
+        ]
+      }
+    }
+    </script>
+
+    <!-- Structured Data: BreadcrumbList (Homepage) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home",
+          "item": "https://www.kramasha.com"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Business Management Software",
+          "item": "https://www.kramasha.com"
+        }
+      ]
+    }
+    </script>
+
+    <!-- Structured Data: FAQPage (synced with landing page FAQ) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is Kramasha?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "A connected business management platform for creative and service-based businesses. Manage clients, events, teams, quotations, invoices, payments and finances — all in one place."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Who is Kramasha for?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Photographers, event managers, architects, interior designers, freelancers, studios, creative agencies and any service-based business that needs to manage clients, projects, teams and finances."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can photographers use Kramasha?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Photography is one of the primary use cases. Kramasha supports wedding packages, add-ons, team scheduling, client-facing quotations, e-sign, invoices and job sheets."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can event managers use Kramasha?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Event Management has ready-made workflows for multi-day events, vendor coordination, crew job sheets, milestone billing and team availability tracking."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I manage teams in Kramasha?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Add team members, assign roles, set rates, assign to events with specific dates, track availability and avoid double-bookings."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can clients sign quotations online?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Send quotations via a secure public link. Clients review online and digitally sign — no printing or scanning needed."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I create invoices in Kramasha?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Generate full invoices or milestone-based invoices linked to payment schedules. Invoices can be sent via public links and downloaded as PDFs."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I track milestone payments?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Create payment milestones like advance, event day and final handover, link them to invoices, and track paid vs outstanding amounts per milestone."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does Kramasha support mobile?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Kramasha is a responsive web app with PWA support. Install it on your phone or use it in any browser. Works on mobile and desktop."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What happens when I upgrade or cancel my plan?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Your existing data stays exactly the same. Upgrading unlocks expanded limits and Pro features. You can cancel anytime and your business data is never deleted — you keep all your clients, projects, quotations and financial records."
+          }
+        }
+      ]
+    }
+    </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Branded splash screen — shown instantly on app launch before React mounts.
+           React replaces this content when the app is ready. -->
+      <div id="app-splash" style="position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#F5F3EF;z-index:9999;">
+        <style>
+          @keyframes splash-fade-in {
+            from { opacity: 0; transform: translateY(8px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+          }
+          @keyframes splash-pulse {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.7; }
+          }
+          #app-splash-logo {
+            width: 72px; height: 72px; border-radius: 16px; overflow: hidden;
+            animation: splash-fade-in 0.5s ease-out both;
+          }
+          #app-splash-logo img { width: 100%; height: 100%; object-fit: contain; }
+          #app-splash-wordmark {
+            margin-top: 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-size: 1.25rem; font-weight: 700; letter-spacing: -0.02em; color: #1A1A1A;
+            animation: splash-fade-in 0.5s ease-out 0.1s both;
+          }
+          #app-splash-subtext {
+            margin-top: 6px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-size: 0.8rem; font-weight: 500; letter-spacing: 0.01em; color: #8A8580;
+            animation: splash-fade-in 0.5s ease-out 0.18s both;
+          }
+          #app-splash-spinner {
+            margin-top: 28px; width: 28px; height: 28px;
+            border: 3px solid #E8E3DB; border-top-color: #C8A95E;
+            border-radius: 50%;
+            animation: splash-spin 0.7s linear infinite;
+          }
+          @keyframes splash-spin { to { transform: rotate(360deg); } }
+        </style>
+        <div id="app-splash-logo">
+          <img src="https://media.base44.com/images/public/6aa198140e2903037c880386/dbb48c566_KramashaLogo.png" alt="Kramasha" />
+        </div>
+        <div id="app-splash-wordmark">Kramasha</div>
+        <div id="app-splash-subtext">Built for creative business</div>
+        <div id="app-splash-spinner"></div>
+      </div>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
+    <!-- Fallback: remove splash screen after 6s even if React fails to mount
+         (e.g., build error, network issue) so the user sees the real error. -->
+    <script>
+      window.setTimeout(function () {
+        var s = document.getElementById('app-splash');
+        if (s && s.parentNode) s.parentNode.removeChild(s);
+      }, 6000);
+    </script>
   </body>
 </html>

@@ -1,0 +1,68 @@
+{
+  "name": "Kramasha — Business Management Platform",
+  "short_name": "Kramasha",
+  "description": "All-in-one business management platform for photographers, event managers, studios and creative businesses in India. Manage leads, clients, projects, teams, quotations, invoices, payments and finances.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F5F3EF",
+  "theme_color": "#0A0A0A",
+  "id": "com.kramasha.app",
+  "categories": ["business", "productivity", "finance"],
+  "lang": "en-IN",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "https://media.base44.com/images/public/6aa198140e2903037c880386/062f47836_kramasha_logo_192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://media.base44.com/images/public/6aa198140e2903037c880386/062f47836_kramasha_logo_192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "https://media.base44.com/images/public/6aa198140e2903037c880386/c25982792_kramasha_logo_512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://media.base44.com/images/public/6aa198140e2903037c880386/c25982792_kramasha_logo_512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "url": "/dashboard",
+      "icons": [{ "src": "https://media.base44.com/images/public/6aa198140e2903037c880386/062f47836_kramasha_logo_192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Events",
+      "short_name": "Events",
+      "url": "/events"
+    },
+    {
+      "name": "Clients",
+      "short_name": "Clients",
+      "url": "/clients"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "https://media.base44.com/images/public/6aa198140e2903037c880386/6965bcea4_generated_image.png",
+      "sizes": "1200x630",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Kramasha Dashboard"
+    }
+  ]
+}
