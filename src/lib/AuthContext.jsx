@@ -23,11 +23,15 @@ export const AuthProvider = ({ children }) => {
       setAuthError(null);
       
       try {
-        const publicSettings = await base44.app.getPublicSettings();
+        let publicSettings = null;
+        try {
+          publicSettings = await base44.app.getPublicSettings();
+        } catch { /* non-fatal — app may not have public settings */ }
         setAppPublicSettings(publicSettings);
-        
-        // If we got the app public settings successfully, check if user is authenticated
-        if (appParams.token) {
+
+        // Check Supabase session (not Base44 token)
+        const isAuthed = await base44.auth.isAuthenticated();
+        if (isAuthed) {
           await checkUserAuth();
         } else {
           setIsLoadingAuth(false);
