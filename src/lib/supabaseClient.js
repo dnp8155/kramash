@@ -137,6 +137,33 @@ async function enrichWithCreatedBy(record) {
   return { ...record, created_by_id: userId };
 }
 
+// Apply a Base44-style filter object to a Supabase query.
+// Supports plain values (eq) and MongoDB-style operators:
+//   { $gte, $lte, $gt, $lt, $ne, $in }
+function applyFilter(query, filterObj) {
+  if (!filterObj) return query;
+  for (const [key, rawValue] of Object.entries(filterObj)) {
+    if (rawValue === undefined || rawValue === null) continue;
+    const col = mapColumn(key);
+    if (typeof rawValue === 'object' && !Array.isArray(rawValue)) {
+      for (const [op, val] of Object.entries(rawValue)) {
+        switch (op) {
+          case '$gte': query = query.gte(col, val); break;
+          case '$lte': query = query.lte(col, val); break;
+          case '$gt': query = query.gt(col, val); break;
+          case '$lt': query = query.lt(col, val); break;
+          case '$ne': query = query.neq(col, val); break;
+          case '$in': query = query.in(col, Array.isArray(val) ? val : [val]); break;
+          default: query = query.eq(col, rawValue); break;
+        }
+      }
+    } else {
+      query = query.eq(col, rawValue);
+    }
+  }
+  return query;
+}
+
 // Add Base44-compatible timestamp aliases (created_date, updated_date)
 // to records returned from Supabase so existing app code keeps working
 function withDateAliases(record) {
@@ -171,13 +198,7 @@ function createEntityProxy(tableName) {
     // Filter with query object
     async filter(filterObj, sort, limit) {
       let query = supabase.from(tableName).select('*');
-      if (filterObj) {
-        Object.entries(filterObj).forEach(([key, value]) => {
-          if (value !== undefined && value !== null) {
-            query = query.eq(mapColumn(key), value);
-          }
-        });
-      }
+      query = applyFilter(query, filterObj);
       if (sort) {
         const s = mapSort(sort);
         query = query.order(s.startsWith('-') ? s.slice(1) : s, { ascending: !s.startsWith('-') });
@@ -239,11 +260,7 @@ function createEntityProxy(tableName) {
     async updateMany(filterObj, updateObj) {
       const clean = stripAutoFields(updateObj);
       let query = supabase.from(tableName).update(clean);
-      if (filterObj) {
-        Object.entries(filterObj).forEach(([key, value]) => {
-          query = query.eq(mapColumn(key), value);
-        });
-      }
+      query = applyFilter(query, filterObj);
       const { data, error } = await query.select('*');
       if (error) throw error;
       return withDateAliasesArray(data);
@@ -259,11 +276,7 @@ function createEntityProxy(tableName) {
     // Delete many
     async deleteMany(filterObj) {
       let query = supabase.from(tableName).delete();
-      if (filterObj) {
-        Object.entries(filterObj).forEach(([key, value]) => {
-          query = query.eq(mapColumn(key), value);
-        });
-      }
+      query = applyFilter(query, filterObj);
       const { error } = await query;
       if (error) throw error;
       return true;

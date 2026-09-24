@@ -102,13 +102,13 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
 
   const validate = () => {
     const workLabel = t.workItemSingular || "Event";
-    if (!form.title.trim()) return `${workLabel} title is required.`;
+    if (!(form.title || "").trim()) return `${workLabel} title is required.`;
     if (!form.client_id) return "Please select a client.";
     if (!form.start_date) return "Pick a start date.";
     if (!form.end_date) return "Pick an end date.";
     if ((form.event_dates || []).length === 0) return "Select at least one shoot day from the range.";
-    if (!isWithinLimit(form.description, 140)) return "Description exceeds the 140-word limit.";
-    if (!isWithinLimit(form.notes, 140)) return "Notes exceed the 140-word limit.";
+    if (!isWithinLimit(form.description || "", 140)) return "Description exceeds the 140-word limit.";
+    if (!isWithinLimit(form.notes || "", 140)) return "Notes exceed the 140-word limit.";
     return "";
   };
 
@@ -161,11 +161,11 @@ export default function EventForm({ open, onClose, onSaved, event = null, worksp
         financial_year: fy,
         team_member_ids: event?.team_member_ids || [],
         service_ids: event?.service_ids || [],
-        venue: form.venue.trim(),
-        venue_address: form.venue_address.trim(),
+        venue: (form.venue || "").trim(),
+        venue_address: (form.venue_address || "").trim(),
         contract_value: Number(form.contract_value) || 0,
-        description: form.description.trim(),
-        notes: form.notes.trim()
+        description: (form.description || "").trim(),
+        notes: (form.notes || "").trim()
       };
       let saved;
       if (event?.id) {

@@ -132,7 +132,7 @@ export default function EventEditor() {
 
   const validate = () => {
     const workLabel = tTerm.workItemSingular || "Event";
-    if (!form.title.trim()) return `${workLabel} title is required.`;
+    if (!(form.title || "").trim()) return `${workLabel} title is required.`;
     if (!form.client_id) return "Please select a client.";
     if (!form.start_date) return "Pick a start date.";
     if (!form.end_date) return "Pick an end date.";
@@ -167,8 +167,8 @@ export default function EventEditor() {
         workspace_id: workspaceId, client_id: form.client_id, title: form.title.trim(), event_type: form.event_type,
         start_date: form.start_date, end_date: form.end_date || form.start_date, event_dates: dates,
         financial_year: form.financial_year || fyLabel || "", team_member_ids: form.team_member_ids || [], service_ids: form.service_ids || [],
-        venue: form.venue.trim(), venue_address: form.venue_address.trim(), status: form.status,
-        contract_value: Number(form.contract_value) || 0, description: form.description.trim(), notes: form.notes.trim()
+        venue: (form.venue || "").trim(), venue_address: (form.venue_address || "").trim(), status: form.status,
+        contract_value: Number(form.contract_value) || 0, description: (form.description || "").trim(), notes: (form.notes || "").trim()
       };
       let saved;
       if (isEdit) { saved = await base44.entities.Event.update(id, payload); }
