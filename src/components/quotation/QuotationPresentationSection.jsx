@@ -1,0 +1,138 @@
+import Input from "@/components/common/Input";
+import Toggle from "@/components/common/Toggle";
+import { Section, Field } from "@/components/quotation/QuotationParts";
+import { Textarea } from "@/components/ui/textarea";
+import WordCounterTextarea from "@/components/common/WordCounterTextarea";
+import SectionVisibilityToggles from "@/components/quotation/SectionVisibilityToggles";
+import { Eye, Building2, Share2, MessageSquare, StickyNote, Instagram, Youtube, Globe, Link as LinkIcon } from "lucide-react";
+import { getSocialIcon } from "@/lib/socialIcons";
+
+function SocialField({ label, url, onChange, placeholder, defaultIcon: DefaultIcon, disabled }) {
+  const DetectedIcon = getSocialIcon(url);
+  const Icon = DetectedIcon || DefaultIcon;
+  return (
+    <Field label={label}>
+      <div className="relative">
+        <Icon className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+        <Input value={url} onChange={onChange} disabled={disabled} placeholder={placeholder} className="pl-9" />
+      </div>
+    </Field>
+  );
+}
+
+export default function QuotationPresentationSection({
+  showPricing, setShowPricing,
+  bankDetails, setBankDetails,
+  socialLinks, setSocialLinks,
+  footerMessage, setFooterMessage,
+  specialNotes, setSpecialNotes,
+  workspace, readOnly,
+  visibility, setVisibility
+}) {
+  const getWorkspaceDefaults = () => {
+    try { return JSON.parse(workspace?.display_preferences || "{}"); }
+    catch { return {}; }
+  };
+
+  const loadBankFromWorkspace = () => {
+    const prefs = getWorkspaceDefaults();
+    setBankDetails({
+      account_name: prefs.bank_account_name || "",
+      bank_name: prefs.bank_name || "",
+      account_number: prefs.bank_account_number || "",
+      ifsc: prefs.bank_ifsc || "",
+      upi_id: prefs.bank_upi_id || ""
+    });
+  };
+
+  const loadSocialFromWorkspace = () => {
+    const prefs = getWorkspaceDefaults();
+    setSocialLinks({
+      instagram: prefs.social_instagram || "",
+      youtube: prefs.social_youtube || "",
+      website: prefs.social_website || "",
+      portfolio: prefs.social_portfolio || ""
+    });
+  };
+
+  return (
+    <div className="space-y-4">
+      <Section icon={Eye} title="Client-Facing Presentation">
+        <div className="flex items-center justify-between">
+          <div>
+            <span className="text-sm font-medium">Show Qty, Rate & Amount to Client</span>
+            <p className="text-xs text-muted-foreground mt-0.5">When OFF, the client sees only day/event, included items, and the final total. Admin always retains full pricing data.</p>
+          </div>
+          <Toggle checked={showPricing} onChange={setShowPricing} label="Show pricing" disabled={readOnly} />
+        </div>
+      </Section>
+
+      <Section icon={Building2} title="Bank & UPI Details">
+        <div className="mb-3">
+          <SectionVisibilityToggles sectionKey="bank" visibility={visibility} setVisibility={setVisibility} readOnly={readOnly} />
+        </div>
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-xs text-muted-foreground">Snapshot — future Preference changes won't affect this quotation.</p>
+          {!readOnly && (
+            <button onClick={loadBankFromWorkspace} className="text-xs text-primary hover:underline">Load from workspace</button>
+          )}
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Field label="Account Name">
+            <Input value={bankDetails.account_name || ""} onChange={(e) => setBankDetails({ ...bankDetails, account_name: e.target.value })} disabled={readOnly} />
+          </Field>
+          <Field label="Bank Name">
+            <Input value={bankDetails.bank_name || ""} onChange={(e) => setBankDetails({ ...bankDetails, bank_name: e.target.value })} disabled={readOnly} />
+          </Field>
+          <Field label="Account Number">
+            <Input value={bankDetails.account_number || ""} onChange={(e) => setBankDetails({ ...bankDetails, account_number: e.target.value })} disabled={readOnly} />
+          </Field>
+          <Field label="IFSC">
+            <Input value={bankDetails.ifsc || ""} onChange={(e) => setBankDetails({ ...bankDetails, ifsc: e.target.value })} disabled={readOnly} />
+          </Field>
+          <Field label="UPI ID">
+            <Input value={bankDetails.upi_id || ""} onChange={(e) => setBankDetails({ ...bankDetails, upi_id: e.target.value })} disabled={readOnly} />
+          </Field>
+        </div>
+      </Section>
+
+      <Section icon={Share2} title="Social Links">
+        <div className="mb-3">
+          <SectionVisibilityToggles sectionKey="social" visibility={visibility} setVisibility={setVisibility} readOnly={readOnly} />
+        </div>
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-xs text-muted-foreground">Only non-empty links will be shown to the client. Icons auto-detect from the URL.</p>
+          {!readOnly && (
+            <button onClick={loadSocialFromWorkspace} className="text-xs text-primary hover:underline">Load from workspace</button>
+          )}
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <SocialField label="Instagram" url={socialLinks.instagram || ""} onChange={(e) => setSocialLinks({ ...socialLinks, instagram: e.target.value })} disabled={readOnly} placeholder="https://instagram.com/…" defaultIcon={Instagram} />
+          <SocialField label="YouTube" url={socialLinks.youtube || ""} onChange={(e) => setSocialLinks({ ...socialLinks, youtube: e.target.value })} disabled={readOnly} placeholder="https://youtube.com/…" defaultIcon={Youtube} />
+          <SocialField label="Website" url={socialLinks.website || ""} onChange={(e) => setSocialLinks({ ...socialLinks, website: e.target.value })} disabled={readOnly} placeholder="https://…" defaultIcon={Globe} />
+          <SocialField label="Portfolio" url={socialLinks.portfolio || ""} onChange={(e) => setSocialLinks({ ...socialLinks, portfolio: e.target.value })} disabled={readOnly} placeholder="https://…" defaultIcon={LinkIcon} />
+        </div>
+      </Section>
+
+      <Section icon={MessageSquare} title="Footer / Thank You Message">
+        <div className="mb-3">
+          <SectionVisibilityToggles sectionKey="footer" visibility={visibility} setVisibility={setVisibility} readOnly={readOnly} />
+        </div>
+        <Textarea
+          value={footerMessage || ""} onChange={(e) => setFooterMessage(e.target.value)} disabled={readOnly} rows={2}
+          placeholder="Thank you message shown at the bottom of the quotation"
+        />
+      </Section>
+
+      <Section icon={StickyNote} title="Special Notes (Scope-Specific)">
+        <div className="mb-3">
+          <SectionVisibilityToggles sectionKey="special_notes" visibility={visibility} setVisibility={setVisibility} readOnly={readOnly} />
+        </div>
+        <WordCounterTextarea
+          value={specialNotes || ""} onChange={(e) => setSpecialNotes(e.target.value)} disabled={readOnly} rows={3}
+          placeholder="Travel, accommodation, revision limits, client requirements, other operational notes…"
+        />
+      </Section>
+    </div>
+  );
+}
