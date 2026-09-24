@@ -197,9 +197,11 @@ export function getDefaultDeliverables(category) {
   return CATEGORY_DEFAULTS[category]?.deliverables || CATEGORY_DEFAULTS.OTHER.deliverables;
 }
 
-export function parseJSON(str, fallback) {
+export function parseJSON(val, fallback) {
+  if (val == null) return fallback;
+  if (typeof val !== 'string') return val || fallback;
   try {
-    const parsed = JSON.parse(str);
+    const parsed = JSON.parse(val);
     return parsed || fallback;
   } catch {
     return fallback;
@@ -226,14 +228,14 @@ export async function getOrCreateJobSheet(workspaceId, eventId, category, quotat
   return await base44.entities.JobSheet.create({
     workspace_id: workspaceId,
     event_id: eventId,
-    quotation_id: quotationId || "",
+    quotation_id: quotationId || null,
     show_team_names: false,
     include_crew_contacts: false,
     include_equipment: false,
     show_job_sheet: false,
-    equipment_list: JSON.stringify(getDefaultEquipment(category)),
-    deliverables: JSON.stringify(getDefaultDeliverables(category)),
-    date_configs: JSON.stringify({}),
+    equipment_list: getDefaultEquipment(category),
+    deliverables: getDefaultDeliverables(category),
+    date_configs: {},
     internal_notes: eventNotes || "",
     status: "active"
   });
@@ -245,9 +247,9 @@ export async function updateJobSheetConfig(id, config) {
     include_crew_contacts: config.include_crew_contacts,
     include_equipment: config.include_equipment,
     show_job_sheet: config.show_job_sheet,
-    equipment_list: JSON.stringify(config.equipment_list || []),
-    deliverables: JSON.stringify(config.deliverables || []),
-    date_configs: JSON.stringify(config.date_configs || {}),
+    equipment_list: config.equipment_list || [],
+    deliverables: config.deliverables || [],
+    date_configs: config.date_configs || {},
     internal_notes: config.internal_notes || "",
     public_link_enabled: !!config.public_link_enabled,
     public_token: config.public_token || ""
