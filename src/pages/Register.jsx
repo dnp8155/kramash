@@ -39,7 +39,8 @@ export default function Register() {
       }
       setShowOtp(true);
     } catch (err) {
-      setError(err.message || "Failed to send verification code");
+      const msg = typeof err === 'string' ? err : (err?.message || err?.error_description || "Failed to send verification code. Please try again.");
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -52,7 +53,8 @@ export default function Register() {
       await base44.auth.verifyOtp({ email, otpCode });
       window.location.href = safeReturnTo();
     } catch (err) {
-      setError(err.message || "Invalid verification code");
+      const msg = typeof err === 'string' ? err : (err?.message || err?.error_description || "Invalid verification code. Please try again.");
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -68,7 +70,8 @@ export default function Register() {
         description: "Check your email for the new code.",
       });
     } catch (err) {
-      setError(err.message || "Failed to resend code");
+      const msg = typeof err === 'string' ? err : (err?.message || err?.error_description || "Failed to resend code. Please try again.");
+      setError(msg);
     } finally {
       setLoading(false);
     }

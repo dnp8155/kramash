@@ -438,7 +438,15 @@ export const auth = {
       password,
       options: { data: { role: 'user' } },
     });
-    if (error) throw error;
+    if (error) {
+      let msg = error.message || error.msg || '';
+      if (!msg || msg === '{}') {
+        if (error.status >= 500) msg = 'Server error during signup. Please try again later.';
+        else if (error.status === 429) msg = 'Too many attempts. Please wait a moment.';
+        else msg = 'Failed to create account. Please try again.';
+      }
+      throw new Error(msg);
+    }
     persistSession(data);
     return data;
   },
@@ -494,14 +502,14 @@ export const auth = {
 
   async verifyOtp({ email, otpCode }) {
     const { data, error } = await supabase.auth.verifyEmailOtp({ email, token: otpCode, type: 'signup' });
-    if (error) throw error;
+    if (error) throw new Error(error.message || error.msg || error.error_description || String(error));
     persistSession(data);
     return data;
   },
 
   async resendOtp(email) {
     const { error } = await supabase.auth.resend({ email, type: 'signup' });
-    if (error) throw error;
+    if (error) throw new Error(error.message || error.msg || error.error_description || String(error));
     return true;
   },
 
