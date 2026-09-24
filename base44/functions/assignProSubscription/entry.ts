@@ -1,47 +1,59 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.49';
-import { computeExpiry } from "../../shared/helpers.js";
+// assignProSubscription — Admin: assign a Pro plan subscription to a workspace.
+// Ported from supabase/functions/assignProSubscription — uses Supabase admin client.
+import { getSupabaseAdmin, getUserFromRequest } from "../../shared/supabaseAdmin.js";
+import { computeExpiry, PLAN_CODES, SUB_STATUS } from "../../shared/planEngine.js";
 
 export default async function(req) {
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
-    if (user.role !== "admin") return Response.json({ error: "Admin only" }, { status: 403 });
+    const supabaseAdmin = getSupabaseAdmin();
+    const user = await getUserFromRequest(req);
+    if (!user || user.role !== "admin") return Response.json({ error: "Admin only" }, { status: 403 });
 
-    const body = await req.json();
-    const { workspace_id, pricing_id, start_date, note } = body;
-    if (!workspace_id || !pricing_id || !start_date) return Response.json({ error: "workspace_id, pricing_id, start_date required" }, { status: 400 });
+    const body = await req.json().catch(() => ({}));
+    const { workspace_id, pricing_id, duration_months, note } = body;
+    if (!workspace_id) return Response.json({ error: "workspace_id required" }, { status: 400 });
 
-    const pricing = await base44.asServiceRole.entities.PlanPricing.get(pricing_id);
-    if (!pricing) return Response.json({ error: "Pricing not found" }, { status: 404 });
+    const { data: ws } = await supabaseAdmin.from("workspaces").select("*").eq("id", workspace_id).single();
+    if (!ws) return Response.json({ error: "Workspace not found" }, { status: 404 });
 
-    const plans = await base44.asServiceRole.entities.Plan.filter({ code: "PRO" }, "-created_date", 10);
-    const proPlan = (plans && plans[0]) || null;
+    let proPlan = null;
+    const { data: plans } = await supabaseAdmin.from("plans").select("*").eq("code", PLAN_CODES.PRO);
+    proPlan = (plans && plans[0]) || null;
     if (!proPlan) return Response.json({ error: "Pro plan not configured" }, { status: 500 });
 
-    const expiresAt = computeExpiry(start_date, pricing.duration_months || 1);
+    let pricing = null;
+    if (pricing_id) {
+      const { data: p } = await supabaseAdmin.from("plan_pricings").select("*").eq("id", pricing_id).single();
+      pricing = p;
+    }
+    const duration = duration_months || pricing?.duration_months || 1;
+    const startDate = new Date().toISOString().split("T")[0];
+    const expiresAt = computeExpiry(startDate, duration);
 
-    const existing = await base44.asServiceRole.entities.WorkspaceSubscription.filter(
-      { workspace_id, status: "ACTIVE" }, "-created_date", 50
-    );
+    const { data: existing } = await supabaseAdmin
+      .from("workspace_subscriptions")
+      .select("*")
+      .eq("workspace_id", workspace_id)
+      .eq("status", SUB_STATUS.ACTIVE);
     for (const s of existing || []) {
-      await base44.asServiceRole.entities.WorkspaceSubscription.update(s.id, {
-        status: "CANCELLED", note: "Replaced by new Pro assignment"
-      });
+      await supabaseAdmin.from("workspace_subscriptions").update({ status: SUB_STATUS.CANCELLED, note: "Replaced by admin assignment" }).eq("id", s.id);
     }
 
-    const sub = await base44.asServiceRole.entities.WorkspaceSubscription.create({
-      workspace_id, plan_id: proPlan.id, pricing_id, status: "ACTIVE",
-      started_at: start_date, expires_at: expiresAt, auto_renew: false, source: "ADMIN",
-      assigned_price: pricing.price, billing_cycle_snapshot: pricing.billing_cycle,
-      note: note || "Admin assigned Pro"
-    });
+    const { data: sub } = await supabaseAdmin
+      .from("workspace_subscriptions")
+      .insert({
+        workspace_id, plan_id: proPlan.id, pricing_id: pricing?.id || null,
+        status: SUB_STATUS.ACTIVE, started_at: startDate, expires_at: expiresAt,
+        auto_renew: false, source: "ADMIN",
+        assigned_price: pricing?.price || 0, billing_cycle_snapshot: pricing?.billing_cycle || null,
+        updated_by: user.id, note: note || "Assigned by admin"
+      })
+      .select("*")
+      .single();
 
-    await base44.asServiceRole.entities.Workspace.update(workspace_id, {
-      plan_type: "pro", plan_status: "active"
-    });
+    await supabaseAdmin.from("workspaces").update({ plan_type: "pro", plan_status: "active" }).eq("id", workspace_id);
 
-    return Response.json({ ok: true, subscription_id: sub.id, expires_at: expiresAt });
+    return Response.json({ ok: true, subscription: { id: sub?.id, expires_at: expiresAt, plan_code: PLAN_CODES.PRO } });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }

@@ -1,39 +1,51 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.49';
-import { secrets } from "base44:runtime";
+// verifyFirebaseToken — Verify a Firebase ID token and return the matching user.
+// Ported from supabase/functions/verifyFirebaseToken — uses Firebase Admin + Supabase admin client.
+import { secrets } from 'base44:runtime';
+import { getSupabaseAdmin } from "../../shared/supabaseAdmin.js";
+
+async function verifyFirebaseIdToken(idToken) {
+  const apiKey = secrets.get("FIREBASE_API_KEY");
+  if (!apiKey) throw new Error("FIREBASE_API_KEY not configured");
+  const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${apiKey}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ idToken })
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Firebase token verification failed: ${err}`);
+  }
+  const data = await res.json();
+  if (!data.users || data.users.length === 0) throw new Error("No user found for Firebase token");
+  return data.users[0];
+}
 
 export default async function(req) {
   try {
-    const base44 = createClientFromRequest(req);
-    const body = await req.json();
-    const { token, phone, uid } = body;
-    if (!token || !phone) return Response.json({ error: "Missing Firebase token or phone." }, { status: 400 });
+    const supabaseAdmin = getSupabaseAdmin();
+    const body = await req.json().catch(() => ({}));
+    const { id_token, phone } = body;
+    if (!id_token) return Response.json({ error: "id_token required" }, { status: 400 });
 
-    const apiKey = secrets.get("FIREBASE_API_KEY");
-    if (!apiKey) return Response.json({ error: "Firebase phone authentication is not configured." }, { status: 503 });
+    const fbUser = await verifyFirebaseIdToken(id_token);
+    const phoneNumber = fbUser.phoneNumber || phone || "";
 
-    const verifyRes = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${apiKey}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ idToken: token })
+    const { data: profiles } = await supabaseAdmin
+      .from("profiles")
+      .select("*")
+      .eq("phone", phoneNumber)
+      .limit(1);
+    const profile = (profiles && profiles[0]) || null;
+
+    if (!profile) return Response.json({ error: "User not found", phone: phoneNumber }, { status: 404 });
+
+    return Response.json({
+      user: {
+        id: profile.id, email: profile.email, full_name: profile.full_name,
+        phone: profile.phone, role: profile.role
+      },
+      firebase_user: { local_id: fbUser.localId, phone_number: phoneNumber }
     });
-
-    if (!verifyRes.ok) {
-      const err = await verifyRes.json().catch(() => ({}));
-      return Response.json({ error: "Invalid or expired Firebase token.", details: err?.error?.message }, { status: 401 });
-    }
-
-    const verifyData = await verifyRes.json();
-    const fbUser = verifyData?.users?.[0];
-    if (!fbUser || fbUser.phoneNumber !== phone) return Response.json({ error: "Phone number mismatch." }, { status: 401 });
-
-    const users = await base44.asServiceRole.entities.User.list("-created_date", 2000);
-    const matchedUser = (users || []).find((u) => u.phone === phone);
-
-    if (!matchedUser) {
-      return Response.json({ ok: true, needsRegistration: true, phone, firebaseUid: uid || fbUser.localId });
-    }
-
-    return Response.json({ ok: true, phone, user: { id: matchedUser.id, email: matchedUser.email, full_name: matchedUser.full_name }, authenticated: true });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }

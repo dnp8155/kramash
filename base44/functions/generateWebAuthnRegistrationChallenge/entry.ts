@@ -1,32 +1,47 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.49';
-import { base64urlEncode, generateChallenge, createChallengeToken, getRpId } from "../../shared/helpers.js";
+// generateWebAuthnRegistrationChallenge — Generate a registration challenge for a logged-in user.
+// Ported from supabase/functions/generateWebAuthnRegistrationChallenge — uses Supabase admin client.
+import { getSupabaseAdmin, getUserFromRequest } from "../../shared/supabaseAdmin.js";
+import { generateChallenge, createChallengeToken, getRpId } from "../../shared/webauthnCore.js";
 
 export default async function(req) {
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
+    const supabaseAdmin = getSupabaseAdmin();
+    const user = await getUserFromRequest(req);
+    if (!user) return Response.json({ error: "Authentication required" }, { status: 401 });
 
-    const rpId = getRpId(req);
-    if (!rpId) return Response.json({ error: "Could not determine RP ID from request" }, { status: 400 });
+    const body = await req.json().catch(() => ({}));
+    const deviceLabel = body.device_label || "WebAuthn Device";
 
     const challenge = generateChallenge();
     const challengeToken = await createChallengeToken(challenge, user.id);
 
-    const existingCreds = await base44.asServiceRole.entities.UserAuthCredential.filter(
-      { user_id: user.id }, "-created_date", 100
-    );
-    const excludeCredentials = (existingCreds || []).map((c) => ({ type: "public-key", id: c.credential_id }));
-
-    const userIdBytes = new TextEncoder().encode(user.id);
+    const rpId = getRpId(req);
+    const publicKey = {
+      challenge: [...challenge],
+      rp: { name: "Kramashah", id: rpId },
+      user: {
+        id: [...new TextEncoder().encode(user.id)],
+        name: user.email || `user-${user.id}`,
+        displayName: user.full_name || user.email || "User"
+      },
+      pubKeyCredParams: [
+        { type: "public-key", alg: -7 },
+        { type: "public-key", alg: -257 }
+      ],
+      authenticatorSelection: {
+        authenticatorAttachment: "platform",
+        userVerification: "preferred",
+        requireResidentKey: false
+      },
+      timeout: 60000,
+      attestation: "none"
+    };
 
     return Response.json({
-      challenge: base64urlEncode(challenge), challengeToken,
-      rp: { name: "Kramasha", id: rpId },
-      user: { id: base64urlEncode(userIdBytes), name: user.email || user.id, displayName: user.full_name || user.email || "User" },
-      pubKeyCredParams: [{ type: "public-key", alg: -7 }],
-      authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required", residentKey: "preferred" },
-      timeout: 60000, attestation: "none", excludeCredentials
+      challenge_token: challengeToken,
+      public_key: publicKey,
+      device_label: deviceLabel,
+      rp_id: rpId
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });

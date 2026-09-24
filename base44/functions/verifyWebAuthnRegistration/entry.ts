@@ -1,56 +1,77 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.49';
-import { base64urlDecode, base64urlEncode, decodeCbor, parseAuthData, verifyChallengeToken, getOrigin, getRpId } from "../../shared/helpers.js";
+// verifyWebAuthnRegistration — Verify a WebAuthn registration response and store the credential.
+// Ported from supabase/functions/verifyWebAuthnRegistration — uses Supabase admin client + webauthn core.
+import { getSupabaseAdmin, getUserFromRequest } from "../../shared/supabaseAdmin.js";
+import {
+  base64urlDecode, base64urlEncode, verifyChallengeToken,
+  parseAuthData, getOrigin, getRpId
+} from "../../shared/webauthnCore.js";
 
 export default async function(req) {
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
+    const supabaseAdmin = getSupabaseAdmin();
+    const user = await getUserFromRequest(req);
+    if (!user) return Response.json({ error: "Authentication required" }, { status: 401 });
 
-    const body = await req.json();
-    const { credential, challengeToken, deviceLabel } = body;
-    if (!credential || !challengeToken) return Response.json({ error: "credential and challengeToken are required" }, { status: 400 });
+    const body = await req.json().catch(() => ({}));
+    const { challenge_token, credential_response, device_label } = body;
+    if (!challenge_token || !credential_response) {
+      return Response.json({ error: "challenge_token and credential_response required" }, { status: 400 });
+    }
 
-    const tokenPayload = await verifyChallengeToken(challengeToken);
-    const expectedChallenge = tokenPayload.challenge;
+    const payload = await verifyChallengeToken(challenge_token);
+    if (payload.userId !== user.id) return Response.json({ error: "Challenge user mismatch" }, { status: 403 });
 
-    const attestationObject = base64urlDecode(credential.response.attestationObject);
-    const clientDataJSON = base64urlDecode(credential.response.clientDataJSON);
+    const clientDataJSON = base64urlDecode(credential_response.response.clientDataJSON);
     const clientData = JSON.parse(new TextDecoder().decode(clientDataJSON));
+    if (clientData.type !== "webauthn.create") return Response.json({ error: "Invalid clientData type" }, { status: 400 });
 
-    if (clientData.type !== "webauthn.create") return Response.json({ error: "Invalid clientData type: " + clientData.type }, { status: 400 });
     const expectedOrigin = getOrigin(req);
     if (clientData.origin !== expectedOrigin) return Response.json({ error: "Origin mismatch" }, { status: 400 });
+
+    const expectedChallenge = payload.challenge;
     if (clientData.challenge !== expectedChallenge) return Response.json({ error: "Challenge mismatch" }, { status: 400 });
 
-    const { value: attObj } = decodeCbor(attestationObject, 0);
-    const authData = attObj.authData;
+    const authData = base64urlDecode(credential_response.response.attestationObject);
+    const parsed = parseAuthData(authData);
+    if (!parsed.credentialId || !parsed.credentialPublicKeyJwk) {
+      return Response.json({ error: "Missing credential data in authData" }, { status: 400 });
+    }
 
     const expectedRpId = getRpId(req);
     const expectedRpIdHash = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(expectedRpId)));
-    const authDataRpIdHash = authData.slice(0, 32);
     let rpIdMatch = true;
-    for (let i = 0; i < 32; i++) { if (expectedRpIdHash[i] !== authDataRpIdHash[i]) { rpIdMatch = false; break; } }
+    for (let i = 0; i < 32; i++) {
+      if (expectedRpIdHash[i] !== parsed.rpIdHash[i]) { rpIdMatch = false; break; }
+    }
     if (!rpIdMatch) return Response.json({ error: "RP ID hash mismatch" }, { status: 400 });
 
-    const parsed = parseAuthData(authData);
-    if (!parsed.credentialId || !parsed.credentialPublicKeyJwk) return Response.json({ error: "No attested credential data in authData" }, { status: 400 });
-
-    const credentialIdB64 = base64urlEncode(parsed.credentialId);
+    const credentialId = base64urlEncode(parsed.credentialId);
     const publicKeyJwkStr = JSON.stringify(parsed.credentialPublicKeyJwk);
+    const transports = credential_response.response?.transports || [];
 
-    const existing = await base44.asServiceRole.entities.UserAuthCredential.filter(
-      { user_id: user.id, credential_id: credentialIdB64 }, "-created_date", 5
-    );
+    const { data: existing } = await supabaseAdmin
+      .from("user_auth_credentials")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("credential_id", credentialId)
+      .limit(1);
     if (existing && existing.length > 0) return Response.json({ error: "Credential already registered" }, { status: 409 });
 
-    const created = await base44.asServiceRole.entities.UserAuthCredential.create({
-      user_id: user.id, credential_id: credentialIdB64, public_key: publicKeyJwkStr,
-      counter: parsed.counter, device_label: deviceLabel || "Device",
-      transports: credential.response.transports ? JSON.stringify(credential.response.transports) : ""
-    });
+    const { data: cred } = await supabaseAdmin
+      .from("user_auth_credentials")
+      .insert({
+        user_id: user.id, credential_id: credentialId,
+        public_key: publicKeyJwkStr, counter: parsed.counter,
+        device_label: device_label || "WebAuthn Device",
+        transports: JSON.stringify(transports)
+      })
+      .select("*")
+      .single();
 
-    return Response.json({ verified: true, credentialId: credentialIdB64, credential: created });
+    return Response.json({
+      ok: true,
+      credential: { id: cred?.id, credential_id: credentialId, device_label: cred?.device_label }
+    });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }

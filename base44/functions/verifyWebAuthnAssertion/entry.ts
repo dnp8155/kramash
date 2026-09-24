@@ -1,42 +1,70 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.49';
-import { base64urlDecode, verifyAssertion, verifyChallengeToken, getOrigin, getRpId } from "../../shared/helpers.js";
+// verifyWebAuthnAssertion — Verify a WebAuthn assertion and return the authenticated user.
+// Ported from supabase/functions/verifyWebAuthnAssertion — uses Supabase admin client + webauthn core.
+import { getSupabaseAdmin } from "../../shared/supabaseAdmin.js";
+import {
+  base64urlDecode, verifyChallengeToken, verifyAssertion,
+  getOrigin, getRpId
+} from "../../shared/webauthnCore.js";
 
 export default async function(req) {
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
+    const supabaseAdmin = getSupabaseAdmin();
+    const body = await req.json().catch(() => ({}));
+    const { challenge_token, assertion_response } = body;
+    if (!challenge_token || !assertion_response) {
+      return Response.json({ error: "challenge_token and assertion_response required" }, { status: 400 });
+    }
 
-    const body = await req.json();
-    const { credential, challengeToken } = body;
-    if (!credential || !challengeToken) return Response.json({ error: "credential and challengeToken are required" }, { status: 400 });
+    const payload = await verifyChallengeToken(challenge_token);
+    const userId = payload.userId;
+    const expectedChallenge = payload.challenge;
 
-    const tokenPayload = await verifyChallengeToken(challengeToken);
-    const expectedChallenge = tokenPayload.challenge;
+    const { data: creds } = await supabaseAdmin
+      .from("user_auth_credentials")
+      .select("*")
+      .eq("user_id", userId);
+    if (!creds || creds.length === 0) return Response.json({ error: "No credentials found" }, { status: 404 });
 
-    const creds = await base44.asServiceRole.entities.UserAuthCredential.filter(
-      { user_id: user.id, credential_id: credential.id }, "-created_date", 5
-    );
-    if (!creds || creds.length === 0) return Response.json({ error: "Credential not found" }, { status: 404 });
-    const storedCred = creds[0];
+    const credentialId = assertion_response.id;
+    const cred = creds.find((c) => c.credential_id === credentialId);
+    if (!cred) return Response.json({ error: "Credential not found" }, { status: 404 });
 
     let storedPublicKeyJwk;
-    try { storedPublicKeyJwk = JSON.parse(storedCred.public_key); } catch { return Response.json({ error: "Stored public key is invalid" }, { status: 500 }); }
+    try { storedPublicKeyJwk = JSON.parse(cred.public_key); } catch { return Response.json({ error: "Invalid stored public key" }, { status: 500 }); }
 
-    const authenticatorData = base64urlDecode(credential.response.authenticatorData);
-    const clientDataJSON = base64urlDecode(credential.response.clientDataJSON);
-    const signature = base64urlDecode(credential.response.signature);
+    const authenticatorData = base64urlDecode(assertion_response.response.authenticatorData);
+    const clientDataJSON = base64urlDecode(assertion_response.response.clientDataJSON);
+    const signature = base64urlDecode(assertion_response.response.signature);
+
+    const expectedOrigin = getOrigin(req);
+    const expectedRpId = getRpId(req);
 
     const result = await verifyAssertion({
-      authenticatorData, clientDataJSON, signature, storedPublicKeyJwk,
-      expectedChallenge, expectedOrigin: getOrigin(req), expectedRpId: getRpId(req),
-      storedCounter: storedCred.counter || 0
+      authenticatorData, clientDataJSON, signature,
+      storedPublicKeyJwk, expectedChallenge, expectedOrigin, expectedRpId,
+      storedCounter: cred.counter || 0
     });
 
-    await base44.asServiceRole.entities.UserAuthCredential.update(storedCred.id, { counter: result.newCounter });
+    await supabaseAdmin
+      .from("user_auth_credentials")
+      .update({ counter: result.newCounter })
+      .eq("id", cred.id);
 
-    return Response.json({ verified: true });
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
+      .single();
+    if (!profile) return Response.json({ error: "User profile not found" }, { status: 404 });
+
+    return Response.json({
+      ok: true,
+      user: {
+        id: profile.id, email: profile.email, full_name: profile.full_name,
+        phone: profile.phone, role: profile.role
+      }
+    });
   } catch (error) {
-    return Response.json({ error: error.message, verified: false }, { status: 500 });
+    return Response.json({ error: error.message }, { status: 500 });
   }
 }

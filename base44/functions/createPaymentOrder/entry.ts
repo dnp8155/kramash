@@ -1,74 +1,62 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.49';
-import { secrets } from "base44:runtime";
+// createPaymentOrder — Create a Razorpay order for Pro subscription checkout.
+// Ported from supabase/functions/createPaymentOrder — uses Supabase admin client + Razorpay API.
+import { secrets } from 'base44:runtime';
+import { getSupabaseAdmin, getUserFromRequest } from "../../shared/supabaseAdmin.js";
+import { PLAN_CODES } from "../../shared/planEngine.js";
 
 export default async function(req) {
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    const supabaseAdmin = getSupabaseAdmin();
+    const user = await getUserFromRequest(req);
     if (!user) return Response.json({ error: "Authentication required" }, { status: 401 });
 
-    const body = await req.json();
-    const { workspace_id, pricing_id, check_only } = body;
-    if (!workspace_id || !pricing_id) return Response.json({ error: "workspace_id and pricing_id are required" }, { status: 400 });
+    const body = await req.json().catch(() => ({}));
+    const { workspace_id, pricing_id } = body;
+    if (!workspace_id || !pricing_id) return Response.json({ error: "workspace_id and pricing_id required" }, { status: 400 });
+
+    const { data: pricing } = await supabaseAdmin.from("plan_pricings").select("*").eq("id", pricing_id).single();
+    if (!pricing) return Response.json({ error: "Pricing plan not found" }, { status: 404 });
+
+    const { data: plan } = await supabaseAdmin.from("plans").select("*").eq("id", pricing.plan_id).single();
+    if (!plan || plan.code !== PLAN_CODES.PRO) return Response.json({ error: "Only Pro plan can be purchased" }, { status: 400 });
+
+    const amount = Math.round(Number(pricing.price) * 100);
+    const currency = pricing.currency || "INR";
 
     const keyId = secrets.get("RAZORPAY_KEY_ID");
     const keySecret = secrets.get("RAZORPAY_KEY_SECRET");
-    if (!keyId || !keySecret) {
-      return Response.json({ error: "Online payment is not yet available. Please use the Request Upgrade option or contact support.", gatewayStatus: "pending" }, { status: 503 });
-    }
+    if (!keyId || !keySecret) return Response.json({ error: "Razorpay keys not configured" }, { status: 500 });
 
-    if (check_only) return Response.json({ ok: true, configured: true });
-
-    // Verify workspace membership
-    const memberships = await base44.asServiceRole.entities.WorkspaceMember.filter(
-      { workspace_id, user_id: user.id }, "-created_date", 1
-    );
-    const isMember = (memberships && memberships.length > 0) || false;
-    if (!isMember) {
-      // Check if user is workspace owner
-      try {
-        const ws = await base44.asServiceRole.entities.Workspace.get(workspace_id);
-        if (ws && ws.owner_user_id === user.id) { /* ok */ }
-        else return Response.json({ error: "You are not authorized to make payments for this workspace." }, { status: 403 });
-      } catch {
-        return Response.json({ error: "You are not authorized to make payments for this workspace." }, { status: 403 });
-      }
-    }
-
-    const pricing = await base44.asServiceRole.entities.PlanPricing.get(pricing_id);
-    if (!pricing || !pricing.is_active) return Response.json({ error: "Selected pricing option is not available." }, { status: 400 });
-
-    const proPlans = await base44.asServiceRole.entities.Plan.filter({ code: "PRO" }, "-created_date", 10);
-    const proPlan = (proPlans && proPlans[0]) || null;
-    if (!proPlan || pricing.plan_id !== proPlan.id) return Response.json({ error: "Selected pricing is not a Pro plan option." }, { status: 400 });
-
-    const auth = btoa(`${keyId}:${keySecret}`);
-    const amountInPaise = Math.round(pricing.price * 100);
-    const orderRes = await fetch("https://api.razorpay.com/v1/orders", {
+    const receipt = `sub_${workspace_id.slice(0, 12)}_${Date.now()}`;
+    const res = await fetch("https://api.razorpay.com/v1/orders", {
       method: "POST",
-      headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        amount: amountInPaise, currency: pricing.currency || "INR",
-        receipt: `rcpt_${Date.now()}`,
-        notes: { workspace_id, pricing_id, plan_id: proPlan.id, user_id: user.id }
-      })
+      headers: {
+        Authorization: `Basic ${btoa(`${keyId}:${keySecret}`)}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ amount, currency, receipt, notes: { workspace_id, pricing_id, user_id: user.id } })
     });
-
-    if (!orderRes.ok) {
-      const err = await orderRes.text();
-      return Response.json({ error: "Failed to create payment order. Please try again.", details: err }, { status: 502 });
+    if (!res.ok) {
+      const err = await res.text();
+      return Response.json({ error: "Razorpay order creation failed", details: err }, { status: 502 });
     }
+    const order = await res.json();
 
-    const order = await orderRes.json();
+    const { data: payment } = await supabaseAdmin
+      .from("subscription_payments")
+      .insert({
+        workspace_id, plan_id: plan.id, pricing_id: pricing.id,
+        amount: Number(pricing.price), currency, gateway: "razorpay",
+        gateway_order_id: order.id, billing_cycle_snapshot: pricing.billing_cycle,
+        status: "CREATED"
+      })
+      .select("*")
+      .single();
 
-    const payment = await base44.asServiceRole.entities.SubscriptionPayment.create({
-      workspace_id, plan_id: proPlan.id, pricing_id: pricing.id,
-      amount: pricing.price, currency: pricing.currency || "INR",
-      gateway: "razorpay", gateway_order_id: order.id,
-      billing_cycle_snapshot: pricing.billing_cycle, status: "CREATED"
+    return Response.json({
+      order_id: order.id, amount, currency, key_id: keyId,
+      payment_id: payment?.id, billing_cycle: pricing.billing_cycle, price: pricing.price
     });
-
-    return Response.json({ ok: true, order_id: order.id, key_id: keyId, payment_id: payment.id, amount: pricing.price, currency: pricing.currency || "INR" });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }

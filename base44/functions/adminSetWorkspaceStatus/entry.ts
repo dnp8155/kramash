@@ -1,36 +1,27 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.49';
+// adminSetWorkspaceStatus — Admin: activate/suspend a workspace.
+// Ported from supabase/functions/adminSetWorkspaceStatus — uses Supabase admin client.
+import { getSupabaseAdmin, getUserFromRequest } from "../../shared/supabaseAdmin.js";
 
 export default async function(req) {
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ error: "Admin only" }, { status: 403 });
-    if (user.role !== "admin") return Response.json({ error: "Admin only" }, { status: 403 });
+    const supabaseAdmin = getSupabaseAdmin();
+    const user = await getUserFromRequest(req);
+    if (!user || user.role !== "admin") return Response.json({ error: "Admin only" }, { status: 403 });
 
-    const body = await req.json();
-    const { workspace_id, status, note } = body;
-    if (!workspace_id || !status) return Response.json({ error: "workspace_id, status required" }, { status: 400 });
-    const subscriptionStatus = status === "SUSPENDED" ? "SUSPENDED" : "ACTIVE";
+    const body = await req.json().catch(() => ({}));
+    const { workspace_id, status, reason } = body;
+    if (!workspace_id || !status) return Response.json({ error: "workspace_id and status required" }, { status: 400 });
 
-    const existing = await base44.asServiceRole.entities.WorkspaceSubscription.filter(
-      { workspace_id, status: "ACTIVE" }, "-created_date", 50
-    );
-    const suspended = await base44.asServiceRole.entities.WorkspaceSubscription.filter(
-      { workspace_id, status: "SUSPENDED" }, "-created_date", 50
-    );
-    const allExisting = [...(existing || []), ...(suspended || [])];
-    for (const s of allExisting) {
-      await base44.asServiceRole.entities.WorkspaceSubscription.update(s.id, {
-        status: subscriptionStatus,
-        note: note || (status === "SUSPENDED" ? "Workspace suspended" : "Workspace reactivated")
-      });
-    }
+    const valid = ["active", "suspended", "deleted"];
+    if (!valid.includes(status)) return Response.json({ error: "Invalid status" }, { status: 400 });
 
-    await base44.asServiceRole.entities.Workspace.update(workspace_id, {
-      plan_status: status === "SUSPENDED" ? "suspended" : "active"
-    });
+    const { data: ws } = await supabaseAdmin.from("workspaces").select("*").eq("id", workspace_id).single();
+    if (!ws) return Response.json({ error: "Workspace not found" }, { status: 404 });
 
-    return Response.json({ ok: true, status: subscriptionStatus });
+    const updates = { status, status_reason: reason || null, status_updated_at: new Date().toISOString() };
+    const { data: updated } = await supabaseAdmin.from("workspaces").update(updates).eq("id", workspace_id).select("*").single();
+
+    return Response.json({ ok: true, workspace: { id: updated.id, name: updated.name, status: updated.status } });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }

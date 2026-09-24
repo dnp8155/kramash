@@ -1,30 +1,46 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.49';
-import { base64urlEncode, generateChallenge, createChallengeToken, getRpId, safeJson } from "../../shared/helpers.js";
+// generateWebAuthnAssertionChallenge — Generate an assertion challenge for passwordless login.
+// Ported from supabase/functions/generateWebAuthnAssertionChallenge — uses Supabase admin client.
+import { getSupabaseAdmin } from "../../shared/supabaseAdmin.js";
+import { generateChallenge, createChallengeToken, getRpId } from "../../shared/webauthnCore.js";
 
 export default async function(req) {
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
+    const supabaseAdmin = getSupabaseAdmin();
+    const body = await req.json().catch(() => ({}));
+    const email = (body.email || "").trim().toLowerCase();
+    if (!email) return Response.json({ error: "email required" }, { status: 400 });
 
-    const rpId = getRpId(req);
-    if (!rpId) return Response.json({ error: "Could not determine RP ID from request" }, { status: 400 });
+    const { data: profiles } = await supabaseAdmin
+      .from("profiles")
+      .select("*")
+      .eq("email", email)
+      .limit(1);
+    const profile = (profiles && profiles[0]) || null;
+    if (!profile) return Response.json({ error: "User not found" }, { status: 404 });
 
-    const credentials = await base44.asServiceRole.entities.UserAuthCredential.filter(
-      { user_id: user.id }, "-created_date", 100
-    );
-    if (!credentials || credentials.length === 0) return Response.json({ error: "No registered credentials found" }, { status: 404 });
+    const { data: creds } = await supabaseAdmin
+      .from("user_auth_credentials")
+      .select("*")
+      .eq("user_id", profile.id);
+    if (!creds || creds.length === 0) return Response.json({ error: "No WebAuthn credentials registered" }, { status: 404 });
 
     const challenge = generateChallenge();
-    const challengeToken = await createChallengeToken(challenge, user.id);
+    const challengeToken = await createChallengeToken(challenge, profile.id);
+    const rpId = getRpId(req);
 
-    const allowCredentials = credentials.map((c) => {
-      const entry = { type: "public-key", id: c.credential_id };
-      if (c.transports) { entry.transports = safeJson(c.transports) || []; }
-      return entry;
+    const allowCredentials = creds.map((c) => ({
+      type: "public-key",
+      id: c.credential_id,
+      transports: (() => { try { return JSON.parse(c.transports || "[]"); } catch { return []; } })()
+    }));
+
+    return Response.json({
+      challenge_token: challengeToken,
+      challenge: [...challenge],
+      rp_id: rpId,
+      allow_credentials: allowCredentials,
+      user_id: profile.id
     });
-
-    return Response.json({ challenge: base64urlEncode(challenge), challengeToken, rpId, allowCredentials, userVerification: "required", timeout: 60000 });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
