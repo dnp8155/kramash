@@ -1,4 +1,5 @@
 // Shared helpers — pure functions used across multiple backend functions.
+// Ported from supabase/functions/_shared/helpers.ts — no Supabase dependency.
 
 export function safeJson(v) {
   if (v === null || v === undefined) return null;
@@ -9,6 +10,12 @@ export function safeJson(v) {
 export function round2(n) {
   const v = Number(n) || 0;
   return Math.round((v + Number.EPSILON) * 100) / 100;
+}
+
+export function generateSecureToken() {
+  const arr = new Uint8Array(24);
+  crypto.getRandomValues(arr);
+  return Array.from(arr).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
 export function filterTeamItems(items) {
@@ -25,228 +32,205 @@ export function calculateMilestoneAmount(milestone, grandTotal) {
   return round2((Number(grandTotal) || 0) * value / 100);
 }
 
-export function computeExpiry(startDateStr, durationMonths) {
-  const d = new Date(startDateStr + "T00:00:00");
-  const originalDay = d.getDate();
-  d.setMonth(d.getMonth() + durationMonths);
-  if (d.getDate() !== originalDay) d.setDate(0);
-  return d.toISOString().split("T")[0];
+export function groupBy(arr, key) {
+  const groups = {};
+  for (const item of arr || []) {
+    const k = item[key];
+    if (!k) continue;
+    if (!groups[k]) groups[k] = [];
+    groups[k].push(item);
+  }
+  return groups;
 }
 
-export function todayStr() {
-  return new Date().toISOString().split("T")[0];
+export function sumLineTotals(items) {
+  return round2((items || []).reduce((s, it) => s + (Number(it.line_total) || 0), 0));
 }
 
-// Base64url encode/decode for WebAuthn
-export function base64urlEncode(buf) {
-  const bytes = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
-  let bin = "";
-  for (const b of bytes) bin += String.fromCharCode(b);
-  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+export function uniqueSortedDates(dates) {
+  return [...new Set(dates)].filter(Boolean).sort();
 }
 
-export function base64urlDecode(str) {
-  str = str.replace(/-/g, "+").replace(/_/g, "/");
-  while (str.length % 4) str += "=";
-  const bin = atob(str);
-  const bytes = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-  return bytes;
+export function deriveEventDates(quotation) {
+  if (!quotation.start_date) return [];
+  const excluded = new Set(quotation.excluded_dates || []);
+  const start = new Date(quotation.start_date + "T00:00:00");
+  const end = quotation.end_date
+    ? new Date(quotation.end_date + "T00:00:00")
+    : new Date(quotation.start_date + "T00:00:00");
+  if (isNaN(start) || isNaN(end) || start > end) return [quotation.start_date].filter(Boolean);
+  const dates = [];
+  const cur = new Date(start);
+  while (cur <= end) {
+    const ds = cur.toISOString().slice(0, 10);
+    if (!excluded.has(ds)) dates.push(ds);
+    cur.setDate(cur.getDate() + 1);
+  }
+  return dates;
 }
 
-export function generateChallenge() {
-  const arr = new Uint8Array(32);
-  crypto.getRandomValues(arr);
-  return arr;
-}
-
-// Simple challenge token: base64url(challenge_hex + ":" + user_id + ":" + expiry)
-export async function createChallengeToken(challenge, userId) {
-  const expiry = Date.now() + 5 * 60 * 1000;
-  const challengeHex = [...new Uint8Array(challenge)].map(b => b.toString(16).padStart(2, "0")).join("");
-  const payload = `${challengeHex}:${userId}:${expiry}`;
-  return base64urlEncode(new TextEncoder().encode(payload));
-}
-
-export async function verifyChallengeToken(token) {
-  try {
-    const decoded = new TextDecoder().decode(base64urlDecode(token));
-    const parts = decoded.split(":");
-    if (parts.length < 3) throw new Error("Invalid token format");
-    const challengeHex = parts[0];
-    const userId = parts.slice(1, -1).join(":");
-    const expiry = parseInt(parts[parts.length - 1], 10);
-    if (Date.now() > expiry) throw new Error("Challenge token expired");
-    const challengeBytes = new Uint8Array(challengeHex.length / 2);
-    for (let i = 0; i < challengeBytes.length; i++) {
-      challengeBytes[i] = parseInt(challengeHex.substr(i * 2, 2), 16);
+export async function generateInvoiceNumber(supabaseAdmin, workspaceId) {
+  const year = new Date().getFullYear();
+  const prefix = `INV-${year}-`;
+  const { data } = await supabaseAdmin
+    .from("invoices")
+    .select("invoice_number")
+    .eq("workspace_id", workspaceId)
+    .order("invoice_number", { ascending: false })
+    .limit(500);
+  let max = 0;
+  for (const inv of data || []) {
+    const num = String(inv.invoice_number || "");
+    if (num.startsWith(prefix)) {
+      const n = parseInt(num.slice(prefix.length), 10);
+      if (!isNaN(n) && n > max) max = n;
     }
-    return { challenge: challengeHex, challengeBytes, userId };
-  } catch (e) {
-    throw new Error("Invalid challenge token: " + e.message);
   }
+  return `${prefix}${String(max + 1).padStart(4, "0")}`;
 }
 
-export function getRpId(req) {
-  const origin = getOrigin(req);
-  try {
-    const url = new URL(origin);
-    return url.hostname;
-  } catch { return null; }
+export function determineGstMode(businessState, clientState) {
+  if (!businessState || !clientState) return "cgst_sgst";
+  return businessState.trim().toLowerCase() === clientState.trim().toLowerCase()
+    ? "cgst_sgst"
+    : "igst";
 }
 
-export function getOrigin(req) {
-  const headers = req.headers || new Headers();
-  // Try multiple headers
-  return headers.get("origin") || headers.get("referer")?.replace(/\/$/, "") || 
-    (headers.get("x-forwarded-proto") || "https") + "://" + (headers.get("x-forwarded-host") || headers.get("host") || "localhost");
-}
+export function computeInvoiceTotals(items, opts) {
+  const subtotal = round2((items || []).reduce((s, it) => {
+    const qty = Math.max(0, Number(it.quantity) || 0);
+    const rate = Math.max(0, Number(it.unit_rate) || 0);
+    return s + round2(qty * rate);
+  }, 0));
 
-// Minimal CBOR decoder for WebAuthn attestation objects
-export function decodeCbor(buf, offset) {
-  // This is a simplified CBOR decoder sufficient for WebAuthn attestation objects
-  const bytes = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
-  const result = _decodeCborValue(bytes, offset || 0);
-  return result;
-}
+  const dType = opts.discountType || "percent";
+  const dVal = Math.max(0, Number(opts.discountValue) || 0);
+  let discountAmount = 0;
+  if (dType === "fixed") {
+    discountAmount = round2(Math.min(dVal, subtotal));
+  } else {
+    const pct = Math.min(Math.max(dVal, 0), 100);
+    discountAmount = round2((subtotal * pct) / 100);
+  }
 
-function _decodeCborValue(bytes, offset) {
-  const firstByte = bytes[offset];
-  const majorType = firstByte >> 5;
-  const info = firstByte & 0x1f;
+  const taxableAmount = round2(Math.max(0, subtotal - discountAmount));
 
-  if (majorType === 5) { // map
-    const mapLength = info === 31 ? -1 : _readLen(bytes, offset, info);
-    let pos = offset + 1 + (info >= 24 ? 1 : 0) + (info >= 256 ? 1 : 0);
-    const map = {};
-    let count = 0;
-    while (mapLength === -1 ? bytes[pos] !== 0xff : count < mapLength) {
-      if (mapLength === -1 && bytes[pos] === 0xff) { pos++; break; }
-      const key = _decodeCborValue(bytes, pos);
-      pos = key.offset;
-      const val = _decodeCborValue(bytes, pos);
-      pos = val.offset;
-      map[key.value] = val.value;
-      count++;
+  let cgst = 0, sgst = 0, igst = 0, gstTotal = 0;
+  if (opts.gstApplicable) {
+    const rate = Math.max(0, Number(opts.gstRate) || 0);
+    gstTotal = round2((taxableAmount * rate) / 100);
+    const mode = opts.gstMode || "cgst_sgst";
+    if (mode === "igst") {
+      igst = gstTotal;
+    } else {
+      cgst = round2(gstTotal / 2);
+      sgst = round2(gstTotal - cgst);
     }
-    return { value: map, offset: pos };
   }
-  if (majorType === 3) { // byte string
-    const len = _readLen(bytes, offset, info);
-    let pos = offset + 1 + (info >= 24 ? 1 : 0) + (info >= 256 ? 1 : 0);
-    const value = bytes.slice(pos, pos + len);
-    return { value, offset: pos + len };
-  }
-  if (majorType === 2) { // text string
-    const len = _readLen(bytes, offset, info);
-    let pos = offset + 1 + (info >= 24 ? 1 : 0) + (info >= 256 ? 1 : 0);
-    const value = new TextDecoder().decode(bytes.slice(pos, pos + len));
-    return { value, offset: pos + len };
-  }
-  if (majorType === 0) { // unsigned int
-    return { value: _readLen(bytes, offset, info), offset: offset + 1 + (info >= 24 ? 1 : 0) + (info >= 256 ? 1 : 0) };
-  }
-  if (majorType === 1) { // negative int
-    return { value: -1 - _readLen(bytes, offset, info), offset: offset + 1 + (info >= 24 ? 1 : 0) + (info >= 256 ? 1 : 0) };
-  }
-  if (majorType === 4) { // array
-    const len = _readLen(bytes, offset, info);
-    let pos = offset + 1 + (info >= 24 ? 1 : 0) + (info >= 256 ? 1 : 0);
-    const arr = [];
-    for (let i = 0; i < len; i++) {
-      const v = _decodeCborValue(bytes, pos);
-      pos = v.offset;
-      arr.push(v.value);
-    }
-    return { value: arr, offset: pos };
-  }
-  return { value: null, offset: offset + 1 };
+
+  const grandTotal = round2(taxableAmount + gstTotal);
+
+  return {
+    subtotal,
+    discountAmount,
+    taxableAmount,
+    cgstAmount: cgst,
+    sgstAmount: sgst,
+    igstAmount: igst,
+    gstTotal,
+    grandTotal
+  };
 }
 
-function _readLen(bytes, offset, info) {
-  if (info < 24) return info;
-  if (info === 24) return bytes[offset + 1];
-  if (info === 25) return (bytes[offset + 1] << 8) | bytes[offset + 2];
-  if (info === 26) return (bytes[offset + 1] << 24) | (bytes[offset + 2] << 16) | (bytes[offset + 3] << 8) | bytes[offset + 4];
-  return 0;
+export function buildClientSnapshot(client) {
+  if (!client) return "";
+  return JSON.stringify({
+    name: client.name || "",
+    phone: client.phone || "",
+    email: client.email || "",
+    address: client.address || "",
+    city: client.city || "",
+    state: client.state || "",
+    country: client.country || "",
+    gstin: client.gstin || ""
+  });
 }
 
-export function parseAuthData(authData) {
-  const bytes = authData instanceof Uint8Array ? authData : new Uint8Array(authData);
-  const rpIdHash = bytes.slice(0, 32);
-  const flags = bytes[32];
-  const counter = ((bytes[33] << 24) | (bytes[34] << 16) | (bytes[35] << 8) | bytes[36]) >>> 0;
-  const hasAttested = (flags & 0x40) !== 0;
-  let credentialId = null, credentialPublicKeyJwk = null;
-  let offset = 37;
-  if (hasAttested) {
-    const aaguid = bytes.slice(offset, offset + 16);
-    offset += 16;
-    const credIdLen = (bytes[offset] << 8) | bytes[offset + 1];
-    offset += 2;
-    credentialId = bytes.slice(offset, offset + credIdLen);
-    offset += credIdLen;
-    // The rest is the CBOR-encoded public key
-    const pubKeyBytes = bytes.slice(offset);
-    try {
-      const { value: pubKey } = decodeCbor(pubKeyBytes, 0);
-      if (pubKey) {
-        // COSE key to JWK
-        const kty = pubKey[1];
-        const alg = pubKey[3];
-        if (kty === 2) { // EC2
-          credentialPublicKeyJwk = {
-            kty: "EC",
-            crv: "P-256",
-            x: base64urlEncode(pubKey[-2]),
-            y: base64urlEncode(pubKey[-3]),
-            alg: alg || -7
-          };
-        } else if (kty === 3) { // RSA
-          credentialPublicKeyJwk = {
-            kty: "RSA",
-            n: base64urlEncode(pubKey[-1]),
-            e: base64urlEncode(pubKey[-2]),
-            alg: alg || -257
-          };
-        }
-      }
-    } catch {}
-  }
-  return { rpIdHash, flags, counter, credentialId, credentialPublicKeyJwk };
+export function buildBusinessSnapshot(workspace) {
+  if (!workspace) return "";
+  return JSON.stringify({
+    name: workspace.name || "",
+    logo: workspace.logo || "",
+    address: workspace.address || "",
+    city: workspace.city || "",
+    state: workspace.state || "",
+    country: workspace.country || "",
+    phone: workspace.phone || "",
+    email: workspace.email || "",
+    gst_enabled: !!workspace.gst_enabled,
+    gstin: workspace.gstin || "",
+    gst_business_name: workspace.gst_business_name || "",
+    gst_billing_address: workspace.gst_billing_address || "",
+    gst_state: workspace.gst_state || "",
+    default_gst_rate: workspace.default_gst_rate ?? 0
+  });
 }
 
-export async function verifyAssertion(opts) {
-  const { authenticatorData, clientDataJSON, signature, storedPublicKeyJwk, expectedChallenge, expectedOrigin, expectedRpId, storedCounter } = opts;
+export function buildEventSnapshot(event) {
+  if (!event) return "";
+  return JSON.stringify({
+    title: event.title || "",
+    event_type: event.event_type || "",
+    start_date: event.start_date || "",
+    end_date: event.end_date || "",
+    event_dates: Array.isArray(event.event_dates) ? event.event_dates : [],
+    venue: event.venue || "",
+    venue_address: event.venue_address || ""
+  });
+}
 
-  const clientData = JSON.parse(new TextDecoder().decode(clientDataJSON));
-  if (clientData.type !== "webauthn.get") throw new Error("Invalid clientData type");
-  if (clientData.challenge !== expectedChallenge) throw new Error("Challenge mismatch");
-  if (clientData.origin !== expectedOrigin) throw new Error("Origin mismatch");
+export function getFinancialYearForDate(dateStr) {
+  if (!dateStr) return null;
+  const d = new Date(dateStr + "T00:00:00");
+  if (Number.isNaN(d.getTime())) return null;
+  const year = d.getFullYear();
+  const month = d.getMonth() + 1;
+  const startYear = month >= 4 ? year : year - 1;
+  const endYear = startYear + 1;
+  return {
+    name: `FY ${startYear}\u2013${String(endYear).slice(-2)}`,
+    start_date: `${startYear}-04-01`,
+    end_date: `${endYear}-03-31`,
+  };
+}
 
-  // Verify RP ID hash
-  const expectedRpIdHash = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(expectedRpId)));
-  const authRpIdHash = authenticatorData.slice(0, 32);
-  for (let i = 0; i < 32; i++) {
-    if (expectedRpIdHash[i] !== authRpIdHash[i]) throw new Error("RP ID hash mismatch");
-  }
+export function getCurrentFinancialYear() {
+  const d = new Date();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const today = `${d.getFullYear()}-${m}-${day}`;
+  return getFinancialYearForDate(today) || (() => {
+    const year = d.getFullYear();
+    const startYear = d.getMonth() + 1 >= 4 ? year : year - 1;
+    const endYear = startYear + 1;
+    return {
+      name: `FY ${startYear}\u2013${String(endYear).slice(-2)}`,
+      start_date: `${startYear}-04-01`,
+      end_date: `${endYear}-03-31`,
+    };
+  })();
+}
 
-  // Verify signature
-  const flags = authenticatorData[32];
-  const hasUserVerification = (flags & 0x04) !== 0;
-  if (!hasUserVerification) throw new Error("User verification required");
+export function findFYForDate(dateStr, fys) {
+  if (!dateStr || !fys || !fys.length) return null;
+  return fys.find((fy) => dateStr >= fy.start_date && dateStr <= fy.end_date) || null;
+}
 
-  const counter = ((authenticatorData[33] << 24) | (authenticatorData[34] << 16) | (authenticatorData[35] << 8) | authenticatorData[36]) >>> 0;
-  if (counter <= storedCounter && counter !== 0) throw new Error("Counter regression detected");
-
-  // Import public key and verify signature
-  const keyData = { ...storedPublicKeyJwk, ext: true };
-  const cryptoKey = await crypto.subtle.importKey("jwk", keyData, storedPublicKeyJwk.alg === -7 ? { name: "ECDSA", namedCurve: "P-256" } : { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["verify"]);
-  const signedData = new Uint8Array(authenticatorData.length + clientDataJSON.length);
-  signedData.set(authenticatorData, 0);
-  signedData.set(clientDataJSON, authenticatorData.length);
-  const valid = await crypto.subtle.verify(cryptoKey.algorithm, cryptoKey, signature, signedData);
-  if (!valid) throw new Error("Signature verification failed");
-
-  return { newCounter: counter + 1 };
+export function checkFYOverlap(startDate, endDate, existingFYs, excludeId) {
+  return existingFYs.some(
+    (fy) =>
+      (!excludeId || fy.id !== excludeId) &&
+      startDate <= fy.end_date &&
+      endDate >= fy.start_date
+  );
 }

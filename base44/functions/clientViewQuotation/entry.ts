@@ -1,16 +1,23 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.49';
+// clientViewQuotation — Public client-facing quotation view with view tracking.
+// Ported from supabase/functions/clientViewQuotation — uses Supabase admin client.
+import { getSupabaseAdmin } from "../../shared/supabaseAdmin.js";
 import { safeJson } from "../../shared/helpers.js";
 
 export default async function(req) {
   try {
-    const base44 = createClientFromRequest(req);
+    const supabaseAdmin = getSupabaseAdmin();
     const body = await req.json().catch(() => ({}));
     const token = body.public_token || body.token;
     const skipTracking = !!body.skip_tracking;
 
     if (!token) return Response.json({ error: "Quotation token required" }, { status: 400 });
 
-    const list = await base44.asServiceRole.entities.Quotation.filter({ public_token: token }, "-created_date", 5);
+    const { data: list } = await supabaseAdmin
+      .from("quotations")
+      .select("*")
+      .eq("public_token", token)
+      .order("created_at", { ascending: false })
+      .limit(5);
     const q = (list && list.length > 0) ? list[0] : null;
     if (!q) return Response.json({ error: "Quotation not found" }, { status: 404 });
 
@@ -24,8 +31,8 @@ export default async function(req) {
       if (password !== q.client_access_password) {
         return Response.json({ error: "Incorrect email or password" }, { status: 401 });
       }
-      const snap = safeJson(q.client_snapshot) || {};
-      const clientEmail = (snap.email || "").trim().toLowerCase();
+      let clientEmail = "";
+      const snap = safeJson(q.client_snapshot) || {}; clientEmail = (snap.email || "").trim().toLowerCase();
       if (clientEmail && (!email || email.trim().toLowerCase() !== clientEmail)) {
         return Response.json({ error: "Incorrect email or password" }, { status: 401 });
       }
@@ -35,23 +42,30 @@ export default async function(req) {
       const now = new Date().toISOString();
       const viewCount = (Number(q.portal_view_count) || 0) + 1;
       const firstViewed = q.portal_first_viewed_at || now;
-      base44.asServiceRole.entities.Quotation.update(q.id, { portal_view_count: viewCount, portal_first_viewed_at: firstViewed, portal_latest_viewed_at: now }).catch(() => {});
+      supabaseAdmin
+        .from("quotations")
+        .update({ portal_view_count: viewCount, portal_first_viewed_at: firstViewed, portal_latest_viewed_at: now })
+        .eq("id", q.id)
+        .then(() => {}, () => {});
     }
 
-    const items = await base44.asServiceRole.entities.QuotationItem.filter({ quotation_id: q.id }, "sort_order", 500);
+    const { data: items } = await supabaseAdmin
+      .from("quotation_items")
+      .select("*")
+      .eq("quotation_id", q.id)
+      .order("sort_order", { ascending: true })
+      .limit(500);
 
     let currency = "INR";
-    try {
-      const ws = await base44.asServiceRole.entities.Workspace.get(q.workspace_id);
-      if (ws?.currency) currency = ws.currency;
-    } catch {}
+    const { data: ws } = await supabaseAdmin.from("workspaces").select("currency").eq("id", q.workspace_id).single();
+    if (ws?.currency) currency = ws.currency;
 
     const todayStr = new Date().toISOString().slice(0, 10);
     const expired = !!(q.valid_until && q.valid_until < todayStr);
 
-    const milestones = safeJson(q.payment_schedule_json) || [];
-    const bankDetails = safeJson(q.bank_details_snapshot);
-    const socialLinks = safeJson(q.social_links_snapshot);
+    let milestones = safeJson(q.payment_schedule_json) || [];
+    let bankDetails = safeJson(q.bank_details_snapshot);
+    let socialLinks = safeJson(q.social_links_snapshot);
 
     return Response.json({
       quotation: {

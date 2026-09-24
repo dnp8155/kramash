@@ -1,39 +1,49 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.49';
+// getPublicEventData — Public event tracking page by token.
+// Ported from supabase/functions/getPublicEventData — uses Supabase admin client.
+import { getSupabaseAdmin } from "../../shared/supabaseAdmin.js";
 
 export default async function(req) {
   try {
-    const base44 = createClientFromRequest(req);
+    const supabaseAdmin = getSupabaseAdmin();
     const body = await req.json().catch(() => ({}));
     const token = body.token;
     if (!token) return Response.json({ error: "Token required" }, { status: 400 });
 
-    const events = await base44.asServiceRole.entities.Event.filter({ public_token: token }, "-created_date", 5);
+    const { data: events } = await supabaseAdmin.from("events").select("*").eq("public_token", token).order("created_at", { ascending: false }).limit(5);
     const event = (events && events.length > 0) ? events[0] : null;
     if (!event) return Response.json({ error: "Event not found" }, { status: 404 });
     if (!event.public_tracking_enabled) return Response.json({ error: "Tracking is not enabled for this event." }, { status: 403 });
     if (event.status === "cancelled") return Response.json({ error: "This event has been cancelled." }, { status: 404 });
 
-    const workspace = await base44.asServiceRole.entities.Workspace.get(event.workspace_id);
+    const { data: workspace } = await supabaseAdmin.from("workspaces").select("*").eq("id", event.workspace_id).single();
     let client = null;
     if (event.client_id) {
-      try { client = await base44.asServiceRole.entities.Client.get(event.client_id); } catch {}
+      const { data: c } = await supabaseAdmin.from("clients").select("*").eq("id", event.client_id).single();
+      client = c;
     }
-
-    const transactions = await base44.asServiceRole.entities.FinancialTransaction.filter(
-      { workspace_id: event.workspace_id, event_id: event.id, transaction_type: "CLIENT_RECEIPT", status: "ACTIVE" },
-      "-transaction_date", 200
-    );
-    const assignments = await base44.asServiceRole.entities.EventTeamAssignment.filter(
-      { workspace_id: event.workspace_id, event_id: event.id, assignment_status: "assigned" },
-      "created_date", 100
-    );
-    const members = await base44.asServiceRole.entities.TeamMember.filter(
-      { workspace_id: event.workspace_id, status: "active" }, "name", 200
-    );
-    const quotations = await base44.asServiceRole.entities.Quotation.filter(
-      { workspace_id: event.workspace_id, event_id: event.id }, "-created_date", 10
-    );
-    const finalizedQuotations = (quotations || []).filter(q => q.status === "finalized" || q.status === "accepted");
+    const { data: transactions } = await supabaseAdmin
+      .from("financial_transactions")
+      .select("*")
+      .eq("workspace_id", event.workspace_id).eq("event_id", event.id)
+      .eq("transaction_type", "CLIENT_RECEIPT").eq("status", "ACTIVE")
+      .order("transaction_date", { ascending: false }).limit(200);
+    const { data: assignments } = await supabaseAdmin
+      .from("event_team_assignments")
+      .select("*")
+      .eq("workspace_id", event.workspace_id).eq("event_id", event.id)
+      .eq("assignment_status", "assigned")
+      .order("created_at", { ascending: true }).limit(100);
+    const { data: members } = await supabaseAdmin
+      .from("team_members")
+      .select("*")
+      .eq("workspace_id", event.workspace_id).eq("status", "active")
+      .order("name", { ascending: true }).limit(200);
+    const { data: quotations } = await supabaseAdmin
+      .from("quotations")
+      .select("*")
+      .eq("workspace_id", event.workspace_id).eq("event_id", event.id)
+      .in("status", ["finalized", "accepted"])
+      .order("created_at", { ascending: false }).limit(10);
 
     const membersById = {};
     (members || []).forEach((m) => { membersById[m.id] = m; });
@@ -47,7 +57,7 @@ export default async function(req) {
     const pending = Math.max(0, contractValue - received);
     const paymentProgress = contractValue > 0 ? Math.min(100, Math.round((received / contractValue) * 100)) : 0;
 
-    const sortedQuotations = (finalizedQuotations || []).slice().sort((a, b) => {
+    const sortedQuotations = (quotations || []).slice().sort((a, b) => {
       const aAccepted = a.status === "accepted" ? 1 : 0;
       const bAccepted = b.status === "accepted" ? 1 : 0;
       return bAccepted - aAccepted;
@@ -61,7 +71,7 @@ export default async function(req) {
         const tokenBytes = new Uint8Array(24);
         crypto.getRandomValues(tokenBytes);
         publicToken = Array.from(tokenBytes).map((b) => b.toString(16).padStart(2, "0")).join("");
-        await base44.asServiceRole.entities.Quotation.update(resolvedQuotation.id, { public_token: publicToken });
+        await supabaseAdmin.from("quotations").update({ public_token: publicToken }).eq("id", resolvedQuotation.id);
       }
       quotation = { id: resolvedQuotation.id, public_token: publicToken, quotation_number: resolvedQuotation.quotation_number, status: resolvedQuotation.status, grand_total: Number(resolvedQuotation.grand_total) || 0 };
     }
@@ -74,21 +84,21 @@ export default async function(req) {
     let milestones = [];
     if (event.status === "upcoming") {
       milestones = [
-        { label: "Booking Confirmed", done: true, date: event.created_date?.slice(0, 10) },
+        { label: "Booking Confirmed", done: true, date: event.created_at?.slice(0, 10) },
         { label: "Planning & Coordination", done: firstDate && today < firstDate, date: null },
         { label: "Event Day", done: false, date: firstDate },
         { label: "Delivery & Wrap-up", done: false, date: null }
       ];
     } else if (event.status === "in-progress") {
       milestones = [
-        { label: "Booking Confirmed", done: true, date: event.created_date?.slice(0, 10) },
+        { label: "Booking Confirmed", done: true, date: event.created_at?.slice(0, 10) },
         { label: "Planning & Coordination", done: true, date: null },
         { label: "Event Day", done: true, date: firstDate },
         { label: "Delivery & Wrap-up", done: false, date: null }
       ];
     } else if (event.status === "completed") {
       milestones = [
-        { label: "Booking Confirmed", done: true, date: event.created_date?.slice(0, 10) },
+        { label: "Booking Confirmed", done: true, date: event.created_at?.slice(0, 10) },
         { label: "Planning & Coordination", done: true, date: null },
         { label: "Event Day", done: true, date: firstDate },
         { label: "Delivery & Wrap-up", done: true, date: lastDate }
@@ -106,6 +116,8 @@ export default async function(req) {
       business: {
         name: workspace?.name || "", logo: workspace?.logo || "", phone: workspace?.phone || "",
         email: workspace?.email || "", address: workspace?.address || "", city: workspace?.city || "",
+        custom_work_label_singular: workspace?.custom_work_label_singular || "",
+        custom_work_label_plural: workspace?.custom_work_label_plural || "",
         business_category: workspace?.business_category || "OTHER"
       },
       client: client ? { name: client.name || "" } : null,

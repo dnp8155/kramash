@@ -1,9 +1,11 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.49';
+// signQuotation — Public endpoint: client signs (accepts) a finalized quotation.
+// Ported from supabase/functions/signQuotation — uses Supabase admin client.
+import { getSupabaseAdmin } from "../../shared/supabaseAdmin.js";
 import { safeJson } from "../../shared/helpers.js";
 
 export default async function(req) {
   try {
-    const base44 = createClientFromRequest(req);
+    const supabaseAdmin = getSupabaseAdmin();
     const body = await req.json().catch(() => ({}));
     const { signature, signed_by_name, consent } = body;
     const token = body.public_token || body.token;
@@ -15,7 +17,12 @@ export default async function(req) {
     if (!signed_by_name || !signed_by_name.trim()) return Response.json({ error: "Your name is required to sign" }, { status: 400 });
     if (!consent) return Response.json({ error: "You must agree to the terms before signing" }, { status: 400 });
 
-    const list = await base44.asServiceRole.entities.Quotation.filter({ public_token: token }, "-created_date", 5);
+    const { data: list } = await supabaseAdmin
+      .from("quotations")
+      .select("*")
+      .eq("public_token", token)
+      .order("created_at", { ascending: false })
+      .limit(5);
     const q = (list && list.length > 0) ? list[0] : null;
     if (!q) return Response.json({ error: "Quotation not found" }, { status: 404 });
 
@@ -35,18 +42,23 @@ export default async function(req) {
       if (!password || password !== q.client_access_password) {
         return Response.json({ error: "Authentication required to sign this quotation" }, { status: 401 });
       }
-      const snap = safeJson(q.client_snapshot) || {};
-      const clientEmail = (snap.email || "").trim().toLowerCase();
+      let clientEmail = "";
+      const snap = safeJson(q.client_snapshot) || {}; clientEmail = (snap.email || "").trim().toLowerCase();
       if (clientEmail && (!email || email.trim().toLowerCase() !== clientEmail)) {
         return Response.json({ error: "Authentication required to sign this quotation" }, { status: 401 });
       }
     }
 
-    const updated = await base44.asServiceRole.entities.Quotation.update(q.id, {
-      status: "accepted", client_signature: signature,
-      signed_by_name: signed_by_name.trim(), signed_at: new Date().toISOString(),
-      sync_pending: true
-    });
+    const { data: updated } = await supabaseAdmin
+      .from("quotations")
+      .update({
+        status: "accepted", client_signature: signature,
+        signed_by_name: signed_by_name.trim(), signed_at: new Date().toISOString(),
+        sync_pending: true
+      })
+      .eq("id", q.id)
+      .select("*")
+      .single();
 
     return Response.json({
       ok: true,

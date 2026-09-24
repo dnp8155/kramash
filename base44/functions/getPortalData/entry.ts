@@ -1,16 +1,23 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.49';
-import { safeJson, round2, filterTeamItems, filterServiceItems, calculateMilestoneAmount } from "../../shared/helpers.js";
+// getPortalData — Public Client Project Portal (URL 1) data by token.
+// Ported from supabase/functions/getPortalData — uses Supabase admin client.
+import { getSupabaseAdmin } from "../../shared/supabaseAdmin.js";
+import { round2, filterTeamItems, filterServiceItems, calculateMilestoneAmount, safeJson } from "../../shared/helpers.js";
 
 export default async function(req) {
   try {
-    const base44 = createClientFromRequest(req);
+    const supabaseAdmin = getSupabaseAdmin();
     const body = await req.json().catch(() => ({}));
     const token = body.public_token || body.token;
     const skipTracking = !!body.skip_tracking;
     const providedPassword = body.password || "";
     if (!token) return Response.json({ error: "Token required" }, { status: 400 });
 
-    const list = await base44.asServiceRole.entities.Quotation.filter({ public_token: token }, "-created_date", 5);
+    const { data: list } = await supabaseAdmin
+      .from("quotations")
+      .select("*")
+      .eq("public_token", token)
+      .order("created_at", { ascending: false })
+      .limit(5);
     if (!list || list.length === 0) return Response.json({ error: "Project not found" }, { status: 404 });
     const q = list[0];
 
@@ -27,7 +34,7 @@ export default async function(req) {
       const now = new Date().toISOString();
       const viewCount = (Number(q.portal_view_count) || 0) + 1;
       const firstViewed = q.portal_first_viewed_at || now;
-      base44.asServiceRole.entities.Quotation.update(q.id, { portal_view_count: viewCount, portal_first_viewed_at: firstViewed, portal_latest_viewed_at: now }).catch(() => {});
+      supabaseAdmin.from("quotations").update({ portal_view_count: viewCount, portal_first_viewed_at: firstViewed, portal_latest_viewed_at: now }).eq("id", q.id).then(() => {}, () => {});
     }
 
     let event = safeJson(q.event_snapshot);
@@ -35,20 +42,22 @@ export default async function(req) {
     let business = safeJson(q.business_snapshot);
     let milestones = safeJson(q.payment_schedule_json) || [];
 
-    const items = await base44.asServiceRole.entities.QuotationItem.filter({ quotation_id: q.id }, "sort_order", 500);
+    const { data: items } = await supabaseAdmin.from("quotation_items").select("*").eq("quotation_id", q.id).order("sort_order", { ascending: true }).limit(500);
 
     let currency = "INR";
-    try {
-      const ws = await base44.asServiceRole.entities.Workspace.get(q.workspace_id);
-      if (ws?.currency) currency = ws.currency;
-    } catch {}
+    const { data: ws } = await supabaseAdmin.from("workspaces").select("currency").eq("id", q.workspace_id).single();
+    if (ws?.currency) currency = ws.currency;
 
     let totalReceived = 0;
     if (q.event_id) {
-      const txns = await base44.asServiceRole.entities.FinancialTransaction.filter(
-        { event_id: q.event_id, transaction_type: "CLIENT_RECEIPT", status: "ACTIVE" },
-        "transaction_date", 500
-      );
+      const { data: txns } = await supabaseAdmin
+        .from("financial_transactions")
+        .select("*")
+        .eq("event_id", q.event_id)
+        .eq("transaction_type", "CLIENT_RECEIPT")
+        .eq("status", "ACTIVE")
+        .order("transaction_date", { ascending: true })
+        .limit(500);
       totalReceived = (txns || []).reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
     }
 
@@ -56,9 +65,13 @@ export default async function(req) {
     let milestoneStates = [];
 
     if (q.event_id) {
-      const dbMilestones = await base44.asServiceRole.entities.PaymentMilestone.filter(
-        { workspace_id: q.workspace_id, event_id: q.event_id }, "sort_order", 100
-      );
+      const { data: dbMilestones } = await supabaseAdmin
+        .from("payment_milestones")
+        .select("*")
+        .eq("workspace_id", q.workspace_id)
+        .eq("event_id", q.event_id)
+        .order("sort_order", { ascending: true })
+        .limit(100);
       if (dbMilestones && dbMilestones.length > 0) {
         milestoneStates = dbMilestones.map((m) => {
           const due = Number(m.due_amount) || 0;

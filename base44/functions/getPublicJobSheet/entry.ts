@@ -1,57 +1,60 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.49';
+// getPublicJobSheet — Public crew job sheet by token (no financial data).
+// Ported from supabase/functions/getPublicJobSheet — uses Supabase admin client.
+import { getSupabaseAdmin } from "../../shared/supabaseAdmin.js";
 import { safeJson } from "../../shared/helpers.js";
 
 export default async function(req) {
   try {
-    const base44 = createClientFromRequest(req);
+    const supabaseAdmin = getSupabaseAdmin();
     const body = await req.json().catch(() => ({}));
     const token = body.public_token || body.token;
     const skipTracking = !!body.skip_tracking;
     if (!token) return Response.json({ error: "Token required" }, { status: 400 });
 
-    const list = await base44.asServiceRole.entities.JobSheetPortal.filter({ public_token: token }, "-created_date", 5);
+    const { data: list } = await supabaseAdmin.from("job_sheets").select("*").eq("public_token", token).order("created_at", { ascending: false }).limit(5);
     if (!list || list.length === 0) return Response.json({ error: "Job sheet not found" }, { status: 404 });
     const js = list[0];
 
-    if (!js.is_enabled) return Response.json({ unavailable: true, message: "This Job Sheet link is no longer available." });
+    if (!js.public_link_enabled) return Response.json({ unavailable: true, message: "This Job Sheet link is no longer available." });
 
     if (!skipTracking) {
       const now = new Date().toISOString();
-      const viewCount = (Number(js.view_count) || 0) + 1;
-      const firstViewed = js.first_viewed_at || now;
-      base44.asServiceRole.entities.JobSheetPortal.update(js.id, { view_count: viewCount, first_viewed_at: firstViewed, last_viewed_at: now }).catch(() => {});
+      const viewCount = (Number(js.portal_view_count) || 0) + 1;
+      const firstViewed = js.portal_first_viewed_at || now;
+      supabaseAdmin.from("job_sheets").update({ portal_view_count: viewCount, portal_first_viewed_at: firstViewed, portal_latest_viewed_at: now }).eq("id", js.id).then(() => {}, () => {});
     }
 
-    const event = await base44.asServiceRole.entities.Event.get(js.event_id);
+    const { data: event } = await supabaseAdmin.from("events").select("*").eq("id", js.event_id).single();
     if (!event) return Response.json({ error: "Event not found" }, { status: 404 });
 
     let client = null;
     if (event.client_id) {
-      try { client = await base44.asServiceRole.entities.Client.get(event.client_id); } catch {}
+      const { data: c } = await supabaseAdmin.from("clients").select("*").eq("id", event.client_id).single();
+      client = c;
     }
-
-    const quotations = await base44.asServiceRole.entities.Quotation.filter({ workspace_id: js.workspace_id, event_id: event.id }, "-quotation_date", 200);
-    const teamAssignments = await base44.asServiceRole.entities.EventTeamAssignment.filter({ workspace_id: js.workspace_id, event_id: event.id, assignment_status: "assigned" }, "-created_date", 500);
-    const dayAssignments = await base44.asServiceRole.entities.EventDayAssignment.filter({ workspace_id: js.workspace_id, event_id: event.id }, "start_date", 1000);
-    const members = await base44.asServiceRole.entities.TeamMember.filter({ workspace_id: js.workspace_id }, "name", 500);
+    const { data: quotations } = await supabaseAdmin.from("quotations").select("*").eq("workspace_id", js.workspace_id).eq("event_id", event.id).order("quotation_date", { ascending: false }).limit(200);
+    const { data: teamAssignments } = await supabaseAdmin.from("event_team_assignments").select("*").eq("workspace_id", js.workspace_id).eq("event_id", event.id).eq("assignment_status", "assigned").order("created_at", { ascending: false }).limit(500);
+    const { data: dayAssignments } = await supabaseAdmin.from("event_day_assignments").select("*").eq("workspace_id", js.workspace_id).eq("event_id", event.id).order("date", { ascending: true }).limit(1000);
+    const { data: members } = await supabaseAdmin.from("team_members").select("*").eq("workspace_id", js.workspace_id).order("name", { ascending: true }).limit(500);
 
     const quotation = (quotations || []).find((q) => q.status === "accepted") || (quotations || [])[0] || null;
     let quotationItems = [];
     if (quotation) {
-      quotationItems = await base44.asServiceRole.entities.QuotationItem.filter({ workspace_id: js.workspace_id, quotation_id: quotation.id }, "sort_order", 1000);
+      const { data: qi } = await supabaseAdmin.from("quotation_items").select("*").eq("workspace_id", js.workspace_id).eq("quotation_id", quotation.id).order("sort_order", { ascending: true }).limit(1000);
+      quotationItems = qi || [];
     }
 
     const membersById = {};
     (members || []).forEach((m) => { membersById[m.id] = m; });
 
-    const equipment = safeJson(js.equipment_list) || [];
-    const deliverables = safeJson(js.deliverables) || [];
-    const dateConfigs = safeJson(js.date_configs) || {};
+    let equipment = safeJson(js.equipment_list) || [];
+    let deliverables = safeJson(js.deliverables) || [];
+    let dateConfigs = safeJson(js.date_configs) || {};
 
     const eventDates = (event.event_dates && event.event_dates.length) ? event.event_dates : [event.start_date].filter(Boolean);
 
     const itinerary = eventDates.map((date) => {
-      const dayItems = (quotationItems || []).filter((item) => item.day_date === date);
+      const dayItems = quotationItems.filter((item) => item.day_date === date);
       const phases = [...new Set(dayItems.map((item) => item.phase_title).filter(Boolean))];
       const dc = dateConfigs[date] || {};
       const dayAssignment = (dayAssignments || []).find((d) => d.date === date);

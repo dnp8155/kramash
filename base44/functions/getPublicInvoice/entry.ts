@@ -1,15 +1,17 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.49';
-import { safeJson, round2 } from "../../shared/helpers.js";
+// getPublicInvoice — Public invoice view by token with view tracking.
+// Ported from supabase/functions/getPublicInvoice — uses Supabase admin client.
+import { getSupabaseAdmin } from "../../shared/supabaseAdmin.js";
+import { round2, safeJson } from "../../shared/helpers.js";
 
 export default async function(req) {
   try {
-    const base44 = createClientFromRequest(req);
+    const supabaseAdmin = getSupabaseAdmin();
     const body = await req.json().catch(() => ({}));
     const token = body.public_token || body.token;
     const skipTracking = !!body.skip_tracking;
     if (!token) return Response.json({ error: "Token required" }, { status: 400 });
 
-    const list = await base44.asServiceRole.entities.Invoice.filter({ public_token: token }, "-created_date", 5);
+    const { data: list } = await supabaseAdmin.from("invoices").select("*").eq("public_token", token).order("created_at", { ascending: false }).limit(5);
     if (!list || list.length === 0) return Response.json({ error: "Invoice not found" }, { status: 404 });
     const inv = list[0];
 
@@ -20,41 +22,40 @@ export default async function(req) {
       const now = new Date().toISOString();
       const viewCount = (Number(inv.portal_view_count) || 0) + 1;
       const firstViewed = inv.portal_first_viewed_at || now;
-      base44.asServiceRole.entities.Invoice.update(inv.id, { portal_view_count: viewCount, portal_first_viewed_at: firstViewed, portal_latest_viewed_at: now }).catch(() => {});
+      supabaseAdmin.from("invoices").update({ portal_view_count: viewCount, portal_first_viewed_at: firstViewed, portal_latest_viewed_at: now }).eq("id", inv.id).then(() => {}, () => {});
     }
 
-    let client = safeJson(inv.client_snapshot);
-    let business = safeJson(inv.business_snapshot);
-    let event = safeJson(inv.event_snapshot);
-    let bankDetails = safeJson(inv.bank_details_snapshot);
-    let socialLinks = safeJson(inv.social_links_snapshot);
+    let client = null, business = null, event = null, bankDetails = null, socialLinks = null;
+    client = safeJson(inv.client_snapshot);
+    business = safeJson(inv.business_snapshot);
+    event = safeJson(inv.event_snapshot);
+    bankDetails = safeJson(inv.bank_details_snapshot);
+    socialLinks = safeJson(inv.social_links_snapshot);
 
     if (inv.event_id) {
-      try {
-        const liveEvent = await base44.asServiceRole.entities.Event.get(inv.event_id);
-        if (liveEvent) {
-          event = event || {};
-          event.event_type = liveEvent.event_type || event.event_type || "";
-          event.title = liveEvent.title || event.title || "";
-          event.venue = liveEvent.venue || event.venue || "";
-        }
-      } catch {}
+      const { data: liveEvent } = await supabaseAdmin.from("events").select("*").eq("id", inv.event_id).single();
+      if (liveEvent) {
+        event = event || {};
+        event.event_type = liveEvent.event_type || event.event_type || "";
+        event.title = liveEvent.title || event.title || "";
+        event.venue = liveEvent.venue || event.venue || "";
+      }
     }
 
-    const items = await base44.asServiceRole.entities.InvoiceItem.filter({ invoice_id: inv.id }, "sort_order", 500);
+    const { data: items } = await supabaseAdmin.from("invoice_items").select("*").eq("invoice_id", inv.id).order("sort_order", { ascending: true }).limit(500);
 
     let currency = "INR";
-    try {
-      const ws = await base44.asServiceRole.entities.Workspace.get(inv.workspace_id);
-      if (ws?.currency) currency = ws.currency;
-    } catch {}
+    const { data: ws } = await supabaseAdmin.from("workspaces").select("currency").eq("id", inv.workspace_id).single();
+    if (ws?.currency) currency = ws.currency;
 
-    const txns = await base44.asServiceRole.entities.FinancialTransaction.filter(
-      { invoice_id: inv.id, transaction_type: "CLIENT_RECEIPT", status: "ACTIVE" },
-      "-transaction_date", 200
-    );
-    const payments = (txns || []).map((t) => ({ amount: Number(t.amount) || 0, payment_method: t.payment_method || "", transaction_date: t.transaction_date || "", reference_number: t.reference_number || "" }));
-    const totalPaid = round2(payments.reduce((s, p) => s + p.amount, 0));
+    let payments = [], totalPaid = 0;
+    const { data: txns } = await supabaseAdmin
+      .from("financial_transactions")
+      .select("*")
+      .eq("invoice_id", inv.id).eq("transaction_type", "CLIENT_RECEIPT").eq("status", "ACTIVE")
+      .order("transaction_date", { ascending: false }).limit(200);
+    payments = (txns || []).map((t) => ({ amount: Number(t.amount) || 0, payment_method: t.payment_method || "", transaction_date: t.transaction_date || "", reference_number: t.reference_number || "" }));
+    totalPaid = round2(payments.reduce((s, p) => s + p.amount, 0));
 
     const grandTotal = Number(inv.grand_total) || 0;
     const balanceDue = round2(Math.max(0, grandTotal - totalPaid));
