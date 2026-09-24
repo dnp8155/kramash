@@ -1,34 +1,23 @@
 // ============================================================
 // Base44 Client — Supabase-Backed Compatibility Layer
 // ============================================================
-// This app stores ALL data in Supabase (not Base44's database).
+// This app stores ALL data in Supabase and runs ALL backend logic
+// as Supabase Edge Functions. Base44 is used ONLY as a frontend host.
+//
 // We re-export a merged `base44` object so existing service files
 // that import { base44 } from "@/api/base44Client" continue to work:
 //
-//   - base44.entities.*  → Supabase (via supabaseClient entities proxy)
-//   - base44.auth.*      → Supabase (via supabaseClient auth proxy)
-//   - base44.functions.* → Base44 SDK (invokes Base44 backend functions
-//                         that themselves use Supabase internally)
-//   - base44.integrations.Core.UploadFile/UploadPublicFile/Private
-//                         → Supabase Storage
+//   - base44.entities.*      → Supabase (via supabaseClient entities proxy)
+//   - base44.auth.*          → Supabase (via supabaseClient auth proxy)
+//   - base44.functions.*     → Supabase Edge Functions (via invokeEdgeFunction)
+//   - base44.integrations.*  → Supabase Storage
+//   - base44.app.*           → stub (no Base44 app settings needed)
 // ============================================================
 
-import { createClient } from '@base44/sdk';
-import { appParams } from '@/lib/app-params';
 import { entities, auth, storage } from '@/lib/supabaseClient';
+import { invokeEdgeFunction } from '@/lib/edgeFunction';
 
-const { appId, token, functionsVersion, appBaseUrl } = appParams;
-
-// Base44 SDK — used ONLY for backend function invocation
-const base44Sdk = createClient({
-  appId,
-  token,
-  functionsVersion,
-  serverUrl: '',
-  appBaseUrl
-});
-
-// Supabase-backed file upload helpers (replace Base44 storage)
+// Supabase-backed file upload helpers
 const supabaseUploadPublic = async ({ file }) => {
   const { file_url } = await storage.uploadPublic(file);
   return { file_url };
@@ -47,8 +36,10 @@ export const base44 = {
   entities,
   // Auth — Supabase
   auth,
-  // Backend functions — Base44 SDK (functions use Supabase internally)
-  functions: base44Sdk.functions,
+  // Backend functions — Supabase Edge Functions
+  functions: {
+    invoke: invokeEdgeFunction,
+  },
   // File uploads — Supabase Storage
   integrations: {
     Core: {
@@ -58,11 +49,17 @@ export const base44 = {
       CreateFileSignedUrl: supabaseCreateSignedUrl,
     }
   },
-  // App-level settings — Base44 SDK
-  app: base44Sdk.app,
-  // User management & analytics — Base44 SDK (if needed later)
-  users: base44Sdk.users,
-  analytics: base44Sdk.analytics,
+  // App-level settings — stub (not using Base44 app settings)
+  app: {
+    getPublicSettings: async () => null,
+  },
+  // User management & analytics — stubs (not used; users managed via Supabase auth)
+  users: {
+    inviteUser: async () => { throw new Error('Use Supabase auth admin to invite users'); },
+  },
+  analytics: {
+    track: async () => {},
+  },
 };
 
 export default base44;
