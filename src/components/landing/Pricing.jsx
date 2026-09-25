@@ -5,10 +5,10 @@ import { base44 } from "@/api/base44Client";
 import Reveal from "@/components/landing/Reveal";
 
 const FREE_FEATURES = [
-  "Up to 3 Projects / Events",
-  "Up to 5 Team Members",
-  "Up to 3 Services",
-  "Up to 10 Leads",
+  "Up to 5 Projects / Events",
+  "Up to 3 Team Members",
+  "Up to 5 Services",
+  "Up to 50 Leads",
   "Quotations & Invoices",
   "Reminders",
   "Public Profile URL",
@@ -24,6 +24,11 @@ const PRO_FEATURES = [
   "Everything in Free, plus:",
   "Excel / CSV Export",
   "Notifications",
+  "Link Sharing",
+  "Client & Team Portal",
+  "Night & Pastel Themes",
+  "Event Display Customization",
+  "Quotation Logo",
   "Priority Support",
 ];
 

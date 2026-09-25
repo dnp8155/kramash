@@ -128,7 +128,7 @@ export default function Leads() {
     <div className="p-4 sm:p-6 space-y-5">
       <PageHeader title="Leads" subtitle="Track and manage potential clients through your sales pipeline.">
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => { if (!checkFeature("excel_export_enabled", "Excel Export")) return; exportLeadsXlsx(filtered); }} disabled={filtered.length === 0}>
+          <Button variant="outline" onClick={() => { if (!checkFeature("excel_csv_export_enabled", "Excel Export")) return; exportLeadsXlsx(filtered); }} disabled={filtered.length === 0}>
             <FileSpreadsheet className="w-4 h-4" /> Export
           </Button>
           <Button onClick={openNew}>

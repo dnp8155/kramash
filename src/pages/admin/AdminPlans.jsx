@@ -7,23 +7,40 @@ import Input from "@/components/common/Input";
 import { Switch } from "@/components/ui/switch";
 import LoadingState from "@/components/common/LoadingState";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Save, Crown, Sparkles, Check, X, Plus, Trash2 } from "lucide-react";
+import { Save, Crown, Sparkles, Check, X, Plus, Trash2, ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CreatePlanDialog, AddLimitDialog, AddPricingDialog } from "@/components/admin/PlanDialogs";
 
 const BILLING_LABELS = { MONTHLY: "Monthly", SIX_MONTHS: "6 Months", ANNUAL: "Annual" };
 
-const NUMERIC_KEYS = ["max_events", "max_team_members", "max_services", "max_storage_gb"];
-const BOOLEAN_KEYS = ["pdf_export_enabled", "reminders_enabled"];
+const NUMERIC_KEYS = ["max_events", "max_team_members", "max_services", "max_storage_gb", "max_leads"];
+const BOOLEAN_KEYS = [
+  "pdf_export_enabled", "reminders_enabled", "quotation_enabled", "notifications_enabled",
+  "link_sharing_enabled", "client_portal_enabled", "team_portal_enabled",
+  "excel_csv_export_enabled", "event_display_customization_enabled",
+  "quotation_logo_enabled", "advanced_theme_enabled"
+];
 const ALL_LIMIT_KEYS = [...NUMERIC_KEYS, ...BOOLEAN_KEYS];
 const KEY_LABELS = {
   max_events: "Max Events", max_team_members: "Max Team Members", max_services: "Max Services",
-  max_storage_gb: "Database Storage (GB)", pdf_export_enabled: "PDF Export", reminders_enabled: "Reminders"
+  max_storage_gb: "Database Storage (GB)", max_leads: "Max Leads",
+  pdf_export_enabled: "PDF Export", reminders_enabled: "Reminders",
+  quotation_enabled: "Quotations & Invoices", notifications_enabled: "Notifications",
+  link_sharing_enabled: "Link Sharing", client_portal_enabled: "Client Portal",
+  team_portal_enabled: "Team Portal", excel_csv_export_enabled: "Excel/CSV Export",
+  event_display_customization_enabled: "Event Display Customization",
+  quotation_logo_enabled: "Quotation Logo", advanced_theme_enabled: "Advanced Themes"
 };
 const KEY_HINTS = {
   max_events: "Use 999999 for unlimited", max_team_members: "Use 999999 for unlimited",
   max_services: "Use 999999 for unlimited", max_storage_gb: "Total DB storage in GB (e.g. 5, 50)",
-  pdf_export_enabled: "Allow quotation PDF export", reminders_enabled: "Enable event reminders"
+  max_leads: "Use 999999 for unlimited",
+  pdf_export_enabled: "Allow quotation PDF export", reminders_enabled: "Enable event reminders",
+  quotation_enabled: "Enable Quotation & Invoice creation", notifications_enabled: "Enable app notifications",
+  link_sharing_enabled: "Enable public link sharing", client_portal_enabled: "Enable Client Portal",
+  team_portal_enabled: "Enable Team Member Portal", excel_csv_export_enabled: "Enable Excel & CSV data exports",
+  event_display_customization_enabled: "Allow customizing event cards & invoice logos",
+  quotation_logo_enabled: "Allow custom logos on quotations", advanced_theme_enabled: "Enable Night & Pastel themes"
 };
 
 export default function AdminPlans() {
@@ -86,6 +103,12 @@ export default function AdminPlans() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto space-y-6">
+      <button onClick={() => window.history.back()} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-4">
+        <span className="w-8 h-8 rounded-full border border-border bg-card flex items-center justify-center">
+          <ArrowLeft className="w-4 h-4" />
+        </span>
+        Back to Admin Dashboard
+      </button>
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div><h1 className="text-xl font-bold text-foreground">Plans & Pricing</h1><p className="text-sm text-muted-foreground mt-0.5">Configure plan limits and subscription pricing</p></div>
         <Button onClick={() => setCreateOpen(true)}><Plus className="w-4 h-4" /> New Plan</Button>

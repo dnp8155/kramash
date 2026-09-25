@@ -40,6 +40,12 @@ export default function AdminWorkspaces() {
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-5">
       {/* Header */}
       <div>
+        <button onClick={() => window.history.back()} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-4">
+          <span className="w-8 h-8 rounded-full border border-border bg-card flex items-center justify-center">
+            <ChevronRight className="w-4 h-4 rotate-180" />
+          </span>
+          Back to Admin Dashboard
+        </button>
         <h1 className="text-xl font-bold text-foreground">Workspaces</h1>
         <p className="text-sm text-muted-foreground mt-0.5">Manage all platform workspaces, plans and status.</p>
       </div>

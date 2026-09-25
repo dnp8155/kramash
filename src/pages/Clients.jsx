@@ -91,7 +91,7 @@ export default function Clients() {
           <Share2 className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">Portal Link</span>
         </Button>
-        <Button variant="outline" size="sm" onClick={() => { if (!checkFeature("excel_export_enabled", "Excel Export")) return; exportClientsXlsx(filtered, eventCounts, term); }} disabled={filtered.length === 0}>
+        <Button variant="outline" size="sm" onClick={() => { if (!checkFeature("excel_csv_export_enabled", "Excel Export")) return; exportClientsXlsx(filtered, eventCounts, term); }} disabled={filtered.length === 0}>
           <Download className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">{t("Export")}</span>
         </Button>

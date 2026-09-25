@@ -284,7 +284,7 @@ export default function Events() {
             aria-label="Export"
             className="shrink-0"
             onClick={() => {
-              if (!checkFeature("excel_export_enabled", "Excel Export")) return;
+              if (!checkFeature("excel_csv_export_enabled", "Excel Export")) return;
               exportEventsXlsx(filtered, clients, fyFilter !== "all" ? fyFilter : null, term, receiptsByEvent, addonsByEvent);
             }}
             disabled={filtered.length === 0}

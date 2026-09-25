@@ -356,7 +356,7 @@ export default function Financial() {
               variant="outline"
               size="sm"
               className="sm:ml-auto"
-              onClick={() => { if (!checkFeature("excel_export_enabled", "Excel Export")) return; exportFinancialXlsx(fyTx, { eventsById, clientsById, membersById }, currency, dateRange?.label); }}
+              onClick={() => { if (!checkFeature("excel_csv_export_enabled", "Excel Export")) return; exportFinancialXlsx(fyTx, { eventsById, clientsById, membersById }, currency, dateRange?.label); }}
               disabled={fyTx.length === 0}
             >
               <Download className="w-3.5 h-3.5" />
