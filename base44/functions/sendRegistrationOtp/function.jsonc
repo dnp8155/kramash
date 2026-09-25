@@ -1,0 +1,4 @@
+{
+  "name": "sendRegistrationOtp",
+  "entry": "entry.ts"
+}

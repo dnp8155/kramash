@@ -1,0 +1,4 @@
+{
+  "name": "verifyWebAuthnRegistration",
+  "entry": "entry.ts"
+}

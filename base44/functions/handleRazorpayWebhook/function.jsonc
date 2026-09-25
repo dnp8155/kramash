@@ -1,0 +1,4 @@
+{
+  "name": "handleRazorpayWebhook",
+  "entry": "entry.ts"
+}

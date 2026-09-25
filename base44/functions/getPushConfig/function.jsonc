@@ -1,0 +1,4 @@
+{
+  "name": "getPushConfig",
+  "entry": "entry.ts"
+}
