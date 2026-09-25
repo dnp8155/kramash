@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
@@ -12,6 +12,7 @@ import CalendarPageSkeleton from "@/components/calendar/CalendarPageSkeleton";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
 import { ChevronLeft, ChevronRight, CalendarRange, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toISODate } from "@/lib/dates";
 import { motion } from "framer-motion";
 import TabTransition from "@/components/common/TabTransition";
 import { DURATION_FAST, EASE } from "@/lib/motionVariants";
@@ -26,12 +27,36 @@ export default function Calendar() {
   const [view, setView] = useState("month");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [search, setSearch] = useState("");
+  const [selectedDate, setSelectedDate] = useState(null);
 
-  const { data: events = [], isLoading } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ["calendar-events", workspaceId],
-    queryFn: async () => base44.entities.Event.filter({ workspace_id: workspaceId }, "-start_date", 500),
+    queryFn: async () => {
+      const [events, members, assignments, serviceAssignments, dayAssignments, services] = await Promise.all([
+        base44.entities.Event.filter({ workspace_id: workspaceId }, "-start_date", 500),
+        base44.entities.TeamMember.filter({ workspace_id: workspaceId }, "name", 500),
+        base44.entities.EventTeamAssignment.filter({ workspace_id: workspaceId }, "-created_date", 1000),
+        base44.entities.EventServiceAssignment.filter({ workspace_id: workspaceId }, "-created_date", 1000),
+        base44.entities.EventDayAssignment.filter({ workspace_id: workspaceId }, "date", 1000),
+        base44.entities.Service.filter({ workspace_id: workspaceId }, "name", 500)
+      ]);
+      return {
+        events: events || [],
+        members: members || [],
+        assignments: assignments || [],
+        serviceAssignments: serviceAssignments || [],
+        dayAssignments: dayAssignments || [],
+        services: services || []
+      };
+    },
     enabled: !!workspaceId,
   });
+  const events = data?.events || [];
+  const members = data?.members || [];
+  const assignments = data?.assignments || [];
+  const serviceAssignments = data?.serviceAssignments || [];
+  const dayAssignments = data?.dayAssignments || [];
+  const services = data?.services || [];
 
   const filteredEvents = useMemo(() => {
     if (!search) return events;
@@ -81,6 +106,11 @@ export default function Calendar() {
   }, [currentDate, view]);
 
   const onEventClick = (ev) => navigate(`/events/${ev.id}`);
+
+  // Keep the side panel in sync with day-view navigation (prev/next arrows).
+  useEffect(() => {
+    if (view === "day") setSelectedDate(toISODate(currentDate));
+  }, [view, currentDate]);
 
   if (isLoading) return <CalendarPageSkeleton />;
 
@@ -163,7 +193,7 @@ export default function Calendar() {
             <CalendarMonthView
               currentDate={currentDate}
               eventsByDate={eventsByDate}
-              onDayClick={(d) => { setCurrentDate(d); setView("day"); }}
+              onDayClick={(d) => { setCurrentDate(d); setSelectedDate(toISODate(d)); setView("day"); }}
               onEventClick={onEventClick}
             />
           )}
@@ -171,7 +201,7 @@ export default function Calendar() {
             <CalendarWeekView
               currentDate={currentDate}
               eventsByDate={eventsByDate}
-              onDayClick={(d) => { setCurrentDate(d); setView("day"); }}
+              onDayClick={(d) => { setCurrentDate(d); setSelectedDate(toISODate(d)); setView("day"); }}
               onEventClick={onEventClick}
             />
           )}
@@ -184,7 +214,18 @@ export default function Calendar() {
           )}
           </TabTransition>
         </div>
-        <CalendarSidePanel events={events} search={search} />
+        <CalendarSidePanel
+          events={events}
+          search={search}
+          selectedDate={selectedDate}
+          eventsByDate={eventsByDate}
+          members={members}
+          assignments={assignments}
+          serviceAssignments={serviceAssignments}
+          dayAssignments={dayAssignments}
+          services={services}
+          onEventClick={onEventClick}
+        />
       </div>
     </div>
   );

@@ -83,18 +83,18 @@ export default function TeamMemberCard({ member, assignments = [], transactions 
         <span className="text-xs text-muted-foreground ml-auto truncate">
           {member.profession || "—"}
         </span>
-        <button onClick={() => onEdit?.(member)} className="text-muted-foreground hover:text-foreground shrink-0 p-1.5 rounded-full hover:bg-muted transition-colors" aria-label="Edit">
+        <button onClick={() => onEdit?.(member)} className="w-8 h-8 rounded-full flex items-center justify-center bg-card border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0" aria-label="Edit">
           <Pencil className="w-3.5 h-3.5" />
         </button>
         <button
           onClick={() => onArchive?.(member)}
-          className="text-muted-foreground hover:text-warning shrink-0 p-1.5 rounded-full hover:bg-muted transition-colors"
+          className="w-8 h-8 rounded-full flex items-center justify-center bg-card border border-border text-muted-foreground hover:text-warning hover:bg-muted transition-colors shrink-0"
           aria-label={active ? "Archive" : "Reactivate"}
           title={active ? "Set inactive" : "Set active"}
         >
           {active ? <Archive className="w-3.5 h-3.5" /> : <RotateCcw className="w-3.5 h-3.5" />}
         </button>
-        <button onClick={() => onDelete?.(member)} className="text-muted-foreground hover:text-destructive shrink-0 p-1.5 rounded-full hover:bg-destructive/5 transition-colors" aria-label="Delete">
+        <button onClick={() => onDelete?.(member)} className="w-8 h-8 rounded-full flex items-center justify-center bg-card border border-border text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-colors shrink-0" aria-label="Delete">
           <Trash2 className="w-3.5 h-3.5" />
         </button>
       </div>

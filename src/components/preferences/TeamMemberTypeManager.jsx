@@ -96,16 +96,15 @@ export default function TeamMemberTypeManager({ workspace }) {
           ) : (
             <span
               key={t.id}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-sm"
+              className="inline-flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded-full text-sm"
               style={{ backgroundColor: t.color + "20", color: t.color }}
             >
-              <span className="type-dot w-2 h-2 rounded-full" style={{ backgroundColor: t.color }} />
               {t.title}
-              <button onClick={() => startEdit(t)} className="hover:opacity-70" aria-label="Edit">
-                <Pencil className="w-3 h-3" />
+              <button onClick={() => startEdit(t)} className="w-5 h-5 rounded-full flex items-center justify-center bg-card border border-border text-muted-foreground hover:text-foreground transition-colors" aria-label="Edit">
+                <Pencil className="w-2.5 h-2.5" />
               </button>
-              <button onClick={() => remove(t)} className="hover:opacity-70" aria-label="Delete">
-                <Trash2 className="w-3 h-3" />
+              <button onClick={() => remove(t)} className="w-5 h-5 rounded-full flex items-center justify-center bg-card border border-border text-muted-foreground hover:text-destructive transition-colors" aria-label="Delete">
+                <Trash2 className="w-2.5 h-2.5" />
               </button>
             </span>
           )

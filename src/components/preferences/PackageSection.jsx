@@ -237,7 +237,7 @@ function PackageEditDialog({ open, pkg, workspaceId, onClose, onSaved }) {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-muted-foreground mb-1">Category</label>
-              <Select value={form.category} onChange={set("category")}>
+              <Select value={form.category} onChange={set("category")} className="w-full">
                 <option value="PHOTOGRAPHY">Photography</option>
                 <option value="EVENT_MANAGEMENT">Event Management</option>
                 <option value="ARCHITECTURE">Architecture</option>
@@ -246,7 +246,7 @@ function PackageEditDialog({ open, pkg, workspaceId, onClose, onSaved }) {
             </div>
             <div>
               <label className="block text-xs font-medium text-muted-foreground mb-1">Status</label>
-              <Select value={form.status} onChange={set("status")}>
+              <Select value={form.status} onChange={set("status")} className="w-full">
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
               </Select>

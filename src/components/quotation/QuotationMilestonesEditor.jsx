@@ -5,13 +5,15 @@ import { Section } from "@/components/quotation/QuotationParts";
 import { formatMoney } from "@/utils/format";
 import { calculateMilestones, validateMilestones, round2 } from "@/lib/quotationCalc";
 import { useWorkspace } from "@/lib/WorkspaceContext";
+import { base44 } from "@/api/base44Client";
+import ExpenseCategoryAutocomplete from "@/components/financial/ExpenseCategoryAutocomplete";
 import { Plus, Trash2, AlertTriangle, CalendarCheck } from "lucide-react";
 
 export default function QuotationMilestonesEditor({
   schedule, setSchedule, grandTotal, currency, readOnly,
   eventStartDate = "", eventEndDate = ""
 }) {
-  const { workspace } = useWorkspace();
+  const { workspace, setWorkspace } = useWorkspace();
   const milestones = calculateMilestones(schedule, grandTotal);
   const validationError = validateMilestones(schedule, grandTotal);
 
@@ -42,6 +44,25 @@ export default function QuotationMilestonesEditor({
       return prefs.milestoneTemplates || [];
     } catch { return []; }
   })();
+
+  const milestoneTypeNames = (() => {
+    try {
+      const prefs = workspace?.display_preferences ? JSON.parse(workspace.display_preferences) : {};
+      return prefs.milestoneTypeNames || [];
+    } catch { return []; }
+  })();
+
+  const saveMilestoneTypeName = async (name) => {
+    const trimmed = (name || "").trim();
+    if (!trimmed || !workspace?.id) return;
+    if (milestoneTypeNames.some((n) => n.toLowerCase() === trimmed.toLowerCase())) return;
+    try {
+      const existing = workspace?.display_preferences ? JSON.parse(workspace.display_preferences) : {};
+      const updated = { ...existing, milestoneTypeNames: [...milestoneTypeNames, trimmed] };
+      await base44.entities.Workspace.update(workspace.id, { display_preferences: JSON.stringify(updated) });
+      setWorkspace((w) => ({ ...w, display_preferences: JSON.stringify(updated) }));
+    } catch { /* best-effort — don't block milestone editing on this */ }
+  };
 
   const applyTemplate = (templateId) => {
     const tpl = templates.find((t) => t.id === templateId);
@@ -85,9 +106,18 @@ export default function QuotationMilestonesEditor({
         <div className="space-y-2">
           {milestones.map((m, idx) => (
             <div key={idx} className="flex flex-wrap items-end gap-2 bg-muted/20 border border-border/60 rounded-lg p-2.5">
-              <div className="flex flex-col gap-0.5 flex-1 min-w-[140px]">
+              <div className="flex flex-col gap-0.5 flex-1 min-w-[140px]" onBlur={() => saveMilestoneTypeName(m.name)}>
                 <span className="text-[10px] text-muted-foreground uppercase">Name</span>
-                <Input value={m.name} onChange={(e) => updateMilestone(idx, "name", e.target.value)} disabled={readOnly} placeholder="e.g. Advance on Signing" className="h-8 text-xs" />
+                {readOnly ? (
+                  <Input value={m.name} disabled className="h-8 text-xs" />
+                ) : (
+                  <ExpenseCategoryAutocomplete
+                    value={m.name}
+                    onChange={(v) => updateMilestone(idx, "name", v)}
+                    suggestions={milestoneTypeNames}
+                    placeholder="e.g. Advance on Signing"
+                  />
+                )}
               </div>
               <div className="flex flex-col gap-0.5 w-28">
                 <span className="text-[10px] text-muted-foreground uppercase">Type</span>

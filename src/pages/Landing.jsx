@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import LandingNav from "@/components/landing/LandingNav";
+import LandingBottomNav from "@/components/landing/LandingBottomNav";
 import Hero from "@/components/landing/Hero";
 import TrustStrip from "@/components/landing/TrustStrip";
 import FeatureGroups from "@/components/landing/FeatureGroups";
@@ -47,7 +48,7 @@ export default function Landing() {
       },
       primaryImageOfPage: {
         "@type": "ImageObject",
-        url: "https://media.base44.com/images/public/6aa198140e2903037c880386/6965bcea4_generated_image.png"
+        url: "https://www.kramasha.com/kramasha_logo_512x512.png"
       },
     },
     breadcrumbs: [{ name: "Home", url: "/" }],
@@ -87,6 +88,7 @@ export default function Landing() {
       <FAQ />
       <CTA />
       <LandingFooter />
+      <LandingBottomNav />
     </div>
   );
 }

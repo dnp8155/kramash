@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Bell, ChevronDown, ChevronUp } from "lucide-react";
+import { Bell, ChevronDown, ChevronUp, CalendarClock } from "lucide-react";
 import { formatEventDate, isThisWeek, isUpcomingDate } from "@/lib/dates";
 
 export default function ReminderBanner({ events = [], onEventClick }) {
@@ -36,11 +36,14 @@ export default function ReminderBanner({ events = [], onEventClick }) {
                 <button
                   key={e.id}
                   onClick={() => onEventClick?.(e)}
-                  className="flex items-center gap-2 w-full text-left hover:text-foreground"
+                  className="flex items-center gap-2 w-full text-left hover:text-foreground min-w-0"
                 >
-                  <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                  <span className="text-foreground font-medium flex-1 truncate">{e.title}</span>
-                  <span>{formatEventDate(e.start_date, e.end_date)}</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                  <span className="text-foreground font-medium truncate">{e.title}</span>
+                  <span className="flex items-center gap-1 text-xs shrink-0">
+                    <CalendarClock className="w-3 h-3" />
+                    {formatEventDate(e.start_date, e.end_date)}
+                  </span>
                 </button>
               ))}
             </div>

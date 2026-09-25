@@ -169,7 +169,9 @@ export default function QuotationPackageDialog({
                       <tbody>
                         {items.map((it, i) => (
                           <tr key={i} className="border-t border-border/50">
-                            <td className="px-3 py-1.5 text-foreground">{it.name || "Unnamed"}</td>
+                            <td className="px-3 py-1.5 text-foreground">
+                              {it.item_type === "team" ? (it.description || "Role") : (it.name || "Unnamed")}
+                            </td>
                             <td className="px-2 py-1.5 text-muted-foreground text-right whitespace-nowrap">{it.day_date || "—"}</td>
                             <td className="px-3 py-1.5 text-right font-medium text-foreground whitespace-nowrap">
                               {currency}{(Number(lineTotal(it)) || 0).toLocaleString("en-IN")}

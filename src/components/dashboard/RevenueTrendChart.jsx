@@ -1,6 +1,6 @@
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 import { TrendingUp } from "lucide-react";
-import { formatMoney } from "@/utils/format";
+import { formatMoney, formatMoneyCompact } from "@/utils/format";
 import { useT } from "@/hooks/useT";
 
 export default function RevenueTrendChart({ data = [], currency = "INR", isLoading }) {
@@ -39,8 +39,8 @@ export default function RevenueTrendChart({ data = [], currency = "INR", isLoadi
                 tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
                 tickLine={false}
                 axisLine={false}
-                width={48}
-                tickFormatter={(v) => formatMoney(v, currency).replace(/\.\d+/, "")}
+                width={60}
+                tickFormatter={(v) => formatMoneyCompact(v, currency)}
               />
               <Tooltip
                 contentStyle={{

@@ -33,6 +33,15 @@ function textToArray(text) {
   return String(text || "").split("\n").map((l) => l.trim()).filter(Boolean);
 }
 
+// Handles both plain text (old quotations) and HTML (from RichTextEditor) — used for
+// rich-text fields (Terms & Conditions, Payment Conditions) so bold/inline formatting
+// survives instead of being flattened into a plain bulleted line list.
+function safeRichHtml(text) {
+  if (!text) return "";
+  if (/<[a-z][\s\S]*>/i.test(text)) return text;
+  return escapeHtml(text).replace(/\n/g, "<br>");
+}
+
 export function renderNavyGold(data) {
   const { workspace, quotation, client, event, items, currency, templateConfig } = data;
   const symbol = CURRENCY_SYMBOLS[currency] || currency || "\u20B9";
@@ -44,19 +53,19 @@ export function renderNavyGold(data) {
   const nameParts = bizName.trim().split(/\s+/);
   const brandPart1 = nameParts.length > 1 ? nameParts.slice(0, -1).join(" ") : bizName;
   const brandPart2 = nameParts.length > 1 ? nameParts[nameParts.length - 1] : "";
-  const companySubtitle = cfg.company?.subtitle || (workspace?.business_type || "").toUpperCase();
-  const companyTagline = cfg.company?.tagline || "Quality service you can trust.";
+  const companySubtitle = (workspace?.business_type || "").toUpperCase();
+  const companyTagline = "Quality service you can trust.";
   const companyAddress = [workspace?.address, workspace?.city, workspace?.state, workspace?.country].filter(Boolean).join(", ");
   const companyPhone = workspace?.phone || "";
   const companyEmail = workspace?.email || "";
-  const companyWebsite = cfg.company?.website || "";
+  const companyWebsite = "";
   const logoUrl = workspace?.logo || "";
   const logoHtml = logoUrl
     ? `<img src="${escapeHtml(logoUrl)}" alt="${escapeHtml(bizName)}">`
     : `<div style="width:62px;height:62px;display:grid;place-items:center;color:var(--gold);font-size:11px;font-weight:700;border:1px solid var(--gold);border-radius:6px;">LOGO</div>`;
 
   // Quotation meta
-  const quotationTitle = cfg.company?.quotationTitle || "QUOTATION";
+  const quotationTitle = "QUOTATION";
   const quoteNumber = quotation?.quotation_number || "";
   const quoteDate = fmtDate(quotation?.quotation_date);
   const validUntil = fmtDate(quotation?.valid_until);
@@ -64,16 +73,14 @@ export function renderNavyGold(data) {
 
   // Client
   const clientName = client?.name || "Client Name";
-  const clientCompany = cfg.client?.company || "";
   const clientAddressLine1 = client?.address || "";
-  const clientAddressLine2 = cfg.client?.addressLine2 || "";
   const clientCityStateCountry = [client?.city, client?.state, client?.country].filter(Boolean).join(", ");
   const clientEmail = client?.email || "";
   const clientPhone = client?.phone || "";
 
   // Project
-  const projectTitle = cfg.project?.title || quotation?.project_title || event?.title || "";
-  const projectSummary = cfg.project?.summary || quotation?.project_summary || event?.description || "";
+  const projectTitle = quotation?.project_title || event?.title || "";
+  const projectSummary = quotation?.project_summary || event?.description || "";
   const showProjectSummary = sections.projectSummary !== false;
 
   // Items
@@ -115,28 +122,45 @@ export function renderNavyGold(data) {
                     <span class="discount">- ${symbol} ${formatMoney(discountAmount)}</span>
                 </div>` : "";
 
-  // Notes & Terms
-  const notesArray = textToArray(quotation?.notes);
-  const termsArray = textToArray(quotation?.terms_and_conditions);
-  const showNotes = sections.notes !== false && notesArray.length > 0;
-  const showTerms = sections.terms !== false && termsArray.length > 0;
+  // Visibility (Show in PDF / Show in Link toggles — defaults to shown when unset)
+  const vis = cfg.visibility || {};
+  const shown = (key) => vis[key]?.pdf !== false;
 
-  // Payment
-  const payment = cfg.payment || {};
+  // Terms & Special Notes (internal "Notes" is intentionally never rendered here — client-facing only)
+  const termsHtml = safeRichHtml(quotation?.terms_and_conditions);
+  const specialNotesArray = textToArray(quotation?.special_notes);
+  const paymentConditionsHtml = safeRichHtml(quotation?.payment_conditions);
+  const showTerms = sections.terms !== false && shown("terms") && !!termsHtml;
+  const showSpecialNotes = sections.notes !== false && shown("special_notes") && specialNotesArray.length > 0;
+  const showPaymentConditions = shown("payment_conditions") && !!paymentConditionsHtml;
+
+  // Payment — from the quotation's own Payment Method/Instructions (Preferences-seeded, per-quotation editable)
+  const payment = {
+    method: cfg.payment?.method || "Bank Transfer / UPI / Cheque",
+    instructions: cfg.payment?.instructions || "Payment details will be shared upon confirmation."
+  };
   const showPayment = sections.payment !== false;
 
-  // Bank
-  const bank = cfg.bank || {};
-  const showBank = sections.bank !== false && bank.enabled !== false;
+  // Bank Details (from snapshot)
+  let bankDetails = {};
+  try { bankDetails = quotation?.bank_details_snapshot ? JSON.parse(quotation.bank_details_snapshot) : {}; } catch (e) {}
+  const showBank = sections.bank !== false && shown("bank") &&
+    !!(bankDetails.account_name || bankDetails.bank_name || bankDetails.account_number || bankDetails.ifsc || bankDetails.upi_id);
 
-  // Social
-  const socialLinks = (cfg.socialLinks || []).filter((s) => s.enabled && s.shortName);
-  const showSocial = sections.social !== false && socialLinks.length > 0;
-  const socialHtml = socialLinks.map((s) => `<div class="social-circle">${escapeHtml(s.shortName)}</div>`).join("");
+  // Social Links (from snapshot)
+  let socialLinksData = {};
+  try { socialLinksData = quotation?.social_links_snapshot ? JSON.parse(quotation.social_links_snapshot) : {}; } catch (e) {}
+  const socialItems = [];
+  if (socialLinksData.instagram) socialItems.push({ label: "ig", url: socialLinksData.instagram });
+  if (socialLinksData.youtube) socialItems.push({ label: "yt", url: socialLinksData.youtube });
+  if (socialLinksData.website) socialItems.push({ label: "web", url: socialLinksData.website });
+  if (socialLinksData.portfolio) socialItems.push({ label: "pf", url: socialLinksData.portfolio });
+  const showSocial = sections.social !== false && shown("social") && socialItems.length > 0;
+  const socialHtml = socialItems.map((s) => `<a href="${escapeHtml(s.url)}" class="social-circle">${escapeHtml(s.label)}</a>`).join("");
 
-  // Footer
-  const footer = cfg.footer || {};
-  const showFooter = sections.footer !== false;
+  // Footer — sourced from the quotation's own Footer Message field (Preferences-seeded, per-quotation editable)
+  const footerMessage = quotation?.footer_message || "";
+  const showFooter = sections.footer !== false && shown("footer") && !!footerMessage;
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -308,11 +332,7 @@ ${quillContentCss}
 
             <div class="client-details">
 
-                ${clientCompany ? `${escapeHtml(clientCompany)}<br>` : ""}
-
                 ${clientAddressLine1 ? `${escapeHtml(clientAddressLine1)}<br>` : ""}
-
-                ${clientAddressLine2 ? `${escapeHtml(clientAddressLine2)}<br>` : ""}
 
                 ${clientCityStateCountry ? escapeHtml(clientCityStateCountry) : ""}
 
@@ -385,20 +405,20 @@ ${itemRows}
 
         <div>
 
-            ${showNotes ? `
+            ${showSpecialNotes ? `
             <div class="bottom-card">
 
                 <div class="bottom-heading">
 
                     <div class="bottom-icon">\u25A4</div>
 
-                    <div class="bottom-title">NOTES</div>
+                    <div class="bottom-title">SPECIAL NOTES</div>
 
                 </div>
 
                 <div class="bottom-content">
 
-                    <ul>${notesArray.map((n) => `<li>${escapeHtml(n)}</li>`).join("")}</ul>
+                    <ul>${specialNotesArray.map((n) => `<li>${escapeHtml(n)}</li>`).join("")}</ul>
 
                 </div>
 
@@ -418,7 +438,27 @@ ${itemRows}
 
                 <div class="bottom-content">
 
-                    <ul>${termsArray.map((t) => `<li>${escapeHtml(t)}</li>`).join("")}</ul>
+                    ${termsHtml}
+
+                </div>
+
+            </div>` : ""}
+
+
+            ${showPaymentConditions ? `
+            <div class="bottom-card">
+
+                <div class="bottom-heading">
+
+                    <div class="bottom-icon">\u20B9</div>
+
+                    <div class="bottom-title">PAYMENT CONDITIONS</div>
+
+                </div>
+
+                <div class="bottom-content">
+
+                    ${paymentConditionsHtml}
 
                 </div>
 
@@ -488,15 +528,15 @@ ${itemRows}
 
                 <div class="bank-grid">
 
-                    <span>Bank Name</span><span>:</span><span>${escapeHtml(bank.bankName || "")}</span>
+                    ${bankDetails.bank_name ? `<span>Bank Name</span><span>:</span><span>${escapeHtml(bankDetails.bank_name)}</span>` : ""}
 
-                    <span>Account Name</span><span>:</span><span>${escapeHtml(bank.accountName || "")}</span>
+                    ${bankDetails.account_name ? `<span>Account Name</span><span>:</span><span>${escapeHtml(bankDetails.account_name)}</span>` : ""}
 
-                    <span>Account No.</span><span>:</span><span>${escapeHtml(bank.accountNumber || "")}</span>
+                    ${bankDetails.account_number ? `<span>Account No.</span><span>:</span><span>${escapeHtml(bankDetails.account_number)}</span>` : ""}
 
-                    <span>IFSC Code</span><span>:</span><span>${escapeHtml(bank.ifsc || "")}</span>
+                    ${bankDetails.ifsc ? `<span>IFSC Code</span><span>:</span><span>${escapeHtml(bankDetails.ifsc)}</span>` : ""}
 
-                    <span>Branch</span><span>:</span><span>${escapeHtml(bank.branch || "")}</span>
+                    ${bankDetails.upi_id ? `<span>UPI ID</span><span>:</span><span>${escapeHtml(bankDetails.upi_id)}</span>` : ""}
 
                 </div>
 
@@ -516,9 +556,7 @@ ${itemRows}
 
             <div class="footer-message">
 
-                ${escapeHtml(footer.messageLine1 || "We appreciate the opportunity to work with you.")}<br>
-
-                ${escapeHtml(footer.messageLine2 || "Looking forward to building something great together.")}
+                ${footerMessage.split("\n").map((l) => escapeHtml(l)).join("<br>")}
 
             </div>
 
@@ -532,14 +570,6 @@ ${itemRows}
             </div>` : `<div class="social"></div>`}
 
         </div>
-
-
-        ${footer.creditName ? `
-        <div class="footer-bottom">
-
-            ${escapeHtml(footer.creditPrefix || "developed by")} <span>${escapeHtml(footer.creditName)}</span>
-
-        </div>` : ""}
 
     </footer>` : ""}
 

@@ -86,15 +86,25 @@ export default async function(req) {
         milestones, client_signature: q.client_signature || "", signed_by_name: q.signed_by_name || "",
         signed_at: q.signed_at || "", expired, currency
       },
-      items: (items || []).map((it) => ({
-        item_type: it.item_type || "custom", name: it.name || "", description: it.description || "",
-        quantity: it.quantity || 0, days: it.days || 0, unit_rate: it.unit_rate || 0,
-        rate_type: it.rate_type || "Fixed", line_total: it.line_total || 0,
-        gst_rate: it.gst_rate || 0, sac_code: it.sac_code || "", day_date: it.day_date || "",
-        phase_title: it.phase_title || "", member_type: it.member_type || "",
-        team_member_name_snapshot: it.team_member_name_snapshot || "", is_addon: !!it.is_addon,
-        sort_order: it.sort_order || 0
-      }))
+      items: (items || []).map((it) => {
+        const hideTeamNames = !!q.hide_team_names;
+        const isTeam = it.item_type === "team";
+        const isService = it.item_type === "service";
+        return {
+          item_type: it.item_type || "custom",
+          // For team items, `name` holds the person's name — redact it server-side
+          // (not just in the UI) when the quotation is set to hide team names.
+          name: (hideTeamNames && isTeam) ? "" : (it.name || ""),
+          // Service descriptions can carry a provider's name (e.g. "Provider: X") — strip too.
+          description: (hideTeamNames && isService) ? "" : (it.description || ""),
+          quantity: it.quantity || 0, days: it.days || 0, unit_rate: it.unit_rate || 0,
+          rate_type: it.rate_type || "Fixed", line_total: it.line_total || 0,
+          gst_rate: it.gst_rate || 0, sac_code: it.sac_code || "", day_date: it.day_date || "",
+          phase_title: it.phase_title || "", member_type: it.member_type || "",
+          team_member_name_snapshot: (hideTeamNames && isTeam) ? "" : (it.team_member_name_snapshot || ""),
+          is_addon: !!it.is_addon, sort_order: it.sort_order || 0
+        };
+      })
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });

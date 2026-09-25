@@ -1,11 +1,11 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
 import { useT } from "@/hooks/useT";
 import { useWorkspace } from "@/lib/WorkspaceContext";
-import { useAuth } from "@/lib/AuthContext";
 import { navGroups, aboutLegalNav } from "@/constants/navigation";
 import { Crown, ChevronRight, LogOut } from "lucide-react";
+import LogoutConfirmDialog from "@/components/common/LogoutConfirmDialog";
 
 const MOBILE_BAR_PATHS = ["/events", "/team", "/financial"];
 
@@ -14,7 +14,7 @@ export default function More() {
   const term = useBusinessTerminology();
   const t = useT();
   const { workspace } = useWorkspace();
-  const { logout } = useAuth();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   useEffect(() => {
     if (window.innerWidth >= 1024) navigate("/dashboard", { replace: true });
@@ -82,7 +82,7 @@ export default function More() {
       <div className="flex flex-col gap-2.5">
         {aboutLegalNav.map((item) => <Card key={item.path} item={item} />)}
         <button
-          onClick={() => logout()}
+          onClick={() => setShowLogoutConfirm(true)}
           className="w-full flex items-center gap-3 bg-card rounded-2xl p-4 text-left border border-border/60 shadow-sm active:scale-[0.99] transition-transform"
         >
           <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center shrink-0">
@@ -94,6 +94,8 @@ export default function More() {
           <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
         </button>
       </div>
+
+      <LogoutConfirmDialog open={showLogoutConfirm} onOpenChange={setShowLogoutConfirm} />
     </div>
   );
 }

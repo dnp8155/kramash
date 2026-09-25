@@ -154,24 +154,57 @@ export function renderClassicMinimal(data) {
       </div>`;
   }).join("");
 
-  // Includes — from special notes
-  const includesHtml = textToBullets(quotation?.special_notes);
+  // Includes — from special notes (gated below via `shown`, computed after `vis`/`shown` are defined)
 
   // Pricing
   const grandTotal = quotation?.grand_total || 0;
   const currencySymbol = currency === "INR" ? "Rs" : (currency || "");
   const totalWords = `(${currency === "INR" ? "INR " : ""}${amountInWords(grandTotal)})`;
 
-  // Payment — from templateConfig (per-quotation) or workspace defaults
+  // Payment — from the quotation's own Payment Method/Instructions (Preferences-seeded, per-quotation editable)
   const payMethod = templateConfig?.payment?.method || prefs.defaultPaymentMethod || "";
   const payInstructions = templateConfig?.payment?.instructions || prefs.defaultPaymentInstructions || "";
   const paymentHtml = [payMethod, payInstructions].filter(Boolean).map((l) => escapeHtml(l)).join("<br>");
 
-  // Notes & T&C
-  const notesHtml = textToBullets(quotation?.notes);
-  const termsText = quotation?.terms_and_conditions
+  // Visibility (Show in PDF / Show in Link toggles — defaults to shown when unset)
+  const vis = templateConfig?.visibility || {};
+  const shown = (key) => vis[key]?.pdf !== false;
+
+  // Includes — from special notes
+  const includesHtml = shown("special_notes") ? textToBullets(quotation?.special_notes) : "";
+
+  // Terms & Payment Conditions (internal "Notes" is intentionally never rendered here — client-facing only)
+  const termsText = shown("terms") && quotation?.terms_and_conditions
     ? `<div class="bullet-line">${safeRichHtml(quotation.terms_and_conditions)}</div>`
     : "";
+  const paymentConditionsText = shown("payment_conditions") && quotation?.payment_conditions
+    ? `<div class="bullet-line">${safeRichHtml(quotation.payment_conditions)}</div>`
+    : "";
+
+  // Bank Details (from snapshot)
+  let bankDetails = {};
+  try { bankDetails = quotation?.bank_details_snapshot ? JSON.parse(quotation.bank_details_snapshot) : {}; } catch (e) {}
+  const bankLines = [
+    bankDetails.account_name ? `<div class="detail-line"><span class="detail-label">Account Name:</span> ${escapeHtml(bankDetails.account_name)}</div>` : "",
+    bankDetails.bank_name ? `<div class="detail-line"><span class="detail-label">Bank Name:</span> ${escapeHtml(bankDetails.bank_name)}</div>` : "",
+    bankDetails.account_number ? `<div class="detail-line"><span class="detail-label">Account No.:</span> ${escapeHtml(bankDetails.account_number)}</div>` : "",
+    bankDetails.ifsc ? `<div class="detail-line"><span class="detail-label">IFSC:</span> ${escapeHtml(bankDetails.ifsc)}</div>` : "",
+    bankDetails.upi_id ? `<div class="detail-line"><span class="detail-label">UPI ID:</span> ${escapeHtml(bankDetails.upi_id)}</div>` : "",
+  ].filter(Boolean).join("");
+  const hasBankDetails = shown("bank") && bankLines.length > 0;
+
+  // Social Links (from snapshot)
+  let socialLinks = {};
+  try { socialLinks = quotation?.social_links_snapshot ? JSON.parse(quotation.social_links_snapshot) : {}; } catch (e) {}
+  const socialLines = [
+    socialLinks.instagram ? `<div class="detail-line"><span class="detail-label">Instagram:</span> ${escapeHtml(socialLinks.instagram)}</div>` : "",
+    socialLinks.youtube ? `<div class="detail-line"><span class="detail-label">YouTube:</span> ${escapeHtml(socialLinks.youtube)}</div>` : "",
+    socialLinks.website ? `<div class="detail-line"><span class="detail-label">Website:</span> ${escapeHtml(socialLinks.website)}</div>` : "",
+    socialLinks.portfolio ? `<div class="detail-line"><span class="detail-label">Portfolio:</span> ${escapeHtml(socialLinks.portfolio)}</div>` : "",
+  ].filter(Boolean).join("");
+  const hasSocial = shown("social") && socialLines.length > 0;
+
+  const footerMessage = shown("footer") ? (quotation?.footer_message || "") : "";
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -270,16 +303,28 @@ export function renderClassicMinimal(data) {
       <div class="section-title">PAYMENT</div>
       <div class="payment-text">${paymentHtml}</div>` : ""}
 
-      ${(notesHtml || termsText) ? `
-      <div class="section-title">NOTES</div>
-      ${notesHtml}
+      ${hasBankDetails ? `
+      <div class="section-title">BANK DETAILS</div>
+      ${bankLines}` : ""}
+
+      ${termsText ? `
+      <div class="section-title">TERMS &amp; CONDITIONS</div>
       ${termsText}` : ""}
+
+      ${paymentConditionsText ? `
+      <div class="section-title">PAYMENT CONDITIONS</div>
+      ${paymentConditionsText}` : ""}
+
+      ${hasSocial ? `
+      <div class="section-title">CONNECT WITH US</div>
+      ${socialLines}` : ""}
 
       <div class="signed-block">
         <div class="section-title">ELECTRONICALLY SIGNED &amp; AUTHORIZED BY:</div>
         <div class="detail-line">${escapeHtml(bizName)} on ${escapeHtml(quoteDate)}</div>
       </div>
 
+      ${footerMessage ? `<div class="footer">${footerMessage.split("\n").map((l) => escapeHtml(l)).join("<br>")}</div>` : ""}
       <div class="footer">${escapeHtml(bizName)}</div>
 
     </div>

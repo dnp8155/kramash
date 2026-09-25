@@ -13,6 +13,7 @@ export default function EventTypeAutocomplete({
   const [inputValue, setInputValue] = useState(value || "");
   const inputRef = useRef(null);
   const wrapperRef = useRef(null);
+  const justSelectedRef = useRef(false);
 
   useEffect(() => {
     setInputValue(value || "");
@@ -52,6 +53,10 @@ export default function EventTypeAutocomplete({
   const showAddOption = normalizedInput.length > 0 && !exactMatch;
 
   const selectValue = (val) => {
+    // A blur fires synchronously from inputRef.current.blur() below, before this
+    // render's state updates are applied — handleBlur would otherwise re-commit
+    // the stale (pre-selection) inputValue and clobber the value just chosen here.
+    justSelectedRef.current = true;
     setInputValue(val);
     onChange(val);
     setFocused(false);
@@ -66,7 +71,11 @@ export default function EventTypeAutocomplete({
   };
 
   const handleBlur = () => {
-    onChange(normalizedInput);
+    if (justSelectedRef.current) {
+      justSelectedRef.current = false;
+    } else {
+      onChange(normalizedInput);
+    }
     setTimeout(() => setFocused(false), 150);
   };
 
@@ -83,7 +92,7 @@ export default function EventTypeAutocomplete({
           onBlur={handleBlur}
           placeholder={placeholder}
           autoComplete="off"
-          className="w-full h-9 pl-9 pr-3 text-base md:text-sm bg-card border border-border rounded-lg text-foreground placeholder:text-muted-foreground transition-all focus:outline-none focus:ring-2 focus:ring-ring/40 focus:border-primary/40"
+          className="w-full h-9 !pl-9 pr-3 text-base md:text-sm bg-card border border-border rounded-lg text-foreground placeholder:text-muted-foreground transition-all focus:outline-none focus:ring-2 focus:ring-ring/40 focus:border-primary/40"
         />
       </div>
       {focused && (dedupedSuggestions.length > 0 || showAddOption) && (

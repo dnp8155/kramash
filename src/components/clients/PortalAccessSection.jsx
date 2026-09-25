@@ -7,7 +7,7 @@ import { useFeatureGate } from "@/components/common/ProGate";
 import { enableClientPortal, disableClientPortal, regenerateClientPortalPassword } from "@/lib/clientPortalAccess";
 import {
   KeyRound, Link2, Copy, CheckCircle2, RefreshCw, Loader2, Lock, Eye, EyeOff, Power,
-  Share2, Mail
+  Share2
 } from "lucide-react";
 
 // "Quick Portal Access" section for the Client Details page.
@@ -152,7 +152,7 @@ const PortalAccessSection = forwardRef(function PortalAccessSection({ client, wo
             readOnly
             value={loginUrl || `${window.location.origin}/client-login/${client.portal_access_token || ""}`}
             onClick={(e) => e.target.select()}
-            className="flex-1 px-3 py-2 text-xs bg-muted/50 border border-border rounded-lg text-foreground font-mono"
+            className="flex-1 min-w-0 px-3 py-2 text-xs bg-muted/50 border border-border rounded-lg text-foreground font-mono"
           />
           <Button size="sm" variant="outline" onClick={() => copy(loginUrl || `${window.location.origin}/client-login/${client.portal_access_token || ""}`, "link")} className="shrink-0">
             {copiedField === "link" ? <><CheckCircle2 className="w-3.5 h-3.5 text-success" /> Copied</> : <Copy className="w-3.5 h-3.5" />}
@@ -171,7 +171,7 @@ const PortalAccessSection = forwardRef(function PortalAccessSection({ client, wo
             readOnly
             value={password || "••••••••"}
             onClick={(e) => e.target.select()}
-            className="flex-1 px-3 py-2 text-xs bg-muted/50 border border-border rounded-lg text-foreground font-mono"
+            className="flex-1 min-w-0 px-3 py-2 text-xs bg-muted/50 border border-border rounded-lg text-foreground font-mono"
           />
           <Button size="sm" variant="outline" onClick={() => setShowPassword(!showPassword)} disabled={!password} className="shrink-0">
             {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
@@ -211,23 +211,6 @@ const PortalAccessSection = forwardRef(function PortalAccessSection({ client, wo
               className="flex-1"
             >
               <Share2 className="w-3.5 h-3.5" /> WhatsApp
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                const link = loginUrl || `${window.location.origin}/client-login/${client.portal_access_token || ""}`;
-                const subject = "Your Client Portal Access";
-                const body = `Hi ${client.name},\n\nHere is your portal link:\n${link}\n\nPassword: ${password}\n\nThank you!`;
-                if (client.email) {
-                  window.location.href = `mailto:${client.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-                } else {
-                  window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-                }
-              }}
-              className="flex-1"
-            >
-              <Mail className="w-3.5 h-3.5" /> Email
             </Button>
           </div>
         </div>

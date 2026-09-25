@@ -155,12 +155,12 @@ export default function ClientDetails() {
               <button
                 key={e.id}
                 onClick={() => navigate(`/events/${e.id}`)}
-                className="w-full flex items-center gap-3 py-3 hover:bg-muted/40 -mx-2 px-2 rounded text-left"
+                className="w-full flex items-center gap-3 py-3.5 hover:bg-muted/40 -mx-2 px-2 rounded text-left"
               >
                 <Calendar className="w-4 h-4 text-muted-foreground shrink-0" />
                 <div className="min-w-0 flex-1">
                   <div className="text-sm font-medium text-foreground truncate">{e.title}</div>
-                  <div className="text-xs text-muted-foreground">{e.event_type} · {formatEventDate(e.start_date, e.end_date)}{e.venue ? ` · ${e.venue}` : ""}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">{e.event_type} · {formatEventDate(e.start_date, e.end_date)}{e.venue ? ` · ${e.venue}` : ""}</div>
                 </div>
                 <StatusBadge status={e.status} />
                 <ArrowRight className="w-4 h-4 text-muted-foreground" />

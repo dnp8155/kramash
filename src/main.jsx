@@ -3,13 +3,16 @@ import ReactDOM from 'react-dom/client'
 import App from '@/App.jsx'
 import '@/index.css'
 import '@/lib/apiConcurrency' // side-effect: patches base44 entities with concurrency limiting
+import { applyThemeColor } from '@/lib/themeColor'
 
 // Apply saved theme before React renders to prevent flash.
 if (typeof window !== "undefined") {
   const savedTheme = localStorage.getItem("app-theme");
-  if (savedTheme === "Night") {
+  const isDark = savedTheme === "Night";
+  if (isDark) {
     document.documentElement.classList.add("dark");
   }
+  applyThemeColor(isDark);
 
   // Disable the browser right-click context menu app-wide.
   window.addEventListener("contextmenu", (e) => e.preventDefault());

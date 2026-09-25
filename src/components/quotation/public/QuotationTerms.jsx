@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { ChevronDown, ChevronUp, FileText } from "lucide-react";
 
-export default function QuotationTerms({ terms, specialNotes }) {
+export default function QuotationTerms({ terms, specialNotes, paymentConditions, showTerms = true, showSpecialNotes = true, showPaymentConditions = true }) {
   const [expanded, setExpanded] = useState(false);
 
-  if (!terms && !specialNotes) return null;
+  const hasTerms = showTerms && !!terms?.trim();
+  const hasNotes = showSpecialNotes && !!specialNotes?.trim();
+  const hasPaymentConditions = showPaymentConditions && !!paymentConditions?.trim();
 
-  const hasTerms = !!terms?.trim();
-  const hasNotes = !!specialNotes?.trim();
+  if (!hasTerms && !hasNotes && !hasPaymentConditions) return null;
 
   return (
     <div className="bg-card border border-border rounded-xl overflow-hidden">
@@ -22,6 +23,12 @@ export default function QuotationTerms({ terms, specialNotes }) {
         <div className="px-5 pb-4 space-y-3">
           {hasTerms && (
             <div className="text-sm text-foreground leading-relaxed [&_p]:mb-1 [&_ul]:list-disc [&_ol]:list-decimal [&_ul]:pl-5 [&_ol]:pl-5" dangerouslySetInnerHTML={{ __html: terms }} />
+          )}
+          {hasPaymentConditions && (
+            <div className="pt-2 border-t border-border">
+              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Payment Conditions</div>
+              <div className="text-sm text-foreground leading-relaxed [&_p]:mb-1 [&_ul]:list-disc [&_ol]:list-decimal [&_ul]:pl-5 [&_ol]:pl-5" dangerouslySetInnerHTML={{ __html: paymentConditions }} />
+            </div>
           )}
           {hasNotes && (
             <div className="pt-2 border-t border-border">

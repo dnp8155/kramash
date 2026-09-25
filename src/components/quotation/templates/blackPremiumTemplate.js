@@ -121,21 +121,28 @@ export function renderBlackPremium(data) {
     ? Math.round((gstTotal / quotation.taxable_amount) * 100)
     : 0;
 
-  // Notes & terms
-  const notesHtml = textToBulletList(quotation?.notes);
-  const termsHtml = safeRichHtml(quotation?.terms_and_conditions);
+  // Visibility (Show in PDF / Show in Link toggles — defaults to shown when unset)
+  const vis = cfg.visibility || {};
+  const shown = (key) => vis[key]?.pdf !== false;
 
-  // Payment
-  const paymentMethod = cfg.payment_method || "Bank Transfer / UPI / Cheque\nDetails will be shared upon confirmation.";
-  const paymentHtml = paymentMethod.split("\n").map((l) => escapeHtml(l)).join("<br>");
+  // Terms & special notes (internal "Notes" is intentionally never rendered here — client-facing only)
+  const termsHtml = shown("terms") ? safeRichHtml(quotation?.terms_and_conditions) : "";
+  const specialNotesHtml = shown("special_notes") ? textToBulletList(quotation?.special_notes) : "";
+
+  // Payment — from the quotation's own Payment Method/Instructions (Preferences-seeded, per-quotation editable)
+  const paymentLines = [
+    cfg.payment?.method || "Bank Transfer / UPI / Cheque",
+    cfg.payment?.instructions || "Details will be shared upon confirmation."
+  ];
+  const paymentHtml = paymentLines.filter(Boolean).map((l) => escapeHtml(l)).join("<br>");
 
   // Payment Conditions
-  const paymentConditionsHtml = safeRichHtml(quotation?.payment_conditions);
+  const paymentConditionsHtml = shown("payment_conditions") ? safeRichHtml(quotation?.payment_conditions) : "";
 
   // Bank Details (from snapshot)
   let bankDetails = {};
   try { bankDetails = quotation?.bank_details_snapshot ? JSON.parse(quotation.bank_details_snapshot) : {}; } catch (e) {}
-  const hasBankDetails = bankDetails.account_name || bankDetails.bank_name || bankDetails.account_number || bankDetails.ifsc || bankDetails.upi_id;
+  const hasBankDetails = shown("bank") && (bankDetails.account_name || bankDetails.bank_name || bankDetails.account_number || bankDetails.ifsc || bankDetails.upi_id);
   const bankRowsHtml = [
     bankDetails.account_name ? `<div class="bank-row"><span class="bank-label">Account Name</span><span class="bank-val">${escapeHtml(bankDetails.account_name)}</span></div>` : "",
     bankDetails.bank_name ? `<div class="bank-row"><span class="bank-label">Bank Name</span><span class="bank-val">${escapeHtml(bankDetails.bank_name)}</span></div>` : "",
@@ -153,11 +160,11 @@ export function renderBlackPremium(data) {
   if (socialLinks.website) socialItems.push({ label: "web", url: socialLinks.website });
   if (socialLinks.portfolio) socialItems.push({ label: "★", url: socialLinks.portfolio });
   const socialHtml = socialItems.map((s) => `<a href="${escapeHtml(s.url)}" class="social-circle">${escapeHtml(s.label)}</a>`).join("");
-  const hasSocial = socialItems.length > 0;
+  const hasSocial = shown("social") && socialItems.length > 0;
 
-  // Footer
+  // Footer — sourced from the quotation's own Footer Message field (Preferences-seeded, per-quotation editable)
   const thankYou = cfg.thank_you || "Thank you!";
-  const footerMessage = cfg.footer_message || "We appreciate the opportunity to work with you.\nLooking forward to building something great together.";
+  const footerMessage = shown("footer") ? (quotation?.footer_message || "") : "";
   const footerHtml = footerMessage.split("\n").map((l) => escapeHtml(l)).join("<br>");
   const developerCredit = cfg.developer_credit || "";
 
@@ -346,13 +353,13 @@ ${itemRows}
 
     <section class="bottom-section">
       <div>
-        ${notesHtml ? `
+        ${specialNotesHtml ? `
         <div class="info-block">
           <div class="info-heading">
             <div class="round-icon">&#9635;</div>
-            <span>NOTES</span>
+            <span>SPECIAL NOTES</span>
           </div>
-          <div class="editable-list">${notesHtml}</div>
+          <div class="editable-list">${specialNotesHtml}</div>
         </div>` : ""}
 
         ${termsHtml ? `

@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Check, Play } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
 import DashboardPreview from "@/components/landing/previews/DashboardPreview";
 import MobilePreview from "@/components/landing/previews/MobilePreview";
 import Reveal from "@/components/landing/Reveal";
@@ -43,12 +43,9 @@ export default function Hero() {
             </Reveal>
 
             <Reveal delay={200}>
-              <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto mb-6">
+              <div className="flex w-full sm:w-auto mb-6">
                 <Link to="/register" className="h-12 px-7 inline-flex items-center justify-center gap-2 text-sm font-semibold bg-[#1A1A1A] text-white hover:bg-[#C8A95E] rounded-full transition-all">
                   Sign Up <ArrowRight className="w-4 h-4" />
-                </Link>
-                <Link to="/register" className="h-12 px-7 inline-flex items-center justify-center gap-2 text-sm font-medium border border-[#E8E3DB] bg-white text-[#1A1A1A] hover:bg-[#FAF8F4] rounded-full transition-all">
-                  <Play className="w-3.5 h-3.5" /> Watch Demo
                 </Link>
               </div>
             </Reveal>

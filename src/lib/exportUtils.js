@@ -4,6 +4,8 @@
 // for passing pre-filtered, workspace-scoped rows.
 
 import * as XLSX from "xlsx";
+import { eventFinancialSummary, assignmentPaid, serviceAssignmentPaid, teamPaymentStatus } from "@/lib/financeService";
+import { fyForDate } from "@/lib/dates";
 
 // Sanitize a filename component.
 function sanitizeFilename(s) {
@@ -75,49 +77,306 @@ function downloadXlsx(wb, filename) {
   XLSX.writeFile(wb, filename, { bookType: "xlsx", type: "binary" });
 }
 
+// ---- Multi-sheet export helpers ----
+// The app uses the free "xlsx" (SheetJS Community) package, which cannot write
+// real cell styling (bold, borders, fills) into .xlsx output — only structural
+// features (merged cells, column widths) actually render. Readability relies on
+// merged section titles and generous column widths rather than visual styling.
+
+function titleCase(str) {
+  return String(str || "")
+    .toLowerCase()
+    .replace(/(^|[\s\-_/])([a-z])/g, (m, sep, ch) => sep + ch.toUpperCase());
+}
+
+const INVALID_SHEET_CHARS = /[[\]*/\\?:]/g;
+
+// Sanitize + de-duplicate an Excel sheet name (31 char limit, no [ ] * / \ ? :).
+function uniqueSheetName(name, usedNames) {
+  const base = (String(name || "Sheet").replace(INVALID_SHEET_CHARS, "").trim() || "Sheet").slice(0, 31);
+  let candidate = base;
+  let n = 2;
+  while (usedNames.has(candidate.toLowerCase())) {
+    const suffix = ` (${n})`;
+    candidate = base.slice(0, 31 - suffix.length) + suffix;
+    n += 1;
+  }
+  usedNames.add(candidate.toLowerCase());
+  return candidate;
+}
+
+function mergeRange(ws, r1, c1, r2, c2) {
+  if (!ws["!merges"]) ws["!merges"] = [];
+  ws["!merges"].push({ s: { r: r1, c: c1 }, e: { r: r2, c: c2 } });
+}
+
+function autoColWidths(rows, colCount, { min = 10, max = 42 } = {}) {
+  const widths = new Array(colCount).fill(min);
+  rows.forEach((row) => {
+    (row || []).forEach((cell, i) => {
+      if (i >= colCount) return;
+      const len = String(cell ?? "").length + 2;
+      if (len > widths[i]) widths[i] = Math.min(len, max);
+    });
+  });
+  return widths.map((wch) => ({ wch }));
+}
+
+// Deliver a workbook: native share sheet first (mobile/desktop), then a
+// temporary download link, then XLSX.writeFile as a last-resort fallback.
+async function shareOrDownload(wb, filename) {
+  const mime = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+  try {
+    if (typeof navigator !== "undefined" && navigator.share && navigator.canShare) {
+      const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+      const file = new File([wbout], filename, { type: mime });
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: filename });
+        return;
+      }
+    }
+  } catch (err) {
+    if (err?.name === "AbortError") return;
+  }
+  try {
+    const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+    const blob = new Blob([wbout], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch {
+    XLSX.writeFile(wb, filename, { bookType: "xlsx", type: "binary" });
+  }
+}
+
 // ---- Export: Events ----
 
-export function exportEventsXlsx(events, clientsMap, fyLabel, term, receiptsByEvent, addonsByEvent) {
+function fyStartYear(event) {
+  const fy = event.financial_year || fyForDate(event.start_date) || "";
+  const y = parseInt(String(fy).replace(/^FY\s*/i, "").slice(0, 4), 10);
+  return Number.isFinite(y) ? y : 0;
+}
+
+function sortEventsForExport(events) {
+  return [...(events || [])].sort((a, b) => {
+    const fyDiff = fyStartYear(b) - fyStartYear(a);
+    if (fyDiff !== 0) return fyDiff;
+    const dateDiff = String(a.start_date || "").localeCompare(String(b.start_date || ""));
+    if (dateDiff !== 0) return dateDiff;
+    return String(a.title || "").localeCompare(String(b.title || ""));
+  });
+}
+
+const TX_TYPE_LABELS = {
+  CLIENT_RECEIPT: "Client Receipt",
+  TEAM_PAYMENT: "Team Payment",
+  BUSINESS_EXPENSE: "Business Expense",
+};
+
+function buildEventDetailRows(event, ctx) {
+  const { clientsMap, teamMap, serviceMap, assignmentsByEvent, serviceAssignmentsByEvent, transactions, locationLabel, statusLabel } = ctx;
+  const client = clientsMap[event.client_id] || {};
+  const evTx = (transactions || [])
+    .filter((tx) => tx.event_id === event.id)
+    .sort((a, b) => String(a.transaction_date || "").localeCompare(String(b.transaction_date || "")));
+  const assignments = (assignmentsByEvent[event.id] || []).filter((a) => a.assignment_status !== "removed");
+  const services = (serviceAssignmentsByEvent[event.id] || []).filter((a) => a.assignment_status !== "removed");
+
+  const rows = [];
+  rows.push([event.title || ""]);
+  rows.push([]);
+
+  rows.push(["Client Details"]);
+  rows.push(["Client Name", client.name || ""]);
+  rows.push(["Phone", client.phone || ""]);
+  rows.push(["Email", client.email || ""]);
+  rows.push([locationLabel, event.venue || ""]);
+  rows.push(["Event Type", event.event_type || ""]);
+  rows.push(["Start Date", event.start_date || ""]);
+  rows.push(["End Date", event.end_date || ""]);
+  rows.push(["Status", statusLabel(event.status)]);
+  rows.push([]);
+
+  rows.push(["Transactions"]);
+  rows.push(["Date", "Type", "Party", "Amount", "Method", "Reference", "Status", "Notes"]);
+  if (evTx.length === 0) {
+    rows.push(["No transactions recorded."]);
+  } else {
+    evTx.forEach((tx) => {
+      let party = "";
+      if (tx.transaction_type === "CLIENT_RECEIPT") party = client.name || "";
+      else if (tx.transaction_type === "TEAM_PAYMENT") party = teamMap[tx.team_member_id]?.name || "";
+      else party = tx.expense_category_name_snapshot || "";
+      rows.push([
+        tx.transaction_date || "",
+        TX_TYPE_LABELS[tx.transaction_type] || tx.transaction_type,
+        party,
+        Number(tx.amount) || 0,
+        tx.payment_method || "",
+        tx.reference_number || "",
+        tx.status || "",
+        tx.notes || "",
+      ]);
+    });
+  }
+  rows.push([]);
+
+  rows.push(["Team Members"]);
+  rows.push(["Name", "Role", "Rate Type", "Agreed Rate", "Paid", "Status"]);
+  if (assignments.length === 0) {
+    rows.push(["No team members assigned."]);
+  } else {
+    assignments.forEach((a) => {
+      const member = teamMap[a.team_member_id] || {};
+      const isSelf = !!member.is_self;
+      const paid = assignmentPaid(transactions, a.id);
+      rows.push([
+        isSelf ? `${member.name || "Self"} (Self)` : member.name || "",
+        a.role_name_snapshot || member.profession || "",
+        a.rate_type || "",
+        Number(a.agreed_rate) || 0,
+        isSelf ? "—" : paid,
+        isSelf ? "Self (no payment due)" : teamPaymentStatus(paid, Number(a.agreed_rate) || 0),
+      ]);
+    });
+  }
+  rows.push([]);
+
+  rows.push(["Services"]);
+  rows.push(["Service", "Provider", "Rate Type", "Agreed Rate", "Add-on", "Paid", "Status"]);
+  if (services.length === 0) {
+    rows.push(["No services assigned."]);
+  } else {
+    services.forEach((a) => {
+      const paid = serviceAssignmentPaid(transactions, a.id);
+      rows.push([
+        a.service_name_snapshot || serviceMap[a.service_id]?.name || "",
+        a.provider_name_snapshot || "",
+        a.rate_type || "",
+        Number(a.agreed_rate) || 0,
+        a.is_addon ? "Yes" : "No",
+        paid,
+        teamPaymentStatus(paid, Number(a.agreed_rate) || 0),
+      ]);
+    });
+  }
+
+  const notes = [event.notes, event.description].filter(Boolean).join("\n\n");
+  if (notes) {
+    rows.push([]);
+    rows.push(["Notes"]);
+    rows.push([notes]);
+  }
+
+  return rows;
+}
+
+// Builds a multi-sheet workbook: a "Main Summary" sheet with core financials
+// for every event, plus one detail sheet per event (client, transactions,
+// team, services, notes). Delivered via shareOrDownload (share sheet ->
+// download link -> writeFile).
+export async function exportEventsXlsx(events, clientsMap, fyLabel, term, opts = {}) {
   const t = term || {};
   const workSingular = t.workItemSingular || "Event";
   const workPlural = t.workItemPlural || "Events";
   const locationLabel = t.locationLabel || "Venue";
-  const rb = receiptsByEvent || {};
-  const ab = addonsByEvent || {};
-  const columns = [
-    { key: "title", label: `${workSingular} Name` },
-    { key: "event_type", label: "Event Type" },
-    { key: "client_name", label: "Client" },
-    { key: "start_date", label: "Start Date" },
-    { key: "end_date", label: "End Date" },
-    { key: "venue", label: locationLabel },
-    { key: "contract_value", label: "Contract Value" },
-    { key: "addon_total", label: "Add-ons" },
-    { key: "received", label: "Payment Received" },
-    { key: "balance", label: "Remaining Balance" },
-    { key: "status", label: "Status" },
-  ];
-  const rows = events.map((e) => {
-    const contract = Number(e.contract_value) || 0;
-    const addons = Number(ab[e.id]) || 0;
-    const received = Number(rb[e.id]) || 0;
-    const balance = Math.max(contract + addons - received, 0);
-    return {
-      ...e,
-      event_type: e.event_type || "",
-      client_name: clientsMap[e.client_id]?.name || "",
-      end_date: e.end_date || "",
-      venue: e.venue || "",
-      contract_value: contract,
-      addon_total: addons,
-      received,
-      balance,
-    };
+  const statusLabel = (s) => (t.statusLabels && t.statusLabels[s]) || titleCase(s);
+  const {
+    teamMap = {},
+    serviceMap = {},
+    assignmentsByEvent = {},
+    serviceAssignmentsByEvent = {},
+    transactions = [],
+  } = opts;
+
+  const sorted = sortEventsForExport(events);
+  const wb = XLSX.utils.book_new();
+  const usedNames = new Set(["main summary"]);
+
+  const fyHeading = fyLabel ? `FY ${fyLabel}` : "All Years";
+  const summaryHeader = ["#", `${workSingular} Name`, "Client", "Status", "Contract Value", "Received", "Paid", "Left Balance", "Profit"];
+  const summaryRows = [[`Kramasha — ${workPlural} Summary — ${fyHeading}`], [], summaryHeader];
+  const totals = { contract: 0, received: 0, paid: 0, left: 0, profit: 0 };
+  sorted.forEach((e, i) => {
+    const summary = eventFinancialSummary(e, transactions, assignmentsByEvent[e.id], serviceAssignmentsByEvent[e.id]);
+    const paid = summary.teamPaid + summary.expenses;
+    totals.contract += summary.contractValue;
+    totals.received += summary.received;
+    totals.paid += paid;
+    totals.left += summary.pending;
+    totals.profit += summary.profit;
+    summaryRows.push([
+      i + 1,
+      e.title || "",
+      clientsMap[e.client_id]?.name || "",
+      statusLabel(e.status),
+      summary.contractValue,
+      summary.received,
+      paid,
+      summary.pending,
+      summary.profit,
+    ]);
   });
-  const wb = rowsToWorkbook(rows, columns, workPlural);
+  summaryRows.push(["", "Totals", "", "", totals.contract, totals.received, totals.paid, totals.left, totals.profit]);
+
+  const summaryWs = XLSX.utils.aoa_to_sheet(summaryRows);
+  mergeRange(summaryWs, 0, 0, 0, summaryHeader.length - 1);
+  summaryWs["!cols"] = autoColWidths(summaryRows, summaryHeader.length);
+  XLSX.utils.book_append_sheet(wb, summaryWs, "Main Summary");
+
+  sorted.forEach((e) => {
+    const sheetName = uniqueSheetName(e.title || workSingular, usedNames);
+    const rows = buildEventDetailRows(e, {
+      clientsMap, teamMap, serviceMap, assignmentsByEvent, serviceAssignmentsByEvent, transactions, locationLabel, statusLabel,
+    });
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    mergeRange(ws, 0, 0, 0, 7);
+    ws["!cols"] = autoColWidths(rows, 8);
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+  });
+
   const fy = fyLabel ? sanitizeFilename(fyLabel) : "All";
   const prefix = sanitizeFilename(t.exportPrefix || workPlural);
-  downloadXlsx(wb, `Kramasha_${prefix}_${fy}.xlsx`);
+  await shareOrDownload(wb, `Kramasha_${prefix}_${fy}.xlsx`);
+}
+
+// Flattens every transaction (across all events) into one "Payment Activity"
+// sheet. `display` mirrors exportFinancialXlsx's shape so callers can share
+// the same lookups. Delivered via shareOrDownload.
+export async function exportTransactionsXlsx(transactions, display, fyLabel) {
+  const { eventsById = {}, clientsById = {}, membersById = {} } = display || {};
+  const header = ["Date", "Event", "Type", "Party", "Amount", "Method", "Reference", "Status", "Notes"];
+  const sorted = [...(transactions || [])].sort((a, b) => String(b.transaction_date || "").localeCompare(String(a.transaction_date || "")));
+  const rows = [["Kramasha — Payment Activity"], [], header];
+  sorted.forEach((tx) => {
+    let party = "";
+    if (tx.transaction_type === "CLIENT_RECEIPT") party = clientsById[tx.client_id]?.name || "";
+    else if (tx.transaction_type === "TEAM_PAYMENT") party = membersById[tx.team_member_id]?.name || "";
+    else party = tx.expense_category_name_snapshot || "";
+    rows.push([
+      tx.transaction_date || "",
+      eventsById[tx.event_id]?.title || "",
+      TX_TYPE_LABELS[tx.transaction_type] || tx.transaction_type,
+      party,
+      Number(tx.amount) || 0,
+      tx.payment_method || "",
+      tx.reference_number || "",
+      tx.status || "",
+      tx.notes || "",
+    ]);
+  });
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  mergeRange(ws, 0, 0, 0, header.length - 1);
+  ws["!cols"] = autoColWidths(rows, header.length);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Payment Activity");
+  const fy = fyLabel ? sanitizeFilename(fyLabel) : "All";
+  await shareOrDownload(wb, `Kramasha_Payment_Activity_${fy}.xlsx`);
 }
 
 // Backward-compat CSV alias.

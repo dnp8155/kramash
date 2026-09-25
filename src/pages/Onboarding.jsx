@@ -136,8 +136,8 @@ export default function Onboarding() {
 
           {step === 2 && (
             <StepShell icon={Building2} title="Business Details" subtitle="Tell us about your business.">
-              <Field label="Your Name *"><Input value={form.your_name} onChange={(e) => set("your_name", e.target.value)} placeholder="Krishna Shah" autoFocus /></Field>
-              <Field label="Business / Workspace Name *"><Input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="Krishna Shah Photography" /></Field>
+              <Field label="Your Name *"><Input value={form.your_name} onChange={(e) => set("your_name", e.target.value)} placeholder="Krishna Shah" autoFocus name="your_name" autoComplete="name" /></Field>
+              <Field label="Business / Workspace Name *"><Input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="Krishna Shah Photography" name="workspace_name" autoComplete="organization" /></Field>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Field label="Phone *"><Input value={form.phone} onChange={(e) => set("phone", sanitizePhoneInput(e.target.value))} inputMode="tel" placeholder="10-digit mobile (e.g. 9876543210)" maxLength={10} /></Field>
                 <Field label="Email *"><Input value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="you@example.com" /></Field>

@@ -7,7 +7,7 @@ import {
   Wallet,
   Calculator,
   FileText,
-  Receipt,
+  ReceiptIndianRupee,
   PenLine,
   SlidersHorizontal,
   Smartphone,
@@ -29,7 +29,7 @@ export const workspaceNav = [
 export const financeNav = [
   { label: "Financial", path: "/financial", icon: Wallet },
   { label: "Leads", path: "/leads", icon: UserPlus },
-  { label: "Invoices", path: "/invoices", icon: Receipt }
+  { label: "Invoices", path: "/invoices", icon: ReceiptIndianRupee }
 ];
 
 export const toolsNav = [

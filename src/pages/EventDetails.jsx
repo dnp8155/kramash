@@ -28,7 +28,7 @@ import EventMilestonesTab from "@/components/events/EventMilestonesTab";
 import EventNotesTab from "@/components/events/EventNotesTab";
 import { loadServiceProviders } from "@/lib/serviceProviderService";
 import { useToast } from "@/components/ui/use-toast";
-import { currentFY, fyRange, fyForDate, formatEventDate, formatEventDates, formatDatesCompact } from "@/lib/dates";
+import { currentFY, fyRange, fyForDate, formatEventDate, formatEventDates } from "@/lib/dates";
 import { formatMoney } from "@/utils/format";
 import { eventFinancialSummary, clientPaymentStatus, loadExpenseCategories } from "@/lib/financeService";
 import {
@@ -380,7 +380,7 @@ export default function EventDetails() {
     );
   }
 
-  const tabs = ["Team", "Financials", "Services", "Payments", "Milestones", "Notes", "Progress"];
+  const tabs = ["Team", "Services", "Payments", "Financials", "Milestones", "Notes", "Progress"];
   const eventTransactions = transactions.filter((t) => t.status === "ACTIVE");
 
   const removeServiceAssignment = async (a) => {
@@ -417,7 +417,7 @@ export default function EventDetails() {
 
   const statusDot = EVENT_STATUS[event.status]?.dot || "bg-warning";
   const allDates = (event.event_dates?.length ? event.event_dates : [event.start_date]).filter(Boolean);
-  const datesLabel = formatDatesCompact(event);
+  const datesLabel = formatEventDates(event);
 
   return (
     <div className="p-4 sm:p-6 space-y-5">
@@ -461,25 +461,32 @@ export default function EventDetails() {
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4">
             <DetailField label={`Client / ${term.workItemSingular}`} value={event.title} />
             <DetailField label={term.workItemTypeLabel} value={event.event_type || "—"} />
-            <DetailField label="Contract Value" value={formatMoney(fin.contractValue || 0, currency)} />
-            {fin.addonTotal + fin.miscTotal > 0 && (
-              <div className="text-[11px] text-muted-foreground">
-                Base: {formatMoney(fin.baseContractValue, currency)} + Add-ons: {formatMoney(fin.addonTotal + fin.miscTotal, currency)}
+            <div className="min-w-0">
+              <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide mb-1">Contract Value</div>
+              <div className="flex items-center gap-1.5 text-sm font-medium text-foreground flex-wrap">
+                <span>{formatMoney(fin.contractValue || 0, currency)}</span>
+                {fin.addonTotal + fin.miscTotal > 0 && (
+                  <span className="text-[11px] text-muted-foreground font-normal">
+                    ({formatMoney(fin.baseContractValue, currency)} + {formatMoney(fin.addonTotal + fin.miscTotal, currency)} add-ons)
+                  </span>
+                )}
               </div>
-            )}
-            <DetailField label="Start Date" value={event.start_date ? formatEventDate(event.start_date) : "—"} />
-            <DetailField label="End Date" value={event.end_date ? formatEventDate(event.end_date) : "—"} />
+            </div>
             <DetailField label="Financial Year" value={fyLabel} />
           </div>
 
-          {allDates.length > 0 && (
-            <div className="mt-4">
-              <div className="text-xs font-medium text-muted-foreground mb-2.5">{term.workItemSingular} Date(s)</div>
-              <div className="flex flex-wrap gap-2">
-                {allDates.map((d) => <DateChip key={d} date={d} />)}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4 mt-4">
+            <DetailField label="Start Date" value={event.start_date ? formatEventDate(event.start_date) : "—"} />
+            <DetailField label="End Date" value={event.end_date ? formatEventDate(event.end_date) : "—"} />
+            {allDates.length > 0 && (
+              <div className="min-w-0">
+                <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide mb-1">{term.workItemSingular} Date(s)</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {allDates.map((d) => <DateChip key={d} date={d} />)}
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
           <div className="my-5 border-t border-border/60" />
 

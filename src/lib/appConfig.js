@@ -5,9 +5,9 @@ export const APP_CONFIG = {
   name: "Kramasha",
   shortName: "Kramasha",
   version: "1.0.0",
-  phase: "Phase 8 Beta",
+  phase: "Edited 2026-09-25 20:12 IST",
   versionLabel: "Version 1.0.0 Beta",
-  buildDate: "2026-08-24",
+  buildDate: "2026-09-25",
 
   // PWA
   manifestPath: "/manifest.json",

@@ -9,8 +9,9 @@ import Select from "@/components/common/Select";
 import Toggle from "@/components/common/Toggle";
 import ChangePasswordDialog from "@/components/settings/ChangePasswordDialog";
 import WordCounterTextarea from "@/components/common/WordCounterTextarea";
-import { Pencil, Check, Loader2, Upload, User, Building2, Lock, KeyRound, Globe, Copy, ExternalLink, Share2, Instagram, Youtube, Link as LinkIcon, Crown } from "lucide-react";
+import { Pencil, Check, Loader2, Upload, User, Building2, Lock, KeyRound, Globe, Copy, ExternalLink, Share2, Instagram, Youtube, Link as LinkIcon, Crown, Save } from "lucide-react";
 import { isValidIndianMobile, isValidEmail, sanitizePhoneInput } from "@/lib/validation";
+import { lookupCity } from "@/lib/cityMapping";
 import { useFeatureGate } from "@/components/common/ProGate";
 
 const currencies = [{ v: "INR", l: "INR (₹)" }, { v: "USD", l: "USD ($)" }, { v: "EUR", l: "EUR (€)" }, { v: "AED", l: "AED (د.إ)" }];
@@ -44,11 +45,18 @@ export default function ProfileWorkspaceSection() {
   const [showChangePwd, setShowChangePwd] = useState(false);
 
   const [form, setForm] = useState(null);
+  const [savedForm, setSavedForm] = useState(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const logoFileRef = useRef(null);
 
-  const isNameLocked = !!(user?.full_name?.trim());
+  // Some accounts ended up with full_name set to their email's local part
+  // (e.g. "abc" from "abc@xyz.com") — never a real name the user chose, so
+  // don't let that value lock the field. Once they save a real name it'll
+  // differ from the email prefix and lock normally.
+  const emailLocalPart = (user?.email || "").split("@")[0].trim().toLowerCase();
+  const looksLikeEmailArtifact = !!emailLocalPart && user?.full_name?.trim().toLowerCase() === emailLocalPart;
+  const isNameLocked = !!(user?.full_name?.trim()) && !looksLikeEmailArtifact;
   const isBusinessTypeLocked = !!(workspace?.business_type);
   const isPhoneLocked = !!(workspace?.phone);
   const isEmailLocked = !!(workspace?.email);
@@ -60,7 +68,7 @@ export default function ProfileWorkspaceSection() {
   })();
 
   if (!form && workspace) {
-    setForm({
+    const initial = {
       name: workspace.name || "", tagline: workspace.tagline || "", website: workspace.website || "",
       phone: workspace.phone || "", email: workspace.email || user?.email || "",
       address: workspace.address || "", city: workspace.city || "", state: workspace.state || "",
@@ -78,8 +86,12 @@ export default function ProfileWorkspaceSection() {
       public_show_social: dp.public_show_social !== false,
       social_instagram: dp.social_instagram || "", social_youtube: dp.social_youtube || "",
       social_website: dp.social_website || "", social_portfolio: dp.social_portfolio || "",
-    });
+    };
+    setForm(initial);
+    setSavedForm(initial);
   }
+
+  const isFormDirty = !!(form && savedForm) && JSON.stringify(form) !== JSON.stringify(savedForm);
 
   const saveName = async () => {
     if (!name.trim()) { toast({ title: "Name cannot be empty." }); return; }
@@ -96,6 +108,15 @@ export default function ProfileWorkspaceSection() {
 
   const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
 
+  // Auto-fill state & country when city matches a known Indian city — still editable after.
+  const onCityChange = (val) => {
+    set("city", val);
+    const match = lookupCity(val);
+    if (match) {
+      setForm((f) => ({ ...f, city: val, state: match.state, country: match.country }));
+    }
+  };
+
   const onLogo = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -106,6 +127,7 @@ export default function ProfileWorkspaceSection() {
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       set("logo", file_url);
+      setSavedForm((f) => (f ? { ...f, logo: file_url } : f));
       await base44.entities.Workspace.update(workspace.id, { logo: file_url });
       setWorkspace((w) => ({ ...w, logo: file_url }));
       toast({ title: "Logo updated" });
@@ -149,6 +171,7 @@ export default function ProfileWorkspaceSection() {
         display_preferences: JSON.stringify(updatedDp),
       });
       setWorkspace(updated);
+      setSavedForm(form);
       toast({ title: "Settings saved" });
     } catch (err) {
       toast({ title: "Save failed", description: err.message, variant: "destructive" });
@@ -176,7 +199,7 @@ export default function ProfileWorkspaceSection() {
               </div>
             ) : editingName ? (
               <div className="flex items-center gap-2 ml-3 flex-1 justify-end">
-                <input value={name} onChange={(e) => setName(e.target.value)} autoFocus className="flex-1 max-w-[180px] h-8 px-2 text-sm bg-card border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring/40" />
+                <input value={name} onChange={(e) => setName(e.target.value)} autoFocus name="full_name" autoComplete="name" className="flex-1 max-w-[180px] h-8 px-2 text-sm bg-card border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring/40" />
                 <button onClick={saveName} disabled={savingName} className="w-8 h-8 rounded-md bg-success/10 text-success flex items-center justify-center hover:bg-success/20 transition-colors shrink-0" aria-label="Save name" title="Save">
                   {savingName ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
                 </button>
@@ -254,6 +277,7 @@ export default function ProfileWorkspaceSection() {
                 try {
                   await base44.entities.Workspace.update(workspace.id, { logo: "" });
                   set("logo", "");
+                  setSavedForm((f) => (f ? { ...f, logo: "" } : f));
                   setWorkspace((w) => ({ ...w, logo: "" }));
                   toast({ title: "Logo removed" });
                 } catch (err) { toast({ title: "Failed to remove logo", description: err.message, variant: "destructive" }); }
@@ -263,12 +287,12 @@ export default function ProfileWorkspaceSection() {
         </div>
 
         <div className="space-y-3">
-          <Field label="Business / Workspace Name"><Input value={form.name} onChange={(e) => set("name", e.target.value)} /></Field>
+          <Field label="Business / Workspace Name"><Input value={form.name} onChange={(e) => set("name", e.target.value)} name="workspace_name" autoComplete="organization" /></Field>
           <Field label="Tagline"><Input value={form.tagline} onChange={(e) => set("tagline", e.target.value)} placeholder="e.g. Capturing moments that last forever" /></Field>
           <Field label="Website">
             <div className="relative">
               <Globe className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-              <Input value={form.website} onChange={(e) => set("website", e.target.value)} placeholder="https://yourwebsite.com" className="pl-9" />
+              <Input value={form.website} onChange={(e) => set("website", e.target.value)} placeholder="https://yourwebsite.com" className="!pl-9" />
             </div>
           </Field>
 
@@ -288,13 +312,13 @@ export default function ProfileWorkspaceSection() {
 
           <Field label="Business Address"><Input value={form.address} onChange={(e) => set("address", e.target.value)} /></Field>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Field label="City"><Input value={form.city} onChange={(e) => set("city", e.target.value)} /></Field>
+            <Field label="City"><Input value={form.city} onChange={(e) => onCityChange(e.target.value)} /></Field>
             <Field label="State"><Input value={form.state} onChange={(e) => set("state", e.target.value)} /></Field>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field label="Country"><Input value={form.country} onChange={(e) => set("country", e.target.value)} /></Field>
             <Field label="Currency">
-              <Select value={form.currency} onChange={(e) => set("currency", e.target.value)}>
+              <Select value={form.currency} onChange={(e) => set("currency", e.target.value)} className="w-full">
                 {currencies.map((c) => <option key={c.v} value={c.v}>{c.l}</option>)}
               </Select>
             </Field>
@@ -303,24 +327,24 @@ export default function ProfileWorkspaceSection() {
           {/* Region Settings */}
           <div className="pt-3 mt-3 border-t border-border">
             <h4 className="text-sm font-semibold text-foreground mb-3">Region Settings</h4>
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label="Timezone">
-                <Select value={form.timezone} onChange={(e) => set("timezone", e.target.value)}>
+                <Select value={form.timezone} onChange={(e) => set("timezone", e.target.value)} className="w-full">
                   {timezones.map((t) => <option key={t}>{t}</option>)}
                 </Select>
               </Field>
               <Field label="Date Format">
-                <Select value={form.date_format} onChange={(e) => set("date_format", e.target.value)}>
+                <Select value={form.date_format} onChange={(e) => set("date_format", e.target.value)} className="w-full">
                   {dateFormats.map((d) => <option key={d.v} value={d.v}>{d.l}</option>)}
                 </Select>
               </Field>
               <Field label="Number Format">
-                <Select value={form.number_format} onChange={(e) => set("number_format", e.target.value)}>
+                <Select value={form.number_format} onChange={(e) => set("number_format", e.target.value)} className="w-full">
                   {numberFormats.map((n) => <option key={n.v} value={n.v}>{n.l}</option>)}
                 </Select>
               </Field>
               <Field label="Financial Year Start Month">
-                <Select value={form.fy_start_month} onChange={(e) => set("fy_start_month", Number(e.target.value))}>
+                <Select value={form.fy_start_month} onChange={(e) => set("fy_start_month", Number(e.target.value))} className="w-full">
                   {MONTHS.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
                 </Select>
               </Field>
@@ -341,7 +365,7 @@ export default function ProfileWorkspaceSection() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Field label="GST State"><Input value={form.gst_state} onChange={(e) => set("gst_state", e.target.value)} /></Field>
                   <Field label="Default GST Rate (%)">
-                    <Select value={form.default_gst_rate} onChange={(e) => set("default_gst_rate", Number(e.target.value))}>
+                    <Select value={form.default_gst_rate} onChange={(e) => set("default_gst_rate", Number(e.target.value))} className="w-full">
                       {gstRates.map((r) => <option key={r} value={r}>{r}%</option>)}
                     </Select>
                   </Field>
@@ -422,8 +446,8 @@ export default function ProfileWorkspaceSection() {
             </div>
           </div>
 
-          <Button onClick={saveWorkspace} disabled={saving}>
-            {saving ? <><Loader2 className="w-4 h-4 animate-spin" />Saving…</> : "Save Settings"}
+          <Button variant={isFormDirty ? "primary" : "outline"} onClick={saveWorkspace} disabled={saving || !isFormDirty}>
+            {saving ? <><Loader2 className="w-4 h-4 animate-spin" />Saving…</> : <><Save className="w-4 h-4" />Save Settings</>}
           </Button>
         </div>
       </div>
@@ -467,7 +491,7 @@ function SocialField({ label, value, onChange, placeholder, Icon }) {
       <label className="block text-xs font-medium text-muted-foreground mb-1">{label}</label>
       <div className="relative">
         <Icon className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-        <Input value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="pl-9" />
+        <Input value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="!pl-9" />
       </div>
     </div>
   );

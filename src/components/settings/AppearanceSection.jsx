@@ -9,6 +9,7 @@ import PastelPalettePicker from "@/components/settings/PastelPalettePicker";
 import { hexToHsl } from "@/lib/pastelTheme";
 import { useFeatureGate } from "@/components/common/ProGate";
 import { DEFAULT_PASTEL_COLORS } from "@/lib/pastelTheme";
+import { applyThemeColor } from "@/lib/themeColor";
 import { Crown } from "lucide-react";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -26,8 +27,10 @@ export default function AppearanceSection() {
 
   useEffect(() => {
     const root = document.documentElement;
-    if (theme === "Night") root.classList.add("dark");
+    const isDark = theme === "Night";
+    if (isDark) root.classList.add("dark");
     else root.classList.remove("dark");
+    applyThemeColor(isDark);
     localStorage.setItem("app-theme", theme);
 
     if (theme === "Pastel") {

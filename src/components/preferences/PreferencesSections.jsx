@@ -40,6 +40,7 @@ export default function PreferencesSections({
   onOpenAddRole,
   onOpenEditRole,
   onToggleRoleStatus,
+  onDeleteRole,
   onOpenAddService,
   onOpenEditService,
   onToggleServiceStatus,
@@ -79,11 +80,14 @@ export default function PreferencesSections({
                       <span className="text-xs text-muted-foreground whitespace-nowrap shrink-0">
                         {formatINR(r.default_rate)} <span className="text-[10px]">/ {r.rate_type}</span>
                       </span>
-                      <button onClick={() => onOpenEditRole(r)} className="text-muted-foreground hover:text-foreground shrink-0" aria-label="Edit role">
+                      <button onClick={() => onOpenEditRole(r)} className="w-7 h-7 rounded-full flex items-center justify-center bg-card border border-border text-muted-foreground hover:text-foreground transition-colors shrink-0" aria-label="Edit role">
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
-                      <button onClick={() => onToggleRoleStatus(r)} className="text-muted-foreground hover:text-warning shrink-0" aria-label="Toggle status" title={r.status === "active" ? "Disable" : "Enable"}>
-                        {r.status === "active" ? <Trash2 className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+                      <button onClick={() => onToggleRoleStatus(r)} className="w-7 h-7 rounded-full flex items-center justify-center bg-card border border-border text-muted-foreground hover:text-warning transition-colors shrink-0" aria-label="Toggle status" title={r.status === "active" ? "Disable" : "Enable"}>
+                        <Power className="w-3.5 h-3.5" />
+                      </button>
+                      <button onClick={() => onDeleteRole(r)} className="w-7 h-7 rounded-full flex items-center justify-center bg-card border border-border text-muted-foreground hover:text-destructive transition-colors shrink-0" aria-label="Delete role">
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   ))
@@ -108,13 +112,13 @@ export default function PreferencesSections({
                       {workspace?.gst_enabled && Number(s.gst_rate) > 0 && (
                         <span className="text-[10px] text-muted-foreground whitespace-nowrap hidden sm:inline">GST {s.gst_rate}%</span>
                       )}
-                      <button onClick={() => onOpenEditService(s)} className="text-muted-foreground hover:text-foreground shrink-0" aria-label="Edit service">
+                      <button onClick={() => onOpenEditService(s)} className="w-7 h-7 rounded-full flex items-center justify-center bg-card border border-border text-muted-foreground hover:text-foreground transition-colors shrink-0" aria-label="Edit service">
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
-                      <button onClick={() => onToggleServiceStatus(s)} className="text-muted-foreground hover:text-warning shrink-0" aria-label="Toggle status" title={s.status === "active" ? "Disable" : "Enable"}>
+                      <button onClick={() => onToggleServiceStatus(s)} className="w-7 h-7 rounded-full flex items-center justify-center bg-card border border-border text-muted-foreground hover:text-warning transition-colors shrink-0" aria-label="Toggle status" title={s.status === "active" ? "Disable" : "Enable"}>
                         <Power className="w-3.5 h-3.5" />
                       </button>
-                      <button onClick={() => onDeleteService(s)} className="text-muted-foreground hover:text-destructive shrink-0" aria-label="Delete service">
+                      <button onClick={() => onDeleteService(s)} className="w-7 h-7 rounded-full flex items-center justify-center bg-card border border-border text-muted-foreground hover:text-destructive transition-colors shrink-0" aria-label="Delete service">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
@@ -186,7 +190,7 @@ export default function PreferencesSections({
         <SectionBlock icon={Download} title="Data Export">
           <Card title="Export">
             <Field label="Financial year" className="mb-3">
-              <Select value={selectedFY?.id || ""} onChange={(e) => selectFY(e.target.value)}>
+              <Select value={selectedFY?.id || ""} onChange={(e) => selectFY(e.target.value)} className="w-full">
                 {fiscalYears.map((f) => (
                   <option key={f.id} value={f.id}>{f.label}</option>
                 ))}

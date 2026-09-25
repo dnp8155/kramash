@@ -15,7 +15,7 @@ export default function QuotationPreview() {
 
   return (
     <BrowserFrame url="www.kramasha.com/quotation">
-      <MockSidebar active="Quotations" />
+      <MockSidebar active="Quotation & Agreement" />
       <div className="flex-1 p-6 overflow-hidden bg-[#F5F3EF]">
         <div className="flex items-center justify-between mb-5">
           <div>

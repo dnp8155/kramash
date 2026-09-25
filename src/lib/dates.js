@@ -23,9 +23,13 @@ export function todayISO() {
   return toISODate(new Date());
 }
 
+function pad(n) {
+  return String(n).padStart(2, "0");
+}
+
 // Format a single date: "26 Aug 2026"
 function formatSingle(date) {
-  return `${date.getDate()} ${MONTHS[date.getMonth()]} ${date.getFullYear()}`;
+  return `${pad(date.getDate())} ${MONTHS[date.getMonth()]} ${date.getFullYear()}`;
 }
 
 // General-purpose date list formatter — takes an array of "YYYY-MM-DD" strings
@@ -53,11 +57,36 @@ export function formatDatesList(datesArray) {
     }
   }
   const parts = groups.map((g) => {
-    const daysStr = g.days.join(", ");
+    const daysStr = g.days.map(pad).join(", ");
     const monthYear = sameYear ? MONTHS[g.month] : `${MONTHS[g.month]} ${g.year}`;
     return `${daysStr} ${monthYear}`;
   });
   return parts.join(", ") + (sameYear ? ` ${first.getFullYear()}` : "");
+}
+
+// Group an array of "YYYY-MM-DD" strings into per-month chip labels:
+//   ["2026-04-04", "2026-04-05", "2026-04-06"] → [{ label: "04, 05, 06 Apr 2026", count: 3 }]
+//   ["2026-04-04", "2026-05-12"]                → [{ label: "04 Apr 2026", count: 1 }, { label: "12 May 2026", count: 1 }]
+// Unlike formatDatesList (one joined string), each group is returned separately
+// so callers can render one chip per group.
+export function formatDateGroups(datesArray) {
+  if (!Array.isArray(datesArray) || datesArray.length === 0) return [];
+  const parsed = datesArray.map(parseISODate).filter(Boolean).sort((a, b) => a - b);
+  if (parsed.length === 0) return [];
+  const groups = [];
+  for (const d of parsed) {
+    const key = `${d.getFullYear()}-${d.getMonth()}`;
+    const last = groups[groups.length - 1];
+    if (last && last.key === key) {
+      last.days.push(d.getDate());
+    } else {
+      groups.push({ key, year: d.getFullYear(), month: d.getMonth(), days: [d.getDate()] });
+    }
+  }
+  return groups.map((g) => ({
+    label: `${g.days.map(pad).join(", ")} ${MONTHS[g.month]} ${g.year}`,
+    count: g.days.length
+  }));
 }
 
 // Format an event date range, matching the Kramasha style:
@@ -69,10 +98,10 @@ export function formatEventDate(startStr, endStr) {
   const end = parseISODate(endStr);
   if (!end) return formatSingle(start);
   if (start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear()) {
-    return `${start.getDate()}, ${end.getDate()} ${MONTHS[end.getMonth()]} ${end.getFullYear()}`;
+    return `${pad(start.getDate())}, ${pad(end.getDate())} ${MONTHS[end.getMonth()]} ${end.getFullYear()}`;
   }
   if (start.getFullYear() === end.getFullYear()) {
-    return `${start.getDate()} ${MONTHS[start.getMonth()]}, ${end.getDate()} ${MONTHS[end.getMonth()]} ${end.getFullYear()}`;
+    return `${pad(start.getDate())} ${MONTHS[start.getMonth()]}, ${pad(end.getDate())} ${MONTHS[end.getMonth()]} ${end.getFullYear()}`;
   }
   return `${formatSingle(start)}, ${formatSingle(end)}`;
 }
@@ -165,6 +194,18 @@ export function isPastDate(dateStr) {
   const d = parseISODate(dateStr);
   if (!d) return false;
   return toISODate(d) < todayISO();
+}
+
+// Whether every date of an event has already passed — used to disable
+// actions (like sharing team/service assignments) that are only useful
+// while the event is still upcoming or in progress.
+export function isEventFinished(event) {
+  const dates = Array.isArray(event?.event_dates) && event.event_dates.length > 0
+    ? event.event_dates
+    : [event?.end_date || event?.start_date].filter(Boolean);
+  if (dates.length === 0) return false;
+  const lastDate = [...dates].sort().slice(-1)[0];
+  return isPastDate(lastDate);
 }
 
 // India financial year: 1 April – 31 March.

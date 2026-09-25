@@ -34,19 +34,21 @@ export default function TopHeader() {
 
   return (
     <header className="flex items-center gap-2 sm:gap-3 px-3 sm:px-6 h-14 border-b border-border bg-card/80 backdrop-blur-md sticky top-0 z-20 shadow-sm safe-area-top">
-      {isMainPage ? (
-        <div className="lg:hidden flex items-center shrink-0 -ml-1">
+      {/* Fixed-size slot regardless of which control renders — keeps GlobalSearch
+          from shifting when navigating between main pages (logo) and sub-pages (back button). */}
+      <div className="lg:hidden w-8 h-8 flex items-center justify-center shrink-0 -ml-1">
+        {isMainPage ? (
           <Logo size={28} />
-        </div>
-      ) : (
-        <button
-          onClick={() => navigate(-1)}
-          className="lg:hidden w-8 h-8 rounded-full border border-border bg-card flex items-center justify-center text-foreground hover:bg-muted transition-colors shrink-0 -ml-1"
-          aria-label="Go back"
-        >
-          <ArrowLeft className="w-4 h-4" />
-        </button>
-      )}
+        ) : (
+          <button
+            onClick={() => navigate(-1)}
+            className="w-8 h-8 rounded-full border border-border bg-card flex items-center justify-center text-foreground hover:bg-muted transition-colors"
+            aria-label="Go back"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </button>
+        )}
+      </div>
 
       <div className="hidden lg:block flex-1" />
 

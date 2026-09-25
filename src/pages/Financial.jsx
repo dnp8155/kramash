@@ -19,6 +19,7 @@ import Select from "@/components/common/Select";
 import LoadingState from "@/components/common/LoadingState";
 import FinancialPageSkeleton from "@/components/financial/FinancialPageSkeleton";
 import { useToast } from "@/components/ui/use-toast";
+import { AppDialog, AppDialogContent, AppDialogHeader, AppDialogTitle, AppDialogDescription, AppDialogFooter } from "@/components/ui/AppDialog";
 import { PAYMENT_METHODS, PAYMENT_TYPES } from "@/constants/statusConfig";
 import { TRANSACTION_TYPES } from "@/constants/financeConfig";
 import {
@@ -356,7 +357,7 @@ export default function Financial() {
               variant="outline"
               size="sm"
               className="sm:ml-auto"
-              onClick={() => { if (!checkFeature("excel_csv_export_enabled", "Excel Export")) return; exportFinancialXlsx(fyTx, { eventsById, clientsById, membersById }, currency, dateRange?.label); }}
+              onClick={() => { if (!checkFeature("excel_export_enabled", "Excel Export")) return; exportFinancialXlsx(fyTx, { eventsById, clientsById, membersById }, currency, dateRange?.label); }}
               disabled={fyTx.length === 0}
             >
               <Download className="w-3.5 h-3.5" />
@@ -421,23 +422,23 @@ export default function Financial() {
           </div>
 
           {/* Filters */}
-          <div className="space-y-2">
+          <div className="flex flex-col lg:flex-row lg:items-center gap-2 lg:gap-5">
             <div className="flex items-center gap-2">
               <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide w-16">{t("Method")}</span>
-              <div className="flex gap-1 bg-muted p-1 rounded-full">
+              <div className="flex gap-1 bg-muted/60 p-1 rounded-lg">
                 {PAYMENT_METHODS.map((m) => (
                   <button
                     key={m}
                     onClick={() => setMethod(m)}
                     className={cn(
-                      "relative px-3.5 py-1 text-xs font-medium rounded-full transition-colors",
+                      "relative px-3.5 py-1 text-xs font-medium rounded-md transition-colors",
                       method === m ? "text-foreground" : "text-muted-foreground"
                     )}
                   >
                     {method === m && (
                       <motion.div
                         layoutId="financial-method-indicator"
-                        className="absolute inset-0 bg-card shadow-sm rounded-full"
+                        className="absolute inset-0 bg-card shadow-sm rounded-md"
                         transition={{ duration: DURATION_FAST, ease: EASE }}
                       />
                     )}
@@ -448,20 +449,20 @@ export default function Financial() {
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide w-16">{t("Type")}</span>
-              <div className="flex gap-1 bg-muted p-1 rounded-full">
+              <div className="flex gap-1 bg-muted/60 p-1 rounded-lg">
                 {PAYMENT_TYPES.map((pt) => (
                   <button
                     key={pt}
                     onClick={() => setType(pt)}
                     className={cn(
-                      "relative px-3.5 py-1 text-xs font-medium rounded-full transition-colors",
+                      "relative px-3.5 py-1 text-xs font-medium rounded-md transition-colors",
                       type === pt ? "text-foreground" : "text-muted-foreground"
                     )}
                   >
                     {type === pt && (
                       <motion.div
                         layoutId="financial-type-indicator"
-                        className="absolute inset-0 bg-card shadow-sm rounded-full"
+                        className="absolute inset-0 bg-card shadow-sm rounded-md"
                         transition={{ duration: DURATION_FAST, ease: EASE }}
                       />
                     )}
@@ -593,22 +594,22 @@ export default function Financial() {
       />
 
       {/* Delete FY confirmation */}
-      {deletingFY && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setDeletingFY(null)}>
-          <div className="bg-card border border-border rounded-[15px] max-w-sm w-full p-5" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-start gap-2">
-              {fyHasTransactions(deletingFY, allTx) ? (
-                <Lock className="w-5 h-5 text-destructive mt-0.5 shrink-0" />
-              ) : (
-                <Trash2 className="w-5 h-5 text-destructive mt-0.5 shrink-0" />
-              )}
-              <div>
-                <h3 className="text-sm font-semibold">
+      <AppDialog open={!!deletingFY} onOpenChange={(o) => !o && setDeletingFY(null)}>
+        <AppDialogContent maxWidth="max-w-sm">
+          {deletingFY && (
+            <>
+              <AppDialogHeader>
+                <AppDialogTitle className="flex items-center gap-2">
+                  {fyHasTransactions(deletingFY, allTx) ? (
+                    <Lock className="w-4 h-4 text-destructive shrink-0" />
+                  ) : (
+                    <Trash2 className="w-4 h-4 text-destructive shrink-0" />
+                  )}
                   {fyHasTransactions(deletingFY, allTx)
                     ? t("Cannot delete this financial year")
                     : t("Delete this financial year?")}
-                </h3>
-                <p className="text-xs text-muted-foreground mt-1">
+                </AppDialogTitle>
+                <AppDialogDescription>
                   {fyHasTransactions(deletingFY, allTx) ? (
                     <>
                       {deletingFY.label} ({deletingFY.fy_id})
@@ -622,18 +623,18 @@ export default function Financial() {
                       {t("This year has no transactions. Are you sure you want to remove it?")}
                     </>
                   )}
-                </p>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 mt-4">
-              <Button variant="outline" size="sm" onClick={() => setDeletingFY(null)}>{t("Cancel")}</Button>
-              {!fyHasTransactions(deletingFY, allTx) && (
-                <Button variant="destructive" size="sm" onClick={handleDeleteFY}>{t("Delete")}</Button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+                </AppDialogDescription>
+              </AppDialogHeader>
+              <AppDialogFooter>
+                <Button variant="outline" size="sm" onClick={() => setDeletingFY(null)}>{t("Cancel")}</Button>
+                {!fyHasTransactions(deletingFY, allTx) && (
+                  <Button variant="destructive" size="sm" onClick={handleDeleteFY}>{t("Delete")}</Button>
+                )}
+              </AppDialogFooter>
+            </>
+          )}
+        </AppDialogContent>
+      </AppDialog>
 
       {/* Void confirmation */}
       {voiding && (

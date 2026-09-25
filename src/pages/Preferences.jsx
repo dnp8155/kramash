@@ -211,6 +211,18 @@ export default function Preferences() {
       toast({ title: "Failed to update role", description: e?.message, variant: "destructive" });
     }
   };
+  const deleteRole = async (r) => {
+    if (!window.confirm(`Delete role "${r.name}"? This cannot be undone.`)) return;
+    setRoles((prev) => prev.filter((x) => x.id !== r.id));
+    try {
+      await base44.entities.TeamRole.delete(r.id);
+      toast({ title: "Role deleted" });
+      loadRolesList();
+    } catch (e) {
+      loadRolesList();
+      toast({ title: "Failed to delete role", description: e?.message, variant: "destructive" });
+    }
+  };
 
   const setT = (key) => async (v) => {
     const next = { ...toggles, [key]: v };
@@ -240,6 +252,7 @@ export default function Preferences() {
     onOpenAddRole: openAddRole,
     onOpenEditRole: openEditRole,
     onToggleRoleStatus: toggleRoleStatus,
+    onDeleteRole: deleteRole,
     onOpenAddService: openAddService,
     onOpenEditService: openEditService,
     onToggleServiceStatus: toggleServiceStatus,

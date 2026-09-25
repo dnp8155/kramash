@@ -1,4 +1,4 @@
-import { CheckCircle2, Circle, Clock, Calendar, IndianRupee, TrendingUp, AlertCircle } from "lucide-react";
+import { CheckCircle2, Circle, Clock, Activity, Calendar, IndianRupee, TrendingUp, AlertCircle } from "lucide-react";
 import { useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import Card from "@/components/common/Card";
@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 
 const STAGES = [
   { key: "upcoming", label: "Upcoming", icon: Clock },
-  { key: "in-progress", label: "In Progress", icon: Clock },
+  { key: "in-progress", label: "In Progress", icon: Activity },
   { key: "completed", label: "Completed", icon: CheckCircle2 },
   { key: "cancelled", label: "Cancelled", icon: Circle },
 ];

@@ -1,12 +1,14 @@
-import { Instagram, Globe, Youtube, ExternalLink } from "lucide-react";
+import { Link as LinkIcon, ExternalLink } from "lucide-react";
+import { getSocialIcon } from "@/lib/socialIcons";
 
 export default function QuotationSocialLinks({ socialLinks }) {
   if (!socialLinks) return null;
 
   const links = [
-    { key: "instagram", label: "Instagram", icon: Instagram, url: socialLinks.instagram },
-    { key: "website", label: "Website", icon: Globe, url: socialLinks.website },
-    { key: "youtube", label: "YouTube", icon: Youtube, url: socialLinks.youtube }
+    { key: "instagram", label: "Instagram", url: socialLinks.instagram },
+    { key: "website", label: "Website", url: socialLinks.website },
+    { key: "youtube", label: "YouTube", url: socialLinks.youtube },
+    { key: "portfolio", label: "Portfolio", url: socialLinks.portfolio }
   ].filter((l) => l.url);
 
   if (links.length === 0) return null;
@@ -16,7 +18,7 @@ export default function QuotationSocialLinks({ socialLinks }) {
       <h2 className="text-sm font-semibold text-foreground mb-3">Connect With Us</h2>
       <div className="flex flex-wrap gap-2">
         {links.map((l) => {
-          const Icon = l.icon;
+          const Icon = getSocialIcon(l.url) || LinkIcon;
           const href = l.url.startsWith("http") ? l.url : `https://${l.url}`;
           return (
             <a key={l.key} href={href} target="_blank" rel="noopener noreferrer"

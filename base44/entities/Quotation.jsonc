@@ -44,7 +44,7 @@
     "category": {
       "type": "string",
       "title": "Quotation Category",
-      "default": "PHOTOGRAPHY",
+      "default": "OTHER",
       "enum": [
         "PHOTOGRAPHY",
         "EVENT_MANAGEMENT",

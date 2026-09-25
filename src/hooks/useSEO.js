@@ -3,8 +3,8 @@ import { useEffect } from "react";
 const DEFAULT_TITLE = "Kramasha — Photography, Event & Creative Business Management Software India | Free CRM, Invoicing, Quotations";
 const DEFAULT_DESC = "Kramasha is the all-in-one business management platform for photographers, event managers, studios and creative businesses in India. Manage leads, clients, projects, teams, quotations, invoices, payments and finances — all in one place. Free plan available. GST invoicing, digital quotation signing, client portal, team scheduling, milestone billing. Built for Gujarat and India.";
 const DEFAULT_KEYWORDS = "photography business management software India, photography CRM Gujarat, event management software India, studio management software, photographer invoicing, photography quotation software, wedding photography business management, event planner software Gujarat, creative business management platform India, photography client portal, team management software photographers, payment tracking software, milestone billing software, GST invoicing software India, freelance business management, architecture project management, interior design business software, business management app for photographers, best photography CRM India, free business management software India, quotation builder software, invoice generator India, digital signature quotation, client project portal, team scheduling software, availability calendar software, financial year management, expense tracking software, lead management CRM, Kramasha, Kramasha app, Kramasha platform";
-const DEFAULT_IMAGE = "https://media.base44.com/images/public/6aa198140e2903037c880386/6965bcea4_generated_image.png";
 const BASE_URL = "https://www.kramasha.com";
+const DEFAULT_IMAGE = `${BASE_URL}/kramasha_logo_512x512.png`;
 
 function setMeta(attr, selector, content) {
   if (!content) return;

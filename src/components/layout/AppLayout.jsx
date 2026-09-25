@@ -11,6 +11,7 @@ import OfflineBanner from "@/components/common/OfflineBanner";
 import UpdateBanner from "@/components/common/UpdateBanner";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import { useDotsHidden } from "@/hooks/useDisplayPreferences";
+import { useAppLock } from "@/hooks/useAppLock";
 import { useWorkspace } from "@/lib/WorkspaceContext";
 import { generateNotifications } from "@/lib/notificationService";
 
@@ -19,6 +20,7 @@ export default function AppLayout() {
   const location = useLocation();
   const { workspaceId } = useWorkspace();
   const lastGenRef = useRef(null);
+  const { isLocked, unlock } = useAppLock();
 
   useRealtimeSync();
   useDotsHidden();
@@ -49,7 +51,7 @@ export default function AppLayout() {
         <main className="flex-1 overflow-y-auto scrollbar-thin pb-24 lg:pb-0">
           <PageTransition key={location.pathname}>
             <ErrorBoundary key={location.pathname}>
-              <AppLockGate>
+              <AppLockGate isLocked={isLocked} unlock={unlock}>
                 <Outlet />
               </AppLockGate>
             </ErrorBoundary>
@@ -57,7 +59,7 @@ export default function AppLayout() {
         </main>
       </div>
 
-      {!/^\/(events|quotation|invoices|clients|team)\/(?!new$)[^/]+(\/(edit|job-sheet))?$/.test(location.pathname) && <MobileNavigation />}
+      {!isLocked && !/^\/(events|quotation|invoices|clients|team)\/(?!new$)[^/]+(\/(edit|job-sheet))?$/.test(location.pathname) && <MobileNavigation />}
       <InstallPrompt />
     </div>
   );

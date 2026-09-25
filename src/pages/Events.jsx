@@ -14,7 +14,7 @@ import SearchInput from "@/components/common/SearchInput";
 import Select from "@/components/common/Select";
 import Button from "@/components/common/Button";
 import PageHeader from "@/components/common/PageHeader";
-import { Users, Plus, Download, CalendarCheck, Clock, CheckCircle2, CalendarDays, IndianRupee, AlertCircle } from "lucide-react";
+import { UserCheck, Plus, Download, CalendarCheck, Clock, Activity, CheckCircle2, CalendarDays, IndianRupee, AlertCircle } from "lucide-react";
 import StatCard from "@/components/common/StatCard";
 import { StaggerList, StaggerItem } from "@/components/common/StaggerList";
 import { isToday, isThisWeek, isUpcomingDate, isPastDate, isWithinFY } from "@/lib/dates";
@@ -38,8 +38,7 @@ export default function Events() {
   const { checkFeature, FeatureGateDialog } = useFeatureGate();
 
   const [query, setQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [typeFilter, setTypeFilter] = useState("all");
+  const [combinedFilter, setCombinedFilter] = useState("all");
   const [fyFilter, setFyFilter] = useState("all");
   const [fyInitialized, setFyInitialized] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -85,7 +84,7 @@ export default function Events() {
           () => base44.entities.Service.filter({ workspace_id: workspaceId }, "name", 500),
           () => base44.entities.EventTeamAssignment.filter({ workspace_id: workspaceId }, "-created_date", 1000),
           () => base44.entities.EventServiceAssignment.filter({ workspace_id: workspaceId }, "-created_date", 1000),
-          () => base44.entities.FinancialTransaction.filter({ workspace_id: workspaceId, transaction_type: "CLIENT_RECEIPT", status: "ACTIVE" }, "-transaction_date", 2000)
+          () => base44.entities.FinancialTransaction.filter({ workspace_id: workspaceId, status: "ACTIVE" }, "-transaction_date", 3000)
         ],
         { waveSize: 3, waveDelay: 200 }
       );
@@ -115,6 +114,7 @@ export default function Events() {
       // Client receipts grouped by event — powers payment-remaining display.
       const receiptsByEvent = {};
       (txList || []).forEach((t) => {
+        if (t.transaction_type !== "CLIENT_RECEIPT") return;
         if (!receiptsByEvent[t.event_id]) receiptsByEvent[t.event_id] = 0;
         receiptsByEvent[t.event_id] += Number(t.amount) || 0;
       });
@@ -130,7 +130,7 @@ export default function Events() {
         if (!serviceAssignmentsByEvent[a.event_id]) serviceAssignmentsByEvent[a.event_id] = [];
         serviceAssignmentsByEvent[a.event_id].push(a);
       });
-      return { events: evList || [], clients: map, teamMap, serviceMap, assignmentsByEvent, receiptsByEvent, addonsByEvent, serviceAssignmentsByEvent, partialError };
+      return { events: evList || [], clients: map, teamMap, serviceMap, assignmentsByEvent, receiptsByEvent, addonsByEvent, serviceAssignmentsByEvent, transactions: txList || [], partialError };
     },
     enabled: !!workspaceId,
     placeholderData: (prev) => prev
@@ -143,6 +143,7 @@ export default function Events() {
   const receiptsByEvent = data?.receiptsByEvent || {};
   const addonsByEvent = data?.addonsByEvent || {};
   const serviceAssignmentsByEvent = data?.serviceAssignmentsByEvent || {};
+  const transactions = data?.transactions || [];
   const partialError = data?.partialError;
   const currency = workspace?.currency || "INR";
   const invalidate = () => {
@@ -159,24 +160,20 @@ export default function Events() {
     const q = query.trim().toLowerCase();
     return events.filter((e) => {
       if (fyFilter && fyFilter !== "all" && !isWithinFY(e.start_date, fyFilter)) return false;
-      switch (statusFilter) {
-        case "today": if (!isToday(e.start_date)) return false; break;
-        case "week": if (!isThisWeek(e.start_date)) return false; break;
-        case "upcoming": if (!(isUpcomingDate(e.start_date) && e.status !== "completed" && e.status !== "cancelled")) return false; break;
-        case "past": if (!(isPastDate(e.start_date) || e.status === "completed")) return false; break;
-        case "completed": if (e.status !== "completed") return false; break;
-        case "in-progress": if (e.status !== "in-progress") return false; break;
-        case "cancelled": if (e.status !== "cancelled") return false; break;
-        default: break;
-      }
-      switch (typeFilter) {
-        case "all": break;
-        case "upcoming": if (!(isUpcomingDate(e.start_date) && e.status !== "completed" && e.status !== "cancelled")) return false; break;
-        case "previous": if (!(isPastDate(e.start_date) || e.status === "completed")) return false; break;
-        default:
-          // event-type match (case-insensitive)
-          if (e.event_type?.toLowerCase() !== typeFilter.toLowerCase()) return false;
-          break;
+      if (combinedFilter.startsWith("type:")) {
+        const et = combinedFilter.slice(5);
+        if (e.event_type?.toLowerCase() !== et.toLowerCase()) return false;
+      } else {
+        switch (combinedFilter) {
+          case "today": if (!isToday(e.start_date)) return false; break;
+          case "week": if (!isThisWeek(e.start_date)) return false; break;
+          case "upcoming": if (!(isUpcomingDate(e.start_date) && e.status !== "completed" && e.status !== "cancelled")) return false; break;
+          case "past": if (!(isPastDate(e.start_date) || e.status === "completed")) return false; break;
+          case "completed": if (e.status !== "completed") return false; break;
+          case "in-progress": if (e.status !== "in-progress") return false; break;
+          case "cancelled": if (e.status !== "cancelled") return false; break;
+          default: break;
+        }
       }
       if (q) {
         const hay = `${e.title} ${e.event_type} ${e.venue || ""} ${clientName(e.client_id)}`.toLowerCase();
@@ -184,7 +181,7 @@ export default function Events() {
       }
       return true;
     });
-  }, [events, query, statusFilter, typeFilter, fyFilter, clients]);
+  }, [events, query, combinedFilter, fyFilter, clients]);
 
   const openEvent = (e) => navigate(`/events/${e.id}`);
   const openNew = () => navigate("/events/new");
@@ -207,6 +204,19 @@ export default function Events() {
   const upcomingCount = events.filter((e) => isUpcomingDate(e.start_date) && e.status !== "completed" && e.status !== "cancelled").length;
   const completedCount = events.filter((e) => e.status === "completed").length;
   const inProgressCount = events.filter((e) => e.status === "in-progress").length;
+  const todayCount = events.filter((e) => isToday(e.start_date)).length;
+  const weekCount = events.filter((e) => isThisWeek(e.start_date)).length;
+  const pastCount = events.filter((e) => isPastDate(e.start_date) || e.status === "completed").length;
+  const cancelledCount = events.filter((e) => e.status === "cancelled").length;
+  const typeCounts = useMemo(() => {
+    const counts = {};
+    for (const e of events) {
+      if (!e.event_type) continue;
+      const key = e.event_type.toLowerCase();
+      counts[key] = (counts[key] || 0) + 1;
+    }
+    return counts;
+  }, [events]);
 
   if (isLoading) return <EventsPageSkeleton />;
 
@@ -223,7 +233,7 @@ export default function Events() {
     <div className="p-4 sm:p-6 space-y-4">
       <PageHeader eyebrow="Schedule" title={term.workItemPlural} subtitle={`Manage your bookings, schedule, and ${term.workItemSingular.toLowerCase()} details.`}>
         <Button variant="outline" onClick={() => navigate("/team")}>
-          <Users className="w-4 h-4" />
+          <UserCheck className="w-4 h-4" />
           <span>{term.teamLabel}</span>
         </Button>
         <Button onClick={openNew}>
@@ -236,7 +246,7 @@ export default function Events() {
       <StaggerList className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <StaggerItem><StatCard label={term.totalWorkLabel} value={events.length} icon={CalendarDays} tone="primary" /></StaggerItem>
         <StaggerItem><StatCard label={term.activeWorkLabel} value={upcomingCount} icon={Clock} tone="info" /></StaggerItem>
-        <StaggerItem><StatCard label={t("In Progress")} value={inProgressCount} icon={Clock} tone="warning" /></StaggerItem>
+        <StaggerItem><StatCard label={t("In Progress")} value={inProgressCount} icon={Activity} tone="warning" /></StaggerItem>
         <StaggerItem><StatCard label={term.completedWorkLabel} value={completedCount} icon={CheckCircle2} tone="success" /></StaggerItem>
       </StaggerList>
 
@@ -252,23 +262,24 @@ export default function Events() {
           onChange={(e) => setQuery(e.target.value)}
         />
         <div className="flex items-center gap-2 sm:ml-auto flex-wrap">
-          <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="flex-1 min-w-[110px] sm:flex-none">
+          <Select value={combinedFilter} onChange={(e) => setCombinedFilter(e.target.value)} className="flex-1 min-w-[160px] sm:flex-none">
             <option value="all">All {term.workItemPlural} ({events.length})</option>
-            <option value="today">{t("Today")}</option>
-            <option value="week">{t("This Week")}</option>
-            <option value="upcoming">{t("Upcoming")}</option>
-            <option value="past">{t("Past")}</option>
-            <option value="completed">{t("Completed")}</option>
-            <option value="in-progress">{t("In Progress")}</option>
-            <option value="cancelled">{t("Cancelled")}</option>
-          </Select>
-          <Select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="flex-1 min-w-[110px] sm:flex-none">
-            <option value="all">All Types</option>
-            <option value="upcoming">{t("Upcoming")}</option>
-            <option value="previous">{t("Previous/Past")}</option>
-            {eventTypeOptions.map((et) => (
-              <option key={et} value={et}>{et}</option>
-            ))}
+            <optgroup label={t("Sort")}>
+              <option value="today">{t("Today")} ({todayCount})</option>
+              <option value="week">{t("This Week")} ({weekCount})</option>
+              <option value="upcoming">{t("Upcoming")} ({upcomingCount})</option>
+              <option value="past">{t("Past")} ({pastCount})</option>
+              <option value="completed">{t("Completed")} ({completedCount})</option>
+              <option value="in-progress">{t("In Progress")} ({inProgressCount})</option>
+              <option value="cancelled">{t("Cancelled")} ({cancelledCount})</option>
+            </optgroup>
+            {eventTypeOptions.length > 0 && (
+              <optgroup label={t("Filter")}>
+                {eventTypeOptions.map((et) => (
+                  <option key={et} value={`type:${et}`}>{et} ({typeCounts[et.toLowerCase()] || 0})</option>
+                ))}
+              </optgroup>
+            )}
           </Select>
           <Select value={fyFilter} onChange={(e) => setFyFilter(e.target.value)} className="flex-1 min-w-[110px] sm:flex-none">
             <option value="all">{t("All Years")}</option>
@@ -284,8 +295,14 @@ export default function Events() {
             aria-label="Export"
             className="shrink-0"
             onClick={() => {
-              if (!checkFeature("excel_csv_export_enabled", "Excel Export")) return;
-              exportEventsXlsx(filtered, clients, fyFilter !== "all" ? fyFilter : null, term, receiptsByEvent, addonsByEvent);
+              if (!checkFeature("excel_export_enabled", "Excel Export")) return;
+              exportEventsXlsx(filtered, clients, fyFilter !== "all" ? fyFilter : null, term, {
+                teamMap,
+                serviceMap,
+                assignmentsByEvent,
+                serviceAssignmentsByEvent,
+                transactions
+              });
             }}
             disabled={filtered.length === 0}
           >

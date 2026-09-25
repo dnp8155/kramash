@@ -12,16 +12,22 @@ export default function MilestoneTemplateManager() {
   const { workspace, setWorkspace } = useWorkspace();
   const { toast } = useToast();
   const [templates, setTemplates] = useState([]);
+  const [savedTemplates, setSavedTemplates] = useState([]);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     try {
       const parsed = workspace?.display_preferences ? JSON.parse(workspace.display_preferences) : {};
-      setTemplates(parsed.milestoneTemplates || []);
+      const initial = parsed.milestoneTemplates || [];
+      setTemplates(initial);
+      setSavedTemplates(initial);
     } catch {
       setTemplates([]);
+      setSavedTemplates([]);
     }
   }, [workspace]);
+
+  const dirty = JSON.stringify(templates) !== JSON.stringify(savedTemplates);
 
   const addTemplate = () => {
     setTemplates([...templates, {
@@ -73,6 +79,7 @@ export default function MilestoneTemplateManager() {
       const updated = { ...existing, milestoneTemplates: templates };
       await base44.entities.Workspace.update(workspace.id, { display_preferences: JSON.stringify(updated) });
       setWorkspace((w) => ({ ...w, display_preferences: JSON.stringify(updated) }));
+      setSavedTemplates(templates);
       toast({ title: "Milestone templates saved" });
     } catch (e) {
       toast({ title: "Save failed", description: e?.message, variant: "destructive" });
@@ -163,7 +170,7 @@ export default function MilestoneTemplateManager() {
         <Button variant="outline" size="sm" onClick={addTemplate}>
           <Plus className="w-3.5 h-3.5" /> Add Template
         </Button>
-        <Button size="sm" onClick={save} disabled={saving}>
+        <Button size="sm" variant={dirty ? "primary" : "outline"} onClick={save} disabled={saving || !dirty}>
           {saving ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />Saving…</> : <><Save className="w-3.5 h-3.5" />Save</>}
         </Button>
       </div>

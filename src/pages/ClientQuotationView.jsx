@@ -231,6 +231,9 @@ export default function ClientQuotationView() {
   const client = parseSnapshot(q.client_snapshot);
   const business = parseSnapshot(q.business_snapshot);
   const event = parseSnapshot(q.event_snapshot);
+  const templateConfig = parseSnapshot(q.template_config) || {};
+  const paymentMethod = templateConfig.payment?.method || "";
+  const paymentInstructions = templateConfig.payment?.instructions || "";
   const currency = q.currency || "INR";
   const expired = q.expired || (q.valid_until && new Date(q.valid_until + "T00:00:00") < new Date());
 
@@ -252,7 +255,7 @@ export default function ClientQuotationView() {
         <QuotationHeaderBlock quotation={q} client={client} business={business} event={event} />
 
         {/* Items */}
-        <QuotationItemsTable items={items} showPricing={q.show_pricing} currency={currency} />
+        <QuotationItemsTable items={items} showPricing={q.show_pricing} currency={currency} hideTeamNames={q.hide_team_names} />
 
         {/* Totals */}
         <div className="bg-card border border-border rounded-xl p-5">
@@ -262,17 +265,33 @@ export default function ClientQuotationView() {
         {/* Milestones */}
         <QuotationMilestones milestones={q.milestones} grandTotal={q.grand_total} currency={currency} />
 
+        {/* Payment method */}
+        {(paymentMethod || paymentInstructions) && (
+          <div className="bg-card border border-border rounded-xl p-5">
+            <h2 className="text-sm font-semibold text-foreground mb-2">Payment Method</h2>
+            {paymentMethod && <p className="text-sm text-foreground">{paymentMethod}</p>}
+            {paymentInstructions && <p className="text-sm text-muted-foreground mt-1">{paymentInstructions}</p>}
+          </div>
+        )}
+
         {/* Bank details */}
-        <QuotationBankDetails bankDetails={q.bank_details} />
+        {q.visibility?.bank?.link !== false && <QuotationBankDetails bankDetails={q.bank_details} />}
 
         {/* Social links */}
-        <QuotationSocialLinks socialLinks={q.social_links} />
+        {q.visibility?.social?.link !== false && <QuotationSocialLinks socialLinks={q.social_links} />}
 
         {/* Terms */}
-        <QuotationTerms terms={q.terms_and_conditions} specialNotes={q.special_notes} />
+        <QuotationTerms
+          terms={q.terms_and_conditions}
+          specialNotes={q.special_notes}
+          paymentConditions={q.payment_conditions}
+          showTerms={q.visibility?.terms?.link !== false}
+          showSpecialNotes={q.visibility?.special_notes?.link !== false}
+          showPaymentConditions={q.visibility?.payment_conditions?.link !== false}
+        />
 
         {/* Footer message */}
-        {q.footer_message && (
+        {q.footer_message && q.visibility?.footer?.link !== false && (
           <div className="text-center text-sm text-muted-foreground py-2">{q.footer_message}</div>
         )}
 

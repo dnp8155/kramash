@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Globe } from "lucide-react";
+import { Globe, ChevronDown } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
 import Button from "@/components/common/Button";
@@ -43,10 +43,11 @@ export default function LanguageSection() {
       <p className="text-xs text-muted-foreground">Choose your preferred language for the app interface.</p>
       <div className="flex items-center gap-2">
         <div className="relative flex-1">
-          <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-          <Select value={selected} onChange={(e) => setSelected(e.target.value)} className="w-full pl-10">
+          <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none z-10" />
+          <Select value={selected} onChange={(e) => setSelected(e.target.value)} className="w-full pl-10 pr-8 appearance-none">
             {LANGUAGES.map((l) => (<option key={l.code} value={l.code}>{l.label}</option>))}
           </Select>
+          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
         </div>
         <Button size="md" onClick={handleSave} disabled={!hasChange || saving}>
           {saving ? "Saving…" : "Save"}

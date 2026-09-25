@@ -71,14 +71,14 @@ export default function EventTypeManager({ workspace }) {
     <div className="space-y-3">
       <div className="flex flex-wrap gap-2">
         {types.map((t) => (
-          <div key={t} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-muted text-sm text-foreground border border-border">
+          <div key={t} className="inline-flex items-center gap-1.5 pl-3 pr-1.5 py-1.5 rounded-full bg-muted text-sm text-foreground border border-border">
             <span>{t}</span>
             <button
               onClick={() => removeType(t)}
-              className="text-muted-foreground hover:text-destructive transition-colors"
+              className="w-5 h-5 rounded-full flex items-center justify-center bg-card border border-border text-muted-foreground hover:text-destructive transition-colors"
               aria-label={`Remove ${t}`}
             >
-              <Trash2 className="w-3 h-3" />
+              <Trash2 className="w-2.5 h-2.5" />
             </button>
           </div>
         ))}

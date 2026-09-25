@@ -18,18 +18,12 @@ export default function CTA() {
               <p className="mt-4 text-[#888] max-w-xl mx-auto text-base">
                 Bring clients, events, teams, quotations, payments and finances into one connected workspace.
               </p>
-              <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
+              <div className="mt-8 flex justify-center">
                 <Link
                   to="/register"
                   className="final_cta_start h-12 px-8 inline-flex items-center justify-center gap-2 text-sm font-semibold bg-[#C8A95E] text-white hover:bg-[#D4B876] rounded-full transition-all"
                 >
                   Start Free Today <ArrowRight className="w-4 h-4" />
-                </Link>
-                <Link
-                  to="/register"
-                  className="h-12 px-8 inline-flex items-center justify-center text-sm font-medium border border-[#2A2A2A] text-white hover:bg-[#1C1C1C] rounded-full transition-colors"
-                >
-                  Book a Demo
                 </Link>
               </div>
             </div>

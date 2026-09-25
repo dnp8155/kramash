@@ -173,10 +173,10 @@ export default function YourPlan() {
           <table className="w-full text-sm">
             <thead><tr className="text-left text-muted-foreground"><th className="py-1.5 font-medium">Feature</th><th className="py-1.5 font-medium text-center">Free</th><th className="py-1.5 font-medium text-center">Pro</th></tr></thead>
             <tbody>
-              <CompareRow label={term.workItemPlural} free="Up to 5" pro="Unlimited" />
-              <CompareRow label="Team Members" free="Up to 3" pro="Up to 50" />
-              <CompareRow label="Services" free="Up to 5" pro="Unlimited" />
-              <CompareRow label="Leads" free="Up to 50" pro="Unlimited" />
+              <CompareRow label={term.workItemPlural} free={plan?.limits?.max_events} pro="Unlimited" />
+              <CompareRow label="Team Members" free={plan?.limits?.max_team_members} pro="Up to 50" />
+              <CompareRow label="Services" free={plan?.limits?.max_services} pro="Unlimited" />
+              <CompareRow label="Leads" free={plan?.limits?.max_leads} pro="Unlimited" />
               <CompareRow label="Quotations & Invoices" free={true} pro={true} />
               <CompareRow label="Reminders" free={true} pro={true} />
               <CompareRow label="Public Profile URL" free={true} pro={true} />

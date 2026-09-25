@@ -5,7 +5,7 @@ import Button from "@/components/common/Button";
 import { useFeatureGate } from "@/components/common/ProGate";
 import { enableTeamPortalAccess, updateTeamPortalPassword } from "@/lib/clientEdgeFunctions";
 import { useToast } from "@/components/ui/use-toast";
-import { KeyRound, Link2, Copy, CheckCircle2, RefreshCw, Loader2, Lock, Eye, EyeOff, Power } from "lucide-react";
+import { KeyRound, Link2, Copy, CheckCircle2, RefreshCw, Loader2, Lock, Eye, EyeOff, Power, Share2 } from "lucide-react";
 
 const teamPwKey = (memberId) => `team_portal_pw_${memberId}`;
 function getStoredTeamPw(memberId) {
@@ -143,7 +143,7 @@ const TeamPortalAccessSection = forwardRef(function TeamPortalAccessSection({ me
             readOnly
             value={loginUrl || `${window.location.origin}/team-login/${member.portal_access_token || ""}`}
             onClick={(e) => e.target.select()}
-            className="flex-1 px-3 py-2 text-xs bg-muted/50 border border-border rounded-lg text-foreground font-mono"
+            className="flex-1 min-w-0 px-3 py-2 text-xs bg-muted/50 border border-border rounded-lg text-foreground font-mono"
           />
           <Button size="sm" variant="outline" onClick={() => copy(loginUrl || `${window.location.origin}/team-login/${member.portal_access_token || ""}`, "link")} className="shrink-0">
             {copiedField === "link" ? <><CheckCircle2 className="w-3.5 h-3.5 text-success" /> Copied</> : <Copy className="w-3.5 h-3.5" />}
@@ -161,7 +161,7 @@ const TeamPortalAccessSection = forwardRef(function TeamPortalAccessSection({ me
             readOnly
             value={password || "••••••••"}
             onClick={(e) => { e.target.select(); setShowPassword(true); }}
-            className="flex-1 px-3 py-2 text-xs bg-muted/50 border border-border rounded-lg text-foreground font-mono"
+            className="flex-1 min-w-0 px-3 py-2 text-xs bg-muted/50 border border-border rounded-lg text-foreground font-mono"
           />
           <Button size="sm" variant="outline" onClick={() => setShowPassword(!showPassword)} className="shrink-0">
             {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
@@ -178,6 +178,31 @@ const TeamPortalAccessSection = forwardRef(function TeamPortalAccessSection({ me
           Regenerate Password
         </Button>
       </div>
+
+      {/* Quick Share */}
+      {(loginUrl || member.portal_access_token) && password && (
+        <div className="pt-3 border-t border-border">
+          <div className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
+            <Share2 className="w-3.5 h-3.5" /> Quick Share
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              const link = loginUrl || `${window.location.origin}/team-login/${member.portal_access_token || ""}`;
+              const phone = member.phone ? `91${member.phone.replace(/\D/g, "").replace(/^91/, "")}` : "";
+              const msg = `Hi ${member.name}, here is your portal link:\n${link}\n\nPassword: ${password}`;
+              const waUrl = phone
+                ? `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`
+                : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+              window.open(waUrl, "_blank");
+            }}
+            className="w-full"
+          >
+            <Share2 className="w-3.5 h-3.5" /> WhatsApp
+          </Button>
+        </div>
+      )}
       {FeatureGateDialog}
     </div>
   );

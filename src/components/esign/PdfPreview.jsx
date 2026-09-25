@@ -8,7 +8,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
 ).href;
 
 export default function PdfPreview({
-  file, pageNumber, overlay, onOverlayChange, onRendered, onFallback
+  file, pageNumber, overlay, onOverlayChange, onRendered, onFallback, signatureDataUrl
 }) {
   const containerRef = useRef(null);
   const canvasRef = useRef(null);
@@ -98,6 +98,14 @@ export default function PdfPreview({
           style={{ left: `calc(50% - ${renderedSize.width / 2}px + ${overlay.x}px)`, top: `${overlay.y + 8}px`, width: `${overlay.width}px`, height: `${overlay.height}px` }}
           onPointerDown={(e) => onPointerDown(e, "drag")}
         >
+          {signatureDataUrl && (
+            <img
+              src={signatureDataUrl}
+              alt="Signature preview"
+              draggable={false}
+              className="absolute inset-0 w-full h-full object-contain pointer-events-none select-none"
+            />
+          )}
           <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] text-primary bg-card px-1.5 py-0.5 rounded border border-border flex items-center gap-1 whitespace-nowrap">
             <Move className="w-2.5 h-2.5" /> drag
           </div>

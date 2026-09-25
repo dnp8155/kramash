@@ -120,14 +120,6 @@ export default function AdminDashboard() {
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-5">
       {/* Header */}
-      <div>
-        <button onClick={() => window.history.back()} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-4">
-          <span className="w-8 h-8 rounded-full border border-border bg-card flex items-center justify-center">
-            <ArrowRight className="w-4 h-4 rotate-180" />
-          </span>
-          Back to App
-        </button>
-      </div>
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-xl font-bold text-foreground">Platform Dashboard</h1>

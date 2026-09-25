@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Plus, Share2, Trash2, ChevronDown, ChevronUp, Pencil, Crown, Briefcase } from "lucide-react";
 import { formatMoney } from "@/utils/format";
-import { formatEventDate } from "@/lib/dates";
+import { formatEventDate, isEventFinished } from "@/lib/dates";
 import { base44 } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";
 import { serviceAssignmentPaid, voidTransaction } from "@/lib/financeService";
@@ -53,6 +53,7 @@ export default function ServiceAssignmentCard({
     .reduce((sum, t) => sum + Number(t.amount || 0), 0);
   const clientTotal = contractValue != null ? contractValue : (Number(event?.contract_value) || 0);
   const clientFullyPaid = clientTotal > 0 && clientPaid >= clientTotal;
+  const finished = isEventFinished(event);
 
   const handleDeletePayment = async (txId) => {
     if (!confirm("Void this payment? It will be marked void and the paid amount recalculated.")) return;
@@ -104,7 +105,7 @@ export default function ServiceAssignmentCard({
       </div>
 
       <div className="grid grid-cols-2 gap-3 mb-3">
-        <div className="flex items-center justify-between sm:block">
+        <div>
           <div className="text-xs font-medium text-muted-foreground">Rate</div>
           <div className="flex items-center gap-1.5">
             <span className={cn(
@@ -116,18 +117,18 @@ export default function ServiceAssignmentCard({
             )}
           </div>
         </div>
-        <div className="flex items-center justify-between sm:block">
+        <div>
           <div className="text-xs font-medium text-muted-foreground">Total Payment</div>
           <div className="text-sm font-semibold text-success tabular-nums">{formatMoney(paid, currency)}</div>
         </div>
-        <div className="flex items-center justify-between sm:block">
+        <div>
           <div className="text-xs font-medium text-muted-foreground">Remaining Payment</div>
           <div className={cn(
             "text-sm font-semibold tabular-nums",
             isDue ? "text-warning" : "text-foreground"
           )}>{formatMoney(remaining, currency)}</div>
         </div>
-        <div className="flex items-center justify-between sm:block">
+        <div>
           <div className="text-xs font-medium text-muted-foreground">Status</div>
           <div className={cn(
             "text-sm font-semibold",
@@ -152,9 +153,16 @@ export default function ServiceAssignmentCard({
           </button>
         )}
         <button
-          onClick={() => onShare?.(assignment)}
-          className="w-8 h-8 rounded-full flex items-center justify-center bg-card border border-border text-foreground hover:bg-muted transition-colors"
+          onClick={() => !finished && onShare?.(assignment)}
+          disabled={finished}
+          className={cn(
+            "w-8 h-8 rounded-full flex items-center justify-center border transition-colors",
+            finished
+              ? "bg-muted border-border text-muted-foreground/50 cursor-not-allowed"
+              : "bg-card border-border text-foreground hover:bg-muted"
+          )}
           aria-label="Share"
+          title={finished ? "Event has ended" : "Share"}
         >
           <Share2 className="w-3.5 h-3.5" />
         </button>

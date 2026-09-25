@@ -97,7 +97,7 @@ export default function QuotationEditor() {
   const [status, setStatus] = useState("draft");
   const [items, setItems] = useState([]);
 
-  const [category, setCategory] = useState("PHOTOGRAPHY");
+  const [category, setCategory] = useState("OTHER");
   const [contextType, setContextType] = useState("");
 
   const [startDate, setStartDate] = useState(today());
@@ -120,11 +120,9 @@ export default function QuotationEditor() {
 
   const [terms, setTerms] = useState(DEFAULT_QUOTATION_TERMS);
   const [notes, setNotes] = useState("");
-  const [accessPassword, setAccessPassword] = useState("");
 
   const [templateId, setTemplateId] = useState("black_premium");
   const [templateConfig, setTemplateConfig] = useState({});
-  const [projectTitle, setProjectTitle] = useState("");
   const [projectSummary, setProjectSummary] = useState("");
 
   const [mode, setMode] = useState("day_wise");
@@ -162,7 +160,7 @@ export default function QuotationEditor() {
         const num = await generateQuotationNumber(workspaceId);
         setQuotationNumber(num);
         setGstApplicable(gstWorkspaceEnabled);
-        setCategory(mapToQuotationCategory(workspace?.business_category) || "PHOTOGRAPHY");
+        setCategory(mapToQuotationCategory(workspace?.business_category) || "OTHER");
         const estimateItems = location.state?.estimateItems;
         if (Array.isArray(estimateItems) && estimateItems.length) {
           setItems(estimateItems.map((it) => ({ ...it, id: undefined })));
@@ -175,10 +173,9 @@ export default function QuotationEditor() {
             if (qpEvent.client_id) setClientId(qpEvent.client_id);
             if (qpEvent.start_date) setStartDate(qpEvent.start_date);
             if (qpEvent.end_date) setEndDate(qpEvent.end_date);
-            if (qpEvent.title) setProjectTitle(qpEvent.title);
             if (qpEvent.description) setProjectSummary(qpEvent.description);
             const inferredCat = inferCategoryFromEventType(qpEvent.event_type);
-            setCategory(inferredCat || mapToQuotationCategory(workspace?.business_category) || "PHOTOGRAPHY");
+            setCategory(inferredCat || mapToQuotationCategory(workspace?.business_category) || "OTHER");
             if (!Array.isArray(estimateItems) || !estimateItems.length) {
               try {
                 const [teamAsgns, serviceAsgns, allMembers, allServices] = await Promise.all([
@@ -200,7 +197,8 @@ export default function QuotationEditor() {
                     item_type: "team", team_member_id: a.team_member_id,
                     team_member_name_snapshot: m?.name || "",
                     member_type: a.member_type_snapshot || "",
-                    name: a.role_name_snapshot || m?.profession || m?.name || "Team Member",
+                    name: m?.name || "Team Member",
+                    description: a.role_name_snapshot || m?.profession || "",
                     unit_rate: rate, rate_type: a.rate_type || "Per Event",
                     days, quantity: 1, line_total: rate * days
                   });
@@ -243,7 +241,7 @@ export default function QuotationEditor() {
         setEventId(q.event_id || "");
         setStatus(q.status || "draft");
         setItems(result.items || []);
-        setCategory(q.category || "PHOTOGRAPHY");
+        setCategory(q.category || mapToQuotationCategory(workspace?.business_category) || "OTHER");
         setContextType(q.context_type || "");
         setStartDate(q.start_date || "");
         setEndDate(q.end_date || "");
@@ -265,9 +263,7 @@ export default function QuotationEditor() {
           setVisibility(tc.visibility || {});
           setMode(tc.mode || "day_wise");
         } catch { setTemplateConfig({}); }
-        setProjectTitle(q.project_title || "");
         setProjectSummary(q.project_summary || "");
-        setAccessPassword(q.client_access_password || "");
         try { setMilestones(JSON.parse(q.payment_schedule_json || "[]")); } catch { setMilestones([]); }
         setBankDetails(parseSnapshot(q.bank_details_snapshot) || {});
         setSocialLinks(parseSnapshot(q.social_links_snapshot) || {});
@@ -277,7 +273,7 @@ export default function QuotationEditor() {
     } finally {
       setLoading(false);
     }
-  }, [workspaceId, id, isNew, location.state, gstWorkspaceEnabled]);
+  }, [workspaceId, id, isNew, location.state, gstWorkspaceEnabled, workspace?.business_category]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -317,6 +313,33 @@ export default function QuotationEditor() {
     } catch { /* ignore */ }
   }, [isNew, workspace?.display_preferences]);
 
+  const getWorkspaceDefaults = () => {
+    try { return JSON.parse(workspace?.display_preferences || "{}"); }
+    catch { return {}; }
+  };
+
+  const loadTermsFromWorkspace = () => {
+    const prefs = getWorkspaceDefaults();
+    if (prefs.defaultTerms) setTerms(prefs.defaultTerms);
+  };
+
+  const loadPaymentConditionsFromWorkspace = () => {
+    const prefs = getWorkspaceDefaults();
+    if (prefs.defaultPaymentConditions) setPaymentConditions(prefs.defaultPaymentConditions);
+  };
+
+  const loadPaymentMethodFromWorkspace = () => {
+    const prefs = getWorkspaceDefaults();
+    setTemplateConfig((prev) => ({
+      ...prev,
+      payment: {
+        ...(prev.payment || {}),
+        method: prefs.defaultPaymentMethod || prev.payment?.method || "",
+        instructions: prefs.defaultPaymentInstructions || prev.payment?.instructions || ""
+      }
+    }));
+  };
+
   const totals = useMemo(
     () => computeTotals(items, { discountType, discountValue, gstApplicable, gstMode }),
     [items, discountType, discountValue, gstApplicable, gstMode]
@@ -326,6 +349,7 @@ export default function QuotationEditor() {
 
   const client = clients.find((c) => c.id === clientId) || null;
   const event = events.find((e) => e.id === eventId) || null;
+  const projectTitle = event?.title || "";
   const availableEvents = clientId
     ? events.filter((e) => !e.client_id || e.client_id === clientId)
     : events;
@@ -374,8 +398,7 @@ export default function QuotationEditor() {
     template_id: templateId,
     template_config: JSON.stringify({ ...templateConfig, visibility, mode }),
     project_title: projectTitle,
-    project_summary: projectSummary,
-    client_access_password: accessPassword || ""
+    project_summary: projectSummary
   });
 
   const validate = () => {
@@ -740,9 +763,6 @@ export default function QuotationEditor() {
               {QUOTATION_TEMPLATES.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
             </Select>
           </Field>
-          <Field label="Project Title">
-            <Input value={projectTitle} onChange={(e) => setProjectTitle(e.target.value)} disabled={readOnly} placeholder="e.g. Wedding Coverage" />
-          </Field>
           <div className="sm:col-span-2">
             <Field label="Project Summary">
               <WordCounterTextarea value={projectSummary} onChange={(e) => setProjectSummary(e.target.value)} disabled={readOnly} rows={2} placeholder="Brief project scope description" />
@@ -774,7 +794,7 @@ export default function QuotationEditor() {
           items={items} setItems={setItems}
           startDate={startDate} endDate={endDate} excludedDates={excludedDates}
           teamMembers={teamMembers} roles={roles} services={services}
-          currency={currency} readOnly={readOnly}
+          currency={currency} readOnly={readOnly} workspace={workspace}
           itemErrors={fieldErrors.items || {}} mode={mode}
         />
       </div>
@@ -805,24 +825,48 @@ export default function QuotationEditor() {
       />
 
       <Section icon={FileText} title="Terms & Conditions">
-        <div className="mb-3">
+        <div className="flex items-center justify-between mb-2">
           <SectionVisibilityToggles sectionKey="terms" visibility={visibility} setVisibility={setVisibility} readOnly={readOnly} />
+          {!readOnly && (
+            <button type="button" onClick={loadTermsFromWorkspace} className="text-xs text-primary hover:underline shrink-0">
+              Load from workspace
+            </button>
+          )}
         </div>
         <RichTextEditor value={terms} onChange={setTerms} readOnly={readOnly} placeholder="Enter terms & conditions…" />
         <div className="mt-4">
           <Field label="Payment Conditions (shown on PDF)">
-            <div className="mb-2">
+            <div className="flex items-center justify-between mb-2">
               <SectionVisibilityToggles sectionKey="payment_conditions" visibility={visibility} setVisibility={setVisibility} readOnly={readOnly} />
+              {!readOnly && (
+                <button type="button" onClick={loadPaymentConditionsFromWorkspace} className="text-xs text-primary hover:underline shrink-0">
+                  Load from workspace
+                </button>
+              )}
             </div>
             <RichTextEditor value={paymentConditions} onChange={setPaymentConditions} readOnly={readOnly} placeholder="e.g. 50% advance to confirm booking. Balance due on or before event day." />
           </Field>
         </div>
+        <div className="mt-4">
+          <div className="flex items-center justify-between mb-2">
+            <label className="text-sm font-medium">Payment Method</label>
+            {!readOnly && (
+              <button type="button" onClick={loadPaymentMethodFromWorkspace} className="text-xs text-primary hover:underline shrink-0">
+                Load from workspace
+              </button>
+            )}
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field label="Payment Method">
+              <Input value={templateConfig.payment?.method || ""} onChange={(e) => setTemplateConfig((prev) => ({ ...prev, payment: { ...(prev.payment || {}), method: e.target.value } }))} disabled={readOnly} placeholder="Bank Transfer / UPI / Cheque" />
+            </Field>
+            <Field label="Payment Instructions">
+              <Input value={templateConfig.payment?.instructions || ""} onChange={(e) => setTemplateConfig((prev) => ({ ...prev, payment: { ...(prev.payment || {}), instructions: e.target.value } }))} disabled={readOnly} placeholder="Payment details will be shared upon confirmation." />
+            </Field>
+          </div>
+        </div>
         <Field label="Notes (internal)">
           <WordCounterTextarea value={notes} onChange={(e) => setNotes(e.target.value)} disabled={readOnly} rows={2} className="bg-card border border-border" />
-        </Field>
-        <Field label="Client Access Password (optional)">
-          <Input value={accessPassword} onChange={(e) => setAccessPassword(e.target.value)} disabled={readOnly} placeholder="Leave blank for public link" />
-          <p className="text-xs text-muted-foreground mt-1">If set, the client must enter their email + this password to view and sign the quotation online.</p>
         </Field>
       </Section>
 

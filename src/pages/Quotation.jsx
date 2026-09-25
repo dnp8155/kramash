@@ -200,7 +200,7 @@ export default function Quotation() {
     <div className="p-4 sm:p-6 space-y-5">
       <PageHeader eyebrow="Sales" title="Quotations" subtitle="Create, track and finalize client quotations.">
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => { if (!checkFeature("excel_csv_export_enabled", "Excel Export")) return; exportQuotationsXlsx(filtered, clientsById, eventsById); }} disabled={filtered.length === 0}>
+          <Button variant="outline" onClick={() => { if (!checkFeature("excel_export_enabled", "Excel Export")) return; exportQuotationsXlsx(filtered, clientsById, eventsById); }} disabled={filtered.length === 0}>
             <FileSpreadsheet className="w-4 h-4" /> Export
           </Button>
           <Button onClick={() => navigate("/quotation/new")}>

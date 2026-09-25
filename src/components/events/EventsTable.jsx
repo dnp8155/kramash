@@ -4,7 +4,7 @@ import StatusBadge from "@/components/common/StatusBadge";
 import EmptyState from "@/components/common/EmptyState";
 import Button from "@/components/common/Button";
 import EventsTableSkeleton from "@/components/events/EventsTableSkeleton";
-import { formatEventDates, isThisWeek, formatAssignedDates } from "@/lib/dates";
+import { formatEventDates, isThisWeek, formatAssignedDates, formatDateGroups } from "@/lib/dates";
 import { useDisplayPreferences } from "@/hooks/useDisplayPreferences";
 import { formatMoney } from "@/utils/format";
 import { parseMiscExpenses, miscExpensesTotal } from "@/components/events/EventMiscExpenseEditor";
@@ -13,16 +13,17 @@ import MemberTypeTag from "@/components/common/MemberTypeTag";
 import EventTypeBadge from "@/components/common/EventTypeBadge";
 import { cn } from "@/lib/utils";
 
-const fmtChip = (d) => {
-  try {
-    const dt = new Date(d + "T00:00:00");
-    const now = new Date();
-    const sameYear = dt.getFullYear() === now.getFullYear();
-    return dt.toLocaleDateString("en-IN", { day: "2-digit", month: "short", ...(sameYear ? {} : { year: "numeric" }) });
-  } catch {
-    return d;
+// Groups team assignments by member type (side), preserving first-seen order —
+// so the "show more" panel lists each type's tag once, followed by its members.
+function groupByMemberType(assignments) {
+  const groups = new Map();
+  for (const a of assignments) {
+    const key = a.member_type_snapshot || a.member_type_id || "__none";
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(a);
   }
-};
+  return Array.from(groups.entries());
+}
 
 function DateChips({ event, maxChips = 3 }) {
   const dates = event?.event_dates;
@@ -30,13 +31,14 @@ function DateChips({ event, maxChips = 3 }) {
     return <span className="text-sm text-muted-foreground">{formatEventDates(event)}</span>;
   }
   const sorted = [...dates].sort();
-  const visible = sorted.slice(0, maxChips);
-  const remaining = sorted.length - maxChips;
+  const groups = formatDateGroups(sorted);
+  const visible = groups.slice(0, maxChips);
+  const remaining = sorted.length - visible.reduce((sum, g) => sum + g.count, 0);
   return (
     <div className="flex flex-wrap gap-x-1.5 gap-y-0.5">
-      {visible.map((d, i) => (
-        <span key={d} className="text-[13px] text-foreground whitespace-nowrap">
-          {fmtChip(d)}{i < visible.length - 1 && <span className="text-muted-foreground">,</span>}
+      {visible.map((g, i) => (
+        <span key={g.label} className="text-[13px] text-foreground whitespace-nowrap">
+          {g.label}{i < visible.length - 1 && <span className="text-muted-foreground">,</span>}
         </span>
       ))}
       {remaining > 0 && (
@@ -191,14 +193,14 @@ function Row({ event, clientName, teamMap, serviceMap, assignmentsByEvent, servi
           <StatusBadge status={event.status} cardView />
         </div>
         <button
-          className="sm:hidden flex items-center justify-center w-11 h-11 rounded-xl border-2 border-border bg-card text-foreground hover:bg-muted transition-colors justify-self-end touch-min"
+          className="sm:hidden flex items-center justify-center w-11 h-11 rounded-full border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground transition-colors justify-self-end touch-min"
           onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}
           aria-label={open ? "Collapse" : "Expand"}
         >
-          {open ? <ChevronUp className="w-6 h-6" /> : <ChevronDown className="w-6 h-6" />}
+          {open ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
         </button>
         <button
-          className="hidden sm:block text-muted-foreground hover:text-foreground justify-self-end"
+          className="hidden sm:flex items-center justify-center w-7 h-7 rounded-full border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground transition-colors justify-self-end"
           onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}
           aria-label={open ? "Collapse" : "Expand"}
         >
@@ -239,39 +241,31 @@ function Row({ event, clientName, teamMap, serviceMap, assignmentsByEvent, servi
                 <span>{event.venue}{event.venue_address ? ` · ${event.venue_address}` : ""}</span>
               </div>
             )}
-            {prefs?.showAddressOnCards && event.description && (
-              <div className="flex items-start gap-2 text-muted-foreground">
-                <FileText className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-                <span className="line-clamp-2">{event.description}</span>
-              </div>
-            )}
-            {prefs?.showAddressOnCards && event.notes && (
-              <div className="flex items-start gap-2 text-muted-foreground">
-                <StickyNote className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-                <span className="line-clamp-2">{event.notes}</span>
-              </div>
-            )}
             {prefs?.showTeam && eventAssignments.length > 0 ? (
               <div className="flex items-start gap-2 text-muted-foreground">
                 <Users className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-                <ul className="space-y-1 min-w-0">
-                  {eventAssignments.map((a) => {
-                    const m = teamMap[a.team_member_id];
-                    const name = m?.name || "Unknown";
-                    const role = a.role_name_snapshot || m?.profession || "—";
-                    const dates = formatAssignedDates(a, event);
-                    return (
-                      <li key={a.id} className="text-xs break-anywhere flex items-center gap-1.5 flex-wrap">
-                        {(a.member_type_snapshot || a.member_type_id) && (
-                          <MemberTypeTag label={a.member_type_snapshot} typeId={a.member_type_id} cardView />
-                        )}
-                        <span className="font-medium text-foreground">{name}</span>
-                        <span className="text-muted-foreground">({role})</span>
-                        <span className="text-muted-foreground">— {dates}</span>
-                      </li>
-                    );
-                  })}
-                </ul>
+                <div className="min-w-0 space-y-1.5 flex-1">
+                  {groupByMemberType(eventAssignments).map(([typeKey, group]) => (
+                    <div key={typeKey}>
+                      <MemberTypeTag label={group[0].member_type_snapshot} typeId={group[0].member_type_id} cardView />
+                      <ul className="space-y-1 min-w-0 mt-1">
+                        {group.map((a) => {
+                          const m = teamMap[a.team_member_id];
+                          const name = m?.name || "Unknown";
+                          const role = a.role_name_snapshot || m?.profession || "—";
+                          const dates = formatAssignedDates(a, event);
+                          return (
+                            <li key={a.id} className="text-xs break-anywhere flex items-center gap-1.5 flex-wrap">
+                              <span className="font-medium text-foreground">{name}</span>
+                              <span className="text-muted-foreground">({role})</span>
+                              <span className="text-muted-foreground">— {dates}</span>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
               </div>
             ) : prefs?.showTeam && teamNames.length > 0 && (
               <div className="flex items-start gap-2 text-muted-foreground">
@@ -293,13 +287,25 @@ function Row({ event, clientName, teamMap, serviceMap, assignmentsByEvent, servi
                     const dates = formatAssignedDates(a, event);
                     return (
                       <li key={a.id} className="text-xs break-anywhere flex items-center gap-1.5 flex-wrap">
-                        <span className="font-medium text-foreground">{svcName}</span>
-                        {provider && <span className="text-muted-foreground">— {provider}</span>}
+                        {provider && <span className="font-medium text-foreground">{provider} —</span>}
+                        <span className={provider ? "text-muted-foreground" : "font-medium text-foreground"}>{svcName}</span>
                         <span className="text-muted-foreground">— {dates}</span>
                       </li>
                     );
                   })}
                 </ul>
+              </div>
+            )}
+            {prefs?.showAddressOnCards && event.description && (
+              <div className="flex items-start gap-2 text-muted-foreground">
+                <FileText className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                <span className="line-clamp-2">{event.description}</span>
+              </div>
+            )}
+            {prefs?.showAddressOnCards && event.notes && (
+              <div className="flex items-start gap-2 text-muted-foreground">
+                <StickyNote className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                <span className="line-clamp-2">{event.notes}</span>
               </div>
             )}
             {!event.venue && !event.description && !event.notes && teamNames.length === 0 && serviceNames.length === 0 && serviceAssignments.length === 0 && (

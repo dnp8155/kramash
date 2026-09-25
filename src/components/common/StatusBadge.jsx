@@ -1,4 +1,3 @@
-import { Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EVENT_STATUS } from "@/constants/statusConfig";
 import { useDisplayPreferences } from "@/hooks/useDisplayPreferences";
@@ -18,6 +17,8 @@ export default function StatusBadge({ status, className, cardView = false }) {
 
   if (cardView && !showProgressIndicators) return null;
 
+  const Icon = cfg.icon;
+
   return (
     <span
       className={cn(
@@ -26,11 +27,7 @@ export default function StatusBadge({ status, className, cardView = false }) {
         className
       )}
     >
-      {cfg.badge === "upcoming" ? (
-        <Calendar className="w-3 h-3 shrink-0" />
-      ) : (
-        <span className={cn("status-dot w-1.5 h-1.5 rounded-full shrink-0", cfg.dot)} />
-      )}
+      {Icon && <Icon className="w-3 h-3 shrink-0" />}
       {cfg.label}
     </span>
   );

@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription
-} from "@/components/ui/dialog";
+  AppDialog, AppDialogContent, AppDialogHeader, AppDialogTitle, AppDialogDescription, AppDialogBody, AppDialogFooter
+} from "@/components/ui/AppDialog";
 import Button from "@/components/common/Button";
 import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
@@ -91,78 +91,80 @@ export default function ServiceForm({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && onClose?.()}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{service ? "Edit Service" : "Add Service"}</DialogTitle>
-          <DialogDescription>
+    <AppDialog open={open} onOpenChange={(o) => !o && onClose?.()}>
+      <AppDialogContent maxWidth="max-w-md">
+        <AppDialogHeader>
+          <AppDialogTitle>{service ? "Edit Service" : "Add Service"}</AppDialogTitle>
+          <AppDialogDescription>
             {service ? "Update this service." : "Create a new service for your workspace."}
-          </DialogDescription>
-        </DialogHeader>
+          </AppDialogDescription>
+        </AppDialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-3">
-          <div className="space-y-1.5">
-            <Label>Service Name <span className="text-destructive">*</span></Label>
-            <Input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="e.g. Wedding Photography" />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label>Description</Label>
-            <Input value={form.description} onChange={(e) => set("description", e.target.value)} placeholder="Optional description" />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+          <AppDialogBody className="space-y-3">
             <div className="space-y-1.5">
-              <Label>Default Rate</Label>
-              <Input
-                type="number"
-                min="0"
-                value={form.default_rate}
-                onChange={(e) => set("default_rate", e.target.value)}
-                placeholder="0"
-              />
+              <Label>Service Name <span className="text-destructive">*</span></Label>
+              <Input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="e.g. Wedding Photography" />
             </div>
-            <div className="space-y-1.5">
-              <Label>Rate Type</Label>
-              <Select value={form.rate_type} onChange={(e) => set("rate_type", e.target.value)} className="w-full">
-                {SERVICE_RATE_TYPES.map((r) => <option key={r} value={r}>{r}</option>)}
-              </Select>
-            </div>
-          </div>
 
-          {gstEnabled && (
+            <div className="space-y-1.5">
+              <Label>Description</Label>
+              <Input value={form.description} onChange={(e) => set("description", e.target.value)} placeholder="Optional description" />
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label>GST Rate (%)</Label>
-                <Select value={form.gst_rate} onChange={(e) => set("gst_rate", Number(e.target.value))} className="w-full">
-                  {GST_RATE_OPTIONS.map((r) => <option key={r} value={r}>{r}%</option>)}
-                </Select>
+                <Label>Default Rate</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={form.default_rate}
+                  onChange={(e) => set("default_rate", e.target.value)}
+                  placeholder="0"
+                />
               </div>
               <div className="space-y-1.5">
-                <Label>SAC Code</Label>
-                <Input value={form.sac_code} onChange={(e) => set("sac_code", e.target.value)} placeholder="Optional" />
+                <Label>Rate Type</Label>
+                <Select value={form.rate_type} onChange={(e) => set("rate_type", e.target.value)} className="w-full">
+                  {SERVICE_RATE_TYPES.map((r) => <option key={r} value={r}>{r}</option>)}
+                </Select>
               </div>
             </div>
-          )}
 
-          <div className="space-y-1.5">
-            <Label>Status</Label>
-            <Select value={form.status} onChange={(e) => set("status", e.target.value)} className="w-full">
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </Select>
-          </div>
+            {gstEnabled && (
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label>GST Rate (%)</Label>
+                  <Select value={form.gst_rate} onChange={(e) => set("gst_rate", Number(e.target.value))} className="w-full">
+                    {GST_RATE_OPTIONS.map((r) => <option key={r} value={r}>{r}%</option>)}
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>SAC Code</Label>
+                  <Input value={form.sac_code} onChange={(e) => set("sac_code", e.target.value)} placeholder="Optional" />
+                </div>
+              </div>
+            )}
 
-          {error && <p className="text-sm text-destructive">{error}</p>}
+            <div className="space-y-1.5">
+              <Label>Status</Label>
+              <Select value={form.status} onChange={(e) => set("status", e.target.value)} className="w-full">
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </Select>
+            </div>
 
-          <DialogFooter className="pt-2">
+            {error && <p className="text-sm text-destructive">{error}</p>}
+          </AppDialogBody>
+
+          <AppDialogFooter>
             <Button type="button" variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
             <Button type="submit" disabled={saving}>
               {saving ? "Saving…" : service ? "Save Changes" : "Add Service"}
             </Button>
-          </DialogFooter>
+          </AppDialogFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </AppDialogContent>
+    </AppDialog>
   );
 }

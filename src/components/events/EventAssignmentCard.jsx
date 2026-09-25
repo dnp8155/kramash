@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Plus, Share2, Trash2, ChevronDown, ChevronUp, Pencil, Crown } from "lucide-react";
 import { formatMoney } from "@/utils/format";
-import { formatEventDate } from "@/lib/dates";
+import { formatEventDate, isEventFinished } from "@/lib/dates";
 import { base44 } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";
 import MemberTypeTag from "@/components/common/MemberTypeTag";
@@ -55,6 +55,7 @@ export default function EventAssignmentCard({
   const memberStart = assignment.booking_start_date || event?.start_date;
   const memberEnd = assignment.booking_end_date || event?.end_date || memberStart;
   const datesLabel = memberStart ? formatEventDate(memberStart, memberEnd) : "—";
+  const finished = isEventFinished(event);
 
   const handleDeletePayment = async (txId) => {
     if (!confirm("Void this payment? It will be marked void and the paid amount recalculated.")) return;
@@ -105,10 +106,6 @@ export default function EventAssignmentCard({
         )}
       </div>
 
-      <div className="text-xs text-muted-foreground mb-3 sm:hidden">
-        <span className="font-medium text-foreground">{datesLabel}</span>
-      </div>
-
       <div className="grid grid-cols-2 gap-3 mb-3">
         <div>
           <div className="text-xs font-medium text-muted-foreground">Rate</div>
@@ -134,7 +131,7 @@ export default function EventAssignmentCard({
       <div className="flex items-center gap-2 mb-1 flex-wrap">
         <button
           onClick={() => onEdit?.(assignment)}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card border border-foreground text-foreground text-xs font-medium hover:bg-muted transition-colors"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card border border-border text-foreground text-xs font-medium hover:bg-muted transition-colors"
         >
           <Pencil className="w-3.5 h-3.5" /> Edit
         </button>
@@ -147,9 +144,16 @@ export default function EventAssignmentCard({
           </button>
         )}
         <button
-          onClick={() => onShare?.(assignment)}
-          className="w-8 h-8 rounded-full flex items-center justify-center bg-card border border-foreground/30 text-foreground hover:bg-muted transition-colors"
+          onClick={() => !finished && onShare?.(assignment)}
+          disabled={finished}
+          className={cn(
+            "w-8 h-8 rounded-full flex items-center justify-center border transition-colors",
+            finished
+              ? "bg-muted border-border text-muted-foreground/50 cursor-not-allowed"
+              : "bg-card border-border text-foreground hover:bg-muted"
+          )}
           aria-label="Share"
+          title={finished ? "Event has ended" : "Share"}
         >
           <Share2 className="w-3.5 h-3.5" />
         </button>

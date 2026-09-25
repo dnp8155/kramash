@@ -237,7 +237,7 @@ export default function ClientProjectPortal() {
 
   if (!data) return null;
 
-  const { project, quotation, timeline, milestones, team, services, currency, total_received, business_name, business_logo } = data;
+  const { project, quotation, timeline, milestones, team, services, currency, total_received, business_name, business_logo, client_name } = data;
 
   // ---- Project Header ----
   const subType = [categoryLabel(project.category), contextLabel(project.context_type)].filter(Boolean).join(" · ");
@@ -247,17 +247,22 @@ export default function ClientProjectPortal() {
       {/* Top bar */}
       <div className="bg-card border-b border-border safe-area-top">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 min-w-0">
             {business_logo ? (
-              <img src={business_logo} alt="" className="w-7 h-7 rounded object-cover" />
+              <img src={business_logo} alt="" className="w-7 h-7 rounded object-cover shrink-0" />
             ) : (
-              <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
+              <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center shrink-0">
                 <FileText className="w-4 h-4 text-primary-foreground" />
               </div>
             )}
-            <span className="text-sm font-semibold text-foreground">{business_name || "Project Portal"}</span>
+            <div className="min-w-0">
+              <div className="text-sm font-semibold text-foreground truncate">{business_name || "Project Portal"}</div>
+              {client_name && (
+                <div className="text-xs text-muted-foreground truncate">For {client_name}</div>
+              )}
+            </div>
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground shrink-0">
             <ShieldCheck className="w-3.5 h-3.5" />
             Secure Client Portal
           </div>

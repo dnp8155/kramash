@@ -16,6 +16,16 @@ import {
   HelpCircle, LifeBuoy, MessageSquare, Mail, Clock, CheckCircle2, AlertCircle,
   Plus, ChevronDown, ChevronUp, Send, Bug, Lightbulb, CreditCard, UserCircle, BookOpen
 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
+import { DURATION_FAST, EASE } from "@/lib/motionVariants";
+
+const HELP_TABS = [
+  { id: "help-center", label: "Help Center", icon: BookOpen },
+  { id: "contact", label: "Contact Us", icon: Send },
+  { id: "tickets", label: "My Tickets", icon: MessageSquare },
+  { id: "faq", label: "FAQs", icon: HelpCircle },
+];
 
 const categoryConfig = {
   bug: { label: "Bug Report", icon: Bug, color: "text-destructive" },
@@ -110,10 +120,21 @@ export default function Help() {
         </Card>
       </div>
 
-      <div className="flex gap-1 border-b border-border overflow-x-auto">
-        {[{ id: "help-center", label: "Help Center", icon: BookOpen }, { id: "contact", label: "Contact Us", icon: Send }, { id: "tickets", label: "My Tickets", icon: MessageSquare }, { id: "faq", label: "FAQs", icon: HelpCircle }].map((tab) => (
-          <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${activeTab === tab.id ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
-            <tab.icon className="w-4 h-4" />{t(tab.label)}
+      <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-lg w-full sm:w-auto overflow-x-auto scrollbar-thin">
+        {HELP_TABS.map((tabItem) => (
+          <button
+            key={tabItem.id}
+            onClick={() => setActiveTab(tabItem.id)}
+            className={cn(
+              "relative flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium rounded-md transition-colors whitespace-nowrap",
+              activeTab === tabItem.id ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            {activeTab === tabItem.id && (
+              <motion.div layoutId="help-tab-indicator" className="absolute inset-0 bg-card shadow-sm rounded-md" transition={{ duration: DURATION_FAST, ease: EASE }} />
+            )}
+            <tabItem.icon className="w-4 h-4 relative z-10" />
+            <span className="relative z-10">{t(tabItem.label)}</span>
           </button>
         ))}
       </div>

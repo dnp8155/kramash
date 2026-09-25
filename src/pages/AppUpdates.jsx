@@ -154,6 +154,11 @@ export default function AppUpdates() {
         <div className="bg-card border border-border rounded-lg p-4">
           <h3 className="text-sm font-semibold mb-2">Release Notes</h3>
           <ul className="space-y-2 text-sm text-muted-foreground">
+            <li>• Quotation category now correctly follows your workspace's business type instead of defaulting to Photography/Videography.</li>
+            <li>• Client project portal now shows the client's name.</li>
+            <li>• Team role and member name now display correctly and consistently on the client portal and quotation link.</li>
+            <li>• "Hide Team Names" now applies consistently everywhere and never sends the name to the browser when hidden.</li>
+            <li>• Invoices icon updated to a rupee receipt icon in the sidebar and mobile menu.</li>
             <li>• PWA install, offline shell, and update detection.</li>
             <li>• Phone OTP architecture with provider configuration support.</li>
             <li>• Subscription payment gateway (Razorpay) integration.</li>

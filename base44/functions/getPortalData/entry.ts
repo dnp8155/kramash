@@ -113,11 +113,35 @@ export default async function(req) {
     const expired = q.valid_until && new Date(q.valid_until + "T00:00:00") < today;
     const hideTeamNames = !!q.hide_team_names;
 
-    const team = filterTeamItems(items).map((it) => ({
-      role: it.name || "", name: hideTeamNames ? "" : (it.team_member_name_snapshot || ""),
-      quantity: Math.max(1, Number(it.quantity) || 1), member_type: it.member_type || "", hide: hideTeamNames
+    const rawTeamItems = filterTeamItems(items);
+    let team;
+    if (hideTeamNames) {
+      // Merge team members that share the same role into a single "N × Role" row
+      // so no individual is identifiable, matching the quotation link behavior.
+      const groups = new Map();
+      for (const it of rawTeamItems) {
+        const role = it.description || it.name || "Team Member";
+        const key = `${role}|${it.unit_rate}|${it.rate_type}|${it.member_type || ""}`;
+        const qty = Math.max(1, Number(it.quantity) || 1);
+        if (groups.has(key)) {
+          groups.get(key).quantity += qty;
+        } else {
+          groups.set(key, { role, name: "", quantity: qty, member_type: it.member_type || "", hide: true });
+        }
+      }
+      team = Array.from(groups.values());
+    } else {
+      team = rawTeamItems.map((it) => ({
+        role: it.description || it.name || "",
+        name: it.team_member_name_snapshot || "",
+        quantity: Math.max(1, Number(it.quantity) || 1), member_type: it.member_type || "", hide: false
+      }));
+    }
+    const services = filterServiceItems(items).map((it) => ({
+      name: it.name || "",
+      // Service descriptions can carry a provider's name (e.g. "Provider: X") — strip when hiding team names.
+      description: hideTeamNames ? "" : (it.description || "")
     }));
-    const services = filterServiceItems(items).map((it) => ({ name: it.name || "", description: it.description || "" }));
 
     let quotationCardState = "draft";
     if (q.status === "accepted") quotationCardState = "signed";
@@ -138,7 +162,7 @@ export default async function(req) {
       },
       timeline: { current_stage: currentStage, stages: [{ label: "Booking Confirmed", step: 1 }, { label: "Planning", step: 2 }, { label: "Event Day", step: 3 }, { label: "Delivery", step: 4 }] },
       milestones: milestoneStates, total_received: round2(totalReceived), team, services, currency, hide_team_names: hideTeamNames,
-      business_name: business?.name || "", business_logo: business?.logo || ""
+      business_name: business?.name || "", business_logo: business?.logo || "", client_name: client?.name || ""
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });

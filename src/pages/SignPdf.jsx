@@ -11,10 +11,7 @@ import TextSignatureInput from "@/components/esign/TextSignatureInput";
 import PdfPreview from "@/components/esign/PdfPreview";
 import PendingQueue from "@/components/esign/PendingQueue";
 import ExportPreviewModal from "@/components/esign/ExportPreviewModal";
-import {
-  AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogFooter,
-  AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel,
-} from "@/components/ui/alert-dialog";
+import { AppDialog, AppDialogContent, AppDialogHeader, AppDialogTitle, AppDialogDescription, AppDialogFooter } from "@/components/ui/AppDialog";
 import { useToast } from "@/components/ui/use-toast";
 import { processSignatureDataUrl, overlayToPdfRect, presetToPdfRect } from "@/lib/esignUtils";
 
@@ -175,7 +172,7 @@ export default function SignPdf() {
               ) : (
                 <div className="space-y-3">
                   <div className="flex items-center gap-2"><label className="text-xs font-medium text-muted-foreground">Page</label><Select size="sm" value={previewPage} onChange={(e) => setPreviewPage(Number(e.target.value))}>{Array.from({ length: pageCount }, (_, i) => i + 1).map((p) => (<option key={p} value={p}>Page {p}</option>))}</Select></div>
-                  <PdfPreview file={file} pageNumber={previewPage} overlay={overlay} onOverlayChange={setOverlay} onRendered={onPdfRendered} onFallback={() => setFallbackMode(true)} />
+                  <PdfPreview file={file} pageNumber={previewPage} overlay={overlay} onOverlayChange={setOverlay} onRendered={onPdfRendered} onFallback={() => setFallbackMode(true)} signatureDataUrl={currentSignature} />
                 </div>
               )}
               <div className="flex flex-col sm:flex-row gap-2">
@@ -205,15 +202,18 @@ export default function SignPdf() {
         </div>
       </div>
 
-      <AlertDialog open={showResetDialog} onOpenChange={setShowResetDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>Reset everything?</AlertDialogTitle><AlertDialogDescription>This will remove the uploaded file, all signatures, and the entire pending queue. This cannot be undone.</AlertDialogDescription></AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-full">Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => { doReset(); setShowResetDialog(false); }} className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-full"><Trash2 className="w-4 h-4" /> Reset All</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <AppDialog open={showResetDialog} onOpenChange={setShowResetDialog}>
+        <AppDialogContent maxWidth="max-w-sm">
+          <AppDialogHeader>
+            <AppDialogTitle>Reset everything?</AppDialogTitle>
+            <AppDialogDescription>This will remove the uploaded file, all signatures, and the entire pending queue. This cannot be undone.</AppDialogDescription>
+          </AppDialogHeader>
+          <AppDialogFooter>
+            <Button variant="outline" onClick={() => setShowResetDialog(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={() => { doReset(); setShowResetDialog(false); }}><Trash2 className="w-4 h-4" /> Reset All</Button>
+          </AppDialogFooter>
+        </AppDialogContent>
+      </AppDialog>
 
       {showExportModal && <ExportPreviewModal open={showExportModal} onClose={closeExportModal} blobUrl={signedBlobUrl} fileName={`signed_${file?.name || "document.pdf"}`} />}
     </div>

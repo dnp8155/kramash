@@ -50,19 +50,19 @@ export default function PortalTeamSection({ team }) {
 }
 
 function TeamMemberRow({ member }) {
+  const role = member.role || "Team Member";
   return (
     <div className="flex items-baseline gap-2 py-1.5">
       <div className="min-w-0 flex-1">
-        <div className="text-sm font-medium text-foreground">{member.role || "Team Member"}</div>
         {member.hide ? (
-          <div className="text-xs text-muted-foreground">
-            {member.quantity > 1 ? `${member.quantity}× ` : "1× "}
-            {member.role || "Assigned"}
-          </div>
+          <div className="text-sm font-medium text-foreground">{`${member.quantity || 1}× ${role}`}</div>
         ) : (
-          member.name && (
-            <div className="text-xs text-muted-foreground">{member.name}</div>
-          )
+          <>
+            <div className="text-sm font-medium text-foreground">{role}</div>
+            {member.name && (
+              <div className="text-xs text-muted-foreground">{member.name}</div>
+            )}
+          </>
         )}
       </div>
     </div>

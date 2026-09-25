@@ -19,7 +19,6 @@ import { base44 } from "@/api/base44Client";
 
 const OUT_COLOR = "#B24F3A";
 const NAVY = "#2D4F75";
-const RED = "#D9534F";
 
 export default function EventPaymentsTab({
   event,
@@ -44,6 +43,7 @@ export default function EventPaymentsTab({
   const [editingAddOn, setEditingAddOn] = useState(null);
   const [shareTx, setShareTx] = useState(null);
   const shareCardRef = useRef(null);
+  const shareBusyRef = useRef(false);
 
   const miscItems = useMemo(() => parseMiscExpenses(event?.misc_expenses_json), [event?.misc_expenses_json]);
   const miscTotal = miscExpensesTotal(miscItems);
@@ -124,6 +124,8 @@ export default function EventPaymentsTab({
   };
 
   const handleShare = async (t) => {
+    if (shareBusyRef.current) return;
+    shareBusyRef.current = true;
     setShareTx(t);
     setSharingId(t.id);
     try {
@@ -162,6 +164,7 @@ export default function EventPaymentsTab({
     } finally {
       setSharingId(null);
       setShareTx(null);
+      shareBusyRef.current = false;
     }
   };
 
@@ -185,7 +188,7 @@ export default function EventPaymentsTab({
       </div>
 
       {miscItems.length > 0 && (
-        <div className="bg-white border border-border rounded-[15px] p-4">
+        <div className="bg-card border border-border rounded-[15px] p-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Tag className="w-4 h-4 text-muted-foreground" />
@@ -227,7 +230,7 @@ export default function EventPaymentsTab({
             return (
               <div
                 key={t.id}
-                className="bg-white border border-border rounded-[15px] p-4"
+                className="bg-card border border-border rounded-[15px] p-4"
               >
                 <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
                   <div>
@@ -281,8 +284,7 @@ export default function EventPaymentsTab({
                   <button
                     onClick={() => handleHardDelete(t)}
                     disabled={deleting}
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-white hover:opacity-90 transition-opacity disabled:opacity-50"
-                    style={{ backgroundColor: RED }}
+                    className="w-8 h-8 rounded-full flex items-center justify-center bg-destructive text-destructive-foreground hover:opacity-90 transition-opacity disabled:opacity-50"
                     aria-label="Delete transaction"
                     title="Delete"
                   >

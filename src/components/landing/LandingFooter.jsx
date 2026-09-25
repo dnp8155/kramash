@@ -4,16 +4,6 @@ import Logo from "@/components/common/Logo";
 
 const SECTIONS = [
   {
-    title: "Product",
-    links: [
-      { label: "Features", to: "/#features" },
-      { label: "How It Works", to: "/#how-it-works" },
-      { label: "Industries", to: "/#industries" },
-      { label: "Pricing", to: "/#pricing" },
-      { label: "Changelog", to: "/app-updates" },
-    ],
-  },
-  {
     title: "Resources",
     links: [
       { label: "Help Center", to: "/help" },
@@ -25,8 +15,6 @@ const SECTIONS = [
     title: "Company",
     links: [
       { label: "About", to: "/about" },
-      { label: "Privacy Policy", to: "/privacy" },
-      { label: "Terms of Service", to: "/terms" },
       { label: "Sign In", to: "/login" },
       { label: "Create Account", to: "/register" },
     ],
@@ -35,9 +23,9 @@ const SECTIONS = [
 
 export default function LandingFooter() {
   return (
-    <footer className="bg-[#0A0A0A] border-t border-[#1C1C1C]">
+    <footer id="site-footer" className="bg-[#0A0A0A] border-t border-[#1C1C1C]">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 py-14">
-        <div className="grid lg:grid-cols-5 gap-10">
+        <div className="grid lg:grid-cols-4 gap-10">
           <div className="lg:col-span-2">
             <Link to="/" className="flex items-center gap-2.5 mb-4">
               <Logo size={32} />

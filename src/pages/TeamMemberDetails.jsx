@@ -3,7 +3,6 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useWorkspace } from "@/lib/WorkspaceContext";
-import { useDisplayPreferences } from "@/hooks/useDisplayPreferences";
 import Card from "@/components/common/Card";
 import Button from "@/components/common/Button";
 import StatusBadge from "@/components/common/StatusBadge";
@@ -16,18 +15,18 @@ import { TEAM_MEMBER_STATUS } from "@/constants/teamConfig";
 import { formatEventDate, isUpcomingDate, isPastDate } from "@/lib/dates";
 import { formatMoney } from "@/utils/format";
 import { assignmentPaid, memberPaidTotal, teamPaymentStatus } from "@/lib/financeService";
-import { ArrowLeft, Pencil, Phone, Mail, StickyNote, Calendar, ArrowRight, Wallet, Crown } from "lucide-react";
+import { ArrowLeft, Pencil, Phone, Mail, StickyNote, Calendar, ArrowRight, Wallet, Crown, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { invalidateEntities } from "@/lib/queryInvalidation";
 import { isSelfMember } from "@/lib/teamService";
 import { buildPersonStatements } from "@/lib/personStatementService";
 import PersonStatementCard from "@/components/team/PersonStatementCard";
 import TeamPortalAccessSection from "@/components/team/TeamPortalAccessSection";
+import PaymentDot from "@/components/common/PaymentDot";
 
 export default function TeamMemberDetails() {
   const { id } = useParams();
   const { workspaceId, workspace } = useWorkspace();
-  const { showStatusDots } = useDisplayPreferences();
   const navigate = useNavigate();
   const [showForm, setShowForm] = useState(false);
   const [payAssignment, setPayAssignment] = useState(null);
@@ -94,12 +93,21 @@ export default function TeamMemberDetails() {
 
       <Card className="p-5">
         <div className="flex items-center gap-3 flex-wrap">
-          {showStatusDots && <span className={`w-3 h-3 rounded-full ${TEAM_MEMBER_STATUS[member.status]?.dot}`} />}
+          {selfMember ? (
+            <Users className="w-4 h-4 shrink-0 text-muted-foreground" />
+          ) : (
+            <PaymentDot paid={totalPaid} agreed={totalEarnings} size="lg" />
+          )}
           <h1 className="text-xl font-semibold text-foreground flex items-center gap-1.5">
             {member.name}
-            {selfMember && <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-primary text-primary-foreground"><Crown className="w-2.5 h-2.5" /> Self</span>}
+            {selfMember && <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-primary text-primary-foreground"><Crown className="w-2.5 h-2.5" /> Self</span>}
           </h1>
-          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{TEAM_MEMBER_STATUS[member.status]?.label}</span>
+          <span className={cn(
+            "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium",
+            member.status === "active" ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"
+          )}>
+            {TEAM_MEMBER_STATUS[member.status]?.label}
+          </span>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
           <InfoRow label="Profession / Role" value={member.profession || "—"} />
@@ -152,31 +160,54 @@ function AssignmentList({ items, transactions, currency, isSelf, onOpen, onPay }
         const bkStart = a.booking_start_date || ev.start_date;
         const bkEnd = a.booking_end_date || ev.end_date || bkStart;
         return (
-          <div key={a.id} className="w-full flex items-center gap-2 sm:gap-3 py-3 hover:bg-muted/40 -mx-2 px-2 rounded">
-            <Calendar className="w-4 h-4 text-muted-foreground shrink-0" />
-            <button onClick={() => onOpen(ev)} className="min-w-0 flex-1 text-left">
-              <div className="text-sm font-medium text-foreground truncate">{ev.title}</div>
-              <div className="text-xs text-muted-foreground">{formatEventDate(bkStart, bkEnd)}{ev.venue ? ` · ${ev.venue}` : ""}{a.role_name_snapshot ? ` · ${a.role_name_snapshot}` : ""}</div>
-              <div className="text-xs text-muted-foreground sm:hidden mt-0.5">{isSelf ? `Share ${formatMoney(agreed, currency)}` : `Agreed ${formatMoney(agreed, currency)} · Paid ${formatMoney(paid, currency)}`}</div>
-            </button>
-            <div className="text-right hidden sm:block">
-              <div className="text-xs text-muted-foreground">{isSelf ? "Share" : "Agreed"} {formatMoney(agreed, currency)}</div>
-              <div className="text-xs text-muted-foreground">{isSelf ? "Owner" : "Paid"} {isSelf ? "share" : formatMoney(paid, currency)}</div>
+          <div key={a.id} className="py-3.5 hover:bg-muted/40 -mx-2 px-2 rounded space-y-2">
+            <div className="flex items-start gap-2.5">
+              <Calendar className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
+              <button onClick={() => onOpen(ev)} className="min-w-0 flex-1 text-left">
+                <div className="text-sm font-medium text-foreground truncate">{ev.title}</div>
+                <div className="text-xs text-muted-foreground truncate mt-0.5">{formatEventDate(bkStart, bkEnd)}{ev.venue ? ` · ${ev.venue}` : ""}{a.role_name_snapshot ? ` · ${a.role_name_snapshot}` : ""}</div>
+              </button>
+              <StatusBadge status={ev.status} className="shrink-0" />
+              <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0 mt-1" />
             </div>
-            <div className="text-right shrink-0">
+            <div className="flex items-center flex-wrap gap-x-4 gap-y-1.5 pl-[26px]">
+              <FieldStat label={isSelf ? "Share" : "Agreed"} value={formatMoney(agreed, currency)} />
+              {!isSelf && <FieldStat label="Paid" value={formatMoney(paid, currency)} />}
               {isSelf ? (
-                <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wide bg-primary text-primary-foreground"><Crown className="w-2.5 h-2.5" /> Self</span>
+                <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wide bg-primary text-primary-foreground">
+                  <Crown className="w-2.5 h-2.5" /> Self
+                </span>
               ) : (
-                <span className={cn("text-[10px] px-1.5 py-0.5 rounded font-medium uppercase tracking-wide", status === "Paid" ? "bg-success/10 text-success" : status === "Overpaid" ? "bg-warning/10 text-warning" : status === "Partial" ? "bg-amber-100 text-amber-700" : "bg-muted text-muted-foreground")}>{status}</span>
+                <>
+                  <FieldStat
+                    label={overpaid > 0 ? "Over" : "Remaining"}
+                    value={formatMoney(overpaid > 0 ? overpaid : remaining, currency)}
+                    tone={overpaid > 0 ? "warning" : undefined}
+                  />
+                  <span className={cn("text-[10px] px-1.5 py-0.5 rounded-full font-medium uppercase tracking-wide", status === "Paid" ? "bg-success/10 text-success" : status === "Overpaid" ? "bg-warning/10 text-warning" : status === "Partial" ? "bg-amber-100 text-amber-700" : "bg-muted text-muted-foreground")}>{status}</span>
+                  <button
+                    onClick={() => onPay(a)}
+                    className="w-7 h-7 rounded-full flex items-center justify-center bg-card border border-border text-primary hover:bg-primary/5 transition-colors ml-auto shrink-0"
+                    aria-label="Record payment"
+                    title="Record payment"
+                  >
+                    <Wallet className="w-3.5 h-3.5" />
+                  </button>
+                </>
               )}
-              {!isSelf && (overpaid > 0 ? <div className="text-xs text-warning mt-0.5">Over {formatMoney(overpaid, currency)}</div> : <div className="text-xs text-muted-foreground mt-0.5">Rem {formatMoney(remaining, currency)}</div>)}
             </div>
-            {!isSelf && <button onClick={() => onPay(a)} className="text-primary hover:text-primary-hover p-1 shrink-0" aria-label="Record payment" title="Record payment"><Wallet className="w-4 h-4" /></button>}
-            <StatusBadge status={ev.status} />
-            <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0" />
           </div>
         );
       })}
+    </div>
+  );
+}
+
+function FieldStat({ label, value, tone }) {
+  return (
+    <div className="text-xs whitespace-nowrap">
+      <span className="text-muted-foreground">{label}: </span>
+      <span className={cn("font-medium", tone === "warning" ? "text-warning" : "text-foreground")}>{value}</span>
     </div>
   );
 }

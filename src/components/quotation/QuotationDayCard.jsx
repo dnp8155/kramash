@@ -4,7 +4,7 @@ import Select from "@/components/common/Select";
 import Button from "@/components/common/Button";
 import { formatMoney } from "@/utils/format";
 import { lineTotal, formatDateChip } from "@/lib/quotationCalc";
-import { MEMBER_TYPE_OPTIONS } from "@/constants/quotationConfig";
+import { getMemberTypes } from "@/lib/memberTypeService";
 import { Trash2, Plus, Copy, Users, Package, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -12,12 +12,15 @@ export default function QuotationDayCard({
   date, phaseTitle, items,
   onUpdatePhaseTitle, onAddTeam, onAddService, onAddCustom,
   onUpdateItem, onRemoveItem, onDuplicate,
-  teamMembers, roles, services, currency, readOnly,
+  teamMembers, roles, services, currency, readOnly, workspace,
   isUncategorized, includedDates = [], itemErrors = {}
 }) {
+  const [addRoleId, setAddRoleId] = useState("");
   const [addTeamId, setAddTeamId] = useState("");
   const [addServiceId, setAddServiceId] = useState("");
   const [showDuplicate, setShowDuplicate] = useState(false);
+  const memberTypes = getMemberTypes(workspace);
+  const roleFilteredMembers = addRoleId ? teamMembers.filter((m) => m.role_id === addRoleId) : teamMembers;
 
   const teamItems = items.filter((it) => it.item_type === "team");
   const serviceItems = items.filter((it) => it.item_type === "service");
@@ -26,7 +29,8 @@ export default function QuotationDayCard({
 
   const dayTotal = items.reduce((s, it) => s + lineTotal(it), 0);
 
-  const handleAddTeam = () => { if (!addTeamId) return; onAddTeam(date, addTeamId); setAddTeamId(""); };
+  const handleAddTeam = () => { if (!addTeamId) return; onAddTeam(date, addTeamId); setAddRoleId(""); setAddTeamId(""); };
+  const handleRoleChange = (roleId) => { setAddRoleId(roleId); setAddTeamId(""); };
   const handleAddService = () => { if (!addServiceId) return; onAddService(date, addServiceId); setAddServiceId(""); };
 
   return (
@@ -82,6 +86,7 @@ export default function QuotationDayCard({
                   currency={currency}
                   readOnly={readOnly}
                   showMemberType={it.item_type === "team"}
+                  memberTypes={memberTypes}
                   hasError={!!itemErrors[it._idx]?.name}
                 />
               ))}
@@ -89,9 +94,13 @@ export default function QuotationDayCard({
           )}
           {!readOnly && (
             <div className="flex gap-2 mt-2">
-              <Select value={addTeamId} onChange={(e) => setAddTeamId(e.target.value)} className="flex-1 h-8 text-xs">
-                <option value="">— Add team member —</option>
-                {teamMembers.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+              <Select value={addRoleId} onChange={(e) => handleRoleChange(e.target.value)} className="flex-1 h-8 text-xs">
+                <option value="">— Select role —</option>
+                {roles.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+              </Select>
+              <Select value={addTeamId} onChange={(e) => setAddTeamId(e.target.value)} className="flex-1 h-8 text-xs" disabled={!addRoleId}>
+                <option value="">— Select member —</option>
+                {roleFilteredMembers.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
               </Select>
               <Button size="sm" variant="outline" onClick={handleAddTeam} disabled={!addTeamId}>
                 <Plus className="w-3 h-3" />Add
@@ -170,7 +179,7 @@ export default function QuotationDayCard({
   );
 }
 
-function ItemRow({ item, onUpdate, onRemove, currency, readOnly, showMemberType, showAddon, showDescription, hasError }) {
+function ItemRow({ item, onUpdate, onRemove, currency, readOnly, showMemberType, memberTypes = [], showAddon, showDescription, hasError }) {
   return (
     <div className={cn("bg-muted/20 border rounded-lg p-2.5 space-y-2", hasError ? "border-destructive bg-destructive/5" : "border-border/60")}>
       <div className="flex items-start gap-2">
@@ -212,7 +221,7 @@ function ItemRow({ item, onUpdate, onRemove, currency, readOnly, showMemberType,
             <span className="text-[10px] text-muted-foreground uppercase">Side</span>
             <Select value={item.member_type || ""} onChange={(e) => onUpdate("member_type", e.target.value)} disabled={readOnly} className="h-7 text-xs py-0">
               <option value="">—</option>
-              {MEMBER_TYPE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              {memberTypes.map((t) => <option key={t.id} value={t.title}>{t.title}</option>)}
             </Select>
           </div>
         )}

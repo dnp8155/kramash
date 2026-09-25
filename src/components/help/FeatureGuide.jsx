@@ -408,7 +408,7 @@ export default function FeatureGuide() {
                 const Icon = feat.icon;
                 const isOpen = openFeature === `search-${idx}`;
                 return (
-                  <Card key={`search-${idx}`} className={cn("group overflow-hidden transition-all hover:shadow-card-hover hover:-translate-y-0.5", isOpen && "sm:col-span-2 xl:col-span-3 ring-1 ring-primary/30")}>
+                  <Card key={`search-${idx}`} className={cn("group overflow-hidden transition-all", isOpen && "sm:col-span-2 xl:col-span-3 ring-1 ring-primary/30")}>
                     <button
                       onClick={() => setOpenFeature(isOpen ? null : `search-${idx}`)}
                       className="w-full flex flex-col gap-3 p-5 text-left"
@@ -502,7 +502,7 @@ export default function FeatureGuide() {
                   <Card
                     key={globalIdx}
                     className={cn(
-                      "group overflow-hidden transition-all hover:shadow-card-hover hover:-translate-y-0.5 cursor-pointer",
+                      "group overflow-hidden transition-all cursor-pointer",
                       isOpen && "sm:col-span-2 xl:col-span-3 ring-1 ring-primary/30"
                     )}
                   >

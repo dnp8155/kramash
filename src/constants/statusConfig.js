@@ -1,12 +1,14 @@
+import { Clock, Activity, CheckCircle2, PauseCircle, Circle } from "lucide-react";
+
 // Event lifecycle status configuration — labels, icons, and colors.
 // Colors are data-driven: each status has fg (foreground) and bg (background) hex values
 // so components can render dots/badges dynamically without hardcoding.
 export const EVENT_STATUS = {
-  upcoming: { label: "Upcoming", badge: "upcoming", dot: "bg-[#1e3a8a]", fg: "#1e3a8a", bg: "#dbeafe" },
-  "in-progress": { label: "In Progress", badge: "progress", dot: "bg-[#f59e0b]", fg: "#b45309", bg: "#fef3c7" },
-  completed: { label: "Completed", badge: "completed", dot: "bg-[#10b981]", fg: "#047857", bg: "#d1fae5" },
-  postponed: { label: "Postponed", badge: "postponed", dot: "bg-[#6b7280]", fg: "#4b5563", bg: "#f3f4f6" },
-  cancelled: { label: "Cancelled", badge: "cancelled", dot: "bg-[#ef4444]", fg: "#dc2626", bg: "#fee2e2" }
+  upcoming: { label: "Upcoming", badge: "upcoming", dot: "bg-[#1e3a8a]", fg: "#1e3a8a", bg: "#dbeafe", icon: Clock },
+  "in-progress": { label: "In Progress", badge: "progress", dot: "bg-[#f59e0b]", fg: "#b45309", bg: "#fef3c7", icon: Activity },
+  completed: { label: "Completed", badge: "completed", dot: "bg-[#10b981]", fg: "#047857", bg: "#d1fae5", icon: CheckCircle2 },
+  postponed: { label: "Postponed", badge: "postponed", dot: "bg-[#6b7280]", fg: "#4b5563", bg: "#f3f4f6", icon: PauseCircle },
+  cancelled: { label: "Cancelled", badge: "cancelled", dot: "bg-[#ef4444]", fg: "#dc2626", bg: "#fee2e2", icon: Circle }
 };
 
 export const EVENT_STATUS_ORDER = ["upcoming", "in-progress", "completed", "postponed", "cancelled"];

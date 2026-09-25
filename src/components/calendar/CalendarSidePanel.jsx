@@ -3,9 +3,15 @@ import { useNavigate } from "react-router-dom";
 import { CalendarClock, MapPin } from "lucide-react";
 import { formatEventDate } from "@/lib/dates";
 import { cn } from "@/lib/utils";
+import CalendarEventDetailPanel from "@/components/team/CalendarEventDetailPanel";
 
-export default function CalendarSidePanel({ events, search }) {
+export default function CalendarSidePanel({
+  events, search, selectedDate, eventsByDate = {},
+  members = [], assignments = [], serviceAssignments = [], dayAssignments = [], services = [],
+  onEventClick
+}) {
   const navigate = useNavigate();
+  const selectedEvents = selectedDate ? (eventsByDate[selectedDate] || []) : [];
 
   const upcoming = useMemo(() => {
     const today = new Date();
@@ -36,47 +42,62 @@ export default function CalendarSidePanel({ events, search }) {
   return (
     <div className="w-full lg:w-72 shrink-0">
       <div className="bg-card border border-border rounded-lg p-4 sticky top-4">
-        <div className="flex items-center gap-2 mb-3">
-          <CalendarClock className="w-4 h-4 text-primary" />
-          <h3 className="text-sm font-semibold text-foreground">Upcoming Events</h3>
-        </div>
-
-        {upcoming.length === 0 ? (
-          <p className="text-xs text-muted-foreground text-center py-6">
-            {search ? "No matching events found." : "No upcoming events."}
-          </p>
+        {selectedEvents.length > 0 ? (
+          <CalendarEventDetailPanel
+            date={selectedDate}
+            events={selectedEvents}
+            members={members}
+            assignments={assignments}
+            serviceAssignments={serviceAssignments}
+            dayAssignments={dayAssignments}
+            services={services}
+            onEventClick={onEventClick || ((ev) => navigate(`/events/${ev.id}`))}
+          />
         ) : (
-          <div className="space-y-2">
-            {upcoming.map((ev) => (
-              <button
-                key={ev.id}
-                onClick={() => navigate(`/events/${ev.id}`)}
-                className="w-full text-left p-2.5 rounded-lg border border-border hover:border-primary/40 hover:bg-muted/50 transition-colors group"
-              >
-                <div className="flex items-start gap-2">
-                  <div className="w-1 h-full min-h-[2.5rem] rounded-full bg-primary/30 shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-sm font-semibold text-foreground truncate group-hover:text-primary transition-colors">
-                      {ev.title}
-                    </div>
-                    {ev.event_type && (
-                      <div className="text-[11px] text-muted-foreground mt-0.5">{ev.event_type}</div>
-                    )}
-                    <div className="flex items-center gap-1 text-[11px] text-muted-foreground mt-1">
-                      <CalendarClock className="w-3 h-3 shrink-0" />
-                      {formatEventDate(ev.start_date, ev.end_date)}
-                    </div>
-                    {ev.venue && (
-                      <div className="flex items-center gap-1 text-[11px] text-muted-foreground mt-0.5">
-                        <MapPin className="w-3 h-3 shrink-0" />
-                        <span className="truncate">{ev.venue}</span>
+          <>
+            <div className="flex items-center gap-2 mb-3">
+              <CalendarClock className="w-4 h-4 text-primary" />
+              <h3 className="text-sm font-semibold text-foreground">Upcoming Events</h3>
+            </div>
+
+            {upcoming.length === 0 ? (
+              <p className="text-xs text-muted-foreground text-center py-6">
+                {search ? "No matching events found." : "No upcoming events."}
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {upcoming.map((ev) => (
+                  <button
+                    key={ev.id}
+                    onClick={() => navigate(`/events/${ev.id}`)}
+                    className="w-full text-left p-2.5 rounded-lg border border-border hover:border-primary/40 hover:bg-muted/50 transition-colors group"
+                  >
+                    <div className="flex items-start gap-2">
+                      <div className="w-1 h-full min-h-[2.5rem] rounded-full bg-primary/30 shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-semibold text-foreground truncate group-hover:text-primary transition-colors">
+                          {ev.title}
+                        </div>
+                        {ev.event_type && (
+                          <div className="text-[11px] text-muted-foreground mt-0.5">{ev.event_type}</div>
+                        )}
+                        <div className="flex items-center gap-1 text-[11px] text-muted-foreground mt-1">
+                          <CalendarClock className="w-3 h-3 shrink-0" />
+                          {formatEventDate(ev.start_date, ev.end_date)}
+                        </div>
+                        {ev.venue && (
+                          <div className="flex items-center gap-1 text-[11px] text-muted-foreground mt-0.5">
+                            <MapPin className="w-3 h-3 shrink-0" />
+                            <span className="truncate">{ev.venue}</span>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

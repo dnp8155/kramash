@@ -87,15 +87,6 @@ export const CONTEXT_LABEL_BY_CATEGORY = {
   OTHER: "Context"
 };
 
-// ---- Member Type / Side options (for team assignments within a day) ----
-
-export const MEMBER_TYPE_OPTIONS = [
-  { value: "bride_side", label: "Bride Side" },
-  { value: "groom_side", label: "Groom Side" },
-  { value: "common", label: "Common" },
-  { value: "other", label: "Others" }
-];
-
 // ---- Default services seeded for a new workspace. ----
 
 export const DEFAULT_SERVICES = [

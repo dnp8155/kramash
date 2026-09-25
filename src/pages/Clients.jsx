@@ -89,9 +89,9 @@ export default function Clients() {
       <PageHeader title="Clients" subtitle={`Manage your client directory and their ${term.workItemSingular.toLowerCase()} history.`}>
         <Button variant="outline" size="sm" onClick={copyPortalLink}>
           <Share2 className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">Portal Link</span>
+          <span>Portal Link</span>
         </Button>
-        <Button variant="outline" size="sm" onClick={() => { if (!checkFeature("excel_csv_export_enabled", "Excel Export")) return; exportClientsXlsx(filtered, eventCounts, term); }} disabled={filtered.length === 0}>
+        <Button variant="outline" size="sm" onClick={() => { if (!checkFeature("excel_export_enabled", "Excel Export")) return; exportClientsXlsx(filtered, eventCounts, term); }} disabled={filtered.length === 0}>
           <Download className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">{t("Export")}</span>
         </Button>
@@ -135,29 +135,27 @@ export default function Clients() {
         </div>
       ) : (
         <div className="bg-card border border-border rounded-[15px] overflow-hidden">
-          <div className="hidden sm:grid grid-cols-[1.4fr_1fr_1.4fr_1fr_80px_auto] gap-4 items-center px-4 py-2.5 border-b border-border text-xs font-medium text-muted-foreground uppercase tracking-wide">
+          <div className="hidden sm:grid grid-cols-[1.4fr_1fr_1.4fr_1fr_96px] gap-4 items-center px-4 py-2.5 border-b border-border text-xs font-medium text-muted-foreground uppercase tracking-wide">
             <span>{t("Name")}</span>
             <span>{t("Phone")}</span>
             <span>{t("Email")}</span>
             <span>{term.workItemPlural}</span>
-            <span />
-            <span />
+            <span className="text-right">{t("Actions")}</span>
           </div>
           {filtered.map((c) => (
-            <div key={c.id} className="grid grid-cols-[1fr_auto] sm:grid-cols-[1.4fr_1fr_1.4fr_1fr_80px_auto] gap-3 sm:gap-4 items-center px-4 py-3 border-b border-border last:border-0 hover:bg-muted/40 transition-colors">
+            <div key={c.id} className="grid grid-cols-[1fr_auto] sm:grid-cols-[1.4fr_1fr_1.4fr_1fr_96px] gap-3 sm:gap-4 items-center px-4 py-3 border-b border-border last:border-0 hover:bg-muted/40 transition-colors">
               <button onClick={() => navigate(`/clients/${c.id}`)} className="text-left min-w-0">
                 <div className="text-sm font-medium text-foreground truncate">{c.name}</div>
                 <div className="text-xs text-muted-foreground sm:hidden">{c.phone || c.email || "—"}</div>
               </button>
-              <span className="text-sm text-foreground hidden sm:block truncate">{c.phone || "—"}</span>
-              <span className="text-sm text-muted-foreground hidden sm:block truncate">{c.email || "—"}</span>
-              <span className="text-sm text-foreground hidden sm:block">{eventCounts[c.id] || 0}</span>
-              <span className="hidden sm:block" />
+              <span className="text-sm text-foreground hidden sm:block truncate min-w-0">{c.phone || "—"}</span>
+              <span className="text-sm text-muted-foreground hidden sm:block truncate min-w-0">{c.email || "—"}</span>
+              <span className="text-sm text-foreground hidden sm:block min-w-0">{eventCounts[c.id] || 0}</span>
               <div className="flex items-center gap-1 justify-self-end">
-                <Button variant="primary" size="icon" aria-label="View" onClick={() => navigate(`/clients/${c.id}`)}>
+                <Button variant="outline" size="icon" aria-label="View" onClick={() => navigate(`/clients/${c.id}`)}>
                   <Eye className="w-4 h-4" />
                 </Button>
-                <Button variant="primary" size="icon" aria-label="Edit" onClick={() => openEdit(c)}>
+                <Button variant="outline" size="icon" aria-label="Edit" onClick={() => openEdit(c)}>
                   <Pencil className="w-4 h-4" />
                 </Button>
               </div>
