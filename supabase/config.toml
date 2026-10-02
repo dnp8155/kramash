@@ -1,0 +1,5 @@
+project_id = "kramasha"
+
+[functions]
+# All Edge Functions deploy with --no-verify-jwt
+# Each function handles its own auth (public portals vs authenticated endpoints)

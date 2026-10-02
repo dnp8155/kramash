@@ -1,0 +1,529 @@
+
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Surfaces — warm beige canvas */
+    --background: 40 43% 97%;
+    --foreground: 220 26% 14%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 26% 14%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 26% 14%;
+
+    /* Brand / actions — deep teal */
+    --primary: 223 47% 41%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 223 47% 34%;
+    --secondary: 43 35% 94%;
+    --secondary-foreground: 220 26% 14%;
+    --muted: 43 30% 95%;
+    --muted-foreground: 218 17% 35%;
+    --accent: 223 47% 41%;
+    --accent-foreground: 0 0% 100%;
+
+    /* Sidebar — dark teal */
+    --sidebar-background: 223 35% 15%;
+    --sidebar-foreground: 43 35% 94%;
+    --sidebar-muted: 223 15% 65%;
+    --sidebar-primary: 43 35% 94%;
+    --sidebar-primary-foreground: 223 47% 41%;
+    --sidebar-border: 223 25% 22%;
+    --sidebar-hover: 223 30% 20%;
+
+    /* Status — refined, not loud */
+    --success: 152 56% 38%;
+    --success-foreground: 0 0% 100%;
+    --warning: 32 95% 44%;
+    --warning-foreground: 0 0% 100%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 40 25% 90%;
+    --input: 40 25% 90%;
+    --ring: 223 47% 41%;
+
+    /* Toggle */
+    --toggle-on: 152 56% 38%;
+
+    /* Shadows — layered, premium */
+    --shadow-xs: 0 1px 2px 0 rgb(15 23 42 / 0.04);
+    --shadow-sm: 0 1px 3px 0 rgb(15 23 42 / 0.06), 0 1px 2px -1px rgb(15 23 42 / 0.03);
+    --shadow-md: 0 6px 16px -3px rgb(15 23 42 / 0.08), 0 2px 6px -2px rgb(15 23 42 / 0.04);
+    --shadow-lg: 0 16px 40px -8px rgb(15 23 42 / 0.14), 0 4px 12px -4px rgb(15 23 42 / 0.06);
+    --shadow-xl: 0 24px 56px -12px rgb(15 23 42 / 0.18), 0 8px 20px -6px rgb(15 23 42 / 0.08);
+    --shadow-card: 0 1px 3px 0 rgb(15 23 42 / 0.03), 0 1px 2px -1px rgb(15 23 42 / 0.02);
+    --shadow-card-hover: 0 12px 32px -6px rgb(15 23 42 / 0.12), 0 4px 10px -4px rgb(15 23 42 / 0.05);
+    --shadow-glow: 0 0 0 1px rgb(34 84 222 / 0.06), 0 8px 24px -4px rgb(34 84 222 / 0.12);
+
+    /* Accent gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(223 47% 41%), hsl(225 50% 34%));
+    --gradient-success: linear-gradient(135deg, hsl(152 56% 38%), hsl(154 60% 32%));
+    --gradient-warning: linear-gradient(135deg, hsl(32 95% 44%), hsl(28 90% 40%));
+    --gradient-danger: linear-gradient(135deg, hsl(0 72% 51%), hsl(355 70% 45%));
+    --gradient-info: linear-gradient(135deg, hsl(217 91% 60%), hsl(222 47% 35%));
+
+    /* Chart / badges */
+    --badge-upcoming-bg: 223 30% 94%;
+    --badge-upcoming-fg: 223 40% 30%;
+    --badge-progress-bg: 32 95% 94%;
+    --badge-progress-fg: 28 90% 40%;
+    --badge-completed-bg: 152 56% 94%;
+    --badge-completed-fg: 154 60% 30%;
+    --badge-postponed-bg: 220 10% 94%;
+    --badge-postponed-fg: 220 10% 40%;
+
+    --radius: 0.5rem;
+
+    --font-heading: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+    --font-body: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+    --font-display: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+
+  .dark {
+    --background: 222 28% 10%;
+    --foreground: 210 16% 93%;
+    --card: 222 24% 14%;
+    --card-foreground: 210 16% 93%;
+    --popover: 222 24% 14%;
+    --popover-foreground: 210 16% 93%;
+    --primary: 223 55% 60%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 223 55% 68%;
+    --secondary: 222 18% 20%;
+    --secondary-foreground: 210 16% 93%;
+    --muted: 222 18% 20%;
+    --muted-foreground: 220 10% 62%;
+    --accent: 223 55% 60%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 72% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --success: 152 56% 48%;
+    --warning: 32 95% 55%;
+    --border: 222 18% 22%;
+    --input: 222 18% 22%;
+    --ring: 223 55% 60%;
+    --sidebar-background: 223 30% 10%;
+    --sidebar-hover: 223 22% 16%;
+    --sidebar-border: 223 18% 18%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body antialiased overflow-x-hidden;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+
+  /* Re-enable text selection for form fields and editable areas */
+  input, textarea, [contenteditable="true"], [contenteditable=""], select {
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
+  }
+
+  /* Native date/datetime/time inputs — normalize so they never overflow
+     cards, dialogs or modals on any browser. */
+  input[type="date"],
+  input[type="datetime-local"],
+  input[type="time"],
+  input[type="month"],
+  input[type="week"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  /* Keep the native calendar/clock indicator clickable but tidy */
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+  input[type="time"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+  }
+}
+
+@layer utilities {
+  /* Safe area insets for PWA standalone mode */
+  .safe-area-top { padding-top: env(safe-area-inset-top); }
+  .safe-area-bottom { padding-bottom: env(safe-area-inset-bottom); }
+  .safe-area-left { padding-left: env(safe-area-inset-left); }
+  .safe-area-right { padding-right: env(safe-area-inset-right); }
+  .safe-area-mt { margin-top: env(safe-area-inset-top); }
+  .safe-area-mb { margin-bottom: env(safe-area-inset-bottom); }
+
+  /* Dynamic viewport height (handles mobile browser chrome) */
+  .h-dvh { height: 100dvh; }
+  .min-h-dvh { min-height: 100dvh; }
+  .max-h-dvh { max-height: 100dvh; }
+
+  /* Text wrapping for long names/emails/notes */
+  .break-anywhere { overflow-wrap: anywhere; word-break: break-word; }
+
+  /* Minimum touch target for mobile accessibility */
+  .touch-min { min-width: 44px; min-height: 44px; }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 9999px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  /* Premium mesh gradient background */
+  .bg-mesh {
+    background-image:
+      radial-gradient(at 20% 20%, hsl(var(--primary) / 0.06) 0px, transparent 50%),
+      radial-gradient(at 80% 0%, hsl(var(--accent) / 0.05) 0px, transparent 50%),
+      radial-gradient(at 60% 80%, hsl(var(--primary) / 0.04) 0px, transparent 50%);
+  }
+
+  /* Subtle grid pattern */
+  .bg-grid {
+    background-image:
+      linear-gradient(to right, hsl(var(--border) / 0.4) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(var(--border) / 0.4) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+
+  /* Glassmorphism */
+  .glass {
+    background: hsl(var(--card) / 0.7);
+    backdrop-filter: blur(12px) saturate(180%);
+    -webkit-backdrop-filter: blur(12px) saturate(180%);
+  }
+
+  /* Bottom-nav glass: same look as .glass, hardened for Android. Its own compositing
+     layer makes Chrome/WebView actually apply the blur (otherwise page text shows
+     through sharp), and where blur isn't supported the panel is nearly opaque so
+     content behind it never reads through. */
+  .glass-nav {
+    background: hsl(var(--card) / 0.96);
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    isolation: isolate;
+  }
+  @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .glass-nav {
+      background: hsl(var(--card) / 0.7);
+      backdrop-filter: blur(14px) saturate(180%);
+      -webkit-backdrop-filter: blur(14px) saturate(180%);
+    }
+  }
+
+  /* Smooth hover lift */
+  .hover-lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .hover-lift:hover {
+    transform: translateY(-2px);
+  }
+
+  /* Premium gradient text */
+  .text-gradient {
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* Logo-inspired gradient (orange → blue → purple) */
+  .bg-logo-gradient {
+    background: linear-gradient(135deg, #F58220 0%, #2D7FF9 55%, #8B2BE2 100%);
+  }
+  .text-logo-gradient {
+    background: linear-gradient(135deg, #F58220 0%, #2D7FF9 55%, #8B2BE2 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+
+  /* Refined focus ring */
+  .focus-ring {
+    outline: none;
+    box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--ring) / 0.4);
+  }
+}
+
+/* ---- Reduced Motion (CSS fallback for non-framer animations) ---- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---- Mobile Input Zoom Prevention ---- */
+/* iOS Safari auto-zooms when form controls have font-size < 16px.
+   Force 16px on mobile for all text-entry controls; desktop unaffected. */
+@media (max-width: 767px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* ---- Invoice Print ---- */
+@media print {
+  body.printing-invoice * {
+    visibility: hidden;
+  }
+  body.printing-invoice .invoice-print-area,
+  body.printing-invoice .invoice-print-area * {
+    visibility: visible;
+  }
+  body.printing-invoice .invoice-print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100% !important;
+    max-width: none !important;
+    box-shadow: none !important;
+  }
+  body.printing-invoice .no-print {
+    display: none !important;
+  }
+  body.printing-invoice {
+    background: white !important;
+  }
+  @page {
+    margin: 12mm;
+  }
+}
+
+/* ---- Job Sheet Print ---- */
+@media print {
+  body.printing-jobsheet .no-print {
+    display: none !important;
+  }
+  body.printing-jobsheet .print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100% !important;
+    max-width: none !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  body.printing-jobsheet {
+    background: white !important;
+  }
+}
+
+/* ---- Global Dots Visibility ---- */
+/* When "Show status dots" preference is OFF, body gets .dots-hidden class.
+   All colored dot indicators are hidden; underlying text/data stays visible.
+   This does NOT change the actual colors or underlying data — only visibility. */
+body.dots-hidden .status-dot,
+body.dots-hidden .type-dot,
+body.dots-hidden .team-chip-dot,
+body.dots-hidden .cal-today-dot {
+  display: none !important;
+}
+
+/* ---- Rich Text Editor (Quill) ---- */
+.rich-text-editor-wrapper .ql-toolbar {
+  border: 1px solid hsl(var(--border));
+  border-bottom: none;
+  border-radius: var(--radius) var(--radius) 0 0;
+  background: hsl(var(--card));
+}
+.rich-text-editor-wrapper .ql-container {
+  border: 1px solid hsl(var(--border));
+  border-radius: 0 0 var(--radius) var(--radius);
+  background: hsl(var(--card));
+  font-family: var(--font-body);
+  font-size: 14px;
+  min-height: 100px;
+}
+.rich-text-editor-wrapper .ql-editor {
+  min-height: 100px;
+  padding: 10px 12px;
+}
+.rich-text-editor-wrapper .ql-editor.ql-blank::before {
+  color: hsl(var(--muted-foreground));
+  font-style: normal;
+}
+.rich-text-editor-wrapper .ql-snow .ql-tooltip {
+  z-index: 100;
+}
+
+/* ---- Quill Rich Text Content Rendering (public views + read-only display) ---- */
+.ql-align-center { text-align: center; }
+.ql-align-right { text-align: right; }
+.ql-align-justify { text-align: justify; }
+.ql-size-small { font-size: 0.75em; }
+.ql-size-large { font-size: 1.5em; }
+.ql-size-huge { font-size: 2.5em; }
+
+/* ---- Quotation Print (URL 2) ---- */
+@media print {
+  body.printing-quotation * {
+    visibility: hidden;
+  }
+  body.printing-quotation .print-area,
+  body.printing-quotation .print-area * {
+    visibility: visible;
+  }
+  body.printing-quotation .print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100% !important;
+    max-width: none !important;
+  }
+  body.printing-quotation .no-print {
+    display: none !important;
+  }
+  body.printing-quotation {
+    background: white !important;
+  }
+}
+
+/* ---- App boot splash (index.html #app-splash) + AppLoadingScreen ----
+   Shared keyframes so the React-rendered AppLoadingScreen is a pixel match
+   for the static pre-mount splash — same timing, same motion — so the
+   handoff between the two is invisible instead of a visible "flick". */
+@keyframes app-splash-fade-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes app-splash-spin {
+  to { transform: rotate(360deg); }
+}
+/* ---------------------------------------------------------------
+   Pastel theme (<html data-theme="pastel">, set by src/lib/theme.js)
+   --primary is the pastel fill; text/icons that use it directly would
+   be unreadable on white, so they use the deeper --primary-strong, and
+   faint primary tints are strengthened so they show up on pastel.
+   Elements that opt in with a `pastel:` class are left alone.
+   --------------------------------------------------------------- */
+[data-theme="pastel"] .text-primary:not([class*="pastel:"]),
+[data-theme="pastel"] .hover\:text-primary:hover:not([class*="pastel:"]),
+[data-theme="pastel"] .group:hover .group-hover\:text-primary:not([class*="pastel:"]) {
+  color: hsl(var(--primary-strong));
+}
+[data-theme="pastel"] .bg-primary\/5:not([class*="pastel:"]) { background-color: hsl(var(--primary) / 0.18); }
+[data-theme="pastel"] .bg-primary\/10:not([class*="pastel:"]) { background-color: hsl(var(--primary) / 0.30); }
+[data-theme="pastel"] .bg-primary\/15:not([class*="pastel:"]) { background-color: hsl(var(--primary) / 0.36); }
+[data-theme="pastel"] .bg-primary\/20:not([class*="pastel:"]) { background-color: hsl(var(--primary) / 0.42); }
+[data-theme="pastel"] .hover\:bg-primary\/5:hover { background-color: hsl(var(--primary) / 0.22); }
+[data-theme="pastel"] .hover\:bg-primary\/10:hover { background-color: hsl(var(--primary) / 0.34); }
+[data-theme="pastel"] .text-primary\/80:not([class*="pastel:"]) { color: hsl(var(--primary-strong) / 0.9); }
+[data-theme="pastel"] .text-primary\/30:not([class*="pastel:"]) { color: hsl(var(--primary-strong) / 0.5); }
+
+/* ---------------------------------------------------------------
+   Desktop scrollbars: thin, invisible until you scroll or reach for
+   the scrollbar edge (see lib/scrollbarAutoHide.js). Touch devices are
+   left exactly as they were.
+   --------------------------------------------------------------- */
+@media (hover: hover) and (pointer: fine) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+  }
+  [data-scrolling],
+  [data-scrollbar-hot] {
+    scrollbar-color: hsl(var(--muted-foreground) / 0.4) transparent;
+  }
+  /* Safari / older WebKit (ignored where the standard properties above apply). */
+  html:root ::-webkit-scrollbar { width: 8px; height: 8px; }
+  html:root ::-webkit-scrollbar-track { background: transparent; }
+  html:root ::-webkit-scrollbar-thumb { background: transparent; border-radius: 9999px; }
+  html:root [data-scrolling]::-webkit-scrollbar-thumb,
+  html:root [data-scrollbar-hot]::-webkit-scrollbar-thumb { background: hsl(var(--muted-foreground) / 0.4); }
+}
+
+/* Dialog/sheet height cap. `dvh` is unsupported on older iOS/Android WebViews (the whole
+   declaration is dropped there), so vh comes first as a fallback. */
+.sheet-max { max-height: 92vh; max-height: 92dvh; }
+@media (min-width: 640px) { .sheet-max { max-height: 90vh; max-height: 90dvh; } }
+
+/* PDF preview sheet: the sheet itself gets a definite height (the header and footer keep their size,
+   the body fills the rest and the PDF scrolls inside it). dvh has no support on older iOS/Android
+   WebViews (the whole rule is dropped), so vh comes first as a fallback. */
+.pdf-preview-sheet { height: 90vh; height: 90dvh; }
+
+/* ---- Print only one element (see lib/printUtils.js) ----
+   The element's ancestors become plain unclipped blocks, everything beside them is removed, so a
+   printout is just the target — no sidebar/header, no one-screen cut-off from the app's
+   fixed-height layout. */
+@media print {
+  html[data-printing], html[data-printing] body {
+    height: auto !important; min-height: 0 !important; overflow: visible !important; background: #fff !important;
+  }
+  [data-print-hide] { display: none !important; }
+  [data-print-ancestor] {
+    display: block !important; position: static !important; transform: none !important;
+    width: auto !important; max-width: none !important; height: auto !important; min-height: 0 !important; max-height: none !important;
+    overflow: visible !important; margin: 0 !important; padding: 0 !important; border: 0 !important;
+    box-shadow: none !important; background: transparent !important; backdrop-filter: none !important;
+  }
+  [data-print-target] {
+    position: static !important; width: 100% !important; max-width: none !important; margin: 0 !important;
+    border: 0 !important; box-shadow: none !important; border-radius: 0 !important; overflow: visible !important;
+  }
+  [data-print-target] > * { break-inside: avoid; }
+}
+
+/* ---- Skeleton shimmer ----
+   A soft light sweep over any skeleton block (keeps its own bg colour).
+   Replaces the plain pulse on loading placeholders, desktop and mobile. */
+@keyframes skeleton-shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+.skeleton-shimmer {
+  background-image: linear-gradient(100deg, transparent 30%, hsl(0 0% 100% / 0.55) 50%, transparent 70%);
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  animation: skeleton-shimmer 1.6s ease-in-out infinite;
+}
+.dark .skeleton-shimmer {
+  background-image: linear-gradient(100deg, transparent 30%, hsl(0 0% 100% / 0.07) 50%, transparent 70%);
+}
+
+/* ---- Desktop polish ----
+   Pointer devices on wide screens get smoother press/hover feedback. */
+@media (hover: hover) and (min-width: 1024px) {
+  button:not(:disabled), [role="button"]:not([aria-disabled="true"]) {
+    transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+    transition-duration: 180ms;
+    transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  button:not(:disabled):not(.w-full):active, [role="button"]:not([aria-disabled="true"]):not(.w-full):active {
+    transform: scale(0.98);
+  }
+  html { scroll-behavior: smooth; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-shimmer { animation: none; }
+  html { scroll-behavior: auto !important; }
+  button:not(:disabled):active { transform: none !important; }
+}

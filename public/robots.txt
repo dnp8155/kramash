@@ -1,0 +1,77 @@
+# Kramasha — Robots.txt
+# Custom domain: https://www.kramasha.com
+
+User-agent: *
+Allow: /
+Allow: /about
+Allow: /faq
+Allow: /login
+Allow: /register
+Allow: /terms
+Allow: /privacy
+Allow: /p/
+
+# Private/authenticated app pages — don't index
+Disallow: /dashboard
+Disallow: /events
+Disallow: /clients
+Disallow: /leads
+Disallow: /team
+Disallow: /financial
+Disallow: /quotation
+Disallow: /invoices
+Disallow: /preferences
+Disallow: /plan
+Disallow: /help
+Disallow: /more
+Disallow: /data-tools
+Disallow: /calendar
+Disallow: /rate-estimator
+Disallow: /sign-pdf
+Disallow: /app-updates
+Disallow: /onboarding
+Disallow: /admin
+Disallow: /client-portal
+Disallow: /team-portal
+Disallow: /portal/
+Disallow: /track/
+Disallow: /job-sheet/
+Disallow: /invoice/
+Disallow: /q/
+
+# AI / LLM crawlers — allow for AEO/GEO
+User-agent: GPTBot
+Allow: /
+Allow: /about
+Allow: /faq
+Allow: /terms
+Allow: /privacy
+
+User-agent: ChatGPT-User
+Allow: /
+Allow: /about
+Allow: /faq
+
+User-agent: PerplexityBot
+Allow: /
+Allow: /about
+Allow: /faq
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+# Block resource-heavy crawlers from authenticated areas
+User-agent: *
+Crawl-delay: 1
+
+# Sitemap
+Sitemap: https://www.kramasha.com/sitemap.xml
