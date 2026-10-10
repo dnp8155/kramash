@@ -1,0 +1,41 @@
+import { Link as LinkIcon, ExternalLink } from "lucide-react";
+import { getSocialIcon, EXTRA_SOCIAL_ICON_OPTIONS } from "@/lib/socialIcons";
+
+export default function QuotationSocialLinks({ socialLinks }) {
+  if (!socialLinks) return null;
+
+  const extra = Array.isArray(socialLinks.extra) ? socialLinks.extra : [];
+  const links = [
+    { key: "instagram", label: "Instagram", url: socialLinks.instagram },
+    { key: "website", label: "Website", url: socialLinks.website },
+    { key: "youtube", label: "YouTube", url: socialLinks.youtube },
+    { key: "twitter", label: "Twitter / X", url: socialLinks.twitter || socialLinks.portfolio },
+    ...extra.map((s, i) => ({
+      key: `extra_${i}`,
+      label: (EXTRA_SOCIAL_ICON_OPTIONS.find((o) => o.v === s.icon) || EXTRA_SOCIAL_ICON_OPTIONS[0]).l,
+      url: s.url,
+    })),
+  ].filter((l) => l.url);
+
+  if (links.length === 0) return null;
+
+  return (
+    <div className="bg-card border border-border rounded-xl p-5 shadow-card">
+      <h2 className="text-sm font-semibold text-foreground mb-3">Connect With Us</h2>
+      <div className="flex flex-wrap gap-2">
+        {links.map((l) => {
+          const Icon = getSocialIcon(l.url) || LinkIcon;
+          const href = l.url.startsWith("http") ? l.url : `https://${l.url}`;
+          return (
+            <a key={l.key} href={href} target="_blank" rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-card text-sm text-foreground hover:bg-muted transition-colors">
+              <Icon className="w-3.5 h-3.5" />
+              {l.label}
+              <ExternalLink className="w-3 h-3 text-muted-foreground" />
+            </a>
+          );
+        })}
+      </div>
+    </div>
+  );
+}

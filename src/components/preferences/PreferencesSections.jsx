@@ -1,0 +1,358 @@
+import { useState, useRef } from "react";
+import { base44 } from "@/api/base44Client";
+import { formatINR } from "@/utils/format";
+import Button from "@/components/common/Button";
+import Toggle from "@/components/common/Toggle";
+import ProfileWorkspaceSection from "@/components/settings/ProfileWorkspaceSection";
+import AppearanceSection from "@/components/settings/AppearanceSection";
+import BillingSection from "@/components/settings/BillingSection";
+import SessionSection from "@/components/settings/SessionSection";
+import NotificationSection from "@/components/settings/NotificationSection";
+import QuotationDefaultsSection from "@/components/settings/QuotationDefaultsSection";
+import SecuritySection from "@/components/settings/SecuritySection";
+import DataDeletionSection from "@/components/settings/DataDeletionSection";
+import TeamMemberTypeManager from "@/components/preferences/TeamMemberTypeManager";
+import EventTypeManager from "@/components/preferences/EventTypeManager";
+import MilestoneTemplateManager from "@/components/preferences/MilestoneTemplateManager";
+import LanguageSection from "@/components/settings/LanguageSection";
+import PackageSection from "@/components/preferences/PackageSection";
+import { useToast } from "@/components/ui/use-toast";
+import { showExportToast } from "@/lib/exportToast";
+import { useFeatureGate } from "@/components/common/ProGate";
+import { loadAllTransactions } from "@/lib/financeService";
+import { txInFY, eventInFY } from "@/lib/financialYearService";
+import { useAuth } from "@/lib/AuthContext";
+import { useBusinessTerminology } from "@/hooks/useBusinessTerminology";
+import { exportFinancialXlsx, exportBusinessWorkbookXlsx } from "@/lib/exportUtils";
+import ExportRangePicker from "@/components/preferences/ExportRangePicker";
+import { Pencil, Trash2, Plus, Download, Loader2, Briefcase, Tags, Palette, Shield, CreditCard, LogOut, FileText, Users, UserCircle, Power, Bell } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+export default function PreferencesSections({
+  sectionKey,
+  workspace,
+  workspaceId,
+  toggles,
+  setT,
+  isPro,
+  roles,
+  loadingRoles,
+  serviceList,
+  loadingServices,
+  fiscalYears,
+  selectedFY,
+  selectFY,
+  onOpenAddRole,
+  onOpenEditRole,
+  onToggleRoleStatus,
+  onDeleteRole,
+  onOpenAddService,
+  onOpenEditService,
+  onToggleServiceStatus,
+  onDeleteService,
+}) {
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const term = useBusinessTerminology();
+  const [exporting, setExporting] = useState(false);
+  const [exportingTx, setExportingTx] = useState(false);
+  const exportLock = useRef(false);
+  const { checkFeature, FeatureGateDialog } = useFeatureGate();
+  const [exportRange, setExportRange] = useState(null);
+  const inExportRange = (date, fyTest) => {
+    if (!exportRange || exportRange.type === "all") return true;
+    if (exportRange.type === "fy") return fyTest(exportRange.fy);
+    return !!date && date >= exportRange.start && date <= exportRange.end;
+  };
+
+  const notifyExport = (res, label) => showExportToast(toast, res, label);
+
+  switch (sectionKey) {
+    case "profile":
+      return (
+        <SectionBlock icon={UserCircle} title="Profile & Workspace">
+          <ProfileWorkspaceSection />
+        </SectionBlock>
+      );
+    case "appearance":
+      return (
+        <SectionBlock icon={Palette} title="Appearance">
+          <AppearanceSection />
+        </SectionBlock>
+      );
+    case "business-setup":
+      return (
+        <SectionBlock icon={Briefcase} title="Business Setup">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <Card title="Team Roles">
+              <div className="space-y-2">
+                {loadingRoles && roles.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-2">Loading roles…</p>
+                ) : roles.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-2">No roles yet. Add one to get started.</p>
+                ) : (
+                  roles.map((r) => (
+                    <div key={r.id} className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-muted/40">
+                      <Users className={cn("w-3.5 h-3.5 shrink-0", r.status === "active" ? "text-success" : "text-destructive")} />
+                      <span className={cn("text-sm flex-1 min-w-0 truncate", r.status === "inactive" && "text-muted-foreground line-through")}>{r.name}</span>
+                      <span className="text-xs text-muted-foreground shrink-0 flex flex-col items-end sm:flex-row sm:items-baseline sm:gap-1">
+                        <span className="whitespace-nowrap">{formatINR(r.default_rate)}</span>
+                        <span className="text-[10px] whitespace-nowrap">/ {r.rate_type}</span>
+                      </span>
+                      <button onClick={() => onOpenEditRole(r)} className="w-7 h-7 rounded-full flex items-center justify-center bg-card border border-border text-muted-foreground hover:text-foreground transition-colors shrink-0" aria-label="Edit role">
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <button onClick={() => onToggleRoleStatus(r)} className="w-7 h-7 rounded-full flex items-center justify-center bg-card border border-border text-muted-foreground hover:text-warning transition-colors shrink-0" aria-label="Toggle status" title={r.status === "active" ? "Disable" : "Enable"}>
+                        <Power className="w-3.5 h-3.5" />
+                      </button>
+                      <button onClick={() => onDeleteRole(r)} className="w-7 h-7 rounded-full flex items-center justify-center bg-card border border-border text-muted-foreground hover:text-destructive transition-colors shrink-0" aria-label="Delete role">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+              <Button variant="primary" size="sm" className="mt-3" onClick={onOpenAddRole}><Plus className="w-3.5 h-3.5" />Add Role</Button>
+            </Card>
+            <Card title="Services">
+              <div className="space-y-2">
+                {loadingServices && serviceList.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-2">Loading services…</p>
+                ) : serviceList.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-2">No services yet. Add one to get started.</p>
+                ) : (
+                  serviceList.map((s) => (
+                    <div key={s.id} className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-muted/40">
+                      <Briefcase className={cn("w-3.5 h-3.5 shrink-0", s.status === "active" ? "text-success" : "text-destructive")} />
+                      <span className={cn("text-sm flex-1 min-w-0 truncate", s.status === "inactive" && "text-muted-foreground line-through")}>{s.name}</span>
+                      <span className="text-xs text-muted-foreground shrink-0 flex flex-col items-end sm:flex-row sm:items-baseline sm:gap-1">
+                        <span className="whitespace-nowrap">{formatINR(s.default_rate)}</span>
+                        <span className="text-[10px] whitespace-nowrap">/ {s.rate_type}</span>
+                      </span>
+                      {workspace?.gst_enabled && Number(s.gst_rate) > 0 && (
+                        <span className="text-[10px] text-muted-foreground whitespace-nowrap hidden sm:inline">GST {s.gst_rate}%</span>
+                      )}
+                      <button onClick={() => onOpenEditService(s)} className="w-7 h-7 rounded-full flex items-center justify-center bg-card border border-border text-muted-foreground hover:text-foreground transition-colors shrink-0" aria-label="Edit service">
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <button onClick={() => onToggleServiceStatus(s)} className="w-7 h-7 rounded-full flex items-center justify-center bg-card border border-border text-muted-foreground hover:text-warning transition-colors shrink-0" aria-label="Toggle status" title={s.status === "active" ? "Disable" : "Enable"}>
+                        <Power className="w-3.5 h-3.5" />
+                      </button>
+                      <button onClick={() => onDeleteService(s)} className="w-7 h-7 rounded-full flex items-center justify-center bg-card border border-border text-muted-foreground hover:text-destructive transition-colors shrink-0" aria-label="Delete service">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+              <Button variant="primary" size="sm" className="mt-3" onClick={onOpenAddService}><Plus className="w-3.5 h-3.5" />Add Service</Button>
+            </Card>
+          </div>
+        </SectionBlock>
+      );
+    case "types-display":
+      return (
+        <SectionBlock icon={Tags} title="Types & Display">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <Card title="Team Member Types">
+              <TeamMemberTypeManager workspace={workspace} />
+            </Card>
+            <Card title="Event / Work Types">
+              <EventTypeManager workspace={workspace} />
+            </Card>
+            <Card title="Language">
+              <LanguageSection />
+            </Card>
+            <Card title="Event Display">
+              <p className="text-xs text-muted-foreground mb-3 flex items-center gap-2">Control what appears on event detail pages, cards, and table rows.{!isPro && <span className="text-[10px] font-bold uppercase tracking-wide bg-primary/10 text-primary px-1.5 py-0.5 rounded">Pro</span>}</p>
+              <div className="space-y-3">
+                <ToggleRow label="Show team members" hint="Display assigned team on event cards and table rows" checked={toggles.showTeam} onChange={setT("showTeam")} disabled={!isPro} />
+                <ToggleRow label="Show services" hint="Display assigned services on event cards and table rows" checked={toggles.showServices} onChange={setT("showServices")} disabled={!isPro} />
+                <ToggleRow
+                  label="Show notes/description on cards"
+                  hint="Display notes and description on event cards and table rows"
+                  checked={isPro && toggles.showAddressOnCards}
+                  onChange={setT("showAddressOnCards")}
+                  disabled={!isPro}
+                />
+              </div>
+              <div className="mt-4 pt-4 border-t border-border">
+                <div className="text-sm font-semibold mb-2 flex items-center gap-2">Shared Invoice{!isPro && <span className="text-[10px] font-bold uppercase tracking-wide bg-primary/10 text-primary px-1.5 py-0.5 rounded">Pro</span>}</div>
+                <ToggleRow label="Show logo on invoice" checked={isPro && toggles.showLogo} onChange={setT("showLogo")} disabled={!isPro} />
+              </div>
+            </Card>
+          </div>
+        </SectionBlock>
+      );
+    case "quotation":
+      return (
+        <SectionBlock icon={FileText} title="Quotation">
+          <div className="space-y-4">
+            <QuotationDefaultsSection />
+            <MilestoneTemplateManager />
+            <div className="bg-card border border-border rounded-[15px] p-4">
+              <h3 className="text-sm font-semibold mb-1">Packages</h3>
+              <p className="text-xs text-muted-foreground mb-3">Reusable quotation templates. Create them from the Quotation Editor ("Save as Package"), then manage their details here.</p>
+              <PackageSection workspaceId={workspaceId} currency={workspace?.currency || "INR"} workspace={workspace} />
+            </div>
+          </div>
+        </SectionBlock>
+      );
+
+    case "data-export":
+      return (
+        <SectionBlock icon={Download} title="Data Export">
+          <Card title="Export">
+            <ExportRangePicker fiscalYears={fiscalYears} defaultFyId={selectedFY?.id} onChange={setExportRange} />
+            <Button size="sm" disabled={exporting || !exportRange} onClick={async () => {
+              if (!checkFeature("excel_csv_export_enabled", "Excel Export")) return;
+              if (exportLock.current) return; // one export per click, even on a double tap
+              exportLock.current = true;
+              setExporting(true);
+              try {
+                const [allEvents, clients, members, services, teamAsg, svcAsg, allTx] = await Promise.all([
+                  base44.entities.Event.filter({ workspace_id: workspaceId }, "-start_date", 1000),
+                  base44.entities.Client.filter({ workspace_id: workspaceId }, "name", 1000),
+                  base44.entities.TeamMember.filter({ workspace_id: workspaceId }, "name", 1000),
+                  base44.entities.Service.filter({ workspace_id: workspaceId }, "name", 1000),
+                  base44.entities.EventTeamAssignment.filter({ workspace_id: workspaceId, assignment_status: "assigned" }, "-created_date", 5000),
+                  base44.entities.EventServiceAssignment.filter({ workspace_id: workspaceId, assignment_status: "assigned" }, "-created_date", 5000),
+                  base44.entities.FinancialTransaction.filter({ workspace_id: workspaceId, status: "ACTIVE" }, "-transaction_date", 10000),
+                ]);
+                const byId = (list) => Object.fromEntries((list || []).map((x) => [x.id, x]));
+                const group = (list) => (list || []).reduce((acc, a) => { (acc[a.event_id] = acc[a.event_id] || []).push(a); return acc; }, {});
+                const fyEvents = (allEvents || []).filter((e) => e.status !== "cancelled" && inExportRange(e.start_date, (fy) => eventInFY(e, fy)));
+                if (fyEvents.length === 0) {
+                  toast({ title: "Nothing to export for this period." });
+                } else {
+                  const res = await exportBusinessWorkbookXlsx(fyEvents, {
+                    ownerName: user?.full_name || "",
+                businessName: workspace?.name || "",
+                    fyLabel: exportRange.label,
+                    clientsMap: byId(clients), teamMap: byId(members), serviceMap: byId(services),
+                    assignmentsByEvent: group(teamAsg), serviceAssignmentsByEvent: group(svcAsg),
+                    transactions: allTx || [], workPlural: term.workItemPlural, currency: workspace?.currency || "INR",
+                  });
+                  notifyExport(res, `${res.count} ${term.workItemPlural.toLowerCase()}`);
+                }
+              } catch (e) {
+                toast({ title: "Export failed", description: e?.message, variant: "destructive" });
+              } finally {
+                setExporting(false);
+                exportLock.current = false;
+              }
+            }}>
+              {exporting ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Exporting…</> : <><Download className="w-3.5 h-3.5" /> Export to Excel</>}
+            </Button>
+            <p className="text-xs text-muted-foreground mt-2 mb-4">One workbook for the selected year: a Main Summary of every {term.workItemSingular.toLowerCase()}, then a sheet per client with their details, transactions, team and services.</p>
+            <p className="text-xs font-medium text-muted-foreground mb-1.5">Payment activity only</p>
+            <Button variant="outline" size="sm" disabled={exportingTx || !exportRange} onClick={async () => {
+              if (!checkFeature("excel_csv_export_enabled", "Excel Export")) return;
+              setExportingTx(true);
+              try {
+                const tx = await loadAllTransactions(workspaceId);
+                const events = await base44.entities.Event.filter({ workspace_id: workspaceId }, "-start_date", 500);
+                const clients = await base44.entities.Client.filter({ workspace_id: workspaceId }, "name", 500);
+                const members = await base44.entities.TeamMember.filter({ workspace_id: workspaceId }, "name", 500);
+                const eventsById = {}, clientsById = {}, membersById = {};
+                events.forEach((e) => { eventsById[e.id] = e; });
+                clients.forEach((c) => { clientsById[c.id] = c; });
+                members.forEach((m) => { membersById[m.id] = m; });
+                const fyTx = tx.filter((t) => inExportRange(t.transaction_date, (fy) => txInFY(t, fy)));
+                if (fyTx.length === 0) {
+                  toast({ title: "No transactions found for this period." });
+                } else {
+                  const res = await exportFinancialXlsx(fyTx, { eventsById, clientsById, membersById }, workspace?.currency || "INR", exportRange.label, { shareSheet: true });
+                  notifyExport(res, `${fyTx.length} transactions`);
+                }
+              } catch (e) {
+                toast({ title: "Export failed", description: e?.message, variant: "destructive" });
+              } finally {
+                setExportingTx(false);
+              }
+            }}>
+              {exportingTx ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Exporting…</> : <><Download className="w-3.5 h-3.5" /> Export to Excel</>}
+            </Button>
+            <p className="text-xs text-muted-foreground mt-2">Exports every payment and expense in the selected range as a flat list.</p>
+            {FeatureGateDialog}
+          </Card>
+        </SectionBlock>
+      );
+    case "security":
+      return (
+        <SectionBlock icon={Shield} title="Security">
+          <SecuritySection />
+        </SectionBlock>
+      );
+    case "notifications":
+      return (
+        <SectionBlock icon={Bell} title="Notifications">
+          <NotificationSection />
+        </SectionBlock>
+      );
+    case "billing":
+      return (
+        <SectionBlock icon={CreditCard} title="Billing & Plan">
+          <BillingSection />
+        </SectionBlock>
+      );
+    case "data-deletion":
+      return (
+        <SectionBlock icon={Trash2} title="Data Deletion">
+          <DataDeletionSection />
+        </SectionBlock>
+      );
+    case "session":
+      return (
+        <SectionBlock icon={LogOut} title="Session">
+          <SessionSection />
+        </SectionBlock>
+      );
+    default:
+      return null;
+  }
+}
+
+function SectionBlock({ icon: Icon, title, children }) {
+  return (
+    <section className="space-y-3">
+      <div className="flex items-center gap-2 pb-1 border-b border-border">
+        <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+          <Icon className="w-4 h-4 text-primary" />
+        </div>
+        <h2 className="text-sm font-bold text-foreground">{title}</h2>
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function Card({ title, children }) {
+  return (
+    <div className="bg-card border border-border rounded-[15px] p-4">
+      <h3 className="text-sm font-semibold mb-3">{title}</h3>
+      {children}
+    </div>
+  );
+}
+
+function Field({ label, className, children }) {
+  return (
+    <div className={className}>
+      <label className="block text-xs font-medium text-muted-foreground mb-1">{label}</label>
+      {children}
+    </div>
+  );
+}
+
+function ToggleRow({ label, hint, checked, onChange, disabled }) {
+  return (
+    <div className={cn("flex items-center justify-between gap-3", disabled && "opacity-50")}>
+      <div className="min-w-0">
+        <span className="text-sm text-foreground block">{label}</span>
+        {hint && <span className="text-xs text-muted-foreground">{hint}</span>}
+      </div>
+      <Toggle checked={checked} onChange={onChange} label={label} disabled={disabled} />
+    </div>
+  );
+}

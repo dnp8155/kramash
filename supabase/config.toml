@@ -1,0 +1,32 @@
+project_id = "kramasha"
+
+[auth.email]
+otp_expiry = 600
+
+[auth.email.template.confirmation]
+subject = "Your Kramasha verification code"
+content_path = "./supabase/email-templates/confirm-signup.html"
+
+[auth.email.template.magic_link]
+subject = "Your Kramasha verification code"
+content_path = "./supabase/email-templates/magic-link.html"
+
+[auth.email.template.invite]
+subject = "You've been invited to Kramasha"
+content_path = "./supabase/email-templates/invite-user.html"
+
+[auth.email.template.recovery]
+subject = "Reset your Kramasha password"
+content_path = "./supabase/email-templates/reset-password.html"
+
+[auth.email.template.reauthentication]
+subject = "Confirm it's you - Kramasha"
+content_path = "./supabase/email-templates/reauthentication.html"
+
+[auth.email.template.email_change]
+subject = "Confirm your new Kramasha email address"
+content_path = "./supabase/email-templates/change-email.html"
+
+[functions]
+# All Edge Functions deploy with --no-verify-jwt
+# Each function handles its own auth (public portals vs authenticated endpoints)
