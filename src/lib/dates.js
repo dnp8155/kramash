@@ -1,0 +1,385 @@
+// Date helpers — all parsing uses LOCAL time to avoid timezone date shifts.
+// Dates are stored as "YYYY-MM-DD" strings.
+
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+// ---- Workspace-configurable display format ----
+// Synced from WorkspaceContext whenever the active workspace loads/changes,
+// so every formatter below reflects the workspace's Date Format preference
+// without threading `workspace` through every call site.
+//
+// Requires supabase/migrations/0017_date_format_enum_fix.sql (adds the
+// "DD MMM YYYY" value to the date_format enum) to be applied to the database
+// before this can be turned on — otherwise saving that option from Preferences
+// fails with "invalid input value for enum date_format".
+const DATE_FORMAT_PREFERENCE_ENABLED = true;
+
+let _dateFormat = "DD MMM YYYY";
+export function setDateFormat(fmt) {
+  if (!DATE_FORMAT_PREFERENCE_ENABLED) return;
+  _dateFormat = fmt || "DD MMM YYYY";
+}
+export function getDateFormat() {
+  return _dateFormat;
+}
+
+// ---- Workspace-configurable financial year start month (1-12, default 4 = April) ----
+let _fyStartMonth = 4;
+export function setFyStartMonth(m) {
+  const n = Number(m);
+  _fyStartMonth = n >= 1 && n <= 12 ? n : 4;
+}
+export function getFyStartMonth() {
+  return _fyStartMonth;
+}
+
+export function toISODate(date) {
+  const d = date instanceof Date ? date : new Date(date);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+// Parse "YYYY-MM-DD" as a local Date (noon to avoid DST edge cases).
+export function parseISODate(str) {
+  if (!str) return null;
+  const [y, m, d] = str.split("-").map(Number);
+  if (!y || !m || !d) return null;
+  return new Date(y, m - 1, d, 12, 0, 0, 0);
+}
+
+export function todayISO() {
+  return toISODate(new Date());
+}
+
+function pad(n) {
+  return String(n).padStart(2, "0");
+}
+
+// Format a single date per the workspace's configured Date Format
+// ("DD MMM YYYY" | "DD/MM/YYYY" | "MM/DD/YYYY" | "YYYY-MM-DD").
+function formatSingle(date, fmt = _dateFormat) {
+  const dd = pad(date.getDate());
+  const mm = pad(date.getMonth() + 1);
+  const yyyy = date.getFullYear();
+  if (fmt === "DD/MM/YYYY") return `${dd}/${mm}/${yyyy}`;
+  if (fmt === "MM/DD/YYYY") return `${mm}/${dd}/${yyyy}`;
+  if (fmt === "YYYY-MM-DD") return `${yyyy}-${mm}-${dd}`;
+  return `${dd} ${MONTHS[date.getMonth()]} ${yyyy}`; // DD MMM YYYY (default)
+}
+
+// Compact single-date form (no year) used by chip-style date lists.
+function formatSingleCompact(date, fmt = _dateFormat) {
+  const dd = pad(date.getDate());
+  const mm = pad(date.getMonth() + 1);
+  if (fmt === "DD/MM/YYYY") return `${dd}/${mm}`;
+  if (fmt === "MM/DD/YYYY") return `${mm}/${dd}`;
+  if (fmt === "YYYY-MM-DD") return `${mm}-${dd}`;
+  return `${dd} ${MONTHS[date.getMonth()]}`; // DD MMM (default)
+}
+
+// General-purpose date list formatter — takes an array of "YYYY-MM-DD" strings
+// and returns smart-grouped output with automatic month/year grouping:
+//   ["2026-09-01"]                                    → "1 Sep 2026"
+//   ["2026-09-01", "2026-09-02"]                       → "1, 2 Sep 2026"
+//   ["2026-09-01", "2026-09-02", "2026-10-31"]         → "1, 2 Sep, 31 Oct 2026"
+//   ["2026-09-01", "2027-10-31"]                       → "1 Sep 2026, 31 Oct 2027"
+// Used by both event/project date displays and notification date formatting.
+export function formatDatesList(datesArray) {
+  if (!Array.isArray(datesArray) || datesArray.length === 0) return "—";
+  const parsed = datesArray.map(parseISODate).filter(Boolean).sort((a, b) => a - b);
+  if (parsed.length === 0) return "—";
+  // The day-clustering below ("23, 25 Apr 2026") only reads naturally in the
+  // "DD MMM YYYY" grammar — other formats list each date individually.
+  if (_dateFormat !== "DD MMM YYYY") {
+    return parsed.map((d) => formatSingle(d)).join(", ");
+  }
+  const first = parsed[0];
+  const sameYear = parsed.every((d) => d.getFullYear() === first.getFullYear());
+  // Group consecutive dates by (year, month)
+  const groups = [];
+  for (const d of parsed) {
+    const key = `${d.getFullYear()}-${d.getMonth()}`;
+    const last = groups[groups.length - 1];
+    if (last && last.key === key) {
+      last.days.push(d.getDate());
+    } else {
+      groups.push({ key, year: d.getFullYear(), month: d.getMonth(), days: [d.getDate()] });
+    }
+  }
+  const parts = groups.map((g) => {
+    const daysStr = g.days.map(pad).join(", ");
+    const monthYear = sameYear ? MONTHS[g.month] : `${MONTHS[g.month]} ${g.year}`;
+    return `${daysStr} ${monthYear}`;
+  });
+  return parts.join(", ") + (sameYear ? ` ${first.getFullYear()}` : "");
+}
+
+// Group an array of "YYYY-MM-DD" strings into per-month chip labels:
+//   ["2026-04-04", "2026-04-05", "2026-04-06"] → [{ label: "04, 05, 06 Apr 2026", count: 3 }]
+//   ["2026-04-04", "2026-05-12"]                → [{ label: "04 Apr 2026", count: 1 }, { label: "12 May 2026", count: 1 }]
+// Unlike formatDatesList (one joined string), each group is returned separately
+// so callers can render one chip per group.
+export function formatDateGroups(datesArray) {
+  if (!Array.isArray(datesArray) || datesArray.length === 0) return [];
+  const parsed = datesArray.map(parseISODate).filter(Boolean).sort((a, b) => a - b);
+  if (parsed.length === 0) return [];
+  const groups = [];
+  for (const d of parsed) {
+    const key = `${d.getFullYear()}-${d.getMonth()}`;
+    const last = groups[groups.length - 1];
+    if (last && last.key === key) {
+      last.days.push(d.getDate());
+    } else {
+      groups.push({ key, year: d.getFullYear(), month: d.getMonth(), days: [d.getDate()] });
+    }
+  }
+  // All dates in one year → show the year once, on the last group only
+  // ("22 Nov", "09, 10, 11, 12 Dec 2026"), not repeated on every group.
+  const sameYear = groups.every((g) => g.year === groups[0].year);
+  return groups.map((g, i) => {
+    const yearOmitted = _dateFormat === "DD MMM YYYY" && sameYear && i < groups.length - 1;
+    return {
+      label: _dateFormat === "DD MMM YYYY"
+        ? `${g.days.map(pad).join(", ")} ${MONTHS[g.month]}${yearOmitted ? "" : ` ${g.year}`}`
+        : g.days.map((day) => formatSingle(new Date(g.year, g.month, day))).join(", "),
+      count: g.days.length,
+      year: g.year,
+      yearOmitted
+    };
+  });
+}
+
+// Format an event date range, matching the Kramasha style:
+// "26 Aug 2026" | "23, 25 Apr 2026" | "31 Jan, 1 Feb 2026" | "31 Dec 2026, 1 Jan 2027"
+export function formatEventDate(startStr, endStr) {
+  const start = parseISODate(startStr);
+  if (!start) return "—";
+  if (!endStr || endStr === startStr) return formatSingle(start);
+  const end = parseISODate(endStr);
+  if (!end) return formatSingle(start);
+  if (_dateFormat !== "DD MMM YYYY") {
+    return `${formatSingle(start)}, ${formatSingle(end)}`;
+  }
+  if (start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear()) {
+    return `${pad(start.getDate())}, ${pad(end.getDate())} ${MONTHS[end.getMonth()]} ${end.getFullYear()}`;
+  }
+  if (start.getFullYear() === end.getFullYear()) {
+    return `${pad(start.getDate())} ${MONTHS[start.getMonth()]}, ${pad(end.getDate())} ${MONTHS[end.getMonth()]} ${end.getFullYear()}`;
+  }
+  return `${formatSingle(start)}, ${formatSingle(end)}`;
+}
+
+// Format an event's dates — prefers non-consecutive event_dates array,
+// falls back to start_date / end_date range for legacy events.
+export function formatEventDates(event) {
+  const dates = event?.event_dates;
+  if (Array.isArray(dates) && dates.length > 0) {
+    return formatDatesList(dates);
+  }
+  return formatEventDate(event?.start_date, event?.end_date);
+}
+
+// Format the exact dates a team member was assigned to an event.
+// Prefers the assignment's working_dates array (non-consecutive selected dates),
+// then falls back to the per-member booking_start_date / booking_end_date range,
+// then to the event's own date range. Never assumes every event date applies.
+export function formatAssignedDates(assignment, event) {
+  const wd = Array.isArray(assignment?.working_dates)
+    ? assignment.working_dates.filter(Boolean)
+    : [];
+  if (wd.length > 0) {
+    return formatDatesList(wd);
+  }
+  const start = assignment?.booking_start_date || event?.start_date;
+  const end = assignment?.booking_end_date || event?.end_date || start;
+  return formatEventDate(start, end);
+}
+
+// Whether a team assignment covers a specific date.
+// Prefers working_dates (non-consecutive selected dates), then the per-member
+// booking_start_date / booking_end_date range, then the event's own dates.
+export function isAssignedToDate(assignment, date, event) {
+  if (!assignment || !date) return false;
+  const wd = Array.isArray(assignment.working_dates) ? assignment.working_dates.filter(Boolean) : [];
+  if (wd.length > 0) return wd.includes(date);
+  const bs = assignment.booking_start_date;
+  const be = assignment.booking_end_date;
+  if (bs && be) return date >= bs && date <= be;
+  if (bs) return date === bs;
+  const ed = Array.isArray(event?.event_dates) ? event.event_dates : (event?.start_date ? [event.start_date] : []);
+  return ed.includes(date);
+}
+
+// Compact date list — "02 Apr, 04 Apr +1more"
+// Shows first `maxVisible` dates as "DD Mon", remaining as "+Nmore".
+// Falls back to formatEventDates for legacy range-only events.
+export function formatDatesCompact(event, maxVisible = 2) {
+  const dates = event?.event_dates;
+  if (!Array.isArray(dates) || dates.length === 0) {
+    return formatEventDate(event?.start_date, event?.end_date);
+  }
+  const sorted = [...dates].sort();
+  const visible = sorted.slice(0, maxVisible);
+  const remaining = sorted.length - maxVisible;
+  const parts = visible.map((d) => {
+    const dt = parseISODate(d);
+    if (!dt) return d;
+    return formatSingleCompact(dt);
+  });
+  let result = parts.join(", ");
+  if (remaining > 0) result += ` +${remaining}more`;
+  return result;
+}
+
+// Public single-date formatter for callers that only need one exact date
+// (not a range/list) formatted per the workspace's Date Format.
+export function formatDate(dateStr) {
+  const d = parseISODate(dateStr);
+  if (!d) return dateStr || "";
+  return formatSingle(d);
+}
+
+// Compact single-date form (no year), e.g. for chip-style displays.
+export function formatDateChip(dateStr) {
+  const d = parseISODate(dateStr);
+  if (!d) return dateStr || "";
+  return formatSingleCompact(d);
+}
+
+export function isToday(dateStr) {
+  return dateStr === todayISO();
+}
+
+export function isTomorrow(dateStr) {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  return dateStr === toISODate(d);
+}
+
+export function isThisMonth(dateStr) {
+  const d = parseISODate(dateStr);
+  if (!d) return false;
+  const now = new Date();
+  return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+}
+
+// Monday-Sunday week boundary.
+export function isThisWeek(dateStr) {
+  const d = parseISODate(dateStr);
+  if (!d) return false;
+  const now = new Date();
+  const day = (now.getDay() + 6) % 7; // 0 = Monday
+  const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - day, 12);
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  return d >= monday && d <= sunday;
+}
+
+export function isUpcomingDate(dateStr) {
+  const d = parseISODate(dateStr);
+  if (!d) return false;
+  return toISODate(d) >= todayISO();
+}
+
+export function isPastDate(dateStr) {
+  const d = parseISODate(dateStr);
+  if (!d) return false;
+  return toISODate(d) < todayISO();
+}
+
+// Whether every date of an event has already passed — used to disable
+// actions (like sharing team/service assignments) that are only useful
+// while the event is still upcoming or in progress.
+export function isEventFinished(event) {
+  const dates = Array.isArray(event?.event_dates) && event.event_dates.length > 0
+    ? event.event_dates
+    : [event?.end_date || event?.start_date].filter(Boolean);
+  if (dates.length === 0) return false;
+  const lastDate = [...dates].sort().slice(-1)[0];
+  return isPastDate(lastDate);
+}
+
+// Human-readable "how long ago" label for a past date, e.g. "2 months ago",
+// "10 months ago", "1.3 years ago" — used by overdue-payment reminders.
+export function timeAgoLabel(dateStr) {
+  const d = parseISODate(dateStr);
+  if (!d) return "";
+  const days = Math.floor((new Date() - d) / 86400000);
+  if (days < 1) return "today";
+  if (days < 7) return days === 1 ? "1 day ago" : `${days} days ago`;
+  if (days < 30) {
+    const weeks = Math.max(1, Math.round(days / 7));
+    return weeks === 1 ? "1 week ago" : `${weeks} weeks ago`;
+  }
+  const months = days / 30.44;
+  if (months < 12) {
+    const m = Math.max(1, Math.round(months));
+    return m === 1 ? "1 month ago" : `${m} months ago`;
+  }
+  const years = Math.round((days / 365.25) * 10) / 10;
+  return years === 1 ? "1 year ago" : `${years} years ago`;
+}
+
+// Natural-language relative time for full timestamps (not just "YYYY-MM-DD"
+// date strings) — for feeds like notifications: "Just now", "5m ago", "3h
+// ago", "Yesterday". Falls back to the workspace's Date Format preference
+// past a week, since "23 days ago" stops being a useful timestamp.
+export function formatRelativeTime(isoTimestamp) {
+  if (!isoTimestamp) return "";
+  const d = new Date(isoTimestamp);
+  if (isNaN(d.getTime())) return "";
+  const minutes = Math.floor((Date.now() - d.getTime()) / 60000);
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days === 1) return "Yesterday";
+  if (days < 7) return `${days}d ago`;
+  return formatSingle(d);
+}
+
+// Financial year, starting the workspace's configured month (default 1 April).
+// FY "2026-27" covers <fyStartMonth> 2026 to the day before <fyStartMonth> 2027.
+export function fyRange(fyLabel) {
+  if (!fyLabel || fyLabel === "all") return null;
+  const startYear = Number(String(fyLabel).slice(0, 4));
+  if (!startYear) return null;
+  const startMonthIdx = _fyStartMonth - 1;
+  const endDateObj = new Date(startYear + 1, startMonthIdx, 1);
+  endDateObj.setDate(endDateObj.getDate() - 1);
+  return {
+    start: `${startYear}-${pad(startMonthIdx + 1)}-01`,
+    end: toISODate(endDateObj)
+  };
+}
+
+export function fyForDate(dateStr) {
+  const d = parseISODate(dateStr);
+  if (!d) return null;
+  const y = d.getFullYear();
+  const startMonthIdx = _fyStartMonth - 1;
+  const fyStart = d.getMonth() >= startMonthIdx ? y : y - 1;
+  return `${fyStart}-${String(fyStart + 1).slice(-2)}`;
+}
+
+export function currentFY() {
+  return fyForDate(todayISO());
+}
+
+export function isWithinFY(dateStr, fyLabel) {
+  const range = fyRange(fyLabel);
+  if (!range) return true;
+  return dateStr >= range.start && dateStr <= range.end;
+}
+// Dates label for a team/service assignment: every working day when the assignment has them
+// (e.g. "09, 10, 11, 12 Dec 2026"), otherwise its booking range, otherwise the event's range.
+export function formatAssignmentDates(assignment, event) {
+  const wd = Array.isArray(assignment?.working_dates) ? assignment.working_dates.filter(Boolean) : [];
+  if (wd.length > 0) return formatDatesList(wd);
+  const start = assignment?.booking_start_date || event?.start_date;
+  const end = assignment?.booking_end_date || event?.end_date || start;
+  return start ? formatEventDate(start, end) : "—";
+}
