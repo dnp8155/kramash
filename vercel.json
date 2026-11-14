@@ -1,0 +1,115 @@
+{
+  "rewrites": [
+    {
+      "source": "/q/:token",
+      "destination": "/share-quotation.html"
+    },
+    {
+      "source": "/invoice/:token",
+      "destination": "/share-invoice.html"
+    },
+    {
+      "source": "/portal/:token",
+      "destination": "/share-portal.html"
+    },
+    {
+      "source": "/client-login/:token",
+      "destination": "/share-portal.html"
+    },
+    {
+      "source": "/client-portal",
+      "destination": "/share-portal.html"
+    },
+    {
+      "source": "/track/:token",
+      "destination": "/share-tracking.html"
+    },
+    {
+      "source": "/job-sheet/:token",
+      "destination": "/share-jobsheet.html"
+    },
+    {
+      "source": "/team-login/:token",
+      "destination": "/share-team.html"
+    },
+    {
+      "source": "/team-portal",
+      "destination": "/share-team.html"
+    },
+    {
+      "source": "/p/:slug",
+      "destination": "/share-profile.html"
+    },
+    {
+      "source": "/about",
+      "destination": "/share-about.html"
+    },
+    {
+      "source": "/terms",
+      "destination": "/share-terms.html"
+    },
+    {
+      "source": "/privacy",
+      "destination": "/share-privacy.html"
+    },
+    {
+      "source": "/contact",
+      "destination": "/share-contact.html"
+    },
+    {
+      "source": "/faq",
+      "destination": "/share-faq.html"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/embed.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600"
+        }
+      ]
+    },
+    {
+      "source": "/sw.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)\\.(png|jpg|jpeg|gif|webp|svg|ico)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)\\.(woff|woff2|ttf|eot)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    }
+  ]
+}
