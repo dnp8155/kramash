@@ -1,0 +1,96 @@
+{
+  "name": "Kramasha — Creative Business Management Platform",
+  "short_name": "Kramasha",
+  "description": "All-in-one business management platform for photographers, event managers, studios and creative businesses. Manage leads, clients, projects, teams, quotations, invoices, payments and finances.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F5F3EF",
+  "theme_color": "#0A0A0A",
+  "id": "com.kramasha.app",
+  "categories": [
+    "business",
+    "productivity",
+    "finance"
+  ],
+  "lang": "en-IN",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/kramasha_ios_180.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/kramasha_ios_192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/kramasha_ios_512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "screenshots": [
+    { "src": "/landing/dashboard-phone.webp", "sizes": "780x1573", "type": "image/webp", "form_factor": "narrow", "label": "Your dashboard at a glance" },
+    { "src": "/landing/portal-phone.webp", "sizes": "780x1397", "type": "image/webp", "form_factor": "narrow", "label": "Client portal" },
+    { "src": "/landing/team-pay-phone.webp", "sizes": "780x1573", "type": "image/webp", "form_factor": "narrow", "label": "Team and payments" },
+    { "src": "/landing/dashboard-desktop.webp", "sizes": "2400x1456", "type": "image/webp", "form_factor": "wide", "label": "Dashboard" },
+    { "src": "/landing/quotation-desktop.webp", "sizes": "2000x1815", "type": "image/webp", "form_factor": "wide", "label": "Quotations" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "url": "/dashboard",
+      "icons": [
+        {
+          "src": "/shortcut-dashboard-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Events",
+      "short_name": "Events",
+      "url": "/events",
+      "icons": [
+        {
+          "src": "/shortcut-events-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Clients",
+      "short_name": "Clients",
+      "url": "/clients",
+      "icons": [
+        {
+          "src": "/shortcut-clients-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Financial",
+      "short_name": "Financial",
+      "url": "/financial",
+      "icons": [
+        {
+          "src": "/shortcut-financial-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ]
+}

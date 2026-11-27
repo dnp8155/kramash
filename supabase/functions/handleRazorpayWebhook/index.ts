@@ -1,0 +1,71 @@
+import { withCors } from "../_shared/cors.ts";
+// handleRazorpayWebhook — Razorpay webhook handler for payment.captured.
+import { supabaseAdmin } from "../_shared/supabaseClient.ts";
+import { verifyRazorpayWebhookSignature, activateProFromPayment, markPaymentFailed, testPaymentsAllowed, paymentIdAlreadyUsed } from "../_shared/paymentEngine.ts";
+import { capturedMatches } from "../_shared/billingRules.ts";
+
+Deno.serve(withCors(async (req) => {
+  try {
+    const webhookSecret = Deno.env.get("RAZORPAY_WEBHOOK_SECRET");
+    if (!webhookSecret) return Response.json({ error: "Webhook not configured" }, { status: 503 });
+
+    const sig = req.headers.get("x-razorpay-signature") || "";
+    const rawBody = await req.text();
+
+    await verifyRazorpayWebhookSignature(rawBody, sig, webhookSecret);
+    const event = JSON.parse(rawBody);
+
+    if (event.event === "payment.captured") {
+      const paymentEntity = event.payload?.payment?.entity;
+      const orderEntity = event.payload?.order?.entity;
+      const orderId = paymentEntity?.order_id || orderEntity?.id;
+      const paymentId = paymentEntity?.id;
+      if (!orderId) return Response.json({ error: "Missing order ID in webhook payload" }, { status: 400 });
+
+      const { data: payments } = await supabaseAdmin.from("subscription_payments").select("*").eq("gateway_order_id", orderId);
+      const payment = (payments && payments[0]) || null;
+      if (!payment) return Response.json({ error: "Payment not found" }, { status: 404 });
+      if (payment.status === "SUCCESS") return Response.json({ ok: true, alreadyProcessed: true });
+
+      // Same checks as verifyPayment: test keys stay locked to the test workspaces, the captured amount / currency /
+      // order must match this row, and one Razorpay payment pays for one row only.
+      const { data: wsRow } = await supabaseAdmin.from("workspaces").select("owner_user_id").eq("id", payment.workspace_id).maybeSingle();
+      if (!(await testPaymentsAllowed(Deno.env.get("RAZORPAY_KEY_ID") || "", payment.workspace_id, wsRow?.owner_user_id || ""))) {
+        return Response.json({ ok: true, ignored: "test payments are not enabled for this workspace" });
+      }
+      const mismatch = capturedMatches(paymentEntity, { orderId, amount: payment.amount, currency: payment.currency });
+      if (mismatch) {
+        await markPaymentFailed(payment.id, mismatch);
+        return Response.json({ ok: true, marked: "failed", reason: mismatch });
+      }
+      if (await paymentIdAlreadyUsed(paymentId || "", payment.id)) return Response.json({ ok: true, alreadyUsed: true });
+
+      const { data: pricing } = await supabaseAdmin.from("plan_pricings").select("*").eq("id", payment.pricing_id).single();
+      const { data: proPlans } = await supabaseAdmin.from("plans").select("*").eq("code", "PRO");
+      const proPlan = (proPlans && proPlans[0]) || null;
+      if (!pricing || !proPlan) return Response.json({ error: "Plan configuration error" }, { status: 500 });
+
+      await supabaseAdmin.from("subscription_payments").update({ gateway_payment_id: paymentId || "" }).eq("id", payment.id);
+      await activateProFromPayment({ ...payment, gateway_payment_id: paymentId || "" }, pricing, proPlan);
+      return Response.json({ ok: true, activated: true });
+    }
+
+    // A declined or abandoned attempt: keep the reason so the payment history can show it. The same order can still be
+    // retried and captured later, which moves it to SUCCESS, so a payment that already succeeded is never touched.
+    if (event.event === "payment.failed") {
+      const paymentEntity = event.payload?.payment?.entity;
+      const orderId = paymentEntity?.order_id;
+      if (!orderId) return Response.json({ error: "Missing order ID in webhook payload" }, { status: 400 });
+      const { data: payments } = await supabaseAdmin.from("subscription_payments").select("*").eq("gateway_order_id", orderId);
+      const payment = (payments && payments[0]) || null;
+      if (!payment) return Response.json({ error: "Payment not found" }, { status: 404 });
+      if (payment.status === "SUCCESS") return Response.json({ ok: true, alreadyProcessed: true });
+      await markPaymentFailed(payment.id, paymentEntity?.error_description || paymentEntity?.error_reason || "Payment failed");
+      return Response.json({ ok: true, marked: "failed" });
+    }
+
+    return Response.json({ ok: true, received: event.event });
+  } catch (error) {
+    return Response.json({ error: error.message }, { status: 500 });
+  }
+}));
